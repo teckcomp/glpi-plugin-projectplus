@@ -1,0 +1,9 @@
+{
+    "name": "claudiomorett/projectdashboard",
+    "description": "Dashboard para Projetos do GLPI",
+    "type": "glpi-plugin",
+    "license": "GPL-3.0",
+    "require": {
+        "php": ">=8.2"
+    }
+}
