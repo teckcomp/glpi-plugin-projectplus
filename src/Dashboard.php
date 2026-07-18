@@ -69,6 +69,38 @@ class Dashboard extends CommonGLPI
     }
 
     // ------------------------------------------------------------------
+    // Estados/fases (Etapa 2.5, Bloco 3)
+    // ------------------------------------------------------------------
+
+    /** Cor padrão para itens sem fase definida. */
+    public const PHASE_DEFAULT_COLOR = '#8a97a5';
+
+    /**
+     * Mapa id => ['name' => ..., 'color' => ...] de glpi_projectstates.
+     * Cor sempre preenchida (fallback cinza) para uso direto nos chips.
+     */
+    public static function getStatesMap(): array
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        static $map = null;
+        if ($map !== null) {
+            return $map;
+        }
+
+        $map = [];
+        foreach ($DB->request(['FROM' => 'glpi_projectstates', 'ORDER' => 'name']) as $s) {
+            $color = trim((string) ($s['color'] ?? ''));
+            $map[(int) $s['id']] = [
+                'name'  => $s['name'],
+                'color' => preg_match('/^#[0-9a-fA-F]{6}$/', $color) ? $color : self::PHASE_DEFAULT_COLOR,
+            ];
+        }
+        return $map;
+    }
+
+    // ------------------------------------------------------------------
     // Dados do painel
     // ------------------------------------------------------------------
 
@@ -96,6 +128,7 @@ class Dashboard extends CommonGLPI
                 'glpi_projects.percent_done', 'glpi_projects.plan_end_date',
                 'glpi_projects.plan_start_date', 'glpi_projects.real_start_date',
                 'glpi_projects.date_mod', 'glpi_projects.priority',
+                'glpi_projects.projectstates_id',
             ],
             'FROM'  => 'glpi_projects',
             'WHERE' => $where,
@@ -111,6 +144,9 @@ class Dashboard extends CommonGLPI
         $chart     = ['done' => 0, 'in_progress' => 0, 'planned' => 0, 'overdue' => 0];
         $prioChart = ['high' => 0, 'medium' => 0, 'low' => 0];
         $pctSum    = 0;
+
+        $states     = self::getStatesMap();
+        $phaseCount = []; // states_id => quantidade (0 = sem fase)
 
         foreach ($iterator as $row) {
             $pct       = (int) $row['percent_done'];
@@ -133,9 +169,14 @@ class Dashboard extends CommonGLPI
                 ];
             }
 
+            $stateId = (int) $row['projectstates_id'];
+            $phaseCount[$stateId] = ($phaseCount[$stateId] ?? 0) + 1;
+
             $projects[] = [
                 'id'            => (int) $row['id'],
                 'name'          => $row['name'],
+                'state_name'    => $states[$stateId]['name'] ?? null,
+                'state_color'   => $states[$stateId]['color'] ?? self::PHASE_DEFAULT_COLOR,
                 'percent_done'  => $pct,
                 'plan_end_date' => $row['plan_end_date'],
                 'last_activity' => $tracking['last_activity'] ?? $row['date_mod'],
@@ -246,11 +287,33 @@ class Dashboard extends CommonGLPI
         ])->current();
         $kpis['done_month'] = (int) ($doneMonth['cpt'] ?? 0);
 
+        // --- Donut "Projetos por fase" (Etapa 2.5, Bloco 3) ---
+        // Segue a ordem alfabética dos estados (prefixo numérico garante a
+        // sequência 1..5); "Sem fase" entra por último, em cinza.
+        $phaseChart = [];
+        foreach ($states as $sid => $s) {
+            if (!empty($phaseCount[$sid])) {
+                $phaseChart[] = [
+                    'name'  => $s['name'],
+                    'color' => $s['color'],
+                    'count' => $phaseCount[$sid],
+                ];
+            }
+        }
+        if (!empty($phaseCount[0])) {
+            $phaseChart[] = [
+                'name'  => __('Sem fase', 'projectplus'),
+                'color' => self::PHASE_DEFAULT_COLOR,
+                'count' => $phaseCount[0],
+            ];
+        }
+
         return [
             'kpis'           => $kpis,
             'status_chart'   => $chart,
             'priority_chart' => $prioChart,
             'tasks_chart'    => $tasksChart,
+            'phase_chart'    => $phaseChart,
             'projects'       => $projects,
             'progress'       => array_slice($progress, 0, 8),
             'open_tasks'     => self::getOpenTasks($from, $until, 15),
@@ -271,10 +334,7 @@ class Dashboard extends CommonGLPI
             $where[] = $c;
         }
 
-        $states = [];
-        foreach ($DB->request(['FROM' => 'glpi_projectstates']) as $s) {
-            $states[(int) $s['id']] = $s['name'];
-        }
+        $states = self::getStatesMap();
 
         $tasks = [];
         $now   = time();
@@ -306,8 +366,10 @@ class Dashboard extends CommonGLPI
                 'name'       => $row['name'],
                 'url'        => ProjectTask::getFormURLWithID((int) $row['id']),
                 'project'    => $row['project_name'] ?? '—',
-                'percent'    => (int) $row['percent_done'],
-                'state_name' => $states[(int) $row['projectstates_id']] ?? '—',
+                'team'       => [],
+                'percent'     => (int) $row['percent_done'],
+                'state_name'  => $states[(int) $row['projectstates_id']]['name'] ?? null,
+                'state_color' => $states[(int) $row['projectstates_id']]['color'] ?? self::PHASE_DEFAULT_COLOR,
                 'end'        => $row['plan_end_date'] ? date('d/m/Y', strtotime($row['plan_end_date'])) : null,
                 'is_overdue' => !empty($row['plan_end_date'])
                     && strtotime($row['plan_end_date']) < $now,
@@ -319,6 +381,42 @@ class Dashboard extends CommonGLPI
                 ),
             ];
         }
+
+        // Responsáveis (equipe User) das tarefas listadas
+        if (!empty($tasks)) {
+            $ids   = array_column($tasks, 'id');
+            $byTid = [];
+            foreach (
+                $DB->request([
+                    'SELECT'    => [
+                        'glpi_projecttaskteams.projecttasks_id',
+                        'glpi_users.realname', 'glpi_users.firstname',
+                        'glpi_users.name AS login',
+                    ],
+                    'FROM'      => 'glpi_projecttaskteams',
+                    'LEFT JOIN' => [
+                        'glpi_users' => [
+                            'ON' => [
+                                'glpi_projecttaskteams' => 'items_id',
+                                'glpi_users'            => 'id',
+                            ],
+                        ],
+                    ],
+                    'WHERE' => [
+                        'glpi_projecttaskteams.itemtype'        => 'User',
+                        'glpi_projecttaskteams.projecttasks_id' => $ids,
+                    ],
+                ]) as $row
+            ) {
+                $label = trim(($row['realname'] ?? '') . ' ' . ($row['firstname'] ?? ''));
+                $byTid[(int) $row['projecttasks_id']][] = $label !== '' ? $label : ($row['login'] ?? '?');
+            }
+            foreach ($tasks as &$t) {
+                $t['team'] = $byTid[$t['id']] ?? [];
+            }
+            unset($t);
+        }
+
         return $tasks;
     }
 
@@ -377,6 +475,7 @@ class Dashboard extends CommonGLPI
             'SELECT' => [
                 'id', 'name', 'percent_done', 'plan_end_date',
                 'plan_start_date', 'real_start_date', 'date_mod',
+                'projectstates_id',
             ],
             'FROM'   => 'glpi_projects',
             'WHERE'  => [
@@ -389,6 +488,7 @@ class Dashboard extends CommonGLPI
 
         $children = [];
         $now      = time();
+        $states   = self::getStatesMap();
         foreach ($iterator as $row) {
             $childId  = (int) $row['id'];
             $tracking = ProjectTracking::getForProject($childId);
@@ -411,9 +511,13 @@ class Dashboard extends CommonGLPI
 
             $lastActivity = $tracking['last_activity'] ?? $row['date_mod'];
 
+            $childState = (int) $row['projectstates_id'];
+
             $children[] = [
                 'id'            => $childId,
                 'name'          => $row['name'],
+                'state_name'    => $states[$childState]['name'] ?? null,
+                'state_color'   => $states[$childState]['color'] ?? self::PHASE_DEFAULT_COLOR,
                 'percent_done'  => (int) $row['percent_done'],
                 'plan_end_date' => $row['plan_end_date'],
                 'last_activity' => $lastActivity ? date('d/m/Y H:i', strtotime($lastActivity)) : null,
@@ -455,10 +559,7 @@ class Dashboard extends CommonGLPI
         /** @var \DBmysql $DB */
         global $DB;
 
-        $states = [];
-        foreach ($DB->request(['FROM' => 'glpi_projectstates']) as $s) {
-            $states[(int) $s['id']] = $s['name'];
-        }
+        $states = self::getStatesMap();
 
         $byParent = [];
         foreach (
@@ -519,8 +620,9 @@ class Dashboard extends CommonGLPI
                     'end'        => $t['plan_end_date'] ? date('d/m/Y', strtotime($t['plan_end_date'])) : null,
                     'start_iso'  => $t['plan_start_date'] ? substr($t['plan_start_date'], 0, 10) : '',
                     'end_iso'    => $t['plan_end_date'] ? substr($t['plan_end_date'], 0, 10) : '',
-                    'state_id'   => (int) $t['projectstates_id'],
-                    'state_name' => $states[(int) $t['projectstates_id']] ?? '—',
+                    'state_id'    => (int) $t['projectstates_id'],
+                    'state_name'  => $states[(int) $t['projectstates_id']]['name'] ?? '—',
+                    'state_color' => $states[(int) $t['projectstates_id']]['color'] ?? self::PHASE_DEFAULT_COLOR,
                     'team'       => $teams[$id] ?? [],
                     'deadline'   => Deadline::compute(
                         $t['plan_start_date'],

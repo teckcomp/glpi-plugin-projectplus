@@ -40,8 +40,8 @@ if (method_exists($plugin, 'isActivated')) {
 global $DB;
 
 $states = [];
-foreach ($DB->request(['FROM' => 'glpi_projectstates', 'ORDER' => 'name']) as $row) {
-    $states[] = ['id' => (int) $row['id'], 'name' => $row['name']];
+foreach (Dashboard::getStatesMap() as $sid => $s) {
+    $states[] = ['id' => $sid, 'name' => $s['name'], 'color' => $s['color']];
 }
 
 $users = [];
@@ -83,6 +83,7 @@ TemplateRenderer::getInstance()->display(
         'kpis'            => $data['kpis'],
         'status_chart'    => $data['status_chart'],
         'tasks_chart'     => $data['tasks_chart'],
+        'phase_chart'     => $data['phase_chart'],
         'priority_chart'  => $data['priority_chart'],
         'progress'        => $data['progress'],
         'open_tasks'      => $data['open_tasks'],

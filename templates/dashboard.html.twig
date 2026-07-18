@@ -158,6 +158,7 @@
                         <tr>
                             <th></th>
                             <th>{{ __('Projeto', 'projectplus') }}</th>
+                            <th>{{ __('Fase', 'projectplus') }}</th>
                             <th>{{ __('Progresso', 'projectplus') }}</th>
                             <th>{{ __('Última atividade', 'projectplus') }}</th>
                             <th>{{ __('Situação', 'projectplus') }}</th>
@@ -179,6 +180,13 @@
                             <td><a href="{{ project.url }}">{{ project.name }}</a>
                                 <button type="button" class="projectplus-tasksbtn"
                                         data-tasks-project="{{ project.id }}">{{ __('Tarefas', 'projectplus') }}</button>
+                            </td>
+                            <td class="pp-phase-cell">
+                                {% if project.state_name %}
+                                    <span class="pp-phase" style="--pp-phase-color: {{ project.state_color }}">{{ project.state_name }}</span>
+                                {% else %}
+                                    <span class="projectplus-muted">—</span>
+                                {% endif %}
                             </td>
                             <td>
                                 <div class="projectplus-progress">
@@ -225,7 +233,7 @@
                             <td>{{ project.plan_end_date ? project.plan_end_date|date('d/m/Y') : '—' }}</td>
                         </tr>
                     {% else %}
-                        <tr><td colspan="8">{{ __('Nenhum projeto no período', 'projectplus') }}</td></tr>
+                        <tr><td colspan="9">{{ __('Nenhum projeto no período', 'projectplus') }}</td></tr>
                     {% endfor %}
                     </tbody>
                 </table>
@@ -250,6 +258,7 @@
                         <tr>
                             <th>{{ __('Tarefa', 'projectplus') }}</th>
                             <th>{{ __('Projeto', 'projectplus') }}</th>
+                            <th>{{ __('Responsáveis', 'projectplus') }}</th>
                             <th>{{ __('Progresso', 'projectplus') }}</th>
                             <th>{{ __('Estado', 'projectplus') }}</th>
                             <th>{{ __('Prazo decorrido', 'projectplus') }}</th>
@@ -262,12 +271,25 @@
                             <td><a href="{{ task.url }}" target="_blank">{{ task.name }}</a></td>
                             <td>{{ task.project }}</td>
                             <td>
+                                {% if task.team %}
+                                    {{ task.team|join(', ') }}
+                                {% else %}
+                                    <span class="projectplus-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
                                 <div class="projectplus-progress">
                                     <div class="projectplus-progress__bar" style="width: {{ task.percent }}%"></div>
                                 </div>
                                 <span class="projectplus-progress__pct">{{ task.percent }}%</span>
                             </td>
-                            <td>{{ task.state_name }}</td>
+                            <td class="pp-phase-cell">
+                                {% if task.state_name %}
+                                    <span class="pp-phase" style="--pp-phase-color: {{ task.state_color }}">{{ task.state_name }}</span>
+                                {% else %}
+                                    <span class="projectplus-muted">—</span>
+                                {% endif %}
+                            </td>
                             <td class="pp-deadline-cell">
                                 {% if task.deadline.state == 'done' %}
                                     <span class="projectplus-muted">—</span>
@@ -292,15 +314,21 @@
                             </td>
                         </tr>
                     {% else %}
-                        <tr><td colspan="6">{{ __('Nenhuma tarefa no período', 'projectplus') }}</td></tr>
+                        <tr><td colspan="7">{{ __('Nenhuma tarefa no período', 'projectplus') }}</td></tr>
                     {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
 
-        {# ================= LINHA 3: Progresso dos projetos + Atividades ================= #}
+        {# ================= LINHA 3: Projetos por fase + Progresso + Atividades ================= #}
         <div class="projectplus-row">
+            <div class="projectplus-card projectplus-card--chart">
+                <h3>{{ __('Projetos por fase', 'projectplus') }}</h3>
+                <div id="projectplus-phase-chart" class="projectplus-donut"
+                     data-phases="{{ phase_chart|json_encode }}"></div>
+            </div>
+
             <div class="projectplus-card projectplus-card--wide">
                 <h3>{{ __('Progresso dos projetos', 'projectplus') }}</h3>
                 {% if progress %}

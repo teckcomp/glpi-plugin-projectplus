@@ -23,6 +23,7 @@
 
         initStatusChart();
         initTasksChart();
+        initPhaseChart();
         initExpandButtons(root, ajaxUrl);
         initModals();
         initTaskPanels(root);
@@ -151,7 +152,7 @@
         const tr = document.createElement('tr');
         tr.className = 'projectplus-taskspanel-row';
         const td = document.createElement('td');
-        td.colSpan = 8;
+        td.colSpan = 9;
         td.innerHTML = '<div class="projectplus-taskspanel">Carregando tarefas…</div>';
         tr.appendChild(td);
         projectRow.insertAdjacentElement('afterend', tr);
@@ -216,7 +217,8 @@
                 '<td><input type="date" class="pp-task-start" value="' + (t.start_iso || '') + '"></td>' +
                 '<td><input type="date" class="pp-task-end" value="' + (t.end_iso || '') + '"></td>' +
                 '<td><input type="number" class="pp-task-percent" min="0" max="100" value="' + t.percent + '"></td>' +
-                '<td><select class="pp-task-state"><option value="0">—</option>' + stateOpts + '</select></td>' +
+                '<td class="pp-state-cell"><span class="pp-phase-dot" style="background:' + stateColor(t.state_id) + '"></span>' +
+                    '<select class="pp-task-state"><option value="0">—</option>' + stateOpts + '</select></td>' +
                 '<td class="pp-deadline-cell">' + deadlineCell(t.deadline) + '</td>' +
                 '<td>' + (t.percent < 100
                     ? '<button type="button" class="pp-task-complete" title="Concluir">✓</button>'
@@ -280,6 +282,8 @@
             const st = row.querySelector('.pp-task-state');
             if (st) {
                 st.addEventListener('change', function () {
+                    const dot = row.querySelector('.pp-phase-dot');
+                    if (dot) { dot.style.background = stateColor(st.value); }
                     taskPost(taskUrl, { action: 'state', task_id: taskId, projectstates_id: st.value }, null);
                 });
             }
@@ -291,6 +295,28 @@
                 });
             }
         });
+    }
+
+    // ------------------------------------------------------------------
+    // Chips de fase (Etapa 2.5, Bloco 3)
+    // ------------------------------------------------------------------
+
+    function stateColor(stateId) {
+        const id = parseInt(stateId, 10) || 0;
+        for (let i = 0; i < ppData.states.length; i++) {
+            if (ppData.states[i].id === id) {
+                return ppData.states[i].color || '#8a97a5';
+            }
+        }
+        return '#8a97a5';
+    }
+
+    function phaseChip(name, color) {
+        if (!name) {
+            return '<span class="projectplus-muted">—</span>';
+        }
+        return '<span class="pp-phase" style="--pp-phase-color:' + escapeHtml(color || '#8a97a5') + '">' +
+            escapeHtml(name) + '</span>';
     }
 
     // ------------------------------------------------------------------
@@ -362,6 +388,18 @@
             { label: 'Planejado',    value: parseInt(el.dataset.planned, 10) || 0,    color: '#e8a33d' },
             { label: 'Atrasado',     value: parseInt(el.dataset.overdue, 10) || 0,    color: '#d9534f' }
         ]);
+    }
+
+    // Donut "Projetos por fase" (Etapa 2.5, Bloco 3) — fatias dinâmicas
+    // com a cor de cada estado, vindas do PHP em data-phases (JSON).
+    function initPhaseChart() {
+        const el = document.getElementById('projectplus-phase-chart');
+        if (!el) { return; }
+        let phases = [];
+        try { phases = JSON.parse(el.dataset.phases || '[]'); } catch (e) { /* vazio */ }
+        drawDonut(el, phases.map(function (p) {
+            return { label: p.name, value: parseInt(p.count, 10) || 0, color: p.color || '#8a97a5' };
+        }));
     }
 
     function initTasksChart() {
@@ -486,6 +524,7 @@
                 '<td></td>' +
                 '<td><a href="' + escapeHtml(child.url) + '">' + escapeHtml(child.name) + '</a>' +
                     ' <button type="button" class="projectplus-tasksbtn" data-tasks-project="' + child.id + '">Tarefas</button></td>' +
+                '<td class="pp-phase-cell">' + phaseChip(child.state_name, child.state_color) + '</td>' +
                 '<td>' +
                     '<div class="projectplus-progress">' +
                         '<div class="projectplus-progress__bar" style="width:' +
