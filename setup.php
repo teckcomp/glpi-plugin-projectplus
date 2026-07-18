@@ -13,6 +13,7 @@ use GlpiPlugin\Projectplus\Dashboard;
 use GlpiPlugin\Projectplus\Notification;
 use GlpiPlugin\Projectplus\ProjectCost;
 use GlpiPlugin\Projectplus\ProjectTracking;
+use GlpiPlugin\Projectplus\TaskComment;
 use GlpiPlugin\Projectplus\TaskCost;
 
 define('PLUGIN_PROJECTPLUS_VERSION', '0.5.0-alpha');
@@ -40,6 +41,9 @@ function plugin_init_projectplus(): void
 
     // Aba "Custos (ProjectPlus)" dentro da tarefa nativa do projeto
     Plugin::registerClass(TaskCost::class, ['addtabon' => ProjectTask::class]);
+
+    // Aba "Comentários (ProjectPlus)" dentro da tarefa nativa do projeto
+    Plugin::registerClass(TaskComment::class, ['addtabon' => ProjectTask::class]);
 
     // Aba "Custos (ProjectPlus)" dentro do projeto nativo
     // (a aba Custos NATIVA fica oculta via JS — fonte única de custos)

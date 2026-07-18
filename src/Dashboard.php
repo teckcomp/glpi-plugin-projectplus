@@ -708,9 +708,13 @@ class Dashboard extends CommonGLPI
                 $label = trim(($row['realname'] ?? '') . ' ' . ($row['firstname'] ?? ''));
                 $byTid[(int) $row['projecttasks_id']][] = $label !== '' ? $label : ($row['login'] ?? '?');
             }
+            // Contador de comentários (Etapa 3, Bloco 2) — consulta única
+            $comments = TaskComment::countForTasks($taskIds);
+
             foreach ($groups as &$g) {
                 foreach ($g['tasks'] as &$t) {
-                    $t['team'] = $byTid[$t['id']] ?? [];
+                    $t['team']     = $byTid[$t['id']] ?? [];
+                    $t['comments'] = $comments[$t['id']] ?? 0;
                 }
                 unset($t);
             }
@@ -743,6 +747,7 @@ class Dashboard extends CommonGLPI
             'deadline_90'      => ['icon' => '%', 'class' => 'over'],
             'deadline_over'    => ['icon' => '!', 'class' => 'over'],
             'deadline_nodates' => ['icon' => '?', 'class' => 'warn'],
+            'comment'          => ['icon' => '💬', 'class' => 'ok'],
         ];
 
         $out = [];
@@ -939,6 +944,13 @@ class Dashboard extends CommonGLPI
             }
         };
         $walk(0, 0);
+
+        // Contador de comentários (Etapa 3, Bloco 2) — consulta única
+        $comments = TaskComment::countForTasks(array_column($out, 'id'));
+        foreach ($out as &$t) {
+            $t['comments'] = $comments[$t['id']] ?? 0;
+        }
+        unset($t);
 
         return $out;
     }

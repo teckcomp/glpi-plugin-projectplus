@@ -6,9 +6,11 @@
  * GET ?action=data              -> KPIs + gráfico + projetos pai
  * GET ?action=children&id=NN    -> subprojetos de um pai (requisito 2)
  * GET ?action=mytasks[&done=1]  -> tarefas do usuário logado (Etapa 3, Bloco 1)
+ * GET ?action=taskcomments&id=NN -> comentários de uma tarefa (Etapa 3, Bloco 2)
  */
 
 use GlpiPlugin\Projectplus\Dashboard;
+use GlpiPlugin\Projectplus\TaskComment;
 
 include('../../../inc/includes.php');
 
@@ -32,6 +34,11 @@ switch ($action) {
     case 'taskchildren':
         $taskId = (int) ($_GET['id'] ?? 0);
         echo json_encode(Dashboard::getOpenTaskChildren($taskId));
+        break;
+
+    case 'taskcomments':
+        $taskId = (int) ($_GET['id'] ?? 0);
+        echo json_encode(TaskComment::getForTask($taskId));
         break;
 
     case 'mytasks':

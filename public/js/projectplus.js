@@ -125,6 +125,8 @@
             return;
         }
         ppCsrf = root.dataset.csrf || null;
+        ppDataUrl = root.dataset.ajaxUrl || null;
+        ppCommentUrl = root.dataset.commentUrl || null;
         const dataEl = document.getElementById('pp-data');
         if (dataEl) {
             try { ppData = JSON.parse(dataEl.textContent); } catch (e) { /* mantém default */ }
@@ -186,6 +188,10 @@
             doneToggle.addEventListener('change', refresh);
         }
         refresh();
+
+        // Sino de alertas (mesma estrutura da Visão geral; o endpoint já
+        // filtra por destinatário — só alertas do usuário logado)
+        initBell(root);
     };
 
     // ------------------------------------------------------------------
@@ -281,9 +287,13 @@
 
     let ppCsrf = null;
     let ppData = { states: [], users: [], current_user_id: 0 };
+    let ppDataUrl = null;      // ajax/dashboard_data.php (leituras)
+    let ppCommentUrl = null;   // ajax/comment.php (Etapa 3, Bloco 2)
 
     function initTaskPanels(root) {
         ppCsrf = root.dataset.csrf || null;
+        ppDataUrl = root.dataset.ajaxUrl || null;
+        ppCommentUrl = root.dataset.commentUrl || null;
         const dataEl = document.getElementById('pp-data');
         if (dataEl) {
             try { ppData = JSON.parse(dataEl.textContent); } catch (e) { /* mantém default */ }
@@ -366,7 +376,7 @@
     function taskTableHtml(tasks) {
         let html = '<table class="projectplus-tasktable"><thead><tr>' +
             '<th>Tarefa</th><th>Responsáveis</th><th>Início</th><th>Fim</th>' +
-            '<th>%</th><th>Estado</th><th>Prazo</th><th></th>' +
+            '<th>%</th><th>Estado</th><th>Prazo</th><th></th><th></th>' +
             '</tr></thead><tbody>';
 
         tasks.forEach(function (t) {
@@ -391,6 +401,7 @@
                 '<td class="pp-state-cell"><span class="pp-phase-dot" style="background:' + stateColor(t.state_id) + '"></span>' +
                     '<select class="pp-task-state"><option value="0">—</option>' + stateOpts + '</select></td>' +
                 '<td class="pp-deadline-cell">' + deadlineCell(t.deadline) + '</td>' +
+                '<td class="pp-cmt-cell">' + commentBtnHtml(t) + '</td>' +
                 '<td>' + (t.percent < 100 && !t.auto_percent
                     ? '<button type="button" class="pp-task-complete" title="Concluir">✓</button>'
                     : '') + '</td>' +
@@ -473,7 +484,189 @@
                     taskPost(taskUrl, { action: 'complete', task_id: taskId }, function () { reload(); });
                 });
             }
+
+            // Comentários (Etapa 3, Bloco 2)
+            const cmt = row.querySelector('.pp-cmt-btn');
+            if (cmt) {
+                cmt.addEventListener('click', function () {
+                    toggleCommentPanel(row, taskId);
+                });
+            }
         });
+    }
+
+    // ------------------------------------------------------------------
+    // Comentários por tarefa (Etapa 3, Bloco 2)
+    //
+    // Balão com contador na coluna própria (classe pp-cmt-* com escopo
+    // exclusivo — lição do Bloco 1: seletores compartilhados entre
+    // tabelas precisam de escopo). Painel expansível logo abaixo da
+    // linha, no mesmo padrão da expansão de subtarefas.
+    // ------------------------------------------------------------------
+
+    function commentBtnHtml(t) {
+        const n = parseInt(t.comments, 10) || 0;
+        return '<button type="button" class="pp-cmt-btn' + (n > 0 ? ' pp-cmt-btn--has' : '') +
+            '" title="Comentários">💬' +
+            (n > 0 ? '<span class="pp-cmt-count">' + n + '</span>' : '') +
+            '</button>';
+    }
+
+    function toggleCommentPanel(row, taskId) {
+        const next = row.nextElementSibling;
+        if (next && next.classList.contains('pp-cmt-row')) {
+            next.remove(); // toggle: fecha
+            return;
+        }
+        const tr = document.createElement('tr');
+        tr.className = 'pp-cmt-row';
+        const td = document.createElement('td');
+        td.colSpan = row.children.length;
+        td.innerHTML = '<div class="pp-cmt-panel"><span class="projectplus-muted">Carregando comentários…</span></div>';
+        tr.appendChild(td);
+        row.insertAdjacentElement('afterend', tr);
+        loadComments(td, row, taskId);
+    }
+
+    function loadComments(container, row, taskId) {
+        fetch(ppDataUrl + '?action=taskcomments&id=' + encodeURIComponent(taskId), {
+            credentials: 'same-origin'
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (comments) { renderComments(container, row, taskId, comments); })
+            .catch(function () {
+                container.innerHTML = '<div class="pp-cmt-panel">' +
+                    '<span class="projectplus-muted">Erro ao carregar comentários.</span></div>';
+            });
+    }
+
+    function renderComments(container, row, taskId, comments) {
+        let html = '<div class="pp-cmt-panel">';
+
+        if (!comments.length) {
+            html += '<p class="projectplus-muted" style="margin:2px 0">Nenhum comentário ainda.</p>';
+        } else {
+            html += comments.map(function (c) {
+                return '<div class="pp-cmt-item" data-comment-id="' + c.id + '">' +
+                    '<div class="pp-cmt-item__head">' +
+                        '<strong>' + escapeHtml(c.author) + '</strong>' +
+                        '<span class="projectplus-muted">' + escapeHtml(c.date) +
+                            (c.edited ? ' · editado' : '') + '</span>' +
+                        (c.can_edit
+                            ? '<span class="pp-cmt-item__actions">' +
+                              '<button type="button" class="pp-cmt-edit" title="Editar">✎</button>' +
+                              '<button type="button" class="pp-cmt-del" title="Excluir">×</button>' +
+                              '</span>'
+                            : '') +
+                    '</div>' +
+                    '<div class="pp-cmt-item__body">' +
+                        escapeHtml(c.content).replace(/\n/g, '<br>') + '</div>' +
+                    '</div>';
+            }).join('');
+        }
+
+        html += '<div class="pp-cmt-new">' +
+            '<textarea class="pp-cmt-text" rows="2" maxlength="4000" ' +
+                'placeholder="Escreva um comentário… (Ctrl+Enter envia)"></textarea>' +
+            '<button type="button" class="projectplus-btn pp-cmt-send">Comentar</button>' +
+            '</div></div>';
+
+        container.innerHTML = html;
+        bindCommentPanel(container, row, taskId, comments);
+    }
+
+    function bindCommentPanel(container, row, taskId, comments) {
+        const reload = function () { loadComments(container, row, taskId); };
+
+        // Novo comentário
+        const send = container.querySelector('.pp-cmt-send');
+        const text = container.querySelector('.pp-cmt-text');
+        if (send && text) {
+            const submit = function () {
+                const content = text.value.trim();
+                if (!content) { return; }
+                send.disabled = true;
+                taskPost(ppCommentUrl, { action: 'add', task_id: taskId, content: content }, function (resp) {
+                    send.disabled = false;
+                    if (resp.ok) {
+                        setCommentCount(row, resp.count);
+                        reload();
+                    }
+                });
+            };
+            send.addEventListener('click', submit);
+            text.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { submit(); }
+            });
+            text.focus();
+        }
+
+        // Editar / excluir (só aparecem para o autor — o servidor revalida)
+        container.querySelectorAll('.pp-cmt-item').forEach(function (item) {
+            const cid = item.dataset.commentId;
+
+            const del = item.querySelector('.pp-cmt-del');
+            if (del) {
+                del.addEventListener('click', function () {
+                    if (!window.confirm('Excluir este comentário?')) { return; }
+                    taskPost(ppCommentUrl, { action: 'delete', id: cid }, function (resp) {
+                        if (resp.ok) {
+                            setCommentCount(row, resp.count);
+                            reload();
+                        }
+                    });
+                });
+            }
+
+            const edit = item.querySelector('.pp-cmt-edit');
+            if (edit) {
+                edit.addEventListener('click', function () {
+                    const body = item.querySelector('.pp-cmt-item__body');
+                    let original = '';
+                    for (let i = 0; i < comments.length; i++) {
+                        if (String(comments[i].id) === String(cid)) {
+                            original = comments[i].content;
+                            break;
+                        }
+                    }
+                    body.innerHTML = '<div class="pp-cmt-new">' +
+                        '<textarea class="pp-cmt-text" rows="2" maxlength="4000"></textarea>' +
+                        '<button type="button" class="projectplus-btn pp-cmt-save">Salvar</button>' +
+                        '<button type="button" class="projectplus-btn projectplus-btn--ghost pp-cmt-cancel">Cancelar</button>' +
+                        '</div>';
+                    const ta = body.querySelector('textarea');
+                    ta.value = original;
+                    ta.focus();
+                    body.querySelector('.pp-cmt-cancel').addEventListener('click', reload);
+                    body.querySelector('.pp-cmt-save').addEventListener('click', function () {
+                        const content = ta.value.trim();
+                        if (!content) { return; }
+                        taskPost(ppCommentUrl, { action: 'update', id: cid, content: content }, function (resp) {
+                            if (resp.ok) { reload(); }
+                        });
+                    });
+                });
+            }
+        });
+    }
+
+    // Atualiza o badge 💬 da linha sem recarregar a tabela
+    function setCommentCount(row, count) {
+        const btn = row.querySelector('.pp-cmt-btn');
+        if (!btn || typeof count === 'undefined') { return; }
+        const n = parseInt(count, 10) || 0;
+        btn.classList.toggle('pp-cmt-btn--has', n > 0);
+        let span = btn.querySelector('.pp-cmt-count');
+        if (n > 0) {
+            if (!span) {
+                span = document.createElement('span');
+                span.className = 'pp-cmt-count';
+                btn.appendChild(span);
+            }
+            span.textContent = String(n);
+        } else if (span) {
+            span.remove();
+        }
     }
 
     // ------------------------------------------------------------------

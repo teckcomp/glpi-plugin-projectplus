@@ -157,6 +157,27 @@ class Install
         }
 
         // ------------------------------------------------------------------
+        // 7) Comentários por tarefa (Etapa 3, Bloco 2)
+        //    Conversa da equipe por tarefa — o core não tem discussão em
+        //    ProjectTask (só Notepad, sem controle por autor).
+        // ------------------------------------------------------------------
+        if (!$DB->tableExists('glpi_plugin_projectplus_taskcomments')) {
+            $DB->doQuery("
+                CREATE TABLE `glpi_plugin_projectplus_taskcomments` (
+                    `id`               INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    `projecttasks_id`  INT UNSIGNED NOT NULL DEFAULT 0,
+                    `users_id`         INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'autor',
+                    `content`          TEXT,
+                    `date_creation`    TIMESTAMP NULL DEFAULT NULL,
+                    `date_mod`         TIMESTAMP NULL DEFAULT NULL,
+                    PRIMARY KEY (`id`),
+                    KEY `projecttasks_id` (`projecttasks_id`),
+                    KEY `users_id` (`users_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET={$charset} COLLATE={$collation}
+            ");
+        }
+
+        // ------------------------------------------------------------------
         // 6.1) Migração ÚNICA dos custos da aba nativa do GLPI para a
         //      tabela do plugin (só roda com a tabela do plugin vazia —
         //      idempotente; os registros nativos ficam intactos no banco).
@@ -234,6 +255,7 @@ class Install
                     'glpi_plugin_projectplus_alerts',
                     'glpi_plugin_projectplus_taskcosts',
                     'glpi_plugin_projectplus_projectcosts',
+                    'glpi_plugin_projectplus_taskcomments',
                 ] as $table
             ) {
                 if ($DB->tableExists($table)) {

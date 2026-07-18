@@ -10,7 +10,7 @@ Versão atual: **v0.5.0-alpha** · Atualizado em 18/07/2026
 
 - Estrutura do plugin (setup, hooks, front, src, templates Twig, estáticos em `public/`)
 - Instalação idempotente via `Install::install` (`tableExists`/`fieldExists`)
-- 6 tabelas próprias: trackings, timers, templates, alerts, taskcosts, projectcosts
+- 7 tabelas próprias: trackings, timers, templates, alerts, taskcosts, projectcosts, taskcomments
 - Direito de acesso `plugin_projectplus_dashboard`
 - Tela de configuração (context `plugin:projectplus`) e cron `projectplusalerts`
 - Proteção de uninstall: dados mantidos por padrão, purga opcional
@@ -54,7 +54,8 @@ Versão atual: **v0.5.0-alpha** · Atualizado em 18/07/2026
 
 - [x] **Bloco 1 (18/07/2026)** — Tela "Minhas tarefas": tarefas do usuário logado agrupadas por projeto, KPIs pessoais (abertas, atrasadas, sem datas, concluídas), hierarquia mãe/filha (aninhada quando a mãe também é do usuário; contexto "Mãe ›" quando não), edição inline com barra de prazo e toggle de concluídas
 - [x] **Bloco 1 / fixes** — "Tarefas em andamento" do painel lista só tarefas-raiz com expansão recursiva de subtarefas (mesmo padrão de "Projetos em andamento"); regra "tarefa mãe só conclui com todas as filhas fechadas" (bloqueio na UI e no endpoint); `auto_percent_done` respeitado (campo % desabilitado, sem ✓, endpoint recusa)
-- [ ] Comentários por tarefa
+- [x] **Bloco 2 (18/07/2026)** — Comentários por tarefa: tabela própria `taskcomments`, balão com contador e painel expansível na árvore de tarefas e em Minhas tarefas (Ctrl+Enter envia), aba nativa "Comentários (ProjectPlus)" na tarefa, edição/exclusão restrita ao autor (UI + servidor), alerta no sino para a equipe (dedup, reabre como não lido) + feed de atividades
+- [x] **Bloco 2 / Fix 1** — Sino de alertas também na tela Minhas tarefas (mesma estrutura da Visão geral; endpoint já filtra por destinatário)
 - [ ] Dependências entre tarefas (bloqueia / bloqueada por)
 - [ ] Timeline em HTML/JS puro, fluxo contínuo (tira o "em breve" da sidebar)
 

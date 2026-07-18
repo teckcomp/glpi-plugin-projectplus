@@ -5,6 +5,8 @@
 <div class="projectplus-app" id="projectplus-mytasks"
      data-ajax-url="{{ plugin_web_dir }}/ajax/dashboard_data.php"
      data-task-url="{{ plugin_web_dir }}/ajax/task.php"
+     data-comment-url="{{ plugin_web_dir }}/ajax/comment.php"
+     data-alerts-url="{{ plugin_web_dir }}/ajax/alerts.php"
      data-csrf="{{ csrf_token }}">
 
     {# ================= COLUNA ESQUERDA: título + sidebar ================= #}
@@ -61,6 +63,21 @@
                 {{ __('Mostrar tarefas concluídas', 'projectplus') }}
             </label>
             <div class="projectplus-actions">
+                {# Sino de alertas — mesma estrutura da Visão geral; o
+                   endpoint já devolve só os alertas do usuário logado
+                   (tarefas em que está na equipe / projetos que gerencia) #}
+                <div class="pp-bell-wrap">
+                    <button type="button" id="pp-bell" class="pp-bell" title="{{ __('Alertas', 'projectplus') }}">
+                        <i class="ti ti-bell"></i><span class="pp-bell__badge" hidden>0</span>
+                    </button>
+                    <div id="pp-bell-panel" class="pp-bell__panel" hidden>
+                        <div class="pp-bell__head">
+                            <strong>{{ __('Alertas', 'projectplus') }}</strong>
+                            <button type="button" class="pp-bell__readall">{{ __('Marcar todas como lidas', 'projectplus') }}</button>
+                        </div>
+                        <ul class="pp-bell__list"></ul>
+                    </div>
+                </div>
                 <a class="projectplus-btn projectplus-btn--ghost" href="{{ plugin_web_dir }}/front/dashboard.php">
                     {{ __('Visão geral', 'projectplus') }}
                 </a>
