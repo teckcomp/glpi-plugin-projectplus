@@ -127,6 +127,7 @@
         ppCsrf = root.dataset.csrf || null;
         ppDataUrl = root.dataset.ajaxUrl || null;
         ppCommentUrl = root.dataset.commentUrl || null;
+        ppDepUrl = root.dataset.depUrl || null;
         const dataEl = document.getElementById('pp-data');
         if (dataEl) {
             try { ppData = JSON.parse(dataEl.textContent); } catch (e) { /* mantém default */ }
@@ -289,11 +290,13 @@
     let ppData = { states: [], users: [], current_user_id: 0 };
     let ppDataUrl = null;      // ajax/dashboard_data.php (leituras)
     let ppCommentUrl = null;   // ajax/comment.php (Etapa 3, Bloco 2)
+    let ppDepUrl = null;       // ajax/taskdep.php (Etapa 3, Bloco 3)
 
     function initTaskPanels(root) {
         ppCsrf = root.dataset.csrf || null;
         ppDataUrl = root.dataset.ajaxUrl || null;
         ppCommentUrl = root.dataset.commentUrl || null;
+        ppDepUrl = root.dataset.depUrl || null;
         const dataEl = document.getElementById('pp-data');
         if (dataEl) {
             try { ppData = JSON.parse(dataEl.textContent); } catch (e) { /* mantém default */ }
@@ -376,7 +379,7 @@
     function taskTableHtml(tasks) {
         let html = '<table class="projectplus-tasktable"><thead><tr>' +
             '<th>Tarefa</th><th>Responsáveis</th><th>Início</th><th>Fim</th>' +
-            '<th>%</th><th>Estado</th><th>Prazo</th><th></th><th></th>' +
+            '<th>%</th><th>Estado</th><th>Prazo</th><th></th><th></th><th></th>' +
             '</tr></thead><tbody>';
 
         tasks.forEach(function (t) {
@@ -390,6 +393,9 @@
                     (t.depth === 0 && t.parent_name
                         ? '<span class="pp-task-parent" title="Tarefa mãe">' + escapeHtml(t.parent_name) + ' › </span>'
                         : '') +
+                    (t.blocked
+                        ? '<span class="pp-dep-lock" title="Bloqueada por outra(s) tarefa(s) — veja 🔗">🔒</span> '
+                        : '') +
                     '<a href="' + escapeHtml(t.url) + '" target="_blank">' + escapeHtml(t.name) + '</a></td>' +
                 '<td>' + (t.team.length ? escapeHtml(t.team.join(', ')) : '<span class="projectplus-muted">—</span>') + '</td>' +
                 '<td><input type="date" class="pp-task-start" value="' + (t.start_iso || '') + '"></td>' +
@@ -401,6 +407,7 @@
                 '<td class="pp-state-cell"><span class="pp-phase-dot" style="background:' + stateColor(t.state_id) + '"></span>' +
                     '<select class="pp-task-state"><option value="0">—</option>' + stateOpts + '</select></td>' +
                 '<td class="pp-deadline-cell">' + deadlineCell(t.deadline) + '</td>' +
+                '<td class="pp-dep-cell">' + depBtnHtml(t) + '</td>' +
                 '<td class="pp-cmt-cell">' + commentBtnHtml(t) + '</td>' +
                 '<td>' + (t.percent < 100 && !t.auto_percent
                     ? '<button type="button" class="pp-task-complete" title="Concluir">✓</button>'
@@ -492,6 +499,14 @@
                     toggleCommentPanel(row, taskId);
                 });
             }
+
+            // Dependências (Etapa 3, Bloco 3)
+            const dep = row.querySelector('.pp-dep-btn');
+            if (dep) {
+                dep.addEventListener('click', function () {
+                    toggleDepPanel(row, taskId);
+                });
+            }
         });
     }
 
@@ -512,10 +527,21 @@
             '</button>';
     }
 
+    // Painéis expansíveis podem coexistir na mesma linha (💬 e 🔗):
+    // procura o painel da classe pedida atravessando os adjacentes.
+    function findPanelRow(row, cls) {
+        let next = row.nextElementSibling;
+        while (next && (next.classList.contains('pp-cmt-row') || next.classList.contains('pp-dep-row'))) {
+            if (next.classList.contains(cls)) { return next; }
+            next = next.nextElementSibling;
+        }
+        return null;
+    }
+
     function toggleCommentPanel(row, taskId) {
-        const next = row.nextElementSibling;
-        if (next && next.classList.contains('pp-cmt-row')) {
-            next.remove(); // toggle: fecha
+        const existing = findPanelRow(row, 'pp-cmt-row');
+        if (existing) {
+            existing.remove(); // toggle: fecha
             return;
         }
         const tr = document.createElement('tr');
@@ -666,6 +692,180 @@
             span.textContent = String(n);
         } else if (span) {
             span.remove();
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // Dependências entre tarefas (Etapa 3, Bloco 3)
+    //
+    // Botão 🔗 com contador em coluna própria (classes pp-dep-* com
+    // escopo exclusivo, lição do Bloco 1). Painel expansível no mesmo
+    // padrão dos comentários; grava na tabela NATIVA
+    // glpi_projecttasklinks via ajax/taskdep.php.
+    // ------------------------------------------------------------------
+
+    function depBtnHtml(t) {
+        const n = parseInt(t.deps, 10) || 0;
+        return '<button type="button" class="pp-dep-btn' + (n > 0 ? ' pp-dep-btn--has' : '') +
+            (t.blocked ? ' pp-dep-btn--blocked' : '') +
+            '" title="Dependências">🔗' +
+            (n > 0 ? '<span class="pp-dep-count">' + n + '</span>' : '') +
+            '</button>';
+    }
+
+    function toggleDepPanel(row, taskId) {
+        const existing = findPanelRow(row, 'pp-dep-row');
+        if (existing) {
+            existing.remove(); // toggle: fecha
+            return;
+        }
+        const tr = document.createElement('tr');
+        tr.className = 'pp-dep-row';
+        const td = document.createElement('td');
+        td.colSpan = row.children.length;
+        td.innerHTML = '<div class="pp-dep-panel"><span class="projectplus-muted">Carregando dependências…</span></div>';
+        tr.appendChild(td);
+        row.insertAdjacentElement('afterend', tr);
+        loadDeps(td, row, taskId);
+    }
+
+    function loadDeps(container, row, taskId) {
+        fetch(ppDataUrl + '?action=taskdeps&id=' + encodeURIComponent(taskId), {
+            credentials: 'same-origin'
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (data) { renderDeps(container, row, taskId, data); })
+            .catch(function () {
+                container.innerHTML = '<div class="pp-dep-panel">' +
+                    '<span class="projectplus-muted">Erro ao carregar as dependências.</span></div>';
+            });
+    }
+
+    function depItemHtml(d, canEdit) {
+        return '<div class="pp-dep-item">' +
+            '<span class="pp-dep-item__status ' + (d.open ? 'pp-dep-item__status--open' : 'pp-dep-item__status--done') + '"' +
+                ' title="' + (d.open ? 'aberta (' + d.percent + '%)' : 'concluída') + '"></span>' +
+            '<a href="' + escapeHtml(d.url) + '" target="_blank">' + escapeHtml(d.name) + '</a>' +
+            (d.implicit ? '<span class="pp-dep-tag" title="Regra geral: subtarefa aberta bloqueia a mãe">subtarefa</span>' : '') +
+            '<span class="projectplus-muted"> — ' + (d.open ? d.percent + '%' : 'concluída') + '</span>' +
+            (canEdit && !d.implicit
+                ? '<button type="button" class="pp-dep-del" data-link-id="' + d.link_id + '" title="Remover vínculo">×</button>'
+                : '') +
+            '</div>';
+    }
+
+    function renderDeps(container, row, taskId, data) {
+        const canEdit    = !!data.can_edit;
+        const blockers   = data.blockers || [];
+        const blocked    = data.blocked || [];
+        const candidates = data.candidates || [];
+
+        let html = '<div class="pp-dep-panel">';
+
+        html += '<div class="pp-dep-group"><div class="pp-dep-group__title">⛔ Bloqueada por ' +
+            '<span class="projectplus-muted">(precisam terminar antes)</span></div>';
+        html += blockers.length
+            ? blockers.map(function (d) { return depItemHtml(d, canEdit); }).join('')
+            : '<div class="projectplus-muted">Nenhuma</div>';
+        html += '</div>';
+
+        html += '<div class="pp-dep-group"><div class="pp-dep-group__title">⏩ Bloqueia ' +
+            '<span class="projectplus-muted">(só concluem depois desta)</span></div>';
+        html += blocked.length
+            ? blocked.map(function (d) { return depItemHtml(d, canEdit); }).join('')
+            : '<div class="projectplus-muted">Nenhuma</div>';
+        html += '</div>';
+
+        if (canEdit) {
+            html += '<div class="pp-dep-new">' +
+                '<select class="pp-dep-dir">' +
+                    '<option value="blocked_by">É bloqueada por</option>' +
+                    '<option value="blocks">Bloqueia</option>' +
+                '</select>' +
+                '<select class="pp-dep-other">' +
+                (candidates.length
+                    ? candidates.map(function (c) {
+                        return '<option value="' + c.id + '">' + escapeHtml(c.name) + ' (' + c.percent + '%)</option>';
+                    }).join('')
+                    : '<option value="0">— sem outras tarefas neste projeto —</option>') +
+                '</select>' +
+                '<button type="button" class="projectplus-btn pp-dep-add"' +
+                    (candidates.length ? '' : ' disabled') + '>Adicionar</button>' +
+                '</div>';
+        }
+
+        html += '</div>';
+        container.innerHTML = html;
+        bindDepPanel(container, row, taskId);
+
+        // Sincroniza badge 🔗 e cadeado 🔒 da linha (sem recarregar a tabela)
+        syncDepRow(row, blockers, blocked);
+    }
+
+    function bindDepPanel(container, row, taskId) {
+        const reload = function () { loadDeps(container, row, taskId); };
+
+        const add = container.querySelector('.pp-dep-add');
+        if (add) {
+            add.addEventListener('click', function () {
+                const other = container.querySelector('.pp-dep-other').value;
+                const dir   = container.querySelector('.pp-dep-dir').value;
+                if (!other || other === '0') { return; }
+                add.disabled = true;
+                taskPost(ppDepUrl, { action: 'add', task_id: taskId, other_id: other, dir: dir }, function () {
+                    reload();
+                });
+            });
+        }
+
+        container.querySelectorAll('.pp-dep-del').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                if (!window.confirm('Remover este vínculo de dependência?')) { return; }
+                taskPost(ppDepUrl, { action: 'delete', link_id: btn.dataset.linkId }, function () {
+                    reload();
+                });
+            });
+        });
+    }
+
+    // Atualiza contador do 🔗 e o 🔒 do nome sem recarregar a tabela
+    // (o contador conta só vínculos EXPLÍCITOS; o 🔒 considera também
+    // as subtarefas abertas — regra geral)
+    function syncDepRow(row, blockers, blocked) {
+        const explicit = function (d) { return !d.implicit; };
+        const n = blockers.filter(explicit).length + blocked.filter(explicit).length;
+        const isBlocked = blockers.some(function (d) { return d.open; });
+
+        const btn = row.querySelector('.pp-dep-btn');
+        if (btn) {
+            btn.classList.toggle('pp-dep-btn--has', n > 0);
+            btn.classList.toggle('pp-dep-btn--blocked', isBlocked);
+            let span = btn.querySelector('.pp-dep-count');
+            if (n > 0) {
+                if (!span) {
+                    span = document.createElement('span');
+                    span.className = 'pp-dep-count';
+                    btn.appendChild(span);
+                }
+                span.textContent = String(n);
+            } else if (span) {
+                span.remove();
+            }
+        }
+
+        let lock = row.querySelector('.pp-dep-lock');
+        if (isBlocked && !lock) {
+            const link = row.querySelector('td a');
+            if (link) {
+                lock = document.createElement('span');
+                lock.className = 'pp-dep-lock';
+                lock.title = 'Bloqueada por outra(s) tarefa(s) — veja 🔗';
+                lock.textContent = '🔒';
+                link.parentNode.insertBefore(lock, link);
+                link.parentNode.insertBefore(document.createTextNode(' '), link);
+            }
+        } else if (!isBlocked && lock) {
+            lock.remove();
         }
     }
 
@@ -895,7 +1095,10 @@
 
             tr.innerHTML =
                 '<td></td>' +
-                '<td><a href="' + escapeHtml(child.url) + '">' + escapeHtml(child.name) + '</a>' +
+                '<td>' + (child.blocked
+                    ? '<span class="pp-dep-lock" title="Projeto com tarefas/subprojetos abertos — não pode ir para fase concluída">🔒</span> '
+                    : '') +
+                '<a href="' + escapeHtml(child.url) + '">' + escapeHtml(child.name) + '</a>' +
                     ' <button type="button" class="projectplus-tasksbtn" data-tasks-project="' + child.id + '">Tarefas</button></td>' +
                 '<td class="pp-phase-cell">' + phaseChip(child.state_name, child.state_color) + '</td>' +
                 '<td>' +

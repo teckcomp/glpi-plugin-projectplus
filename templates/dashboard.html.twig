@@ -6,6 +6,7 @@
      data-ajax-url="{{ plugin_web_dir }}/ajax/dashboard_data.php"
      data-task-url="{{ plugin_web_dir }}/ajax/task.php"
      data-comment-url="{{ plugin_web_dir }}/ajax/comment.php"
+     data-dep-url="{{ plugin_web_dir }}/ajax/taskdep.php"
      data-alerts-url="{{ plugin_web_dir }}/ajax/alerts.php"
      data-csrf="{{ csrf_token }}">
 
@@ -181,7 +182,8 @@
                                             data-project-id="{{ project.id }}">+</button>
                                 {% endif %}
                             </td>
-                            <td><a href="{{ project.url }}">{{ project.name }}</a>
+                            <td>{% if project.blocked %}<span class="pp-dep-lock"
+                                    title="{{ __('Projeto com tarefas/subprojetos abertos — não pode ir para fase concluída', 'projectplus') }}">🔒</span> {% endif %}<a href="{{ project.url }}">{{ project.name }}</a>
                                 <button type="button" class="projectplus-tasksbtn"
                                         data-tasks-project="{{ project.id }}">{{ __('Tarefas', 'projectplus') }}</button>
                             </td>

@@ -15,6 +15,7 @@
  */
 
 use GlpiPlugin\Projectplus\ProjectTracking;
+use GlpiPlugin\Projectplus\TaskDep;
 
 include('../../../inc/includes.php');
 
@@ -52,6 +53,24 @@ function pp_open_children(int $taskId): int
     ])->current();
 
     return (int) ($row['cpt'] ?? 0);
+}
+
+/**
+ * Regra do Bloco 3 (Etapa 3): tarefa BLOQUEADA não pode ser concluída
+ * enquanto houver bloqueadora aberta (percent_done < 100).
+ * Devolve a mensagem de recusa, ou null se pode concluir.
+ */
+function pp_blocked_message(int $taskId): ?string
+{
+    $names = TaskDep::openBlockerNames($taskId);
+    if (empty($names)) {
+        return null;
+    }
+    return sprintf(
+        __('Tarefa bloqueada — conclua antes: %s', 'projectplus'),
+        implode(', ', array_slice($names, 0, 5))
+        . (count($names) > 5 ? '…' : '')
+    );
 }
 
 $action = $_POST['action'] ?? '';
@@ -141,6 +160,9 @@ switch ($action) {
                 $open
             )]);
         }
+        if ($percent >= 100 && ($msg = pp_blocked_message($task->getID())) !== null) {
+            pp_reply(['ok' => false, 'message' => $msg]);
+        }
         $ok = $task->update(['id' => $task->getID(), 'percent_done' => $percent]);
         pp_reply(['ok' => (bool) $ok, 'percent' => $percent]);
         break;
@@ -182,6 +204,9 @@ switch ($action) {
                 __('Conclua antes as %d subtarefa(s) aberta(s) desta tarefa', 'projectplus'),
                 $open
             )]);
+        }
+        if (($msg = pp_blocked_message($task->getID())) !== null) {
+            pp_reply(['ok' => false, 'message' => $msg]);
         }
         $ok = $task->update(['id' => $task->getID(), 'percent_done' => 100]);
         pp_reply(['ok' => (bool) $ok]);

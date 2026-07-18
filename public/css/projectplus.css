@@ -502,6 +502,68 @@
 .pp-cmt-text:focus { outline: none; border-color: #4a9fd4; }
 .pp-cmt-new .projectplus-btn { padding: 6px 14px; font-size: 0.82rem; }
 
+/* ---- Dependências entre tarefas (Etapa 3, Bloco 3) ---- */
+.pp-dep-cell { white-space: nowrap; }
+.pp-dep-btn {
+    border: 1px solid #d5dce3; background: #fff; border-radius: 6px;
+    cursor: pointer; padding: 2px 7px; font-size: 0.82rem;
+    line-height: 1.4; color: #5a7684;
+}
+.pp-dep-btn:hover { background: #f4effb; border-color: #8e6cc9; }
+.pp-dep-btn--has { border-color: #8e6cc9; color: #4d2f80; }
+.pp-dep-btn--blocked { border-color: #d9534f; background: #fdf3f2; }
+.pp-dep-count {
+    margin-left: 4px; background: #8e6cc9; color: #fff;
+    border-radius: 9px; padding: 0 6px;
+    font-size: 0.72rem; font-weight: 700;
+}
+.pp-dep-btn--blocked .pp-dep-count { background: #d9534f; }
+.pp-dep-lock { font-size: 0.8rem; cursor: help; }
+.pp-dep-tag {
+    margin-left: 6px; background: #eef1f5; color: #5a7684;
+    border-radius: 8px; padding: 0 7px;
+    font-size: 0.7rem; font-weight: 600; cursor: help;
+}
+.pp-dep-row > td { background: #faf8fd; padding: 0 !important; }
+.pp-dep-panel {
+    padding: 10px 14px; border-left: 3px solid #8e6cc9;
+    text-align: left;
+}
+.pp-dep-group { margin-bottom: 8px; }
+.pp-dep-group__title {
+    font-size: 0.8rem; font-weight: 700; color: #4d2f80;
+    margin-bottom: 2px;
+}
+.pp-dep-item {
+    display: flex; gap: 6px; align-items: baseline;
+    padding: 4px 0; border-bottom: 1px solid #ece6f5;
+    font-size: 0.85rem;
+}
+.pp-dep-item:last-of-type { border-bottom: 0; }
+.pp-dep-item__status {
+    width: 9px; height: 9px; border-radius: 50%;
+    display: inline-block; align-self: center; flex: 0 0 9px;
+}
+.pp-dep-item__status--open { background: #e8a33d; }
+.pp-dep-item__status--done { background: #4caf7d; }
+.pp-dep-del {
+    border: 0; background: none; cursor: pointer;
+    color: #8a97a5; font-size: 0.9rem; padding: 0 4px;
+    margin-left: auto;
+}
+.pp-dep-del:hover { color: #d9534f; }
+.pp-dep-new {
+    display: flex; gap: 8px; margin-top: 8px; align-items: center;
+    flex-wrap: wrap;
+}
+.pp-dep-new select {
+    border: 1px solid #d5dce3; border-radius: 6px;
+    padding: 5px 8px; font: inherit; font-size: 0.82rem;
+    background: #fff; max-width: 320px;
+}
+.pp-dep-new select:focus { outline: none; border-color: #8e6cc9; }
+.pp-dep-new .projectplus-btn { padding: 6px 14px; font-size: 0.82rem; }
+
 /* Impressão: só o relatório, sem sidebar/filtros/chrome do GLPI */
 @media print {
     .projectplus-noprint,

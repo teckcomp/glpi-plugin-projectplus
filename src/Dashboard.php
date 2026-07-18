@@ -221,6 +221,14 @@ class Dashboard extends CommonGLPI
             }
         }
 
+        // Regra geral (Etapa 3, Bloco 3 / Fix 1): projeto com filhos
+        // abertos fica 🔒 — consulta única para todos os projetos
+        $blockedProjects = TaskDep::blockedProjects(array_column($projects, 'id'));
+        foreach ($projects as &$p) {
+            $p['blocked'] = $blockedProjects[$p['id']] ?? false;
+        }
+        unset($p);
+
         if ($kpis['active'] > 0) {
             $kpis['avg_progress'] = (int) round($pctSum / $kpis['active']);
             $kpis['on_time']      = (int) round(
@@ -710,11 +718,15 @@ class Dashboard extends CommonGLPI
             }
             // Contador de comentários (Etapa 3, Bloco 2) — consulta única
             $comments = TaskComment::countForTasks($taskIds);
+            // Dependências (Etapa 3, Bloco 3) — consulta única
+            $deps = TaskDep::countForTasks($taskIds);
 
             foreach ($groups as &$g) {
                 foreach ($g['tasks'] as &$t) {
                     $t['team']     = $byTid[$t['id']] ?? [];
                     $t['comments'] = $comments[$t['id']] ?? 0;
+                    $t['deps']     = $deps[$t['id']]['deps'] ?? 0;
+                    $t['blocked']  = $deps[$t['id']]['blocked'] ?? false;
                 }
                 unset($t);
             }
@@ -841,6 +853,15 @@ class Dashboard extends CommonGLPI
                 'url'           => Project::getFormURLWithID($childId),
             ];
         }
+
+        // Regra geral (Etapa 3, Bloco 3 / Fix 1): subprojeto com filhos
+        // abertos também mostra 🔒
+        $blockedProjects = TaskDep::blockedProjects(array_column($children, 'id'));
+        foreach ($children as &$c) {
+            $c['blocked'] = $blockedProjects[$c['id']] ?? false;
+        }
+        unset($c);
+
         return $children;
     }
 
@@ -947,8 +968,12 @@ class Dashboard extends CommonGLPI
 
         // Contador de comentários (Etapa 3, Bloco 2) — consulta única
         $comments = TaskComment::countForTasks(array_column($out, 'id'));
+        // Dependências (Etapa 3, Bloco 3) — consulta única
+        $deps = TaskDep::countForTasks(array_column($out, 'id'));
         foreach ($out as &$t) {
             $t['comments'] = $comments[$t['id']] ?? 0;
+            $t['deps']     = $deps[$t['id']]['deps'] ?? 0;
+            $t['blocked']  = $deps[$t['id']]['blocked'] ?? false;
         }
         unset($t);
 

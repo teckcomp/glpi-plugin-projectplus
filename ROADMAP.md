@@ -56,7 +56,9 @@ Versão atual: **v0.5.0-alpha** · Atualizado em 18/07/2026
 - [x] **Bloco 1 / fixes** — "Tarefas em andamento" do painel lista só tarefas-raiz com expansão recursiva de subtarefas (mesmo padrão de "Projetos em andamento"); regra "tarefa mãe só conclui com todas as filhas fechadas" (bloqueio na UI e no endpoint); `auto_percent_done` respeitado (campo % desabilitado, sem ✓, endpoint recusa)
 - [x] **Bloco 2 (18/07/2026)** — Comentários por tarefa: tabela própria `taskcomments`, balão com contador e painel expansível na árvore de tarefas e em Minhas tarefas (Ctrl+Enter envia), aba nativa "Comentários (ProjectPlus)" na tarefa, edição/exclusão restrita ao autor (UI + servidor), alerta no sino para a equipe (dedup, reabre como não lido) + feed de atividades
 - [x] **Bloco 2 / Fix 1** — Sino de alertas também na tela Minhas tarefas (mesma estrutura da Visão geral; endpoint já filtra por destinatário)
-- [ ] Dependências entre tarefas (bloqueia / bloqueada por)
+- [x] **Bloco 3 (18/07/2026)** — Dependências entre tarefas (bloqueia / bloqueada por): tabela nativa `glpi_projecttasklinks` (só finish_to_start), coluna 🔗 com contador e painel expansível na árvore de tarefas e em Minhas tarefas, cadeado 🔒 em tarefa bloqueada, aba nativa "Dependências (ProjectPlus)", regra no servidor (bloqueada não conclui com bloqueadora aberta), prevenção de ciclo e duplicata, vínculos só no mesmo projeto
+- [x] **Bloco 3 / Fix 1** — Regra geral "filhos abertos bloqueiam o pai": subtarefas abertas bloqueiam a mãe (itens implícitos no painel/aba, sem remoção); projeto com filhos abertos mostra 🔒 e não pode ir para fase finalizada (`is_finished`) — hook `PRE_ITEM_UPDATE`, vale na ficha nativa
+- [ ] **Bloco 4 — Ajustes de layout/UX** (orientações por item a receber): (1) mudar o layout; (2) ajustar "Tarefas em andamento"; (3) remover da Visão geral os menus Projetos e Tarefas (redundantes); (4) filtro em "Projetos em andamento" e "Tarefas em andamento"; (5) renomear "Custos" para "Orçamento" no menu da Visão geral
 - [ ] Timeline em HTML/JS puro, fluxo contínuo (tira o "em breve" da sidebar)
 
 ## 📍 Etapa 4 — Modelos de projeto

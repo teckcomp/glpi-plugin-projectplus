@@ -15,6 +15,7 @@ use GlpiPlugin\Projectplus\ProjectCost;
 use GlpiPlugin\Projectplus\ProjectTracking;
 use GlpiPlugin\Projectplus\TaskComment;
 use GlpiPlugin\Projectplus\TaskCost;
+use GlpiPlugin\Projectplus\TaskDep;
 
 define('PLUGIN_PROJECTPLUS_VERSION', '0.5.0-alpha');
 
@@ -44,6 +45,10 @@ function plugin_init_projectplus(): void
 
     // Aba "Comentários (ProjectPlus)" dentro da tarefa nativa do projeto
     Plugin::registerClass(TaskComment::class, ['addtabon' => ProjectTask::class]);
+
+    // Aba "Dependências (ProjectPlus)" dentro da tarefa nativa do projeto
+    // (Etapa 3, Bloco 3 — usa a tabela nativa glpi_projecttasklinks)
+    Plugin::registerClass(TaskDep::class, ['addtabon' => ProjectTask::class]);
 
     // Aba "Custos (ProjectPlus)" dentro do projeto nativo
     // (a aba Custos NATIVA fica oculta via JS — fonte única de custos)
@@ -84,6 +89,12 @@ function plugin_init_projectplus(): void
     ];
     $PLUGIN_HOOKS[Hooks::ITEM_ADD]['projectplus'] = [
         ProjectTask::class => [ProjectTracking::class, 'onTaskAdd'],
+    ];
+
+    // Guarda de fase (Etapa 3, Bloco 3 / Fix 1): projeto com filhos
+    // abertos não pode ir para fase finalizada — vale na ficha nativa
+    $PLUGIN_HOOKS[Hooks::PRE_ITEM_UPDATE]['projectplus'] = [
+        Project::class => [TaskDep::class, 'onProjectPreUpdate'],
     ];
 }
 
