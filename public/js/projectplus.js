@@ -24,12 +24,66 @@
         initStatusChart();
         initTasksChart();
         initPhaseChart();
+        initTaskStateChart();
         initExpandButtons(root, ajaxUrl);
         initTaskExpand(root, ajaxUrl);
         initModals();
         initTaskPanels(root);
+        initOpenTaskPanels(root);  // 💬/🔗 em "Tarefas em andamento" (Bloco 4)
+        initTableSearch(root);     // busca nas tabelas (Bloco 4)
         initBell(root); // depois de initTaskPanels (que inicializa o ppCsrf)
     };
+
+    // ------------------------------------------------------------------
+    // Busca nas tabelas "Projetos em andamento" e "Tarefas em andamento"
+    // (Etapa 3, Bloco 4). Filtra as linhas de topo pelo texto; linhas
+    // filhas e painéis expansíveis (💬/🔗/tarefas) seguem a visibilidade
+    // da linha de topo à qual pertencem.
+    // ------------------------------------------------------------------
+
+    function initTableSearch(root) {
+        root.querySelectorAll('.pp-tablesearch').forEach(function (inp) {
+            const card = inp.closest('.projectplus-card');
+            if (!card) { return; }
+            const apply = function () {
+                const q = inp.value.trim().toLowerCase();
+                let show = true;
+                card.querySelectorAll('table.projectplus-table > tbody > tr').forEach(function (row) {
+                    const isTop = row.classList.contains('projectplus-row-item') ||
+                        row.dataset.depth === '0';
+                    if (isTop) {
+                        show = q === '' || row.textContent.toLowerCase().indexOf(q) !== -1;
+                    }
+                    row.hidden = !show;
+                });
+            };
+            inp.addEventListener('input', apply);
+            inp.addEventListener('search', apply); // botão × do campo
+        });
+    }
+
+    // 💬 e 🔗 nas linhas server-rendered de "Tarefas em andamento"
+    function initOpenTaskPanels(root) {
+        root.querySelectorAll('#tasks-table tr[data-task-id]').forEach(function (row) {
+            bindOpenTaskRow(row);
+        });
+    }
+
+    function bindOpenTaskRow(row) {
+        const taskId = row.dataset.taskId;
+        const cmt = row.querySelector('.pp-cmt-btn');
+        if (cmt) {
+            cmt.addEventListener('click', function () {
+                toggleCommentPanel(row, taskId);
+            });
+        }
+        const dep = row.querySelector('.pp-dep-btn');
+        if (dep) {
+            dep.addEventListener('click', function () {
+                toggleDepPanel(row, taskId);
+            });
+        }
+    }
 
     // ------------------------------------------------------------------
     // Expansão de subtarefas em "Tarefas em andamento" (Fix 2) — mesmo
@@ -48,10 +102,12 @@
             const row   = btn.closest('tr');
             const depth = parseInt(row.dataset.depth, 10) || 0;
 
-            // Já expandido? Recolhe (remove tudo que estiver mais fundo).
+            // Já expandido? Recolhe (remove tudo que estiver mais fundo,
+            // inclusive painéis 💬/🔗 abertos nas linhas descendentes).
             if (btn.dataset.expanded === '1') {
                 let next = row.nextElementSibling;
-                while (next && (parseInt(next.dataset.depth, 10) || 0) > depth) {
+                while (next && ((parseInt(next.dataset.depth, 10) || 0) > depth ||
+                       next.classList.contains('pp-cmt-row') || next.classList.contains('pp-dep-row'))) {
                     const rm = next;
                     next = next.nextElementSibling;
                     rm.remove();
@@ -62,6 +118,14 @@
             }
 
             btn.disabled = true;
+            // Fecha painéis 💬/🔗 desta linha antes de inserir as filhas
+            // (mantém a ordem linha → filhas no DOM)
+            let adj = row.nextElementSibling;
+            while (adj && (adj.classList.contains('pp-cmt-row') || adj.classList.contains('pp-dep-row'))) {
+                const rm = adj;
+                adj = adj.nextElementSibling;
+                rm.remove();
+            }
             fetch(ajaxUrl + '?action=taskchildren&id=' + encodeURIComponent(btn.dataset.taskId), {
                 credentials: 'same-origin'
             })
@@ -83,6 +147,7 @@
             const tr  = document.createElement('tr');
             tr.className = 'projectplus-row--child' + (pct >= 100 ? ' pp-task-done' : '');
             tr.dataset.depth = String(depth);
+            tr.dataset.taskId = String(t.id);
 
             tr.innerHTML =
                 '<td class="projectplus-expand">' + (t.children > 0
@@ -91,6 +156,9 @@
                     : '') + '</td>' +
                 '<td style="padding-left:' + (8 + depth * 18) + 'px">' +
                     '<span class="pp-task-branch">└</span> ' +
+                    (t.blocked
+                        ? '<span class="pp-dep-lock" title="Bloqueada por outra(s) tarefa(s) — veja 🔗">🔒</span> '
+                        : '') +
                     '<a href="' + escapeHtml(t.url) + '" target="_blank">' + escapeHtml(t.name) + '</a></td>' +
                 '<td>' + escapeHtml(t.project || '—') + '</td>' +
                 '<td>' + (t.team && t.team.length
@@ -103,7 +171,9 @@
                 '<td class="pp-deadline-cell">' + deadlineCell(t.deadline) + '</td>' +
                 '<td>' + (t.is_overdue
                     ? '<span class="projectplus-badge projectplus-badge--overdue">' + escapeHtml(t.end || '—') + '</span>'
-                    : (t.end ? escapeHtml(t.end) : '—')) + '</td>';
+                    : (t.end ? escapeHtml(t.end) : '—')) + '</td>' +
+                '<td class="pp-dep-cell">' + depBtnHtml(t) + '</td>' +
+                '<td class="pp-cmt-cell">' + commentBtnHtml(t) + '</td>';
 
             anchor.insertAdjacentElement('afterend', tr);
 
@@ -111,6 +181,7 @@
             if (childBtn) {
                 bindTaskExpand(childBtn, ajaxUrl);
             }
+            bindOpenTaskRow(tr); // 💬/🔗 também nas subtarefas (Bloco 4)
             anchor = tr;
         });
     }
@@ -969,6 +1040,20 @@
         if (!el) { return; }
         let phases = [];
         try { phases = JSON.parse(el.dataset.phases || '[]'); } catch (e) { /* vazio */ }
+        if (!Array.isArray(phases)) { phases = []; } // defesa: "null"/objeto não derruba o init
+        drawDonut(el, phases.map(function (p) {
+            return { label: p.name, value: parseInt(p.count, 10) || 0, color: p.color || '#8a97a5' };
+        }));
+    }
+
+    // Donut "Tarefas por Estado" (Etapa 3, Bloco 4) — mesmas fatias
+    // dinâmicas do donut de fases, agrupando as tarefas por estado.
+    function initTaskStateChart() {
+        const el = document.getElementById('projectplus-taskstate-chart');
+        if (!el) { return; }
+        let phases = [];
+        try { phases = JSON.parse(el.dataset.phases || '[]'); } catch (e) { /* vazio */ }
+        if (!Array.isArray(phases)) { phases = []; } // defesa: "null"/objeto não derruba o init
         drawDonut(el, phases.map(function (p) {
             return { label: p.name, value: parseInt(p.count, 10) || 0, color: p.color || '#8a97a5' };
         }));

@@ -136,10 +136,9 @@ class Dashboard extends CommonGLPI
         ]);
 
         $projects  = [];
-        $progress  = [];
         $kpis      = [
             'active' => 0, 'avg_progress' => 0, 'open_tasks' => 0,
-            'resources' => 0, 'overdue' => 0, 'done_month' => 0, 'on_time' => 0,
+            'tasks_overdue' => 0, 'overdue' => 0, 'done_month' => 0, 'on_time' => 0,
         ];
         $chart     = ['done' => 0, 'in_progress' => 0, 'planned' => 0, 'overdue' => 0];
         $prioChart = ['high' => 0, 'medium' => 0, 'low' => 0];
@@ -193,10 +192,6 @@ class Dashboard extends CommonGLPI
                 'url'           => Project::getFormURLWithID((int) $row['id']),
             ];
 
-            if ($pct < 100) {
-                $progress[] = ['name' => $row['name'], 'percent' => $pct];
-            }
-
             $kpis['active']++;
             $pctSum += $pct;
 
@@ -242,10 +237,11 @@ class Dashboard extends CommonGLPI
             $taskWhere[] = $c;
         }
 
-        $tasksChart = ['done' => 0, 'in_progress' => 0, 'pending' => 0, 'overdue' => 0];
+        $tasksChart     = ['done' => 0, 'in_progress' => 0, 'pending' => 0, 'overdue' => 0];
+        $taskStateCount = []; // projectstates_id => quantidade (donut "Tarefas por Estado")
         foreach (
             $DB->request([
-                'SELECT' => ['percent_done', 'plan_end_date'],
+                'SELECT' => ['percent_done', 'plan_end_date', 'projectstates_id'],
                 'FROM'   => 'glpi_projecttasks',
                 'WHERE'  => $taskWhere,
             ]) as $t
@@ -260,27 +256,11 @@ class Dashboard extends CommonGLPI
             } else {
                 $tasksChart['pending']++;
             }
+            $tsid = (int) $t['projectstates_id'];
+            $taskStateCount[$tsid] = ($taskStateCount[$tsid] ?? 0) + 1;
         }
-        $kpis['open_tasks'] = $tasksChart['in_progress'] + $tasksChart['pending'] + $tasksChart['overdue'];
-
-        // --- Recursos alocados: pessoas distintas em tarefas abertas ---
-        $res = $DB->request([
-            'SELECT'    => ['COUNT DISTINCT' => 'glpi_projecttaskteams.items_id AS cpt'],
-            'FROM'      => 'glpi_projecttaskteams',
-            'LEFT JOIN' => [
-                'glpi_projecttasks' => [
-                    'ON' => [
-                        'glpi_projecttaskteams' => 'projecttasks_id',
-                        'glpi_projecttasks'     => 'id',
-                    ],
-                ],
-            ],
-            'WHERE' => [
-                'glpi_projecttaskteams.itemtype'  => 'User',
-                'glpi_projecttasks.percent_done'  => ['<', 100],
-            ],
-        ])->current();
-        $kpis['resources'] = (int) ($res['cpt'] ?? 0);
+        $kpis['open_tasks']    = $tasksChart['in_progress'] + $tasksChart['pending'] + $tasksChart['overdue'];
+        $kpis['tasks_overdue'] = $tasksChart['overdue'];
 
         // --- Concluídos este mês (percent 100 com modificação no mês corrente) ---
         $doneMonth = $DB->request([
@@ -316,16 +296,35 @@ class Dashboard extends CommonGLPI
             ];
         }
 
+        // --- Donut "Tarefas por Estado" (Etapa 3, Bloco 4) — mesmo formato
+        // do phase_chart, agrupando as tarefas por glpi_projectstates ---
+        $taskStateChart = [];
+        foreach ($states as $sid => $s) {
+            if (!empty($taskStateCount[$sid])) {
+                $taskStateChart[] = [
+                    'name'  => $s['name'],
+                    'color' => $s['color'],
+                    'count' => $taskStateCount[$sid],
+                ];
+            }
+        }
+        if (!empty($taskStateCount[0])) {
+            $taskStateChart[] = [
+                'name'  => __('Sem estado', 'projectplus'),
+                'color' => self::PHASE_DEFAULT_COLOR,
+                'count' => $taskStateCount[0],
+            ];
+        }
+
         return [
-            'kpis'           => $kpis,
-            'status_chart'   => $chart,
-            'priority_chart' => $prioChart,
-            'tasks_chart'    => $tasksChart,
-            'phase_chart'    => $phaseChart,
-            'projects'       => $projects,
-            'progress'       => array_slice($progress, 0, 8),
-            'open_tasks'     => self::getOpenTasks($from, $until, 15),
-            'activities'     => self::getActivities(8),
+            'kpis'             => $kpis,
+            'status_chart'     => $chart,
+            'priority_chart'   => $prioChart,
+            'tasks_chart'      => $tasksChart,
+            'phase_chart'      => $phaseChart,
+            'task_state_chart' => $taskStateChart,
+            'projects'         => $projects,
+            'open_tasks'       => self::getOpenTasks($from, $until, 15),
         ];
     }
 
@@ -523,9 +522,17 @@ class Dashboard extends CommonGLPI
             $counts[$pid] = ($counts[$pid] ?? 0) + 1;
         }
 
+        // Comentários e dependências (Etapa 3, Bloco 4) — consultas únicas,
+        // para os botões 💬/🔗 na tabela "Tarefas em andamento"
+        $comments = TaskComment::countForTasks($ids);
+        $deps     = TaskDep::countForTasks($ids);
+
         foreach ($tasks as &$t) {
             $t['team']     = $byTid[$t['id']] ?? [];
             $t['children'] = $counts[$t['id']] ?? 0;
+            $t['comments'] = $comments[$t['id']] ?? 0;
+            $t['deps']     = $deps[$t['id']]['deps'] ?? 0;
+            $t['blocked']  = $deps[$t['id']]['blocked'] ?? false;
         }
         unset($t);
     }

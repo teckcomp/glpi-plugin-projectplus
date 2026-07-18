@@ -564,6 +564,36 @@
 .pp-dep-new select:focus { outline: none; border-color: #8e6cc9; }
 .pp-dep-new .projectplus-btn { padding: 6px 14px; font-size: 0.82rem; }
 
+/* ===== Etapa 3 / Bloco 4 — reorganização da Visão geral ===== */
+
+/* KPI vermelho (Tarefas em atraso) */
+.projectplus-kpi__icon--red { background: #d9534f; }
+
+/* Linha com os 4 donuts lado a lado */
+.projectplus-row--charts .projectplus-card--chart {
+    flex: 1 1 240px; min-width: 230px;
+}
+.projectplus-row--charts .projectplus-donut__wrap { gap: 12px; }
+.projectplus-row--charts svg { width: 150px; height: 150px; }
+
+/* Cards de tabela em largura total */
+.projectplus-card--full { flex: 1 1 100%; }
+
+/* Cabeçalho de card com campo de busca */
+.pp-tablehead {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap; margin-bottom: 12px;
+}
+.pp-tablehead h3 { margin: 0; }
+.pp-tablesearch {
+    border: 1px solid #c6d0d9; border-radius: 6px; padding: 6px 12px;
+    font-size: 0.85rem; color: #2c3e50; width: 260px; max-width: 100%;
+}
+.pp-tablesearch:focus {
+    outline: none; border-color: #4a9fd4;
+    box-shadow: 0 0 0 2px rgba(74, 159, 212, .18);
+}
+
 /* Impressão: só o relatório, sem sidebar/filtros/chrome do GLPI */
 @media print {
     .projectplus-noprint,
