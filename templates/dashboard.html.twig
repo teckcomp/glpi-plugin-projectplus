@@ -1,0 +1,448 @@
+{# ProjectPlus — Visão Geral no padrão do esboço (Etapa 3, Bloco 3.2) #}
+
+<link rel="stylesheet" href="{{ plugin_web_dir }}/css/projectplus.css">
+
+<div class="projectplus-app" id="projectplus-dashboard"
+     data-ajax-url="{{ plugin_web_dir }}/ajax/dashboard_data.php"
+     data-task-url="{{ plugin_web_dir }}/ajax/task.php"
+     data-alerts-url="{{ plugin_web_dir }}/ajax/alerts.php"
+     data-csrf="{{ csrf_token }}">
+
+    {# ================= COLUNA ESQUERDA: título + sidebar ================= #}
+    <div class="projectplus-left">
+        <div class="projectplus-pagetitle">
+            <h2>{{ __('Projetos', 'projectplus') }}</h2>
+            <span>{{ __('Visão geral dos projetos e seu andamento', 'projectplus') }}</span>
+        </div>
+        <nav class="projectplus-sidebar">
+            <ul>
+                <li class="projectplus-sidebar__item projectplus-sidebar__item--active">
+                    <a href="#overview"><i class="ti ti-layout-dashboard"></i>{{ __('Visão geral', 'projectplus') }}</a>
+                </li>
+                <li class="projectplus-sidebar__item">
+                    <a href="#projects-table"><i class="ti ti-folders"></i>{{ __('Projetos', 'projectplus') }}</a>
+                </li>
+                <li class="projectplus-sidebar__item">
+                    <a href="#tasks-table"><i class="ti ti-list-check"></i>{{ __('Tarefas', 'projectplus') }}</a>
+                </li>
+                <li class="projectplus-sidebar__item">
+                    <a href="{{ glpi_root }}/front/project.form.php?showglobalkanban=1"><i class="ti ti-layout-kanban"></i>{{ __('Kanban global', 'projectplus') }}</a>
+                </li>
+                <li class="projectplus-sidebar__item projectplus-sidebar__item--soon">
+                    <span><i class="ti ti-chart-gantt"></i>{{ __('Timeline', 'projectplus') }}</span><em>{{ __('em breve', 'projectplus') }}</em>
+                </li>
+                <li class="projectplus-sidebar__item projectplus-sidebar__item--soon">
+                    <span><i class="ti ti-calendar"></i>{{ __('Calendário', 'projectplus') }}</span><em>{{ __('em breve', 'projectplus') }}</em>
+                </li>
+                <li class="projectplus-sidebar__item projectplus-sidebar__item--soon">
+                    <span><i class="ti ti-users"></i>{{ __('Recursos', 'projectplus') }}</span><em>{{ __('em breve', 'projectplus') }}</em>
+                </li>
+                <li class="projectplus-sidebar__item">
+                    <a href="{{ plugin_web_dir }}/front/costs.php"><i class="ti ti-coin"></i>{{ __('Custos', 'projectplus') }}</a>
+                </li>
+                <li class="projectplus-sidebar__item projectplus-sidebar__item--soon">
+                    <span><i class="ti ti-report-analytics"></i>{{ __('Relatórios', 'projectplus') }}</span><em>{{ __('em breve', 'projectplus') }}</em>
+                </li>
+                <li class="projectplus-sidebar__item">
+                    <a href="{{ plugin_web_dir }}/front/config.form.php"><i class="ti ti-settings"></i>{{ __('Configurações', 'projectplus') }}</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+
+    {# ================= ÁREA PRINCIPAL ================= #}
+    <div class="projectplus-main">
+
+        {# Cabeçalho: filtro de período + ações #}
+        <div class="projectplus-header" id="overview">
+            <form method="get" class="projectplus-period" action="">
+                <input type="date" name="from" value="{{ filter_from }}" title="{{ __('Início do período', 'projectplus') }}">
+                <span>—</span>
+                <input type="date" name="until" value="{{ filter_until }}" title="{{ __('Fim do período', 'projectplus') }}">
+                <button type="submit" class="projectplus-btn projectplus-btn--ghost">{{ __('Aplicar', 'projectplus') }}</button>
+                {% if filter_from or filter_until %}
+                    <a href="?" class="projectplus-period__clear" title="{{ __('Limpar filtro', 'projectplus') }}">&times;</a>
+                {% endif %}
+            </form>
+            <div class="projectplus-actions">
+                <div class="pp-bell-wrap">
+                    <button type="button" id="pp-bell" class="pp-bell" title="{{ __('Alertas', 'projectplus') }}">
+                        <i class="ti ti-bell"></i><span class="pp-bell__badge" hidden>0</span>
+                    </button>
+                    <div id="pp-bell-panel" class="pp-bell__panel" hidden>
+                        <div class="pp-bell__head">
+                            <strong>{{ __('Alertas', 'projectplus') }}</strong>
+                            <button type="button" class="pp-bell__readall">{{ __('Marcar todas como lidas', 'projectplus') }}</button>
+                        </div>
+                        <ul class="pp-bell__list"></ul>
+                    </div>
+                </div>
+                {% if can_create %}
+                <button type="button" class="projectplus-btn" data-pp-modal-open="pp-modal-newproject">
+                    + {{ __('Novo projeto', 'projectplus') }}
+                </button>
+                {% endif %}
+                <a class="projectplus-btn projectplus-btn--ghost" href="{{ glpi_root }}/front/project.php">
+                    {{ __('Lista nativa', 'projectplus') }}
+                </a>
+            </div>
+        </div>
+
+        {# ================= 6 KPIs ================= #}
+        <div class="projectplus-kpis">
+            <div class="projectplus-kpi">
+                <span class="projectplus-kpi__icon projectplus-kpi__icon--blue"><i class="ti ti-briefcase"></i></span>
+                <div>
+                    <span class="projectplus-kpi__value">{{ kpis.active }}</span>
+                    <span class="projectplus-kpi__label">{{ __('Projetos', 'projectplus') }}</span>
+                    <span class="projectplus-kpi__sub">{{ __('Ativos', 'projectplus') }}</span>
+                </div>
+            </div>
+            <div class="projectplus-kpi">
+                <span class="projectplus-kpi__icon projectplus-kpi__icon--green"><i class="ti ti-percentage"></i></span>
+                <div>
+                    <span class="projectplus-kpi__value">{{ kpis.avg_progress }}%</span>
+                    <span class="projectplus-kpi__label">{{ __('Progresso médio', 'projectplus') }}</span>
+                    <span class="projectplus-kpi__sub">{{ __('Percentual finalizado', 'projectplus') }}</span>
+                </div>
+            </div>
+            <div class="projectplus-kpi">
+                <span class="projectplus-kpi__icon projectplus-kpi__icon--amber"><i class="ti ti-file-text"></i></span>
+                <div>
+                    <span class="projectplus-kpi__value">{{ kpis.open_tasks }}</span>
+                    <span class="projectplus-kpi__label">{{ __('Tarefas pendentes', 'projectplus') }}</span>
+                    <span class="projectplus-kpi__sub">{{ __('Em andamento', 'projectplus') }}</span>
+                </div>
+            </div>
+            <div class="projectplus-kpi">
+                <span class="projectplus-kpi__icon projectplus-kpi__icon--purple"><i class="ti ti-users"></i></span>
+                <div>
+                    <span class="projectplus-kpi__value">{{ kpis.resources }}</span>
+                    <span class="projectplus-kpi__label">{{ __('Recursos alocados', 'projectplus') }}</span>
+                    <span class="projectplus-kpi__sub">{{ __('Equipe do projeto', 'projectplus') }}</span>
+                </div>
+            </div>
+            <div class="projectplus-kpi">
+                <span class="projectplus-kpi__icon projectplus-kpi__icon--teal"><i class="ti ti-alert-circle"></i></span>
+                <div>
+                    <span class="projectplus-kpi__value">{{ kpis.overdue }}</span>
+                    <span class="projectplus-kpi__label">{{ __('Projetos atrasados', 'projectplus') }}</span>
+                    <span class="projectplus-kpi__sub">{{ __('Em risco', 'projectplus') }}</span>
+                </div>
+            </div>
+            <div class="projectplus-kpi">
+                <span class="projectplus-kpi__icon projectplus-kpi__icon--indigo"><i class="ti ti-circle-check"></i></span>
+                <div>
+                    <span class="projectplus-kpi__value">{{ kpis.done_month }}</span>
+                    <span class="projectplus-kpi__label">{{ __('Projetos concluídos', 'projectplus') }}</span>
+                    <span class="projectplus-kpi__sub">{{ __('Este mês', 'projectplus') }}</span>
+                </div>
+            </div>
+        </div>
+
+        {# ================= LINHA 1: Projetos por Status + tabela ================= #}
+        <div class="projectplus-row">
+            <div class="projectplus-card projectplus-card--chart">
+                <h3>{{ __('Projetos por Status', 'projectplus') }}</h3>
+                <div id="projectplus-status-chart" class="projectplus-donut"
+                     data-done="{{ status_chart.done }}"
+                     data-inprogress="{{ status_chart.in_progress }}"
+                     data-planned="{{ status_chart.planned }}"
+                     data-overdue="{{ status_chart.overdue }}"></div>
+            </div>
+
+            <div class="projectplus-card projectplus-card--wide" id="projects-table">
+                <h3>{{ __('Projetos em andamento', 'projectplus') }}</h3>
+                <table class="projectplus-table">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>{{ __('Projeto', 'projectplus') }}</th>
+                            <th>{{ __('Progresso', 'projectplus') }}</th>
+                            <th>{{ __('Última atividade', 'projectplus') }}</th>
+                            <th>{{ __('Situação', 'projectplus') }}</th>
+                            <th>{{ __('Orçamento', 'projectplus') }}</th>
+                            <th>{{ __('Prazo decorrido', 'projectplus') }}</th>
+                            <th>{{ __('Prazo final', 'projectplus') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for project in projects %}
+                        <tr class="projectplus-row-item" data-project-id="{{ project.id }}">
+                            <td class="projectplus-expand">
+                                {% if project.children > 0 %}
+                                    <button type="button" class="projectplus-expand__btn"
+                                            title="{{ project.children }} subprojeto(s)"
+                                            data-project-id="{{ project.id }}">+</button>
+                                {% endif %}
+                            </td>
+                            <td><a href="{{ project.url }}">{{ project.name }}</a>
+                                <button type="button" class="projectplus-tasksbtn"
+                                        data-tasks-project="{{ project.id }}">{{ __('Tarefas', 'projectplus') }}</button>
+                            </td>
+                            <td>
+                                <div class="projectplus-progress">
+                                    <div class="projectplus-progress__bar" style="width: {{ project.percent_done }}%"></div>
+                                </div>
+                                <span class="projectplus-progress__pct">{{ project.percent_done }}%</span>
+                            </td>
+                            <td>{{ project.last_activity|date('d/m/Y H:i') }}</td>
+                            <td>
+                                {% if project.is_overdue %}
+                                    <span class="projectplus-badge projectplus-badge--overdue">{{ __('Atrasado', 'projectplus') }}</span>
+                                {% elseif project.is_stalled %}
+                                    <span class="projectplus-badge projectplus-badge--stalled">{{ __('Parado', 'projectplus') }}</span>
+                                {% else %}
+                                    <span class="projectplus-badge projectplus-badge--ok">{{ __('No prazo', 'projectplus') }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="projectplus-budget-cell">
+                                {% if project.budget %}
+                                    <div class="projectplus-budgetbar"><div
+                                        class="projectplus-budgetbar__fill projectplus-budgetbar__fill--{{ project.budget.state }}"
+                                        style="width: {{ project.budget.percent > 100 ? 100 : project.budget.percent }}%"></div></div>
+                                    {{ project.budget.percent }}%
+                                    <span class="projectplus-muted">({{ project.budget.spent_fmt }} / {{ project.budget.planned_fmt }})</span>
+                                {% else %}
+                                    <span class="projectplus-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="pp-deadline-cell">
+                                {% if project.deadline.state == 'done' %}
+                                    <span class="projectplus-muted">—</span>
+                                {% elseif project.deadline.state == 'none' %}
+                                    <div class="pp-deadline pp-deadline--none"
+                                         title="{{ __('Sem datas planejadas — corrija o planejamento', 'projectplus') }}"><div
+                                        class="pp-deadline__fill" style="width:0%"></div></div>
+                                    <span class="projectplus-muted">—</span>
+                                {% else %}
+                                    <div class="pp-deadline"><div
+                                        class="pp-deadline__fill pp-deadline__fill--{{ project.deadline.state }}"
+                                        style="width: {{ project.deadline.display }}%"></div></div>
+                                    <span class="pp-deadline__label pp-deadline__label--{{ project.deadline.state }}">{{ project.deadline.label }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ project.plan_end_date ? project.plan_end_date|date('d/m/Y') : '—' }}</td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="8">{{ __('Nenhum projeto no período', 'projectplus') }}</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {# ================= LINHA 2: Tarefas por status + tabela ================= #}
+        <div class="projectplus-row">
+            <div class="projectplus-card projectplus-card--chart">
+                <h3>{{ __('Tarefas por status', 'projectplus') }}</h3>
+                <div id="projectplus-tasks-chart" class="projectplus-donut"
+                     data-done="{{ tasks_chart.done }}"
+                     data-inprogress="{{ tasks_chart.in_progress }}"
+                     data-pending="{{ tasks_chart.pending }}"
+                     data-overdue="{{ tasks_chart.overdue }}"></div>
+            </div>
+
+            <div class="projectplus-card projectplus-card--wide" id="tasks-table">
+                <h3>{{ __('Tarefas em andamento', 'projectplus') }}</h3>
+                <table class="projectplus-table">
+                    <thead>
+                        <tr>
+                            <th>{{ __('Tarefa', 'projectplus') }}</th>
+                            <th>{{ __('Projeto', 'projectplus') }}</th>
+                            <th>{{ __('Progresso', 'projectplus') }}</th>
+                            <th>{{ __('Estado', 'projectplus') }}</th>
+                            <th>{{ __('Prazo decorrido', 'projectplus') }}</th>
+                            <th>{{ __('Prazo final', 'projectplus') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for task in open_tasks %}
+                        <tr>
+                            <td><a href="{{ task.url }}" target="_blank">{{ task.name }}</a></td>
+                            <td>{{ task.project }}</td>
+                            <td>
+                                <div class="projectplus-progress">
+                                    <div class="projectplus-progress__bar" style="width: {{ task.percent }}%"></div>
+                                </div>
+                                <span class="projectplus-progress__pct">{{ task.percent }}%</span>
+                            </td>
+                            <td>{{ task.state_name }}</td>
+                            <td class="pp-deadline-cell">
+                                {% if task.deadline.state == 'done' %}
+                                    <span class="projectplus-muted">—</span>
+                                {% elseif task.deadline.state == 'none' %}
+                                    <div class="pp-deadline pp-deadline--none"
+                                         title="{{ __('Sem datas planejadas — corrija o planejamento', 'projectplus') }}"><div
+                                        class="pp-deadline__fill" style="width:0%"></div></div>
+                                    <span class="projectplus-muted">—</span>
+                                {% else %}
+                                    <div class="pp-deadline"><div
+                                        class="pp-deadline__fill pp-deadline__fill--{{ task.deadline.state }}"
+                                        style="width: {{ task.deadline.display }}%"></div></div>
+                                    <span class="pp-deadline__label pp-deadline__label--{{ task.deadline.state }}">{{ task.deadline.label }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if task.is_overdue %}
+                                    <span class="projectplus-badge projectplus-badge--overdue">{{ task.end }}</span>
+                                {% else %}
+                                    {{ task.end ?: '—' }}
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="6">{{ __('Nenhuma tarefa no período', 'projectplus') }}</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {# ================= LINHA 3: Progresso dos projetos + Atividades ================= #}
+        <div class="projectplus-row">
+            <div class="projectplus-card projectplus-card--wide">
+                <h3>{{ __('Progresso dos projetos', 'projectplus') }}</h3>
+                {% if progress %}
+                <div class="projectplus-bars">
+                    {% for p in progress %}
+                        <div class="projectplus-bars__item">
+                            <span class="projectplus-bars__value">{{ p.percent }}%</span>
+                            <div class="projectplus-bars__track">
+                                <div class="projectplus-bars__fill" style="height: {{ p.percent > 0 ? p.percent : 2 }}%"></div>
+                            </div>
+                            <span class="projectplus-bars__label">{{ p.name }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                    <p class="projectplus-muted">{{ __('Sem projetos em andamento no período', 'projectplus') }}</p>
+                {% endif %}
+            </div>
+
+            <div class="projectplus-card projectplus-card--feed">
+                <h3>{{ __('Atividades recentes', 'projectplus') }}</h3>
+                {% if activities %}
+                <ul class="projectplus-feed">
+                    {% for a in activities %}
+                        <li>
+                            <span class="projectplus-feed__icon projectplus-feed__icon--{{ a.class }}">{{ a.icon }}</span>
+                            <div class="projectplus-feed__body">
+                                <span>{{ a.message }}</span>
+                                <em>{{ a.date }}</em>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                    <p class="projectplus-muted">{{ __('Sem atividades registradas ainda', 'projectplus') }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ================= MODAL: NOVO PROJETO ================= #}
+{% if can_create %}
+<div class="projectplus-modal" id="pp-modal-newproject" hidden>
+    <div class="projectplus-modal__backdrop" data-pp-modal-close></div>
+    <div class="projectplus-modal__box">
+        <div class="projectplus-modal__head">
+            <h3>{{ __('Novo projeto', 'projectplus') }}</h3>
+            <button type="button" class="projectplus-modal__x" data-pp-modal-close>&times;</button>
+        </div>
+        <form method="post" action="{{ plugin_web_dir }}/front/project_create.form.php"
+              class="projectplus-form">
+            <input type="hidden" name="_glpi_csrf_token" value="{{ csrf_token }}">
+
+            <label class="projectplus-form__full">
+                {{ __('Nome do projeto', 'projectplus') }} *
+                <input type="text" name="name" required maxlength="255" autofocus>
+            </label>
+
+            <label>
+                {{ __('Projeto pai', 'projectplus') }}
+                <select name="projects_id">
+                    <option value="0">{{ __('— Nenhum (projeto raiz) —', 'projectplus') }}</option>
+                    {% for p in parents %}
+                        <option value="{{ p.id }}">{{ p.name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+
+            <label>
+                {{ __('Estado', 'projectplus') }}
+                <select name="projectstates_id">
+                    <option value="0">—</option>
+                    {% for s in states %}
+                        <option value="{{ s.id }}">{{ s.name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+
+            <label>
+                {{ __('Prioridade', 'projectplus') }}
+                <select name="priority">
+                    <option value="1">{{ __('Muito baixa', 'projectplus') }}</option>
+                    <option value="2">{{ __('Baixa', 'projectplus') }}</option>
+                    <option value="3" selected>{{ __('Média', 'projectplus') }}</option>
+                    <option value="4">{{ __('Alta', 'projectplus') }}</option>
+                    <option value="5">{{ __('Muito alta', 'projectplus') }}</option>
+                    <option value="6">{{ __('Crítica', 'projectplus') }}</option>
+                </select>
+            </label>
+
+            <label>
+                {{ __('Gestor', 'projectplus') }}
+                <select name="users_id">
+                    {% for u in users %}
+                        <option value="{{ u.id }}" {{ u.id == current_user_id ? 'selected' : '' }}>{{ u.name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+
+            <label>
+                {{ __('Início planejado', 'projectplus') }}
+                <input type="date" name="plan_start_date">
+            </label>
+
+            <label>
+                {{ __('Fim planejado', 'projectplus') }}
+                <input type="date" name="plan_end_date">
+            </label>
+
+            <label>
+                {{ __('Teto de orçamento', 'projectplus') }}
+                <input type="number" name="budget_planned" step="0.01" min="0" placeholder="0,00">
+            </label>
+
+            <label class="projectplus-form__full">
+                {{ __('Descrição', 'projectplus') }}
+                <textarea name="content" rows="3"></textarea>
+            </label>
+
+            <div class="projectplus-form__footer">
+                <button type="button" class="projectplus-btn projectplus-btn--ghost" data-pp-modal-close>
+                    {{ __('Cancelar', 'projectplus') }}
+                </button>
+                <button type="submit" class="projectplus-btn">
+                    {{ __('Criar projeto', 'projectplus') }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<script id="pp-data" type="application/json">{{ {
+    'states': states,
+    'users': users,
+    'current_user_id': current_user_id
+}|json_encode|raw }}</script>
+
+<script src="{{ plugin_web_dir }}/js/projectplus.js"></script>
+<script>
+    if (window.ProjectPlus && typeof window.ProjectPlus.initDashboard === 'function') {
+        window.ProjectPlus.initDashboard();
+    }
+</script>
