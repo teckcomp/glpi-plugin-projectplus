@@ -25,9 +25,167 @@
         initTasksChart();
         initPhaseChart();
         initExpandButtons(root, ajaxUrl);
+        initTaskExpand(root, ajaxUrl);
         initModals();
         initTaskPanels(root);
         initBell(root); // depois de initTaskPanels (que inicializa o ppCsrf)
+    };
+
+    // ------------------------------------------------------------------
+    // Expansão de subtarefas em "Tarefas em andamento" (Fix 2) — mesmo
+    // comportamento da relação pai/filho de "Projetos em andamento",
+    // com expansão recursiva (subtarefas de subtarefas).
+    // ------------------------------------------------------------------
+
+    function initTaskExpand(root, ajaxUrl) {
+        root.querySelectorAll('.pp-taskexp').forEach(function (btn) {
+            bindTaskExpand(btn, ajaxUrl);
+        });
+    }
+
+    function bindTaskExpand(btn, ajaxUrl) {
+        btn.addEventListener('click', function () {
+            const row   = btn.closest('tr');
+            const depth = parseInt(row.dataset.depth, 10) || 0;
+
+            // Já expandido? Recolhe (remove tudo que estiver mais fundo).
+            if (btn.dataset.expanded === '1') {
+                let next = row.nextElementSibling;
+                while (next && (parseInt(next.dataset.depth, 10) || 0) > depth) {
+                    const rm = next;
+                    next = next.nextElementSibling;
+                    rm.remove();
+                }
+                btn.dataset.expanded = '0';
+                btn.textContent = '+';
+                return;
+            }
+
+            btn.disabled = true;
+            fetch(ajaxUrl + '?action=taskchildren&id=' + encodeURIComponent(btn.dataset.taskId), {
+                credentials: 'same-origin'
+            })
+                .then(function (r) { return r.json(); })
+                .then(function (children) {
+                    insertTaskChildren(row, children, depth + 1, ajaxUrl);
+                    btn.dataset.expanded = '1';
+                    btn.textContent = '−';
+                })
+                .catch(function () { /* silencioso; próxima tentativa recarrega */ })
+                .finally(function () { btn.disabled = false; });
+        });
+    }
+
+    function insertTaskChildren(parentRow, children, depth, ajaxUrl) {
+        let anchor = parentRow;
+        children.forEach(function (t) {
+            const pct = parseInt(t.percent, 10) || 0;
+            const tr  = document.createElement('tr');
+            tr.className = 'projectplus-row--child' + (pct >= 100 ? ' pp-task-done' : '');
+            tr.dataset.depth = String(depth);
+
+            tr.innerHTML =
+                '<td class="projectplus-expand">' + (t.children > 0
+                    ? '<button type="button" class="projectplus-expand__btn pp-taskexp"' +
+                      ' title="' + t.children + ' subtarefa(s)" data-task-id="' + t.id + '">+</button>'
+                    : '') + '</td>' +
+                '<td style="padding-left:' + (8 + depth * 18) + 'px">' +
+                    '<span class="pp-task-branch">└</span> ' +
+                    '<a href="' + escapeHtml(t.url) + '" target="_blank">' + escapeHtml(t.name) + '</a></td>' +
+                '<td>' + escapeHtml(t.project || '—') + '</td>' +
+                '<td>' + (t.team && t.team.length
+                    ? escapeHtml(t.team.join(', '))
+                    : '<span class="projectplus-muted">—</span>') + '</td>' +
+                '<td><div class="projectplus-progress">' +
+                    '<div class="projectplus-progress__bar" style="width:' + pct + '%"></div></div>' +
+                    '<span class="projectplus-progress__pct">' + pct + '%</span></td>' +
+                '<td class="pp-phase-cell">' + phaseChip(t.state_name, t.state_color) + '</td>' +
+                '<td class="pp-deadline-cell">' + deadlineCell(t.deadline) + '</td>' +
+                '<td>' + (t.is_overdue
+                    ? '<span class="projectplus-badge projectplus-badge--overdue">' + escapeHtml(t.end || '—') + '</span>'
+                    : (t.end ? escapeHtml(t.end) : '—')) + '</td>';
+
+            anchor.insertAdjacentElement('afterend', tr);
+
+            const childBtn = tr.querySelector('.pp-taskexp');
+            if (childBtn) {
+                bindTaskExpand(childBtn, ajaxUrl);
+            }
+            anchor = tr;
+        });
+    }
+
+    // ------------------------------------------------------------------
+    // "Minhas tarefas" (Etapa 3, Bloco 1)
+    // ------------------------------------------------------------------
+
+    ProjectPlus.initMyTasks = function () {
+        const root = document.getElementById('projectplus-mytasks');
+        if (!root) {
+            return;
+        }
+        ppCsrf = root.dataset.csrf || null;
+        const dataEl = document.getElementById('pp-data');
+        if (dataEl) {
+            try { ppData = JSON.parse(dataEl.textContent); } catch (e) { /* mantém default */ }
+        }
+
+        const ajaxUrl    = root.dataset.ajaxUrl;
+        const taskUrl    = root.dataset.taskUrl;
+        const groupsEl   = document.getElementById('pp-mt-groups');
+        const doneToggle = document.getElementById('pp-mt-done');
+
+        function setKpi(id, value) {
+            const el = document.getElementById(id);
+            if (el) { el.textContent = String(value); }
+        }
+
+        function refresh() {
+            const done = (doneToggle && doneToggle.checked) ? '&done=1' : '';
+            fetch(ajaxUrl + '?action=mytasks' + done, { credentials: 'same-origin' })
+                .then(function (r) { return r.json(); })
+                .then(render)
+                .catch(function () {
+                    groupsEl.innerHTML = '<div class="projectplus-card">' +
+                        '<p class="projectplus-muted">Erro ao carregar suas tarefas.</p></div>';
+                });
+        }
+
+        function render(data) {
+            const kpis = (data && data.kpis) || {};
+            setKpi('pp-mt-kpi-open',    kpis.open    || 0);
+            setKpi('pp-mt-kpi-overdue', kpis.overdue || 0);
+            setKpi('pp-mt-kpi-nodates', kpis.nodates || 0);
+            setKpi('pp-mt-kpi-done',    kpis.done    || 0);
+
+            const groups = (data && Array.isArray(data.groups)) ? data.groups : [];
+            if (groups.length === 0) {
+                groupsEl.innerHTML = '<div class="projectplus-card">' +
+                    '<p class="projectplus-muted">Nenhuma tarefa atribuída a você' +
+                    ((doneToggle && doneToggle.checked) ? '' : ' em aberto') + '.</p></div>';
+                return;
+            }
+
+            groupsEl.innerHTML = groups.map(function (g) {
+                const n = g.tasks.length;
+                return '<div class="projectplus-card pp-mt-group">' +
+                    '<div class="pp-report-projhead">' +
+                        '<h3><a href="' + escapeHtml(g.project_url) + '">' + escapeHtml(g.project_name) + '</a></h3>' +
+                        '<span class="projectplus-muted">' + n + (n === 1 ? ' tarefa' : ' tarefas') + '</span>' +
+                    '</div>' +
+                    taskTableHtml(g.tasks) +
+                    '</div>';
+            }).join('');
+
+            groupsEl.querySelectorAll('.pp-mt-group').forEach(function (card) {
+                bindTaskRows(card, taskUrl, refresh);
+            });
+        }
+
+        if (doneToggle) {
+            doneToggle.addEventListener('change', refresh);
+        }
+        refresh();
     };
 
     // ------------------------------------------------------------------
@@ -199,7 +357,14 @@
             return html;
         }
 
-        html += '<table class="projectplus-tasktable"><thead><tr>' +
+        html += taskTableHtml(tasks) + '</div>';
+        return html;
+    }
+
+    // Tabela de tarefas com edição inline — compartilhada entre o painel
+    // por projeto e a tela "Minhas tarefas" (Etapa 3, Bloco 1).
+    function taskTableHtml(tasks) {
+        let html = '<table class="projectplus-tasktable"><thead><tr>' +
             '<th>Tarefa</th><th>Responsáveis</th><th>Início</th><th>Fim</th>' +
             '<th>%</th><th>Estado</th><th>Prazo</th><th></th>' +
             '</tr></thead><tbody>';
@@ -212,21 +377,27 @@
             html += '<tr data-task-id="' + t.id + '" class="' + (t.percent >= 100 ? 'pp-task-done' : '') + '">' +
                 '<td style="padding-left:' + (10 + t.depth * 22) + 'px">' +
                     (t.depth > 0 ? '<span class="pp-task-branch">└</span> ' : '') +
+                    (t.depth === 0 && t.parent_name
+                        ? '<span class="pp-task-parent" title="Tarefa mãe">' + escapeHtml(t.parent_name) + ' › </span>'
+                        : '') +
                     '<a href="' + escapeHtml(t.url) + '" target="_blank">' + escapeHtml(t.name) + '</a></td>' +
                 '<td>' + (t.team.length ? escapeHtml(t.team.join(', ')) : '<span class="projectplus-muted">—</span>') + '</td>' +
                 '<td><input type="date" class="pp-task-start" value="' + (t.start_iso || '') + '"></td>' +
                 '<td><input type="date" class="pp-task-end" value="' + (t.end_iso || '') + '"></td>' +
-                '<td><input type="number" class="pp-task-percent" min="0" max="100" value="' + t.percent + '"></td>' +
+                '<td><input type="number" class="pp-task-percent" min="0" max="100" value="' + t.percent + '"' +
+                    (t.auto_percent
+                        ? ' disabled title="Cálculo automático a partir das subtarefas"'
+                        : '') + '></td>' +
                 '<td class="pp-state-cell"><span class="pp-phase-dot" style="background:' + stateColor(t.state_id) + '"></span>' +
                     '<select class="pp-task-state"><option value="0">—</option>' + stateOpts + '</select></td>' +
                 '<td class="pp-deadline-cell">' + deadlineCell(t.deadline) + '</td>' +
-                '<td>' + (t.percent < 100
+                '<td>' + (t.percent < 100 && !t.auto_percent
                     ? '<button type="button" class="pp-task-complete" title="Concluir">✓</button>'
                     : '') + '</td>' +
                 '</tr>';
         });
 
-        html += '</tbody></table></div>';
+        html += '</tbody></table>';
         return html;
     }
 
@@ -253,6 +424,12 @@
         }
 
         // Edição inline
+        bindTaskRows(container, taskUrl, reload);
+    }
+
+    // Liga a edição inline das linhas de tarefa (percent, datas, estado,
+    // concluir) — compartilhada com "Minhas tarefas" (Etapa 3, Bloco 1).
+    function bindTaskRows(container, taskUrl, reload) {
         container.querySelectorAll('tr[data-task-id]').forEach(function (row) {
             const taskId = row.dataset.taskId;
 
@@ -260,7 +437,9 @@
             if (pct) {
                 pct.addEventListener('change', function () {
                     taskPost(taskUrl, { action: 'percent', task_id: taskId, percent: pct.value }, function (resp) {
-                        if (resp.ok && parseInt(pct.value, 10) >= 100) { reload(); }
+                        // Recarrega sempre: atualiza o % automático da tarefa
+                        // mãe e a barra de prazo/risco da linha alterada
+                        if (resp.ok) { reload(); }
                     });
                 });
             }
@@ -463,8 +642,9 @@
     }
 
     // Requisito 2: subprojetos só aparecem ao expandir o pai
+    // (:not(.pp-taskexp) — os botões de subtarefas têm handler próprio)
     function initExpandButtons(root, ajaxUrl) {
-        root.querySelectorAll('.projectplus-expand__btn').forEach(function (btn) {
+        root.querySelectorAll('.projectplus-expand__btn:not(.pp-taskexp)').forEach(function (btn) {
             btn.addEventListener('click', function () {
                 const projectId = btn.dataset.projectId;
                 const row = btn.closest('tr');

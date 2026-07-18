@@ -1,0 +1,124 @@
+{# ProjectPlus — "Minhas tarefas" (Etapa 3, Bloco 1) #}
+
+<link rel="stylesheet" href="{{ plugin_web_dir }}/css/projectplus.css">
+
+<div class="projectplus-app" id="projectplus-mytasks"
+     data-ajax-url="{{ plugin_web_dir }}/ajax/dashboard_data.php"
+     data-task-url="{{ plugin_web_dir }}/ajax/task.php"
+     data-csrf="{{ csrf_token }}">
+
+    {# ================= COLUNA ESQUERDA: título + sidebar ================= #}
+    <div class="projectplus-left">
+        <div class="projectplus-pagetitle">
+            <h2>{{ __('Projetos', 'projectplus') }}</h2>
+            <span>{{ __('Suas tarefas em todos os projetos', 'projectplus') }}</span>
+        </div>
+        <nav class="projectplus-sidebar">
+            <ul>
+                <li class="projectplus-sidebar__item">
+                    <a href="{{ plugin_web_dir }}/front/dashboard.php"><i class="ti ti-layout-dashboard"></i>{{ __('Visão geral', 'projectplus') }}</a>
+                </li>
+                <li class="projectplus-sidebar__item projectplus-sidebar__item--active">
+                    <a href="{{ plugin_web_dir }}/front/mytasks.php"><i class="ti ti-user-check"></i>{{ __('Minhas tarefas', 'projectplus') }}</a>
+                </li>
+                <li class="projectplus-sidebar__item">
+                    <a href="{{ plugin_web_dir }}/front/dashboard.php#projects-table"><i class="ti ti-folders"></i>{{ __('Projetos', 'projectplus') }}</a>
+                </li>
+                <li class="projectplus-sidebar__item">
+                    <a href="{{ plugin_web_dir }}/front/dashboard.php#tasks-table"><i class="ti ti-list-check"></i>{{ __('Tarefas', 'projectplus') }}</a>
+                </li>
+                <li class="projectplus-sidebar__item">
+                    <a href="{{ glpi_root }}/front/project.form.php?showglobalkanban=1"><i class="ti ti-layout-kanban"></i>{{ __('Kanban global', 'projectplus') }}</a>
+                </li>
+                <li class="projectplus-sidebar__item projectplus-sidebar__item--soon">
+                    <span><i class="ti ti-chart-gantt"></i>{{ __('Timeline', 'projectplus') }}</span><em>{{ __('em breve', 'projectplus') }}</em>
+                </li>
+                <li class="projectplus-sidebar__item projectplus-sidebar__item--soon">
+                    <span><i class="ti ti-calendar"></i>{{ __('Calendário', 'projectplus') }}</span><em>{{ __('em breve', 'projectplus') }}</em>
+                </li>
+                <li class="projectplus-sidebar__item projectplus-sidebar__item--soon">
+                    <span><i class="ti ti-users"></i>{{ __('Recursos', 'projectplus') }}</span><em>{{ __('em breve', 'projectplus') }}</em>
+                </li>
+                <li class="projectplus-sidebar__item">
+                    <a href="{{ plugin_web_dir }}/front/costs.php"><i class="ti ti-coin"></i>{{ __('Custos', 'projectplus') }}</a>
+                </li>
+                <li class="projectplus-sidebar__item projectplus-sidebar__item--soon">
+                    <span><i class="ti ti-report-analytics"></i>{{ __('Relatórios', 'projectplus') }}</span><em>{{ __('em breve', 'projectplus') }}</em>
+                </li>
+                <li class="projectplus-sidebar__item">
+                    <a href="{{ plugin_web_dir }}/front/config.form.php"><i class="ti ti-settings"></i>{{ __('Configurações', 'projectplus') }}</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+
+    {# ================= ÁREA PRINCIPAL ================= #}
+    <div class="projectplus-main">
+
+        <div class="projectplus-header">
+            <label class="pp-mt-toggle">
+                <input type="checkbox" id="pp-mt-done">
+                {{ __('Mostrar tarefas concluídas', 'projectplus') }}
+            </label>
+            <div class="projectplus-actions">
+                <a class="projectplus-btn projectplus-btn--ghost" href="{{ plugin_web_dir }}/front/dashboard.php">
+                    {{ __('Visão geral', 'projectplus') }}
+                </a>
+            </div>
+        </div>
+
+        {# ================= KPIs pessoais ================= #}
+        <div class="projectplus-kpis">
+            <div class="projectplus-kpi">
+                <span class="projectplus-kpi__icon projectplus-kpi__icon--blue"><i class="ti ti-list-check"></i></span>
+                <div>
+                    <span class="projectplus-kpi__value" id="pp-mt-kpi-open">—</span>
+                    <span class="projectplus-kpi__label">{{ __('Tarefas abertas', 'projectplus') }}</span>
+                    <span class="projectplus-kpi__sub">{{ __('Atribuídas a você', 'projectplus') }}</span>
+                </div>
+            </div>
+            <div class="projectplus-kpi">
+                <span class="projectplus-kpi__icon projectplus-kpi__icon--teal"><i class="ti ti-alert-circle"></i></span>
+                <div>
+                    <span class="projectplus-kpi__value" id="pp-mt-kpi-overdue">—</span>
+                    <span class="projectplus-kpi__label">{{ __('Atrasadas', 'projectplus') }}</span>
+                    <span class="projectplus-kpi__sub">{{ __('Prazo final vencido', 'projectplus') }}</span>
+                </div>
+            </div>
+            <div class="projectplus-kpi">
+                <span class="projectplus-kpi__icon projectplus-kpi__icon--amber"><i class="ti ti-calendar-off"></i></span>
+                <div>
+                    <span class="projectplus-kpi__value" id="pp-mt-kpi-nodates">—</span>
+                    <span class="projectplus-kpi__label">{{ __('Sem datas', 'projectplus') }}</span>
+                    <span class="projectplus-kpi__sub">{{ __('Planejamento a corrigir', 'projectplus') }}</span>
+                </div>
+            </div>
+            <div class="projectplus-kpi">
+                <span class="projectplus-kpi__icon projectplus-kpi__icon--green"><i class="ti ti-circle-check"></i></span>
+                <div>
+                    <span class="projectplus-kpi__value" id="pp-mt-kpi-done">—</span>
+                    <span class="projectplus-kpi__label">{{ __('Concluídas', 'projectplus') }}</span>
+                    <span class="projectplus-kpi__sub">{{ __('Total histórico', 'projectplus') }}</span>
+                </div>
+            </div>
+        </div>
+
+        {# ================= Grupos por projeto (renderizados pelo JS) ================= #}
+        <div id="pp-mt-groups">
+            <div class="projectplus-card"><p class="projectplus-muted">{{ __('Carregando suas tarefas…', 'projectplus') }}</p></div>
+        </div>
+    </div>
+</div>
+
+<script id="pp-data" type="application/json">{{ {
+    'states': states,
+    'users': [],
+    'current_user_id': current_user_id
+}|json_encode|raw }}</script>
+
+<script src="{{ plugin_web_dir }}/js/projectplus.js"></script>
+<script>
+    if (window.ProjectPlus && typeof window.ProjectPlus.initMyTasks === 'function') {
+        window.ProjectPlus.initMyTasks();
+    }
+</script>

@@ -437,6 +437,27 @@
 .pp-report-origin { font-size: 0.8rem; color: #5a7684; white-space: nowrap; }
 .pp-report-total td { border-top: 2px solid #e1e5ea; background: #f7fafc; }
 
+/* ===== Etapa 3 / Bloco 1 — Minhas tarefas ===== */
+.pp-mt-group { margin-bottom: 16px; }
+.pp-mt-group .pp-report-projhead h3 a {
+    color: #16323f; text-decoration: none;
+}
+.pp-mt-group .pp-report-projhead h3 a:hover {
+    color: #065a82; text-decoration: underline;
+}
+.pp-mt-toggle {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 0.88rem; color: #5a7684; font-weight: 600; cursor: pointer;
+}
+.pp-mt-toggle input { accent-color: #4a9fd4; width: 15px; height: 15px; }
+
+/* Fix 1 — hierarquia de tarefas e cálculo automático */
+.pp-task-parent { color: #8a97a5; font-size: 0.78rem; }
+.projectplus-tasktable .pp-task-percent:disabled {
+    background: #f0f2f5; color: #8a97a5; border-style: dashed;
+    cursor: not-allowed;
+}
+
 /* Impressão: só o relatório, sem sidebar/filtros/chrome do GLPI */
 @media print {
     .projectplus-noprint,

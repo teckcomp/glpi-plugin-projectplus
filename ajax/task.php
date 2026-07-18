@@ -32,6 +32,28 @@ function pp_reply(array $payload): void
     exit;
 }
 
+/**
+ * Subtarefas DIRETAS ainda abertas (percent < 100) de uma tarefa.
+ * Regra (Fix 2): a mãe só pode ser concluída com todas as filhas fechadas —
+ * aplicada recursivamente, já que cada filha-mãe passa pela mesma checagem.
+ */
+function pp_open_children(int $taskId): int
+{
+    /** @var \DBmysql $DB */
+    global $DB;
+
+    $row = $DB->request([
+        'COUNT' => 'cpt',
+        'FROM'  => 'glpi_projecttasks',
+        'WHERE' => [
+            'projecttasks_id' => $taskId,
+            'percent_done'    => ['<', 100],
+        ],
+    ])->current();
+
+    return (int) ($row['cpt'] ?? 0);
+}
+
 $action = $_POST['action'] ?? '';
 
 // Direito nativo de tarefas de projeto
@@ -109,8 +131,17 @@ switch ($action) {
         if (!$task->getFromDB((int) ($_POST['task_id'] ?? 0))) {
             pp_reply(['ok' => false, 'message' => __('Tarefa não encontrada', 'projectplus')]);
         }
+        if (!empty($task->fields['auto_percent_done'])) {
+            pp_reply(['ok' => false, 'message' => __('O percentual desta tarefa é calculado automaticamente a partir das subtarefas', 'projectplus')]);
+        }
         $percent = min(100, max(0, (int) ($_POST['percent'] ?? 0)));
-        $ok      = $task->update(['id' => $task->getID(), 'percent_done' => $percent]);
+        if ($percent >= 100 && ($open = pp_open_children($task->getID())) > 0) {
+            pp_reply(['ok' => false, 'message' => sprintf(
+                __('Conclua antes as %d subtarefa(s) aberta(s) desta tarefa', 'projectplus'),
+                $open
+            )]);
+        }
+        $ok = $task->update(['id' => $task->getID(), 'percent_done' => $percent]);
         pp_reply(['ok' => (bool) $ok, 'percent' => $percent]);
         break;
 
@@ -142,6 +173,15 @@ switch ($action) {
         $task = new ProjectTask();
         if (!$task->getFromDB((int) ($_POST['task_id'] ?? 0))) {
             pp_reply(['ok' => false, 'message' => __('Tarefa não encontrada', 'projectplus')]);
+        }
+        if (!empty($task->fields['auto_percent_done'])) {
+            pp_reply(['ok' => false, 'message' => __('O percentual desta tarefa é calculado automaticamente a partir das subtarefas', 'projectplus')]);
+        }
+        if (($open = pp_open_children($task->getID())) > 0) {
+            pp_reply(['ok' => false, 'message' => sprintf(
+                __('Conclua antes as %d subtarefa(s) aberta(s) desta tarefa', 'projectplus'),
+                $open
+            )]);
         }
         $ok = $task->update(['id' => $task->getID(), 'percent_done' => 100]);
         pp_reply(['ok' => (bool) $ok]);

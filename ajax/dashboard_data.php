@@ -5,6 +5,7 @@
  *
  * GET ?action=data              -> KPIs + gráfico + projetos pai
  * GET ?action=children&id=NN    -> subprojetos de um pai (requisito 2)
+ * GET ?action=mytasks[&done=1]  -> tarefas do usuário logado (Etapa 3, Bloco 1)
  */
 
 use GlpiPlugin\Projectplus\Dashboard;
@@ -26,6 +27,18 @@ switch ($action) {
     case 'tasks':
         $projectId = (int) ($_GET['id'] ?? 0);
         echo json_encode(Dashboard::getTasks($projectId));
+        break;
+
+    case 'taskchildren':
+        $taskId = (int) ($_GET['id'] ?? 0);
+        echo json_encode(Dashboard::getOpenTaskChildren($taskId));
+        break;
+
+    case 'mytasks':
+        echo json_encode(Dashboard::getMyTasks(
+            (int) Session::getLoginUserID(),
+            !empty($_GET['done'])
+        ));
         break;
 
     case 'data':

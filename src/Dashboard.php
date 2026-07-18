@@ -323,13 +323,18 @@ class Dashboard extends CommonGLPI
 
     /**
      * Tarefas em andamento (globais), para a tabela da linha de tarefas.
+     * Fix 2: lista apenas tarefas-RAIZ (como "Projetos em andamento");
+     * as subtarefas aparecem ao expandir via getOpenTaskChildren().
      */
     public static function getOpenTasks(?string $from, ?string $until, int $limit = 15): array
     {
         /** @var \DBmysql $DB */
         global $DB;
 
-        $where = ['glpi_projecttasks.percent_done' => ['<', 100]];
+        $where = [
+            'glpi_projecttasks.percent_done'    => ['<', 100],
+            'glpi_projecttasks.projecttasks_id' => 0,
+        ];
         foreach (self::periodCriteria($from, $until, 'glpi_projecttasks.') as $c) {
             $where[] = $c;
         }
@@ -367,6 +372,7 @@ class Dashboard extends CommonGLPI
                 'url'        => ProjectTask::getFormURLWithID((int) $row['id']),
                 'project'    => $row['project_name'] ?? '—',
                 'team'       => [],
+                'children'   => 0,
                 'percent'     => (int) $row['percent_done'],
                 'state_name'  => $states[(int) $row['projectstates_id']]['name'] ?? null,
                 'state_color' => $states[(int) $row['projectstates_id']]['color'] ?? self::PHASE_DEFAULT_COLOR,
@@ -382,9 +388,300 @@ class Dashboard extends CommonGLPI
             ];
         }
 
-        // Responsáveis (equipe User) das tarefas listadas
-        if (!empty($tasks)) {
-            $ids   = array_column($tasks, 'id');
+        self::attachTeamAndChildren($tasks);
+
+        return $tasks;
+    }
+
+    /**
+     * Subtarefas DIRETAS de uma tarefa (expansão na tabela "Tarefas em
+     * andamento" — Fix 2). Inclui concluídas, como nos subprojetos; cada
+     * filha traz sua própria contagem para expansão recursiva.
+     */
+    public static function getOpenTaskChildren(int $parentId): array
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        $states = self::getStatesMap();
+        $now    = time();
+        $tasks  = [];
+
+        foreach (
+            $DB->request([
+                'SELECT'    => [
+                    'glpi_projecttasks.id', 'glpi_projecttasks.name',
+                    'glpi_projecttasks.percent_done', 'glpi_projecttasks.plan_end_date',
+                    'glpi_projecttasks.plan_start_date', 'glpi_projecttasks.real_start_date',
+                    'glpi_projecttasks.projectstates_id',
+                    'glpi_projects.name AS project_name',
+                ],
+                'FROM'      => 'glpi_projecttasks',
+                'LEFT JOIN' => [
+                    'glpi_projects' => [
+                        'ON' => [
+                            'glpi_projecttasks' => 'projects_id',
+                            'glpi_projects'     => 'id',
+                        ],
+                    ],
+                ],
+                'WHERE' => ['glpi_projecttasks.projecttasks_id' => $parentId],
+                'ORDER' => 'glpi_projecttasks.plan_end_date ASC',
+            ]) as $row
+        ) {
+            $pct = (int) $row['percent_done'];
+
+            $tasks[] = [
+                'id'          => (int) $row['id'],
+                'name'        => $row['name'],
+                'url'         => ProjectTask::getFormURLWithID((int) $row['id']),
+                'project'     => $row['project_name'] ?? '—',
+                'team'        => [],
+                'children'    => 0,
+                'percent'     => $pct,
+                'state_name'  => $states[(int) $row['projectstates_id']]['name'] ?? null,
+                'state_color' => $states[(int) $row['projectstates_id']]['color'] ?? self::PHASE_DEFAULT_COLOR,
+                'end'         => $row['plan_end_date'] ? date('d/m/Y', strtotime($row['plan_end_date'])) : null,
+                'is_overdue'  => !empty($row['plan_end_date'])
+                    && strtotime($row['plan_end_date']) < $now
+                    && $pct < 100,
+                'deadline'    => Deadline::compute(
+                    $row['plan_start_date'],
+                    $row['real_start_date'],
+                    $row['plan_end_date'],
+                    $pct
+                ),
+            ];
+        }
+
+        self::attachTeamAndChildren($tasks);
+
+        return $tasks;
+    }
+
+    /**
+     * Anexa, em consultas únicas, os responsáveis (equipe User) e a
+     * contagem de subtarefas diretas às tarefas listadas.
+     */
+    private static function attachTeamAndChildren(array &$tasks): void
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        if (empty($tasks)) {
+            return;
+        }
+        $ids = array_column($tasks, 'id');
+
+        $byTid = [];
+        foreach (
+            $DB->request([
+                'SELECT'    => [
+                    'glpi_projecttaskteams.projecttasks_id',
+                    'glpi_users.realname', 'glpi_users.firstname',
+                    'glpi_users.name AS login',
+                ],
+                'FROM'      => 'glpi_projecttaskteams',
+                'LEFT JOIN' => [
+                    'glpi_users' => [
+                        'ON' => [
+                            'glpi_projecttaskteams' => 'items_id',
+                            'glpi_users'            => 'id',
+                        ],
+                    ],
+                ],
+                'WHERE' => [
+                    'glpi_projecttaskteams.itemtype'        => 'User',
+                    'glpi_projecttaskteams.projecttasks_id' => $ids,
+                ],
+            ]) as $row
+        ) {
+            $label = trim(($row['realname'] ?? '') . ' ' . ($row['firstname'] ?? ''));
+            $byTid[(int) $row['projecttasks_id']][] = $label !== '' ? $label : ($row['login'] ?? '?');
+        }
+
+        // Contagem em PHP: o iterator do GLPI 11 descarta os campos do
+        // SELECT quando COUNT+GROUPBY são usados juntos (linhas voltavam
+        // sem projecttasks_id) — contamos aqui, tabela é pequena.
+        $counts = [];
+        foreach (
+            $DB->request([
+                'SELECT' => 'projecttasks_id',
+                'FROM'   => 'glpi_projecttasks',
+                'WHERE'  => ['projecttasks_id' => $ids],
+            ]) as $row
+        ) {
+            $pid          = (int) $row['projecttasks_id'];
+            $counts[$pid] = ($counts[$pid] ?? 0) + 1;
+        }
+
+        foreach ($tasks as &$t) {
+            $t['team']     = $byTid[$t['id']] ?? [];
+            $t['children'] = $counts[$t['id']] ?? 0;
+        }
+        unset($t);
+    }
+
+    /**
+     * "Minhas tarefas" (Etapa 3, Bloco 1) — tarefas em que o usuário está
+     * na equipe (itemtype User), agrupadas por projeto, com KPIs pessoais.
+     *
+     * As tarefas usam o MESMO formato de getTasks() para reaproveitar a
+     * renderização e a edição inline do JS (taskTableHtml/bindTaskRows).
+     *
+     * @param int  $userId      usuário logado
+     * @param bool $includeDone inclui tarefas 100% concluídas na listagem
+     *                          (o KPI "done" é contado sempre)
+     */
+    public static function getMyTasks(int $userId, bool $includeDone = false): array
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        $states = self::getStatesMap();
+        $now    = time();
+
+        $kpis = ['open' => 0, 'overdue' => 0, 'nodates' => 0, 'done' => 0];
+
+        $groups  = []; // project_id => ['project_id','project_name','project_url','tasks']
+        $taskIds = [];
+
+        foreach (
+            $DB->request([
+                'SELECT'     => [
+                    'glpi_projecttasks.id', 'glpi_projecttasks.name',
+                    'glpi_projecttasks.percent_done',
+                    'glpi_projecttasks.plan_start_date', 'glpi_projecttasks.plan_end_date',
+                    'glpi_projecttasks.real_start_date',
+                    'glpi_projecttasks.projectstates_id',
+                    'glpi_projecttasks.projecttasks_id',
+                    'glpi_projecttasks.auto_percent_done',
+                    'parent_task.name AS parent_name',
+                    'glpi_projects.id AS project_id',
+                    'glpi_projects.name AS project_name',
+                ],
+                'FROM'       => 'glpi_projecttaskteams',
+                'INNER JOIN' => [
+                    'glpi_projecttasks' => [
+                        'ON' => [
+                            'glpi_projecttaskteams' => 'projecttasks_id',
+                            'glpi_projecttasks'     => 'id',
+                        ],
+                    ],
+                    'glpi_projects' => [
+                        'ON' => [
+                            'glpi_projecttasks' => 'projects_id',
+                            'glpi_projects'     => 'id',
+                        ],
+                    ],
+                ],
+                'LEFT JOIN'  => [
+                    'glpi_projecttasks AS parent_task' => [
+                        'ON' => [
+                            'glpi_projecttasks' => 'projecttasks_id',
+                            'parent_task'       => 'id',
+                        ],
+                    ],
+                ],
+                'WHERE'      => [
+                    'glpi_projecttaskteams.itemtype' => 'User',
+                    'glpi_projecttaskteams.items_id' => $userId,
+                    'glpi_projects.is_deleted'       => 0,
+                    'glpi_projects.is_template'      => 0,
+                ] + getEntitiesRestrictCriteria('glpi_projects'),
+                'ORDER'      => ['glpi_projects.name', 'glpi_projecttasks.plan_end_date'],
+            ]) as $row
+        ) {
+            $pct      = (int) $row['percent_done'];
+            $deadline = Deadline::compute(
+                $row['plan_start_date'],
+                $row['real_start_date'],
+                $row['plan_end_date'],
+                $pct
+            );
+
+            // KPIs pessoais (contados sobre TODAS as tarefas do usuário)
+            if ($pct >= 100) {
+                $kpis['done']++;
+                if (!$includeDone) {
+                    continue;
+                }
+            } else {
+                $kpis['open']++;
+                if (!empty($row['plan_end_date']) && strtotime($row['plan_end_date']) < $now) {
+                    $kpis['overdue']++;
+                }
+                if ($deadline['state'] === 'none') {
+                    $kpis['nodates']++;
+                }
+            }
+
+            $pid = (int) $row['project_id'];
+            if (!isset($groups[$pid])) {
+                $groups[$pid] = [
+                    'project_id'   => $pid,
+                    'project_name' => $row['project_name'],
+                    'project_url'  => Project::getFormURLWithID($pid),
+                    'tasks'        => [],
+                ];
+            }
+
+            $id        = (int) $row['id'];
+            $taskIds[] = $id;
+            $stateId   = (int) $row['projectstates_id'];
+
+            $groups[$pid]['tasks'][] = [
+                'id'           => $id,
+                'name'         => $row['name'],
+                'url'          => ProjectTask::getFormURLWithID($id),
+                'depth'        => 0,
+                'parent_id'    => (int) $row['projecttasks_id'],
+                'parent_name'  => $row['parent_name'],
+                'auto_percent' => (bool) $row['auto_percent_done'],
+                'percent'      => $pct,
+                'start'       => $row['plan_start_date'] ? date('d/m/Y', strtotime($row['plan_start_date'])) : null,
+                'end'         => $row['plan_end_date'] ? date('d/m/Y', strtotime($row['plan_end_date'])) : null,
+                'start_iso'   => $row['plan_start_date'] ? substr($row['plan_start_date'], 0, 10) : '',
+                'end_iso'     => $row['plan_end_date'] ? substr($row['plan_end_date'], 0, 10) : '',
+                'state_id'    => $stateId,
+                'state_name'  => $states[$stateId]['name'] ?? '—',
+                'state_color' => $states[$stateId]['color'] ?? self::PHASE_DEFAULT_COLOR,
+                'team'        => [],
+                'deadline'    => $deadline,
+            ];
+        }
+
+        // Árvore dentro de cada projeto: filha aninhada sob a mãe quando a
+        // mãe também está na lista do usuário; caso contrário fica na raiz
+        // (o JS mostra "Mãe › " como contexto via parent_name).
+        foreach ($groups as &$g) {
+            $inList = [];
+            foreach ($g['tasks'] as $t) {
+                $inList[$t['id']] = true;
+            }
+            $byParent = [];
+            foreach ($g['tasks'] as $t) {
+                $key = isset($inList[$t['parent_id']]) ? $t['parent_id'] : 0;
+                if ($key !== 0) {
+                    $t['parent_name'] = null; // aninhada: dispensa o contexto textual
+                }
+                $byParent[$key][] = $t;
+            }
+            $ordered = [];
+            $walk = function (int $parentId, int $depth) use (&$walk, &$ordered, $byParent) {
+                foreach ($byParent[$parentId] ?? [] as $t) {
+                    $t['depth'] = $depth;
+                    $ordered[]  = $t;
+                    $walk($t['id'], $depth + 1);
+                }
+            };
+            $walk(0, 0);
+            $g['tasks'] = $ordered;
+        }
+        unset($g);
+
+        // Equipe completa (User) das tarefas listadas, em consulta única
+        if (!empty($taskIds)) {
             $byTid = [];
             foreach (
                 $DB->request([
@@ -404,20 +701,26 @@ class Dashboard extends CommonGLPI
                     ],
                     'WHERE' => [
                         'glpi_projecttaskteams.itemtype'        => 'User',
-                        'glpi_projecttaskteams.projecttasks_id' => $ids,
+                        'glpi_projecttaskteams.projecttasks_id' => $taskIds,
                     ],
                 ]) as $row
             ) {
                 $label = trim(($row['realname'] ?? '') . ' ' . ($row['firstname'] ?? ''));
                 $byTid[(int) $row['projecttasks_id']][] = $label !== '' ? $label : ($row['login'] ?? '?');
             }
-            foreach ($tasks as &$t) {
-                $t['team'] = $byTid[$t['id']] ?? [];
+            foreach ($groups as &$g) {
+                foreach ($g['tasks'] as &$t) {
+                    $t['team'] = $byTid[$t['id']] ?? [];
+                }
+                unset($t);
             }
-            unset($t);
+            unset($g);
         }
 
-        return $tasks;
+        return [
+            'kpis'   => $kpis,
+            'groups' => array_values($groups),
+        ];
     }
 
     /**
@@ -567,7 +870,7 @@ class Dashboard extends CommonGLPI
                 'SELECT' => [
                     'id', 'name', 'projecttasks_id', 'percent_done',
                     'plan_start_date', 'plan_end_date', 'real_start_date',
-                    'projectstates_id',
+                    'projectstates_id', 'auto_percent_done',
                 ],
                 'FROM'  => 'glpi_projecttasks',
                 'WHERE' => ['projects_id' => $projectId],
@@ -611,11 +914,12 @@ class Dashboard extends CommonGLPI
             foreach ($byParent[$parentId] ?? [] as $t) {
                 $id    = (int) $t['id'];
                 $out[] = [
-                    'id'         => $id,
-                    'name'       => $t['name'],
-                    'url'        => ProjectTask::getFormURLWithID($id),
-                    'depth'      => $depth,
-                    'percent'    => (int) $t['percent_done'],
+                    'id'           => $id,
+                    'name'         => $t['name'],
+                    'url'          => ProjectTask::getFormURLWithID($id),
+                    'depth'        => $depth,
+                    'auto_percent' => (bool) $t['auto_percent_done'],
+                    'percent'      => (int) $t['percent_done'],
                     'start'      => $t['plan_start_date'] ? date('d/m/Y', strtotime($t['plan_start_date'])) : null,
                     'end'        => $t['plan_end_date'] ? date('d/m/Y', strtotime($t['plan_end_date'])) : null,
                     'start_iso'  => $t['plan_start_date'] ? substr($t['plan_start_date'], 0, 10) : '',

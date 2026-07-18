@@ -20,6 +20,9 @@
                     <a href="#overview"><i class="ti ti-layout-dashboard"></i>{{ __('Visão geral', 'projectplus') }}</a>
                 </li>
                 <li class="projectplus-sidebar__item">
+                    <a href="{{ plugin_web_dir }}/front/mytasks.php"><i class="ti ti-user-check"></i>{{ __('Minhas tarefas', 'projectplus') }}</a>
+                </li>
+                <li class="projectplus-sidebar__item">
                     <a href="#projects-table"><i class="ti ti-folders"></i>{{ __('Projetos', 'projectplus') }}</a>
                 </li>
                 <li class="projectplus-sidebar__item">
@@ -256,6 +259,7 @@
                 <table class="projectplus-table">
                     <thead>
                         <tr>
+                            <th></th>
                             <th>{{ __('Tarefa', 'projectplus') }}</th>
                             <th>{{ __('Projeto', 'projectplus') }}</th>
                             <th>{{ __('Responsáveis', 'projectplus') }}</th>
@@ -267,7 +271,14 @@
                     </thead>
                     <tbody>
                     {% for task in open_tasks %}
-                        <tr>
+                        <tr data-depth="0">
+                            <td class="projectplus-expand">
+                                {% if task.children > 0 %}
+                                    <button type="button" class="projectplus-expand__btn pp-taskexp"
+                                            title="{{ task.children }} subtarefa(s)"
+                                            data-task-id="{{ task.id }}">+</button>
+                                {% endif %}
+                            </td>
                             <td><a href="{{ task.url }}" target="_blank">{{ task.name }}</a></td>
                             <td>{{ task.project }}</td>
                             <td>
@@ -314,7 +325,7 @@
                             </td>
                         </tr>
                     {% else %}
-                        <tr><td colspan="7">{{ __('Nenhuma tarefa no período', 'projectplus') }}</td></tr>
+                        <tr><td colspan="8">{{ __('Nenhuma tarefa no período', 'projectplus') }}</td></tr>
                     {% endfor %}
                     </tbody>
                 </table>
