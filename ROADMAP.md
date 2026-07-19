@@ -2,7 +2,7 @@
 
 **Plugin de gestão avançada de projetos para GLPI 11**
 Repositório: [github.com/teckcomp/glpi-plugin-projectplus](https://github.com/teckcomp/glpi-plugin-projectplus) · Licença GPL-2.0
-Versão atual: **v0.5.0-alpha** · Atualizado em 19/07/2026
+Versão atual: **v0.5.0-alpha** · Atualizado em 19/07/2026 (Etapa 5 concluída — commit `a9862f1`)
 
 ---
 
@@ -70,12 +70,12 @@ Versão atual: **v0.5.0-alpha** · Atualizado em 19/07/2026
   - Regra do percentual: só o interruptor automático/manual (`auto_percent_done`), com default ligado quando o item tem filhos
 - Modelo em JSON: `{ project:{...}, tasks:[...], subprojects:[...] }` na tabela `glpi_plugin_projectplus_templates.structure`
 
-## 🔶 Etapa 5 — Relatórios `em andamento`
+## ✅ Etapa 5 — Relatórios `concluída em 19/07/2026`
 
 - [x] **Bloco 1** — Tela "Relatórios" na sidebar (mesmo direito da Visão geral) com exportação CSV de três conjuntos de dados: Projetos (fase, tipo, gestor, % concluído, datas, orçamento), Tarefas (projeto, tarefa mãe, fase, tipo, responsáveis, datas, atraso, bloqueio) e Custos (mesma consolidação da tela Orçamento, linha a linha). Filtro por projeto raiz (+ descendentes), igual ao da tela Orçamento. CSV com `;` e BOM UTF-8 para abrir certo no Excel PT-BR.
 - [x] **Bloco 1.1** — Filtros extras na tela Relatórios: Tarefa (busca por nome), Gestor/Responsável (mesmo campo para gestor de projeto e responsável de tarefa), Fase e Tipo (campo único com optgroup "Tipo de projeto"/"Tipo de tarefa", cada um só filtra sua tabela). Valem para Projetos e Tarefas; Custos continua só com o filtro de Projeto. Botão "Limpar". CSV de cada bloco reflete os filtros aplicados na tela.
 - [x] **Bloco 1.2** — Filtro de Período (De/Até) na tela Relatórios, reaproveitando `Dashboard::periodCriteria` (mesma semântica da Visão geral: sobreposição de intervalo pelo planejado, itens sem data sempre entram). Vale para Projetos e Tarefas, não para Custos.
-- [ ] Burndown por projeto ← RETOMAR DAQUI
+- [x] **Bloco 2** — Burndown por projeto: **validado em homologação e commitado/pushado em 19/07/2026** (commit `a9862f1` em `origin/master`). Novo card "Burndown" na tela Relatórios, com seletor de projeto único (raiz + descendentes, mesmo escopo de Tarefas) e toggle **Semana / Dia / Mês**. Burndown por CONTAGEM de tarefas (não duração). Conclusão de cada tarefa aproximada por `date_mod` quando `percent_done = 100` (sem histórico diário de snapshot). O servidor devolve só dados brutos (total de tarefas + lista de conclusões); toda a agregação por semana/dia/mês e o desenho do gráfico (SVG puro, sem lib externa) acontecem no cliente — trocar o toggle não gera nova requisição. O passo mensal é de calendário, ancorado em "início + k meses" (mês curto não desalinha os ticks seguintes). Linha "ideal" usa as datas planejadas do próprio projeto (separadas do eixo do gráfico, que se estende até hoje em projetos atrasados).
 - (Relatório de custos consolidado em tela já entregue no Bloco 5)
 
 ## 📍 Etapa 6 — Refinamento e pré-produção
