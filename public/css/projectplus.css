@@ -603,3 +603,141 @@
     .projectplus-main { padding: 0; }
     .projectplus-card { border: 1px solid #ccc; page-break-inside: avoid; }
 }
+
+/* ===== Etapa 3 — Timeline (Gantt somente-leitura) ===== */
+
+.pp-tl-controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.pp-tl-zoom { display: inline-flex; border: 1px solid #c6d0d9; border-radius: 6px; overflow: hidden; }
+.pp-tl-zoom__btn {
+    border: 0; background: #fff; color: #5a7684; cursor: pointer;
+    padding: 6px 14px; font-size: 0.82rem; font-weight: 600;
+}
+.pp-tl-zoom__btn + .pp-tl-zoom__btn { border-left: 1px solid #e1e5ea; }
+.pp-tl-zoom__btn:hover { background: #eaf4fb; }
+.pp-tl-zoom__btn--active { background: #4a9fd4; color: #fff; }
+
+.pp-tl-card { padding: 12px 0 4px; overflow: hidden; }
+.pp-tl-legend {
+    display: flex; gap: 18px; flex-wrap: wrap; align-items: center;
+    padding: 0 16px 10px; font-size: 0.76rem; color: #5a7684;
+}
+.pp-tl-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.pp-tl-legend i { display: inline-block; }
+.pp-tl-legend__bar {
+    width: 26px; height: 10px; border-radius: 5px;
+    background: rgba(74, 159, 212, .3); position: relative; overflow: hidden;
+}
+.pp-tl-legend__bar::after {
+    content: ''; position: absolute; inset: 0 50% 0 0; background: #4a9fd4;
+}
+.pp-tl-legend__ms {
+    width: 9px; height: 9px; background: #4a9fd4; transform: rotate(45deg);
+    border-radius: 2px;
+}
+.pp-tl-legend__today { width: 2px; height: 14px; background: #d9534f; }
+.pp-tl-legend__overdue {
+    width: 26px; height: 10px; border-radius: 5px;
+    background: rgba(217, 83, 79, .18); border: 1.5px solid #d9534f;
+}
+
+.pp-tl-scroll { overflow-x: auto; overflow-y: hidden; position: relative; }
+.pp-tl-empty { padding: 14px 16px; }
+.pp-tl-canvas { position: relative; }
+
+/* Cabeçalho: meses + ticks (dias/semanas) */
+.pp-tl-head { display: flex; }
+.pp-tl-head__label {
+    flex: 0 0 280px; width: 280px; position: sticky; left: 0; z-index: 30;
+    background: #fff; border-bottom: 1px solid #e1e5ea; border-right: 1px solid #e1e5ea;
+    display: flex; align-items: flex-end; padding: 4px 10px 6px;
+    font-size: 0.72rem; font-weight: 700; color: #8a97a5; text-transform: uppercase;
+    letter-spacing: .4px;
+}
+.pp-tl-head__track { position: relative; border-bottom: 1px solid #e1e5ea; }
+.pp-tl-months { display: flex; }
+.pp-tl-month {
+    flex: 0 0 auto; font-size: 0.74rem; font-weight: 700; color: #16323f;
+    padding: 4px 0 2px 8px; border-left: 1px solid #e1e5ea;
+    white-space: nowrap; overflow: hidden; box-sizing: border-box;
+}
+.pp-tl-ticks { display: flex; position: relative; height: 20px; }
+.pp-tl-ticks--empty { height: 8px; }
+.pp-tl-tick {
+    flex: 0 0 auto; font-size: 0.66rem; color: #8a97a5; text-align: center;
+    border-left: 1px solid #f0f2f5; box-sizing: border-box; line-height: 20px;
+}
+.pp-tl-tick--we { background: #f7fafc; color: #b4c0cc; }
+.pp-tl-wtick {
+    position: absolute; top: 0; font-size: 0.66rem; color: #8a97a5;
+    border-left: 1px solid #e7edf2; padding-left: 3px; line-height: 20px;
+    white-space: nowrap;
+}
+
+/* Corpo: grade + linhas */
+.pp-tl-body { position: relative; }
+.pp-tl-gline {
+    position: absolute; top: 0; bottom: 0; width: 0;
+    border-left: 1px solid #eef1f4; z-index: 1;
+}
+.pp-tl-todayline {
+    position: absolute; top: 0; bottom: 0; width: 0;
+    border-left: 2px solid #d9534f; z-index: 5; opacity: .75;
+}
+
+.pp-tl-row { display: flex; align-items: stretch; position: relative; z-index: 10; }
+.pp-tl-row__label {
+    flex: 0 0 280px; width: 280px; position: sticky; left: 0; z-index: 20;
+    background: #fff; border-right: 1px solid #e1e5ea; border-bottom: 1px solid #f0f2f5;
+    display: flex; align-items: center; gap: 6px;
+    font-size: 0.84rem; min-height: 32px; box-sizing: border-box;
+    padding-right: 8px; white-space: nowrap; overflow: hidden;
+}
+.pp-tl-row__label a {
+    color: #2c3e50; text-decoration: none;
+    overflow: hidden; text-overflow: ellipsis; flex: 0 1 auto;
+}
+.pp-tl-row__label a:hover { color: #065a82; text-decoration: underline; }
+.pp-tl-row__track { position: relative; border-bottom: 1px solid #f0f2f5; min-height: 32px; }
+
+.pp-tl-row--project { z-index: 11; }
+.pp-tl-row--project .pp-tl-row__label,
+.pp-tl-row--project .pp-tl-row__track { background: #f7fafc; min-height: 36px; }
+.pp-tl-row--project .pp-tl-row__label a { font-weight: 700; color: #16323f; }
+.pp-tl-row--done .pp-tl-row__label a { opacity: .55; text-decoration: line-through; }
+
+.pp-tl-caret {
+    border: 0; background: none; cursor: pointer; color: #5a7684;
+    font-size: 0.78rem; padding: 0 2px; flex: 0 0 auto;
+}
+.pp-tl-caret:disabled { opacity: .35; cursor: default; }
+.pp-tl-chip { flex: 0 0 auto; margin-left: 2px; font-size: 0.68rem; max-width: 90px; }
+
+/* Barras, marcos e "sem datas" */
+.pp-tl-bar {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    height: 14px; border-radius: 7px; z-index: 12; overflow: hidden;
+    background: color-mix(in srgb, var(--pp-tl-color, #8a97a5) 28%, #fff);
+    border: 1px solid color-mix(in srgb, var(--pp-tl-color, #8a97a5) 45%, transparent);
+    box-sizing: border-box; display: block;
+}
+.pp-tl-bar__fill {
+    display: block; height: 100%;
+    background: var(--pp-tl-color, #8a97a5); border-radius: 7px 0 0 7px;
+}
+.pp-tl-bar--project { height: 18px; border-radius: 9px; }
+.pp-tl-bar--overdue { border: 1.5px solid #d9534f; }
+.pp-tl-bar:hover {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--pp-tl-color, #8a97a5) 35%, transparent);
+}
+.pp-tl-ms {
+    position: absolute; top: 50%; width: 11px; height: 11px; z-index: 12;
+    transform: translate(-50%, -50%) rotate(45deg);
+    background: var(--pp-tl-color, #8a97a5); border-radius: 2px; display: block;
+}
+.pp-tl-ms--overdue { box-shadow: 0 0 0 2px rgba(217, 83, 79, .5); }
+.pp-tl-nodates {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    font-size: 0.7rem; color: #8a97a5; background: #f0f2f5;
+    border: 1px dashed #b4c0cc; border-radius: 8px; padding: 1px 8px;
+    cursor: help; white-space: nowrap; z-index: 12;
+}

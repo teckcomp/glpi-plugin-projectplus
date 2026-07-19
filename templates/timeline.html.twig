@@ -1,0 +1,101 @@
+{# ProjectPlus — "Timeline" (Etapa 3, bloco final): Gantt somente-leitura #}
+
+<link rel="stylesheet" href="{{ plugin_web_dir }}/css/projectplus.css">
+
+<div class="projectplus-app" id="projectplus-timeline">
+
+    {# ================= COLUNA ESQUERDA: título + sidebar ================= #}
+    <div class="projectplus-left">
+        <div class="projectplus-pagetitle">
+            <h2>{{ __('Projetos', 'projectplus') }}</h2>
+            <span>{{ __('Linha do tempo de projetos e tarefas', 'projectplus') }}</span>
+        </div>
+        <nav class="projectplus-sidebar">
+            <ul>
+                <li class="projectplus-sidebar__item">
+                    <a href="{{ plugin_web_dir }}/front/dashboard.php"><i class="ti ti-layout-dashboard"></i>{{ __('Visão geral', 'projectplus') }}</a>
+                </li>
+                <li class="projectplus-sidebar__item">
+                    <a href="{{ plugin_web_dir }}/front/mytasks.php"><i class="ti ti-user-check"></i>{{ __('Minhas tarefas', 'projectplus') }}</a>
+                </li>
+                <li class="projectplus-sidebar__item">
+                    <a href="{{ glpi_root }}/front/project.form.php?showglobalkanban=1"><i class="ti ti-layout-kanban"></i>{{ __('Kanban global', 'projectplus') }}</a>
+                </li>
+                <li class="projectplus-sidebar__item projectplus-sidebar__item--active">
+                    <a href="{{ plugin_web_dir }}/front/timeline.php"><i class="ti ti-stopwatch"></i>{{ __('Timeline', 'projectplus') }}</a>
+                </li>
+                <li class="projectplus-sidebar__item projectplus-sidebar__item--soon">
+                    <span><i class="ti ti-calendar"></i>{{ __('Calendário', 'projectplus') }}</span><em>{{ __('em breve', 'projectplus') }}</em>
+                </li>
+                <li class="projectplus-sidebar__item projectplus-sidebar__item--soon">
+                    <span><i class="ti ti-users"></i>{{ __('Recursos', 'projectplus') }}</span><em>{{ __('em breve', 'projectplus') }}</em>
+                </li>
+                <li class="projectplus-sidebar__item">
+                    <a href="{{ plugin_web_dir }}/front/costs.php"><i class="ti ti-coin"></i>{{ __('Orçamento', 'projectplus') }}</a>
+                </li>
+                <li class="projectplus-sidebar__item projectplus-sidebar__item--soon">
+                    <span><i class="ti ti-report-analytics"></i>{{ __('Relatórios', 'projectplus') }}</span><em>{{ __('em breve', 'projectplus') }}</em>
+                </li>
+                <li class="projectplus-sidebar__item">
+                    <a href="{{ plugin_web_dir }}/front/config.form.php"><i class="ti ti-settings"></i>{{ __('Configurações', 'projectplus') }}</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+
+    {# ================= ÁREA PRINCIPAL ================= #}
+    <div class="projectplus-main">
+
+        <div class="projectplus-header">
+            <div class="pp-tl-controls">
+                <div class="pp-tl-zoom" role="group" aria-label="{{ __('Zoom', 'projectplus') }}">
+                    <button type="button" class="pp-tl-zoom__btn" data-pp-zoom="day">{{ __('Dia', 'projectplus') }}</button>
+                    <button type="button" class="pp-tl-zoom__btn pp-tl-zoom__btn--active" data-pp-zoom="week">{{ __('Semana', 'projectplus') }}</button>
+                    <button type="button" class="pp-tl-zoom__btn" data-pp-zoom="month">{{ __('Mês', 'projectplus') }}</button>
+                </div>
+                <button type="button" class="projectplus-btn projectplus-btn--ghost" id="pp-tl-today">
+                    {{ __('Hoje', 'projectplus') }}
+                </button>
+                <label class="pp-mt-toggle">
+                    <input type="checkbox" id="pp-tl-done">
+                    {{ __('Mostrar tarefas concluídas', 'projectplus') }}
+                </label>
+            </div>
+            <div class="projectplus-actions">
+                <input type="search" class="pp-tablesearch" id="pp-tl-search"
+                       placeholder="{{ __('Buscar projeto ou tarefa…', 'projectplus') }}"
+                       aria-label="{{ __('Buscar projeto ou tarefa', 'projectplus') }}">
+                <a class="projectplus-btn projectplus-btn--ghost" href="{{ plugin_web_dir }}/front/dashboard.php">
+                    {{ __('Visão geral', 'projectplus') }}
+                </a>
+            </div>
+        </div>
+
+        <div class="projectplus-card projectplus-card--full pp-tl-card">
+            {% if only_mine %}
+                <p class="projectplus-muted" style="padding: 0 16px 8px; margin: 0;">
+                    <i class="ti ti-user-check"></i>
+                    {{ __('Exibindo somente as suas tarefas.', 'projectplus') }}
+                </p>
+            {% endif %}
+            <div class="pp-tl-legend">
+                <span><i class="pp-tl-legend__bar"></i>{{ __('Período planejado (preenchimento = progresso)', 'projectplus') }}</span>
+                <span><i class="pp-tl-legend__ms"></i>{{ __('Marco (só uma data planejada)', 'projectplus') }}</span>
+                <span><i class="pp-tl-legend__today"></i>{{ __('Hoje', 'projectplus') }}</span>
+                <span><i class="pp-tl-legend__overdue"></i>{{ __('Em atraso', 'projectplus') }}</span>
+            </div>
+            <div id="pp-tl" class="pp-tl-scroll">
+                <p class="projectplus-muted">{{ __('Carregando a timeline…', 'projectplus') }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script id="pp-tl-data" type="application/json">{{ timeline|json_encode|raw }}</script>
+
+<script src="{{ plugin_web_dir }}/js/timeline.js"></script>
+<script>
+    if (window.ProjectPlusTimeline && typeof window.ProjectPlusTimeline.init === 'function') {
+        window.ProjectPlusTimeline.init();
+    }
+</script>
