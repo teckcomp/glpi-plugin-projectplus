@@ -34,6 +34,12 @@ TemplateRenderer::getInstance()->display(
         'glpi_root'      => $CFG_GLPI['root_doc'] ?? '',
         'kanban'         => Kanban::getBoardData(),
         'can_templates'  => Session::haveRight('config', UPDATE),
+        // Etapa 7, Bloco 2a — arrastar-e-soltar: quem pode editar tarefa
+        // arrasta o cartão entre colunas (muda a fase). Token inicial para
+        // a 1ª chamada AJAX (ajax/task.php action=kanban_move); o JS
+        // rotaciona a cada resposta.
+        'can_edit'       => Session::haveRight('projecttask', UPDATE) || Session::haveRight('project', UPDATE),
+        'csrf_token'     => Session::getNewCSRFToken(),
     ]
 );
 

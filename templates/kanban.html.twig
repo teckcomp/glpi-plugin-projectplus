@@ -49,7 +49,10 @@
     </div>
 
     {# ================= ÁREA PRINCIPAL ================= #}
-    <div class="projectplus-main" id="pp-kb-widget">
+    <div class="projectplus-main" id="pp-kb-widget"
+         data-ajax-url="{{ plugin_web_dir }}/ajax/task.php"
+         data-csrf="{{ csrf_token }}"
+         data-can-edit="{{ can_edit ? '1' : '0' }}">
 
         <div class="projectplus-header">
             <div class="pp-kb-controls">
@@ -75,7 +78,11 @@
         <div class="projectplus-card projectplus-card--full pp-kb-card">
             <p class="projectplus-muted" style="padding: 0 16px 8px; margin: 0;">
                 <i class="ti ti-info-circle"></i>
-                {{ __('Bloco 1 — somente leitura por enquanto; arrastar-e-soltar entra no próximo bloco.', 'projectplus') }}
+                {% if can_edit %}
+                {{ __('Arraste um cartão entre as colunas para mudar a fase da tarefa.', 'projectplus') }}
+                {% else %}
+                {{ __('Somente leitura — você não tem permissão para alterar tarefas.', 'projectplus') }}
+                {% endif %}
             </p>
             <div class="pp-kb-scroll" data-role="board">
                 <p class="projectplus-muted">{{ __('Carregando o Kanban…', 'projectplus') }}</p>

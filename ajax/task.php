@@ -212,6 +212,48 @@ switch ($action) {
         pp_reply(['ok' => (bool) $ok]);
         break;
 
+    case 'kanban_move':
+        // Etapa 7, Bloco 2a — arrastar cartão entre colunas do Kanban =
+        // mudar a fase da tarefa. TRAVA por dependência: não deixa mover
+        // para uma fase FINALIZADA (is_finished=1) enquanto houver
+        // subtarefa aberta ou bloqueadora aberta (mesma regra da guarda de
+        // fase de projeto, onProjectPreUpdate).
+        if (!$canUpdate) {
+            pp_reply(['ok' => false, 'message' => __('Sem permissão', 'projectplus')]);
+        }
+        $task = new ProjectTask();
+        if (!$task->getFromDB((int) ($_POST['task_id'] ?? 0))) {
+            pp_reply(['ok' => false, 'message' => __('Tarefa não encontrada', 'projectplus')]);
+        }
+        $newState = (int) ($_POST['projectstates_id'] ?? 0);
+
+        if ($newState > 0 && in_array($newState, TaskDep::finishedStateIds(), true)) {
+            $reasons  = [];
+            if (($open = pp_open_children($task->getID())) > 0) {
+                $reasons[] = sprintf(
+                    _n('%d subtarefa aberta', '%d subtarefas abertas', $open, 'projectplus'),
+                    $open
+                );
+            }
+            $blockers = TaskDep::openBlockerNames($task->getID());
+            if (!empty($blockers)) {
+                $reasons[] = sprintf(
+                    __('bloqueada por: %s', 'projectplus'),
+                    implode(', ', array_slice($blockers, 0, 5)) . (count($blockers) > 5 ? '…' : '')
+                );
+            }
+            if (!empty($reasons)) {
+                pp_reply(['ok' => false, 'message' => sprintf(
+                    __('Não é possível mover para uma fase finalizada — %s', 'projectplus'),
+                    implode('; ', $reasons)
+                )]);
+            }
+        }
+
+        $ok = $task->update(['id' => $task->getID(), 'projectstates_id' => $newState]);
+        pp_reply(['ok' => (bool) $ok, 'task_id' => (int) $task->getID(), 'state_id' => $newState]);
+        break;
+
     default:
         http_response_code(400);
         pp_reply(['ok' => false, 'message' => 'ação inválida']);

@@ -501,7 +501,7 @@ class TaskDep extends CommonGLPI
     // ------------------------------------------------------------------
 
     /** IDs das fases marcadas como finalizadas (is_finished=1). */
-    private static function finishedStateIds(): array
+    public static function finishedStateIds(): array
     {
         /** @var \DBmysql $DB */
         global $DB;

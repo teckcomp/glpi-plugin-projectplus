@@ -59,7 +59,16 @@ class KanbanTab extends CommonDBTM
         $uid  = 'pp-kb-widget-tab-' . $projectId;
         $did  = 'pp-kb-data-tab-' . $projectId;
 
-        echo '<div class="pp-kb-widget pp-kb-widget--tab" id="' . htmlspecialchars($uid) . '">';
+        // Etapa 7, Bloco 2a — arrastar-e-soltar também na aba nativa:
+        // mesmas data-attributes que a tela cheia (endpoint AJAX, token
+        // inicial e flag de edição). O token é rotacionado pelo JS.
+        $ajaxUrl = \Plugin::getWebDir('projectplus') . '/ajax/task.php';
+        $canEdit = \Session::haveRight('projecttask', UPDATE) || \Session::haveRight('project', UPDATE);
+
+        echo '<div class="pp-kb-widget pp-kb-widget--tab" id="' . htmlspecialchars($uid) . '"'
+            . ' data-ajax-url="' . htmlspecialchars($ajaxUrl) . '"'
+            . ' data-csrf="' . htmlspecialchars(\Session::getNewCSRFToken()) . '"'
+            . ' data-can-edit="' . ($canEdit ? '1' : '0') . '">';
         echo '<div class="pp-kb-controls">';
         echo '<div class="pp-seg pp-kb-seg" role="group" aria-label="' . __('Agrupar por', 'projectplus') . '">';
         echo '<button type="button" class="pp-seg__btn pp-seg__btn--active" data-pp-lane="project">' . __('Projeto', 'projectplus') . '</button>';

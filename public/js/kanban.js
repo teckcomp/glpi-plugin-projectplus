@@ -1,5 +1,5 @@
 /**
- * ProjectPlus — Kanban avançado (Etapa 7, Bloco 1 + 1.1 + 1.2 + 1.3).
+ * ProjectPlus — Kanban avançado (Etapa 7, Bloco 1 + 1.1 + 1.2 + 1.3 + 2a).
  *
  * Board próprio do plugin, HTML/JS puro. Carregado GLOBALMENTE em toda
  * página do GLPI (setup.php), porque também é usado dentro da aba
@@ -12,21 +12,20 @@
  * haver mais de um widget na mesma página (ex.: várias abas), cada um
  * com seu próprio estado — nada é compartilhado em módulo.
  *
- * Bloco 1.2 (ajustes pós-validação): por padrão só aparecem, como
- * cartão, as tarefas de TOPO atribuídas DIRETAMENTE ao projeto da lane
- * (nada de subprojeto "vazando" pra lane do pai). Subprojeto e subtarefa
- * (tarefa mãe/filha) viram estruturas expansíveis por um botão "+",
- * mesmo espírito do "+"/"−" que a Visão geral já usa pra subprojeto —
- * mas 100% client-side aqui, já que todo o payload já chega de uma vez.
+ * Swimlanes: por Projeto (árvore de projeto raiz + subprojetos, com
+ * "+"/"−" nas lanes) ou por Responsável. TODAS as tarefas aparecem como
+ * cartão na grade, cada uma na sua raia e na coluna da fase dela — a
+ * SUBTAREFA é um cartão comum, só marcada com a tag "Subtarefa da tarefa
+ * …" (sem aninhar/esconder; decisão do usuário: menos regra = menos bug).
  *
- * Interações: alternar swimlane (Projeto / Responsável), expandir/
- * recolher subprojeto (lane) e subtarefa (dentro do cartão), mostrar/
- * ocultar concluídas, busca. Redesenha 100% no cliente ao trocar
- * qualquer controle — mesmo padrão do toggle Semana/Dia/Mês do burndown.
+ * Interações: alternar swimlane (Projeto / Responsável), expandir/recolher
+ * subprojeto (lane), mostrar/ocultar concluídas, busca. Redesenha 100% no
+ * cliente ao trocar qualquer controle.
  *
- * SOMENTE LEITURA neste bloco: clique no cartão abre a ficha nativa da
- * tarefa em nova aba. Arrastar-e-soltar com persistência fica para o
- * Bloco 2.
+ * Bloco 2a: arrastar cartão entre COLUNAS muda a fase da tarefa (POST em
+ * ajax/task.php action=kanban_move, token rotacionado; trava por
+ * dependência p/ fase finalizada). Só quem pode editar (data-can-edit)
+ * arrasta; clique no cartão abre a ficha nativa da tarefa em nova aba.
  */
 (function () {
     'use strict';
@@ -65,8 +64,12 @@
             query: '',
             data: data,
             expandedLanes: new Set(),  // ids de PROJETO cujos subprojetos estão visíveis
-            expandedTasks: new Set(),  // ids de TAREFA cujas subtarefas estão visíveis
-            _holder: holder,           // referência estável p/ handlers montados dentro dos cartões
+            _holder: holder,           // referência estável p/ handlers de re-render
+            // Bloco 2a — arrastar-e-soltar (mudar fase): endpoint + token
+            // (rotacionado a cada resposta) + permissão de edição.
+            ajaxUrl: root.dataset.ajaxUrl || null,
+            csrf: root.dataset.csrf || null,
+            canEdit: root.dataset.canEdit === '1',
         };
 
         const laneBtns = root.querySelectorAll('.pp-kb-seg .pp-seg__btn');
@@ -136,35 +139,10 @@
         const data    = state.data;
         const columns = data.columns;
 
-        // Só tarefas de TOPO (sem tarefa-mãe) viram cartão na grade —
-        // subtarefa fica disponível em childrenOf p/ aninhar no cartão-mãe.
-        const childrenOf = {};
-        data.cards.forEach(function (c) {
-            if (c.task_parent_id) {
-                childrenOf[c.task_parent_id] = childrenOf[c.task_parent_id] || [];
-                childrenOf[c.task_parent_id].push(c);
-            }
-        });
-
-        const topLevel = data.cards.filter(function (c) { return !c.task_parent_id; });
+        // Mapa id -> cartão (p/ achar o nome da mãe na tag da subtarefa).
+        const byId = {};
+        data.cards.forEach(function (c) { byId[c.id] = c; });
         const q = state.query;
-        const cards = topLevel.filter(function (c) {
-            if (q === '') {
-                // sem busca: só o filtro de concluídas
-                return state.showDone || !c.is_done;
-            }
-            // com busca: o cartão de topo aparece se ELE OU qualquer
-            // subtarefa (em qualquer nível) casar — assim "002" encontra a
-            // subtarefa e traz junto o cartão-mãe que a contém (ponto do
-            // usuário: subtarefa não entrava na busca).
-            return subtreeMatchesQuery(c, q, childrenOf, state.showDone);
-        });
-
-        if (cards.length === 0) {
-            holder.innerHTML = '<p class="projectplus-muted" style="padding:16px;">'
-                + 'Nenhuma tarefa encontrada com os filtros atuais.</p>';
-            return;
-        }
 
         // linhas (lanes) + regra de agrupamento por modo
         let laneRows;
@@ -175,6 +153,27 @@
         } else {
             laneRows = buildProjectLaneRows(data.projects, state.expandedLanes);
             laneKey  = 'project_id';
+        }
+
+        // TODOS os cartões são visíveis na grade (tarefa de topo E subtarefa),
+        // cada um na SUA raia (por projeto/responsável) e na coluna da fase
+        // dele. A subtarefa não é mais aninhada nem escondida — é um cartão
+        // comum, só marcado com a TAG "Subtarefa da tarefa …" (decisão do
+        // usuário: menos regra = menos bug). Filtro simples: concluídas +
+        // busca por nome/projeto/responsável, cartão a cartão.
+        const cards = data.cards.filter(function (c) {
+            if (!state.showDone && c.is_done) { return false; }
+            if (q !== '') {
+                const hay = (c.name + ' ' + c.project_name + ' ' + c.responsible_name).toLowerCase();
+                if (hay.indexOf(q) === -1) { return false; }
+            }
+            return true;
+        });
+
+        if (cards.length === 0) {
+            holder.innerHTML = '<p class="projectplus-muted" style="padding:16px;">'
+                + 'Nenhuma tarefa encontrada com os filtros atuais.</p>';
+            return;
         }
 
         const grouped = {};
@@ -254,9 +253,31 @@
             columns.forEach(function (col) {
                 const cell = document.createElement('div');
                 cell.className = 'pp-kb-col';
+                cell.dataset.stateId = String(col.id);
+                cell.dataset.laneId = String(lane.id);
+                if (state.canEdit) {
+                    // Bloco 2a: soltar um cartão nesta célula move a tarefa
+                    // para a fase (coluna) desta célula.
+                    cell.addEventListener('dragover', function (e) {
+                        e.preventDefault();
+                        cell.classList.add('pp-kb-col--drop');
+                    });
+                    cell.addEventListener('dragleave', function () {
+                        cell.classList.remove('pp-kb-col--drop');
+                    });
+                    cell.addEventListener('drop', function (e) {
+                        e.preventDefault();
+                        cell.classList.remove('pp-kb-col--drop');
+                        const idStr  = e.dataTransfer ? e.dataTransfer.getData('text/plain') : '';
+                        const cardId = parseInt(idStr, 10);
+                        if (cardId) {
+                            moveCardPhase(state, cardId, col.id);
+                        }
+                    });
+                }
                 const list = (grouped[lane.id] && grouped[lane.id][col.id]) || [];
                 list.forEach(function (c) {
-                    cell.appendChild(cardEl(c, state, childrenOf));
+                    cell.appendChild(cardEl(c, state, byId));
                 });
                 row.appendChild(cell);
             });
@@ -268,24 +289,64 @@
         holder.appendChild(board);
     }
 
-    function cardHay(c) {
-        return (c.name + ' ' + c.project_name + ' ' + c.responsible_name).toLowerCase();
+    // ------------------------------------------------------------------
+    // Bloco 2a — persistência do arrastar (mudar fase), com rotação de
+    // token (lição: endpoints AJAX devolvem 'csrf' novo a cada resposta).
+    // ------------------------------------------------------------------
+    function ppPost(url, data, onDone) {
+        const body = new URLSearchParams();
+        Object.keys(data).forEach(function (k) { body.append(k, data[k]); });
+        fetch(url, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body.toString(),
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (json) { onDone(json || {}); })
+            .catch(function () { onDone({ ok: false }); });
     }
 
-    // A tarefa — ou alguma descendente, em qualquer nível — casa com a
-    // busca? Respeita o filtro "mostrar concluídas" por nó (uma subtarefa
-    // concluída só conta quando o filtro está ligado).
-    function subtreeMatchesQuery(c, q, childrenOf, showDone) {
-        if ((showDone || !c.is_done) && cardHay(c).indexOf(q) !== -1) {
-            return true;
-        }
-        const kids = childrenOf[c.id] || [];
-        for (let i = 0; i < kids.length; i++) {
-            if (subtreeMatchesQuery(kids[i], q, childrenOf, showDone)) {
+    // Atualiza a fase de um cartão no payload em memória (usado após o
+    // servidor confirmar a mudança). Retorna true se achou o cartão.
+    function applyCardState(data, cardId, newStateId) {
+        for (let i = 0; i < data.cards.length; i++) {
+            if (data.cards[i].id === cardId) {
+                data.cards[i].state_id = newStateId;
                 return true;
             }
         }
         return false;
+    }
+
+    // Move a tarefa para a coluna/fase alvo: valida no cliente (mesmo
+    // cartão/fase = no-op), chama o servidor e só reflete na tela DEPOIS
+    // do "ok" (em erro, mostra a mensagem e mantém onde estava).
+    function moveCardPhase(state, cardId, newStateId) {
+        if (!state.canEdit || !state.ajaxUrl) {
+            return;
+        }
+        let card = null;
+        for (let i = 0; i < state.data.cards.length; i++) {
+            if (state.data.cards[i].id === cardId) { card = state.data.cards[i]; break; }
+        }
+        if (!card || card.state_id === newStateId) {
+            return;
+        }
+        ppPost(state.ajaxUrl, {
+            action: 'kanban_move',
+            task_id: cardId,
+            projectstates_id: newStateId,
+            _glpi_csrf_token: state.csrf,
+        }, function (resp) {
+            if (resp && resp.csrf) { state.csrf = resp.csrf; }
+            if (resp && resp.ok) {
+                applyCardState(state.data, cardId, newStateId);
+            } else if (resp && resp.message) {
+                window.alert(resp.message);
+            }
+            render(state._holder, state);
+        });
     }
 
     function countInColumn(grouped, lanes, colId) {
@@ -296,18 +357,39 @@
         return n;
     }
 
-    function cardEl(c, state, childrenOf, nested) {
+    function cardEl(c, state, byId) {
+        const isSub = !!c.task_parent_id;
         const wrap = document.createElement('div');
         wrap.className = 'pp-kb-card-item'
-            + (nested ? ' pp-kb-card-item--sub' : '')
+            + (isSub ? ' pp-kb-card-item--sub' : '')
             + (c.blocked ? ' pp-kb-card-item--blocked' : '')
             + (c.is_done ? ' pp-kb-card-item--done' : '');
+
+        // Bloco 2a: TODO cartão (tarefa de topo E subtarefa) é arrastável
+        // p/ quem pode editar — cada um é um cartão próprio na grade, então
+        // arrastar a subtarefa não mexe mais na mãe. Muda só a fase.
+        if (state.canEdit) {
+            wrap.draggable = true;
+            wrap.addEventListener('dragstart', function (e) {
+                if (e.dataTransfer) {
+                    e.dataTransfer.setData('text/plain', String(c.id));
+                    e.dataTransfer.effectAllowed = 'move';
+                }
+                wrap.classList.add('pp-kb-card-item--dragging');
+            });
+            wrap.addEventListener('dragend', function () {
+                wrap.classList.remove('pp-kb-card-item--dragging');
+            });
+        }
 
         const a = document.createElement('a');
         a.href = c.url;
         a.target = '_blank';
         a.rel = 'noopener';
         a.className = 'pp-kb-card-item__link';
+        // o link é draggable por padrão no HTML — desliga pra o arraste do
+        // cartão não virar "arrastar o link".
+        a.draggable = false;
 
         const name = document.createElement('span');
         name.className = 'pp-kb-card-item__name';
@@ -337,57 +419,15 @@
 
         wrap.appendChild(a);
 
-        // Subtarefas (tarefa mãe/filha): aninhadas dentro do próprio
-        // cartão, reveladas por "+N subtarefas" — não viram cartões
-        // próprios na GRADE (evita brigar com o eixo de colunas por fase),
-        // mas Bloco 1.3 (ponto 2 do usuário): a subtarefa expandida usa o
-        // MESMO layout de cartão da tarefa (nome/meta/prazo/badges), só que
-        // aninhada e recuada, em vez da antiga listinha "nome — %".
-        const q = state.query;
-        const allKids = childrenOf[c.id] || [];
-        // Durante a busca, mostra só as subtarefas cuja subárvore casa (e o
-        // ramo fica auto-expandido, pra o resultado aparecer); sem busca,
-        // todas as filhas, com expandir/recolher manual.
-        const kids = (q !== '')
-            ? allKids.filter(function (k) { return subtreeMatchesQuery(k, q, childrenOf, state.showDone); })
-            : allKids;
-
-        if (kids.length > 0) {
-            const isOpen = (q !== '') ? true : state.expandedTasks.has(c.id);
-
-            const toggle = document.createElement('button');
-            toggle.type = 'button';
-            toggle.className = 'pp-kb-card-item__tasks-toggle';
-            toggle.textContent = (isOpen ? '− ' : '+ ') + kids.length + (kids.length === 1 ? ' subtarefa' : ' subtarefas');
-            if (q !== '') {
-                // durante a busca o ramo já vem aberto pra mostrar o
-                // resultado — o botão vira só um rótulo (não recolhe).
-                toggle.disabled = true;
-            } else {
-                toggle.addEventListener('click', function (ev) {
-                    ev.preventDefault();
-                    ev.stopPropagation();
-                    if (state.expandedTasks.has(c.id)) {
-                        state.expandedTasks.delete(c.id);
-                    } else {
-                        state.expandedTasks.add(c.id);
-                    }
-                    render(state._holder, state);
-                });
-            }
-            wrap.appendChild(toggle);
-
-            if (isOpen) {
-                const sub = document.createElement('div');
-                sub.className = 'pp-kb-card-item__subcards';
-                kids.forEach(function (k) {
-                    // reaproveita o próprio cardEl (marca nested = true), o
-                    // que dá layout idêntico e ainda permite netos/bisnetos
-                    // com o mesmo "+N subtarefas" recursivamente.
-                    sub.appendChild(cardEl(k, state, childrenOf, true));
-                });
-                wrap.appendChild(sub);
-            }
+        // Subtarefa: sem aninhar nem esconder — só uma TAG dizendo de qual
+        // tarefa ela é filha (decisão do usuário). O nome da mãe vem do
+        // payload (byId); se a mãe não estiver no payload, mostra "—".
+        if (isSub) {
+            const parent = byId[c.task_parent_id];
+            const tag = document.createElement('div');
+            tag.className = 'pp-kb-card-item__subtag';
+            tag.textContent = 'Subtarefa da tarefa: ' + (parent ? parent.name : '—');
+            wrap.appendChild(tag);
         }
 
         return wrap;
@@ -414,6 +454,9 @@
             + '<span class="pp-deadline__label pp-deadline__label--' + d.state + '">' + d.label + '</span>';
         return wrap;
     }
+
+    // Exposto só para os testes isolados (jsdom) do Bloco 2a.
+    ProjectPlusKanban._test = { applyCardState: applyCardState };
 
     window.ProjectPlusKanban = ProjectPlusKanban;
 })();
