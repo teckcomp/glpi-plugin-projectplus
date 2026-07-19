@@ -547,4 +547,123 @@ class Reports
             default    => null,
         };
     }
+
+    // ------------------------------------------------------------------
+    // Burndown (Etapa 5, Bloco 2)
+    // ------------------------------------------------------------------
+
+    /**
+     * Dados BRUTOS para o gráfico de burndown de UM projeto (o projeto
+     * escolhido + todos os descendentes — mesmo escopo de tasksData()).
+     *
+     * Burndown por CONTAGEM de tarefas, não por duração/dias. Não existe
+     * tabela de snapshot diário de progresso no GLPI, então a data de
+     * conclusão de cada tarefa é APROXIMADA por date_mod quando
+     * percent_done = 100 (mesmo padrão pragmático de
+     * Dashboard::getData()/tracking.last_activity — decisão validada com
+     * o usuário).
+     *
+     * A agregação por semana ou por dia (toggle da tela) acontece no
+     * CLIENTE (JS), a partir da lista bruta de conclusões devolvida aqui —
+     * evita duplicar a consulta a cada troca de granularidade.
+     *
+     * @return array{
+     *   project_id: int, project_name: string, total_tasks: int,
+     *   axis_start: string, axis_end: string,
+     *   planned_start: ?string, planned_end: ?string,
+     *   completions: string[]
+     * }|null null se o projeto não existir/estiver fora da entidade.
+     */
+    public static function burndownData(int $projectId): ?array
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        if ($projectId <= 0) {
+            return null;
+        }
+
+        $project = $DB->request([
+            'SELECT' => ['id', 'name', 'plan_start_date', 'plan_end_date'],
+            'FROM'   => 'glpi_projects',
+            'WHERE'  => [
+                'id'          => $projectId,
+                'is_deleted'  => 0,
+                'is_template' => 0,
+            ] + getEntitiesRestrictCriteria('glpi_projects'),
+        ])->current();
+
+        if (!$project) {
+            return null;
+        }
+
+        $norm = static function (?string $d): ?string {
+            return !empty($d) ? substr($d, 0, 10) : null;
+        };
+
+        // scopeProjectIds() nunca devolve null aqui pois $projectId > 0
+        // (checado acima) — já inclui o próprio projeto + descendentes.
+        $scopeIds = self::scopeProjectIds($projectId) ?? [$projectId];
+
+        $planStarts  = [];
+        $planEnds    = [];
+        $completions = [];
+        $total       = 0;
+
+        foreach (
+            $DB->request([
+                'SELECT' => ['id', 'percent_done', 'date_mod', 'plan_start_date', 'plan_end_date'],
+                'FROM'   => 'glpi_projecttasks',
+                'WHERE'  => ['projects_id' => $scopeIds],
+            ]) as $row
+        ) {
+            $total++;
+            if (($s = $norm($row['plan_start_date'])) !== null) {
+                $planStarts[] = $s;
+            }
+            if (($e = $norm($row['plan_end_date'])) !== null) {
+                $planEnds[] = $e;
+            }
+            if ((int) $row['percent_done'] === 100 && ($c = $norm($row['date_mod'])) !== null) {
+                $completions[] = $c;
+            }
+        }
+
+        $today     = date('Y-m-d');
+        $projStart = $norm($project['plan_start_date']);
+        $projEnd   = $norm($project['plan_end_date']);
+
+        // Início do eixo: data planejada do PROJETO se houver; senão a
+        // menor data entre as tarefas (planejada ou de conclusão); senão
+        // hoje (projeto novo, sem nenhuma data ainda).
+        $startCandidates = array_filter(array_merge($planStarts, $completions));
+        $axisStart = $projStart ?? (!empty($startCandidates) ? min($startCandidates) : $today);
+
+        // Fim do eixo: o maior entre o fim planejado do projeto, o fim
+        // planejado das tarefas, a última conclusão e hoje — garante que
+        // um projeto atrasado mostre a curva REAL até o momento, em vez
+        // de cortar no fim planejado (esse continua disponível à parte,
+        // em planned_end, para a linha IDEAL).
+        $endCandidates = array_filter(array_merge($planEnds, $completions, [$today]));
+        if ($projEnd !== null) {
+            $endCandidates[] = $projEnd;
+        }
+        $axisEnd = !empty($endCandidates) ? max($endCandidates) : $today;
+        if ($axisEnd < $axisStart) {
+            $axisEnd = $axisStart; // defesa: eixo nunca "anda para trás"
+        }
+
+        sort($completions);
+
+        return [
+            'project_id'    => (int) $project['id'],
+            'project_name'  => $project['name'],
+            'total_tasks'   => $total,
+            'axis_start'    => $axisStart,
+            'axis_end'      => $axisEnd,
+            'planned_start' => $projStart,
+            'planned_end'   => $projEnd,
+            'completions'   => $completions,
+        ];
+    }
 }

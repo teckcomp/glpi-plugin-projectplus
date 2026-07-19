@@ -1608,5 +1608,256 @@
         return div.innerHTML;
     }
 
+    // ------------------------------------------------------------------
+    // Relatórios: Burndown (Etapa 5, Bloco 2)
+    //
+    // O PHP (ajax/reports_data.php -> Reports::burndownData) devolve só
+    // dados BRUTOS: total de tarefas do escopo + uma lista de datas de
+    // conclusão (uma por tarefa, aproximada por date_mod). Toda a
+    // agregação por semana/dia e o desenho do gráfico acontecem aqui —
+    // trocar o toggle Semana/Dia só reprocessa os dados já carregados,
+    // sem nova requisição ao servidor.
+    // ------------------------------------------------------------------
+
+    ProjectPlus.initReports = function () {
+        const section = document.getElementById('pp-burndown');
+        if (!section) {
+            return;
+        }
+        const ajaxUrl  = section.dataset.ajaxUrl;
+        const select   = document.getElementById('pp-burndown-project');
+        const buttons  = section.querySelectorAll('.pp-seg__btn');
+        const chartEl  = document.getElementById('pp-burndown-chart');
+        const kpiEl    = document.getElementById('pp-burndown-kpis');
+
+        let granularity = 'week';
+        let currentData = null;
+
+        function parseISODate(s) {
+            const p = String(s).split('-');
+            return new Date(Date.UTC(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10)));
+        }
+
+        function addDays(d, n) {
+            const r = new Date(d.getTime());
+            r.setUTCDate(r.getUTCDate() + n);
+            return r;
+        }
+
+        // Avança n meses preservando o dia; se o mês destino for mais
+        // curto (ex.: 31/01 -> fev), fixa no último dia do mês destino.
+        function addMonths(d, n) {
+            const day = d.getUTCDate();
+            const r = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + n, 1));
+            const lastDay = new Date(Date.UTC(r.getUTCFullYear(), r.getUTCMonth() + 1, 0)).getUTCDate();
+            r.setUTCDate(Math.min(day, lastDay));
+            return r;
+        }
+
+        function isoOf(d) {
+            return d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate());
+        }
+
+        function shortLabel(d) {
+            return pad(d.getUTCDate()) + '/' + pad(d.getUTCMonth() + 1);
+        }
+
+        // Datas dos "cortes" do eixo X: sempre inclui o início e o fim do
+        // eixo; entre eles, um ponto a cada dia, a cada 7 dias ou a cada
+        // mês (passo de calendário, não fixo em 30 dias).
+        function buildBucketDates(startStr, endStr, gran) {
+            const start = parseISODate(startStr);
+            let end = parseISODate(endStr);
+            if (end.getTime() < start.getTime()) {
+                end = start;
+            }
+            const dates = [start];
+            if (gran === 'month') {
+                // Ancora cada tick em "início + k meses" (não encadeado),
+                // para que um mês curto não "prenda" os ticks seguintes no
+                // dia reduzido (ex.: 31/01, 28/02, 31/03, 30/04…).
+                let k = 1;
+                let cur = addMonths(start, k);
+                while (cur.getTime() < end.getTime()) {
+                    dates.push(cur);
+                    k++;
+                    cur = addMonths(start, k);
+                }
+                // Fecha o eixo no fim exato, sem duplicar quando início==fim.
+                if (end.getTime() > dates[dates.length - 1].getTime()) {
+                    dates.push(end);
+                }
+                return dates;
+            }
+            const stepDays = gran === 'day' ? 1 : 7;
+            let cur = start;
+            while (cur.getTime() < end.getTime()) {
+                cur = addDays(cur, stepDays);
+                if (cur.getTime() > end.getTime()) {
+                    cur = end;
+                }
+                dates.push(cur);
+            }
+            return dates;
+        }
+
+        // Quantas tarefas já estavam concluídas até (e incluindo) a data
+        // informada — completions[] vem ordenada (ISO, comparação lexical
+        // funciona direto).
+        function completedBy(sortedCompletions, dateObj) {
+            const iso = isoOf(dateObj);
+            let count = 0;
+            for (let i = 0; i < sortedCompletions.length; i++) {
+                if (sortedCompletions[i] <= iso) {
+                    count++;
+                } else {
+                    break;
+                }
+            }
+            return count;
+        }
+
+        // Linha "ideal": queda linear de total -> 0 entre idealStart e
+        // idealEnd. Se o projeto já passou do fim planejado, fica em 0
+        // (mostra visualmente que "já deveria estar pronto").
+        function idealAt(dateObj, idealStart, idealEnd, total) {
+            if (idealEnd.getTime() <= idealStart.getTime()) {
+                return dateObj.getTime() >= idealEnd.getTime() ? 0 : total;
+            }
+            let frac = (dateObj.getTime() - idealStart.getTime()) / (idealEnd.getTime() - idealStart.getTime());
+            frac = Math.max(0, Math.min(1, frac));
+            return total * (1 - frac);
+        }
+
+        function drawChart(dates, realSeries, idealSeries, total) {
+            const W = 640, H = 260, padL = 34, padR = 12, padT = 14, padB = 30;
+            const innerW = W - padL - padR, innerH = H - padT - padB;
+            const n = dates.length;
+            const maxY = Math.max(total, 1);
+
+            function xAt(i) { return n <= 1 ? padL : padL + (innerW * i / (n - 1)); }
+            function yAt(v) { return padT + innerH - (innerH * v / maxY); }
+
+            function pathFor(series) {
+                return series.map(function (v, i) {
+                    return (i === 0 ? 'M' : 'L') + xAt(i).toFixed(1) + ' ' + yAt(v).toFixed(1);
+                }).join(' ');
+            }
+
+            let gridLines = '';
+            [0, 0.5, 1].forEach(function (f) {
+                const y = padT + innerH * (1 - f);
+                gridLines += '<line x1="' + padL + '" y1="' + y + '" x2="' + (W - padR) + '" y2="' + y +
+                    '" stroke="#e7ebf0" stroke-width="1"/>';
+                gridLines += '<text x="' + (padL - 6) + '" y="' + (y + 4) +
+                    '" font-size="10" fill="#8a97a5" text-anchor="end">' + Math.round(maxY * f) + '</text>';
+            });
+
+            const labelStep = Math.max(1, Math.ceil(n / 8));
+            let xLabels = '';
+            dates.forEach(function (d, i) {
+                if (i % labelStep !== 0 && i !== n - 1) {
+                    return;
+                }
+                xLabels += '<text x="' + xAt(i).toFixed(1) + '" y="' + (H - padB + 16) +
+                    '" font-size="10" fill="#8a97a5" text-anchor="middle">' + shortLabel(d) + '</text>';
+            });
+
+            const realDots = realSeries.map(function (v, i) {
+                return '<circle cx="' + xAt(i).toFixed(1) + '" cy="' + yAt(v).toFixed(1) +
+                    '" r="2.6" fill="#4a9fd4"><title>' + shortLabel(dates[i]) + ': ' + Math.round(v) +
+                    ' restante(s)</title></circle>';
+            }).join('');
+
+            chartEl.innerHTML =
+                '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" height="' + H +
+                '" role="img" aria-label="' + escapeHtml('Gráfico de burndown') + '">' +
+                gridLines +
+                '<path d="' + pathFor(idealSeries) + '" fill="none" stroke="#c3ccd4" stroke-width="2" stroke-dasharray="5 4"/>' +
+                '<path d="' + pathFor(realSeries) + '" fill="none" stroke="#4a9fd4" stroke-width="2.5"/>' +
+                realDots + xLabels +
+                '</svg>' +
+                '<ul class="pp-burndown-legend">' +
+                '<li><span class="pp-burndown-legend__swatch pp-burndown-legend__swatch--ideal"></span>' +
+                'Ideal</li>' +
+                '<li><span class="pp-burndown-legend__swatch pp-burndown-legend__swatch--real"></span>' +
+                'Real (tarefas restantes)</li>' +
+                '</ul>';
+        }
+
+        function render() {
+            if (!currentData) {
+                return;
+            }
+            if (!currentData.total_tasks) {
+                chartEl.innerHTML = '<p class="projectplus-muted">Este projeto (e seus subprojetos) não tem tarefas.</p>';
+                kpiEl.innerHTML = '';
+                return;
+            }
+
+            const dates = buildBucketDates(currentData.axis_start, currentData.axis_end, granularity);
+            const idealStart = currentData.planned_start ? parseISODate(currentData.planned_start) : parseISODate(currentData.axis_start);
+            const idealEnd   = currentData.planned_end ? parseISODate(currentData.planned_end) : parseISODate(currentData.axis_end);
+            const completions = (currentData.completions || []).slice().sort();
+            const total = currentData.total_tasks;
+
+            const realSeries  = dates.map(function (d) { return total - completedBy(completions, d); });
+            const idealSeries = dates.map(function (d) { return idealAt(d, idealStart, idealEnd, total); });
+
+            drawChart(dates, realSeries, idealSeries, total);
+
+            const doneNow = completedBy(completions, parseISODate(currentData.axis_end));
+            const pct = total > 0 ? Math.round((doneNow / total) * 100) : 0;
+            kpiEl.innerHTML =
+                '<span><strong>' + total + '</strong> tarefas</span>' +
+                '<span><strong>' + doneNow + '</strong> concluídas</span>' +
+                '<span><strong>' + (total - doneNow) + '</strong> restantes</span>' +
+                '<span><strong>' + pct + '%</strong> concluído</span>';
+        }
+
+        function loadProject(id) {
+            if (!id || id === '0') {
+                currentData = null;
+                chartEl.innerHTML = '<p class="projectplus-muted">Selecione um projeto para ver o burndown.</p>';
+                kpiEl.innerHTML = '';
+                return;
+            }
+            chartEl.innerHTML = '<p class="projectplus-muted">Carregando…</p>';
+            kpiEl.innerHTML = '';
+            fetch(ajaxUrl + '?action=burndown&project=' + encodeURIComponent(id), { credentials: 'same-origin' })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (!data) {
+                        currentData = null;
+                        chartEl.innerHTML = '<p class="projectplus-muted">Projeto não encontrado.</p>';
+                        return;
+                    }
+                    currentData = data;
+                    render();
+                })
+                .catch(function () {
+                    currentData = null;
+                    chartEl.innerHTML = '<p class="projectplus-muted">Não foi possível carregar o burndown.</p>';
+                });
+        }
+
+        buttons.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                if (btn.classList.contains('pp-seg__btn--active')) {
+                    return;
+                }
+                buttons.forEach(function (b) { b.classList.remove('pp-seg__btn--active'); });
+                btn.classList.add('pp-seg__btn--active');
+                granularity = btn.dataset.granularity;
+                render();
+            });
+        });
+
+        if (select) {
+            select.addEventListener('change', function () { loadProject(select.value); });
+            loadProject(select.value);
+        }
+    };
+
     window.ProjectPlus = ProjectPlus;
 })();

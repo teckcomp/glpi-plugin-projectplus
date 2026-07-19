@@ -856,3 +856,39 @@
     width: 100%; margin-top: 8px; border: 1px solid #e1e5ea; border-radius: 6px;
     padding: 6px 8px; font-size: 0.85rem; color: #2c3e50; resize: vertical;
 }
+
+/* ===== Etapa 5, Bloco 2 — Burndown por projeto ===== */
+.pp-burndown-controls {
+    display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+}
+.pp-burndown-project {
+    border: 1px solid #c6d0d9; border-radius: 6px; padding: 6px 8px;
+    font-size: 0.85rem; color: #2c3e50; min-width: 220px;
+}
+.pp-seg {
+    display: inline-flex; border: 1px solid #c6d0d9; border-radius: 6px; overflow: hidden;
+}
+.pp-seg__btn {
+    border: 0; background: #fff; color: #5a7684; cursor: pointer;
+    padding: 6px 12px; font-size: 0.82rem; font-weight: 600;
+}
+.pp-seg__btn + .pp-seg__btn { border-left: 1px solid #c6d0d9; }
+.pp-seg__btn:hover { background: #eaf4fb; }
+.pp-seg__btn--active { background: #4a9fd4; color: #fff; }
+.pp-burndown-kpis {
+    display: flex; gap: 18px; flex-wrap: wrap; align-items: center;
+    font-size: 0.85rem; color: #5a7684; margin: 4px 0 12px;
+}
+.pp-burndown-kpis strong { color: #16323f; font-size: 1rem; }
+.pp-burndown-chart svg { display: block; max-width: 100%; }
+.pp-burndown-legend {
+    list-style: none; display: flex; gap: 16px; margin: 8px 0 0; padding: 0;
+    font-size: 0.8rem; color: #5a7684;
+}
+.pp-burndown-legend li { display: flex; align-items: center; gap: 6px; }
+.pp-burndown-legend__swatch {
+    display: inline-block; width: 18px; height: 3px; border-radius: 2px;
+}
+.pp-burndown-legend__swatch--ideal { background: #c3ccd4; }
+.pp-burndown-legend__swatch--real { background: #4a9fd4; }
+.pp-burndown-note { margin-top: 8px; }

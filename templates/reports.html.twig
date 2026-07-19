@@ -185,6 +185,34 @@
             {% endif %}
         </div>
 
+        {# -------- Burndown (Etapa 5, Bloco 2) -------- #}
+        <div class="projectplus-card pp-report-card" id="pp-burndown"
+             data-ajax-url="{{ plugin_web_dir }}/ajax/reports_data.php">
+            <div class="pp-report-projhead">
+                <h3>{{ __('Burndown', 'projectplus') }}</h3>
+                <div class="pp-burndown-controls">
+                    <select id="pp-burndown-project" class="pp-burndown-project">
+                        <option value="0">{{ __('— Selecione um projeto —', 'projectplus') }}</option>
+                        {% for p in projects_list %}
+                            <option value="{{ p.id }}" {{ p.id == filter_project ? 'selected' : '' }}>{{ p.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="pp-seg" role="group" aria-label="{{ __('Granularidade do gráfico', 'projectplus') }}">
+                        <button type="button" class="pp-seg__btn pp-seg__btn--active" data-granularity="week">{{ __('Semana', 'projectplus') }}</button>
+                        <button type="button" class="pp-seg__btn" data-granularity="day">{{ __('Dia', 'projectplus') }}</button>
+                        <button type="button" class="pp-seg__btn" data-granularity="month">{{ __('Mês', 'projectplus') }}</button>
+                    </div>
+                </div>
+            </div>
+            <div class="pp-burndown-kpis" id="pp-burndown-kpis"></div>
+            <div class="pp-burndown-chart" id="pp-burndown-chart">
+                <p class="projectplus-muted">{{ __('Selecione um projeto para ver o burndown.', 'projectplus') }}</p>
+            </div>
+            <p class="projectplus-muted pp-burndown-note">
+                {{ __('Aproximação: conclusão de cada tarefa estimada pela data da última atualização (percent_done = 100%) — não há histórico diário de progresso.', 'projectplus') }}
+            </p>
+        </div>
+
         {# -------- Custos -------- #}
         <div class="projectplus-card pp-report-card">
             <div class="pp-report-projhead">
@@ -216,3 +244,10 @@
 
     </div>
 </div>
+
+<script src="{{ plugin_web_dir }}/js/projectplus.js"></script>
+<script>
+    if (window.ProjectPlus && typeof window.ProjectPlus.initReports === 'function') {
+        window.ProjectPlus.initReports();
+    }
+</script>
