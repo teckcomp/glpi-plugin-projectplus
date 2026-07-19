@@ -1,0 +1,223 @@
+{# ProjectPlus — tela "Modelos" (Etapa 4) #}
+
+<link rel="stylesheet" href="{{ plugin_web_dir }}/css/projectplus.css">
+
+<div class="projectplus-app" id="projectplus-templates">
+
+    {# ================= COLUNA ESQUERDA: título + sidebar ================= #}
+    <div class="projectplus-left">
+        <div class="projectplus-pagetitle">
+            <h2>{{ __('Projetos', 'projectplus') }}</h2>
+            <span>{{ __('Modelos de projeto', 'projectplus') }}</span>
+        </div>
+        <nav class="projectplus-sidebar">
+            <ul>
+                <li class="projectplus-sidebar__item">
+                    <a href="{{ plugin_web_dir }}/front/dashboard.php"><i class="ti ti-layout-dashboard"></i>{{ __('Visão geral', 'projectplus') }}</a>
+                </li>
+                <li class="projectplus-sidebar__item">
+                    <a href="{{ plugin_web_dir }}/front/mytasks.php"><i class="ti ti-user-check"></i>{{ __('Minhas tarefas', 'projectplus') }}</a>
+                </li>
+                <li class="projectplus-sidebar__item">
+                    <a href="{{ glpi_root }}/front/project.form.php?showglobalkanban=1"><i class="ti ti-layout-kanban"></i>{{ __('Kanban global', 'projectplus') }}</a>
+                </li>
+                <li class="projectplus-sidebar__item">
+                    <a href="{{ plugin_web_dir }}/front/timeline.php"><i class="ti ti-stopwatch"></i>{{ __('Timeline', 'projectplus') }}</a>
+                </li>
+                {% if can_templates %}
+                <li class="projectplus-sidebar__item projectplus-sidebar__item--active">
+                    <a href="{{ plugin_web_dir }}/front/projecttemplates.php"><i class="ti ti-clipboard-list"></i>{{ __('Modelos', 'projectplus') }}</a>
+                </li>
+                {% endif %}
+                <li class="projectplus-sidebar__item projectplus-sidebar__item--soon">
+                    <span><i class="ti ti-calendar"></i>{{ __('Calendário', 'projectplus') }}</span><em>{{ __('em breve', 'projectplus') }}</em>
+                </li>
+                <li class="projectplus-sidebar__item projectplus-sidebar__item--soon">
+                    <span><i class="ti ti-users"></i>{{ __('Recursos', 'projectplus') }}</span><em>{{ __('em breve', 'projectplus') }}</em>
+                </li>
+                <li class="projectplus-sidebar__item">
+                    <a href="{{ plugin_web_dir }}/front/costs.php"><i class="ti ti-coin"></i>{{ __('Orçamento', 'projectplus') }}</a>
+                </li>
+                <li class="projectplus-sidebar__item projectplus-sidebar__item--soon">
+                    <span><i class="ti ti-report-analytics"></i>{{ __('Relatórios', 'projectplus') }}</span><em>{{ __('em breve', 'projectplus') }}</em>
+                </li>
+                <li class="projectplus-sidebar__item">
+                    <a href="{{ plugin_web_dir }}/front/config.form.php"><i class="ti ti-settings"></i>{{ __('Configurações', 'projectplus') }}</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+
+    {# ================= ÁREA PRINCIPAL ================= #}
+    <div class="projectplus-main">
+
+        <div class="projectplus-header">
+            <div class="projectplus-pagetitle" style="padding:0">
+                <h2 style="font-size:1.25rem;color:#16323f;margin:0">{{ __('Modelos de projeto', 'projectplus') }}</h2>
+                <span class="projectplus-subtitle">{{ __('Crie projetos prontos a partir de uma estrutura de tarefas e subprojetos salva', 'projectplus') }}</span>
+            </div>
+            <div class="projectplus-actions">
+                <a class="projectplus-btn projectplus-btn--ghost" href="{{ plugin_web_dir }}/front/projecttemplate_edit.php">
+                    + {{ __('Criar modelo do zero', 'projectplus') }}
+                </a>
+                <button type="button" class="projectplus-btn" data-pp-modal-open="pp-modal-savetemplate">
+                    + {{ __('Salvar projeto como modelo', 'projectplus') }}
+                </button>
+            </div>
+        </div>
+
+        <div class="projectplus-card">
+            {% if templates %}
+            <table class="projectplus-table">
+                <thead>
+                    <tr>
+                        <th>{{ __('Modelo', 'projectplus') }}</th>
+                        <th>{{ __('Comentário', 'projectplus') }}</th>
+                        <th>{{ __('Estrutura', 'projectplus') }}</th>
+                        <th>{{ __('Atualizado em', 'projectplus') }}</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for t in templates %}
+                    <tr>
+                        <td><strong>{{ t.name }}</strong></td>
+                        <td class="projectplus-muted">{{ t.comment ?: '—' }}</td>
+                        <td>
+                            {{ t.count }} {{ t.count == 1 ? 'tarefa' : 'tarefas' }}
+                            {% if t.subcount > 0 %}
+                                <span class="projectplus-muted">· {{ t.subcount }} {{ t.subcount == 1 ? 'subprojeto' : 'subprojetos' }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ t.date_mod ? t.date_mod|date('d/m/Y H:i') : '—' }}</td>
+                        <td style="white-space:nowrap">
+                            {% if can_create %}
+                            <button type="button" class="projectplus-btn pp-tpl-instantiate-btn"
+                                    data-pp-modal-open="pp-modal-instantiate"
+                                    data-tpl-id="{{ t.id }}" data-tpl-name="{{ t.name }}">
+                                {{ __('Criar projeto', 'projectplus') }}
+                            </button>
+                            {% endif %}
+                            <a class="projectplus-btn projectplus-btn--ghost"
+                               href="{{ plugin_web_dir }}/front/projecttemplate_edit.php?id={{ t.id }}">
+                                {{ __('Editar', 'projectplus') }}
+                            </a>
+                            <form method="post" action="{{ plugin_web_dir }}/front/projecttemplate.form.php"
+                                  style="display:inline" onsubmit="return confirm('{{ __('Excluir este modelo?', 'projectplus') }}');">
+                                <input type="hidden" name="_glpi_csrf_token" value="{{ csrf_token }}">
+                                <input type="hidden" name="id" value="{{ t.id }}">
+                                <button type="submit" name="delete" value="1"
+                                        class="btn btn-sm btn-outline-danger" title="{{ __('Excluir', 'projectplus') }}">&times;</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+                <p class="projectplus-muted">
+                    {{ __('Nenhum modelo cadastrado ainda.', 'projectplus') }}
+                    {{ __('Use "Criar modelo do zero" ou "Salvar projeto como modelo" para criar o primeiro.', 'projectplus') }}
+                </p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{# ================= MODAL: SALVAR PROJETO COMO MODELO ================= #}
+<div class="projectplus-modal" id="pp-modal-savetemplate" hidden>
+    <div class="projectplus-modal__backdrop" data-pp-modal-close></div>
+    <div class="projectplus-modal__box">
+        <div class="projectplus-modal__head">
+            <h3>{{ __('Salvar projeto como modelo', 'projectplus') }}</h3>
+            <button type="button" class="projectplus-modal__x" data-pp-modal-close>&times;</button>
+        </div>
+        <form method="post" action="{{ plugin_web_dir }}/front/projecttemplate.form.php" class="projectplus-form">
+            <input type="hidden" name="_glpi_csrf_token" value="{{ csrf_token }}">
+
+            <label class="projectplus-form__full">
+                {{ __('Projeto de origem', 'projectplus') }} *
+                <select name="projects_id" required>
+                    <option value="">{{ __('— Selecione —', 'projectplus') }}</option>
+                    {% for p in projects %}
+                        <option value="{{ p.id }}">{{ p.name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+
+            <label class="projectplus-form__full">
+                {{ __('Nome do modelo', 'projectplus') }} *
+                <input type="text" name="name" required maxlength="255" autofocus>
+            </label>
+
+            <label class="projectplus-form__full">
+                {{ __('Comentário', 'projectplus') }}
+                <textarea name="comment" rows="2"></textarea>
+            </label>
+
+            <p class="projectplus-muted projectplus-form__full" style="margin:0">
+                {{ __('A árvore completa do projeto (tarefas e TODOS os subprojetos, com prazos relativos ao início do projeto) é copiada para o modelo. O projeto de origem não é alterado.', 'projectplus') }}
+            </p>
+
+            <div class="projectplus-form__footer">
+                <button type="button" class="projectplus-btn projectplus-btn--ghost" data-pp-modal-close>
+                    {{ __('Cancelar', 'projectplus') }}
+                </button>
+                <button type="submit" name="save" value="1" class="projectplus-btn">
+                    {{ __('Salvar modelo', 'projectplus') }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{# ================= MODAL: CRIAR PROJETO A PARTIR DO MODELO ================= #}
+{% if can_create %}
+<div class="projectplus-modal" id="pp-modal-instantiate" hidden>
+    <div class="projectplus-modal__backdrop" data-pp-modal-close></div>
+    <div class="projectplus-modal__box">
+        <div class="projectplus-modal__head">
+            <h3>{{ __('Criar projeto a partir do modelo', 'projectplus') }}</h3>
+            <button type="button" class="projectplus-modal__x" data-pp-modal-close>&times;</button>
+        </div>
+        <form method="post" action="{{ plugin_web_dir }}/front/projecttemplate.form.php" class="projectplus-form">
+            <input type="hidden" name="_glpi_csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="template_id" id="pp-inst-template-id" value="">
+
+            <p class="projectplus-form__full" style="margin:0">
+                {{ __('Modelo', 'projectplus') }}: <strong id="pp-inst-template-name">—</strong>
+            </p>
+
+            <label class="projectplus-form__full">
+                {{ __('Nome do novo projeto', 'projectplus') }} *
+                <input type="text" name="name" required maxlength="255">
+            </label>
+
+            <label>
+                {{ __('Data de início', 'projectplus') }} *
+                <input type="date" name="start_date" required value="{{ "now"|date('Y-m-d') }}">
+            </label>
+
+            <p class="projectplus-muted projectplus-form__full" style="margin:0">
+                {{ __('Cria o projeto, todas as tarefas e todos os subprojetos do modelo, com as datas deslocadas a partir da data escolhida.', 'projectplus') }}
+            </p>
+
+            <div class="projectplus-form__footer">
+                <button type="button" class="projectplus-btn projectplus-btn--ghost" data-pp-modal-close>
+                    {{ __('Cancelar', 'projectplus') }}
+                </button>
+                <button type="submit" name="instantiate" value="1" class="projectplus-btn">
+                    {{ __('Criar projeto', 'projectplus') }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<script src="{{ plugin_web_dir }}/js/projectplus.js"></script>
+<script>
+    if (window.ProjectPlus && typeof window.ProjectPlus.initTemplates === 'function') {
+        window.ProjectPlus.initTemplates();
+    }
+</script>

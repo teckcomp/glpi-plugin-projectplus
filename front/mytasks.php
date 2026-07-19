@@ -39,6 +39,7 @@ TemplateRenderer::getInstance()->display(
         'states'          => $states,
         'current_user_id' => (int) Session::getLoginUserID(),
         'csrf_token'      => Session::getNewCSRFToken(),
+        'can_templates'   => Session::haveRight('config', UPDATE),
     ]
 );
 

@@ -96,6 +96,7 @@ TemplateRenderer::getInstance()->display(
         'current_user_id' => (int) Session::getLoginUserID(),
         'csrf_token'      => Session::getNewCSRFToken(),
         'can_create'      => Session::haveRight('project', CREATE),
+        'can_templates'   => Session::haveRight('config', UPDATE),
     ]
 );
 

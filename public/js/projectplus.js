@@ -267,6 +267,347 @@
     };
 
     // ------------------------------------------------------------------
+    // Modelos de projeto — LISTA (Etapa 4)
+    //
+    // Listagem e formulários renderizados no servidor (POST tradicional,
+    // sem AJAX própria). O JS só cuida dos modais (abrir/fechar via
+    // initModals()) e de levar o id/nome do modelo clicado para dentro
+    // do modal "Criar projeto a partir do modelo".
+    // ------------------------------------------------------------------
+
+    ProjectPlus.initTemplates = function () {
+        const root = document.getElementById('projectplus-templates');
+        if (!root) {
+            return;
+        }
+        initModals();
+
+        const idField   = document.getElementById('pp-inst-template-id');
+        const nameField = document.getElementById('pp-inst-template-name');
+
+        root.querySelectorAll('.pp-tpl-instantiate-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                if (idField)   { idField.value = btn.dataset.tplId || ''; }
+                if (nameField) { nameField.textContent = btn.dataset.tplName || ''; }
+            });
+        });
+    };
+
+    // ------------------------------------------------------------------
+    // Modelos de projeto — EDITOR VISUAL (Etapa 4, itens 1 e 2)
+    //
+    // Monta a árvore de tarefas e subprojetos no cliente. O DOM é a
+    // fonte da verdade: adicionar/remover mexe direto nos nós; no submit
+    // a árvore é serializada para JSON no formato de Templates/
+    // TemplateCloner ({tasks:[...], subprojects:[...]}) e enviada em um
+    // campo hidden. Offsets são em dias a partir do início do projeto.
+    // ------------------------------------------------------------------
+
+    // Listas dos dropdowns (estados, tipos de projeto/tarefa, usuários),
+    // carregadas de #pp-tpl-refdata no init.
+    let ppTplRef = { states: [], ptypes: [], ttypes: [], users: [] };
+
+    function tplOptions(list, selectedId) {
+        let html = '<option value="0">—</option>';
+        (Array.isArray(list) ? list : []).forEach(function (o) {
+            html += '<option value="' + o.id + '"' + (o.id === selectedId ? ' selected' : '') +
+                '>' + escapeHtml(o.name) + '</option>';
+        });
+        return html;
+    }
+
+    ProjectPlus.initTemplateEditor = function () {
+        const root = document.getElementById('projectplus-tpleditor');
+        if (!root) {
+            return;
+        }
+
+        const treeEl      = document.getElementById('pp-tpl-tree');
+        const rootTasksEl = document.getElementById('pp-tpl-roottasks');
+        const rootSubsEl  = document.getElementById('pp-tpl-rootsubs');
+        const projMetaEl  = document.getElementById('pp-tpl-projectmeta');
+        const form        = document.getElementById('pp-tpl-form');
+        const out         = document.getElementById('pp-tpl-structure-out');
+        const nameInput   = document.getElementById('pp-tpl-name');
+
+        // Listas dos dropdowns
+        const refEl = document.getElementById('pp-tpl-refdata');
+        if (refEl) {
+            try {
+                const rd = JSON.parse(refEl.textContent);
+                if (rd && typeof rd === 'object') {
+                    ppTplRef = {
+                        states: Array.isArray(rd.states) ? rd.states : [],
+                        ptypes: Array.isArray(rd.ptypes) ? rd.ptypes : [],
+                        ttypes: Array.isArray(rd.ttypes) ? rd.ttypes : [],
+                        users:  Array.isArray(rd.users)  ? rd.users  : []
+                    };
+                }
+            } catch (e) { /* mantém vazio */ }
+        }
+
+        // Estrutura inicial (vazia no modo "criar")
+        let structure = { project: {}, tasks: [], subprojects: [] };
+        const dataEl = document.getElementById('pp-tpl-structure');
+        if (dataEl) {
+            try {
+                const parsed = JSON.parse(dataEl.textContent);
+                if (parsed && typeof parsed === 'object') {
+                    structure.project = (parsed.project && typeof parsed.project === 'object') ? parsed.project : {};
+                    structure.tasks = Array.isArray(parsed.tasks) ? parsed.tasks : [];
+                    structure.subprojects = Array.isArray(parsed.subprojects) ? parsed.subprojects : [];
+                }
+            } catch (e) { /* mantém vazia */ }
+        }
+
+        buildProjectMeta(projMetaEl, structure.project);
+        structure.tasks.forEach(function (t) { rootTasksEl.appendChild(buildTplTask(t)); });
+        structure.subprojects.forEach(function (p) { rootSubsEl.appendChild(buildTplProject(p)); });
+
+        // Botões de topo (raiz)
+        const addRootTask = root.querySelector('[data-add-roottask]');
+        const addRootSub  = root.querySelector('[data-add-rootsub]');
+        if (addRootTask) {
+            addRootTask.addEventListener('click', function () {
+                rootTasksEl.appendChild(buildTplTask(null));
+            });
+        }
+        if (addRootSub) {
+            addRootSub.addEventListener('click', function () {
+                rootSubsEl.appendChild(buildTplProject(null));
+            });
+        }
+
+        // Delegação para os botões dinâmicos dentro da árvore
+        treeEl.addEventListener('click', function (e) {
+            const btn = e.target.closest('button[data-act]');
+            if (!btn) { return; }
+            const act = btn.dataset.act;
+            if (act === 'remove') {
+                const node = btn.closest('.pp-tpl-node');
+                if (node) { node.remove(); }
+            } else if (act === 'add-subtask') {
+                const node = btn.closest('.pp-tpl-node--task');
+                node.querySelector(':scope > .pp-tpl-children').appendChild(buildTplTask(null));
+            } else if (act === 'add-ptask') {
+                const node = btn.closest('.pp-tpl-node--project');
+                node.querySelector(':scope > .pp-tpl-psection > .pp-tpl-ptasks').appendChild(buildTplTask(null));
+            } else if (act === 'add-psub') {
+                const node = btn.closest('.pp-tpl-node--project');
+                node.querySelector(':scope > .pp-tpl-psection > .pp-tpl-psubs').appendChild(buildTplProject(null));
+            }
+        });
+
+        form.addEventListener('submit', function (e) {
+            const name = (nameInput.value || '').trim();
+            if (!name) {
+                e.preventDefault();
+                alert('Informe o nome do modelo.');
+                nameInput.focus();
+                return;
+            }
+            const s = {
+                project: serializeProjectMeta(projMetaEl),
+                tasks: serializeTplTasks(rootTasksEl),
+                subprojects: serializeTplProjects(rootSubsEl)
+            };
+            if (s.tasks.length === 0 && s.subprojects.length === 0) {
+                e.preventDefault();
+                alert('Adicione ao menos uma tarefa ou subprojeto.');
+                return;
+            }
+            out.value = JSON.stringify(s);
+            // deixa o form seguir (POST tradicional)
+        });
+    };
+
+    // Bloco de atributos do projeto raiz (aplicados ao clonar)
+    function buildProjectMeta(container, data) {
+        data = data || {};
+        const offset  = parseInt(data.offset_start_days, 10) || 0;
+        const dur     = (data.duration_days != null) ? Math.max(1, data.duration_days) : 1;
+        const stateId = parseInt(data.projectstates_id, 10) || 0;
+        const ptypeId = parseInt(data.projecttypes_id, 10) || 0;
+        const userId  = parseInt(data.users_id, 10) || 0;
+        const budget  = parseFloat(data.budget) || 0;
+        const auto    = !!data.auto_percent_done;
+
+        container.innerHTML =
+            '<div class="pp-tpl-meta">' +
+                '<label class="pp-tpl-num" title="Dias após a data de início escolhida ao criar">início (d)<input type="number" class="pp-pm-offset" min="0" step="1" value="' + offset + '"></label>' +
+                '<label class="pp-tpl-num" title="Duração do projeto em dias (define a data de fim)">duração (d)<input type="number" class="pp-pm-dur" min="1" step="1" value="' + dur + '"></label>' +
+                '<label class="pp-tpl-field">Estado<select class="pp-pm-state">' + tplOptions(ppTplRef.states, stateId) + '</select></label>' +
+                '<label class="pp-tpl-field">Tipo<select class="pp-pm-ptype">' + tplOptions(ppTplRef.ptypes, ptypeId) + '</select></label>' +
+                '<label class="pp-tpl-field">Gestor<select class="pp-pm-user">' + tplOptions(ppTplRef.users, userId) + '</select></label>' +
+                '<label class="pp-tpl-field">Orçamento (R$)<input type="number" class="pp-pm-budget" min="0" step="0.01" value="' + budget + '"></label>' +
+                '<label class="pp-tpl-check"><input type="checkbox" class="pp-pm-auto"' + (auto ? ' checked' : '') + '> calcular % automático</label>' +
+            '</div>' +
+            '<textarea class="pp-pm-content" rows="2" placeholder="Descrição do projeto (opcional)"></textarea>';
+        container.querySelector('.pp-pm-content').value = data.content || '';
+    }
+
+    function serializeProjectMeta(container) {
+        return {
+            offset_start_days: Math.max(0, parseInt(container.querySelector('.pp-pm-offset').value, 10) || 0),
+            duration_days:     Math.max(1, parseInt(container.querySelector('.pp-pm-dur').value, 10) || 1),
+            projectstates_id: parseInt(container.querySelector('.pp-pm-state').value, 10) || 0,
+            projecttypes_id:  parseInt(container.querySelector('.pp-pm-ptype').value, 10) || 0,
+            users_id:         parseInt(container.querySelector('.pp-pm-user').value, 10) || 0,
+            budget:           Math.max(0, parseFloat(container.querySelector('.pp-pm-budget').value) || 0),
+            auto_percent_done: container.querySelector('.pp-pm-auto').checked ? 1 : 0,
+            content:          container.querySelector('.pp-pm-content').value || ''
+        };
+    }
+
+    function buildTplTask(data) {
+        data = data || {};
+        const stateId     = parseInt(data.projectstates_id, 10) || 0;
+        const ttypeId     = parseInt(data.projecttasktypes_id, 10) || 0;
+        const userId      = parseInt(data.users_id, 10) || 0;
+        const hasChildren = Array.isArray(data.children) && data.children.length > 0;
+        const auto        = (data.auto_percent_done != null) ? !!data.auto_percent_done : hasChildren;
+
+        const el = document.createElement('div');
+        el.className = 'pp-tpl-node pp-tpl-node--task';
+        el.innerHTML =
+            '<div class="pp-tpl-row">' +
+                '<span class="pp-tpl-handle" title="Tarefa"><i class="ti ti-list-check"></i></span>' +
+                '<input type="text" class="pp-tpl-name" placeholder="Nome da tarefa" maxlength="255">' +
+                '<label class="pp-tpl-num">início (d)<input type="number" class="pp-tpl-offset" min="0" step="1" value="0"></label>' +
+                '<label class="pp-tpl-num">duração (d)<input type="number" class="pp-tpl-dur" min="1" step="1" value="1"></label>' +
+                '<button type="button" class="pp-tpl-mini" data-act="add-subtask">+ subtarefa</button>' +
+                '<button type="button" class="pp-tpl-mini pp-tpl-mini--danger" data-act="remove" title="Remover">&times;</button>' +
+            '</div>' +
+            '<div class="pp-tpl-meta">' +
+                '<label class="pp-tpl-field">Estado<select class="pp-tpl-state">' + tplOptions(ppTplRef.states, stateId) + '</select></label>' +
+                '<label class="pp-tpl-field">Tipo<select class="pp-tpl-ttype">' + tplOptions(ppTplRef.ttypes, ttypeId) + '</select></label>' +
+                '<label class="pp-tpl-field">Responsável<select class="pp-tpl-user">' + tplOptions(ppTplRef.users, userId) + '</select></label>' +
+                '<label class="pp-tpl-check"><input type="checkbox" class="pp-tpl-auto"' + (auto ? ' checked' : '') + '> calcular % automático</label>' +
+            '</div>' +
+            '<textarea class="pp-tpl-content" rows="1" placeholder="Descrição (opcional)"></textarea>' +
+            '<div class="pp-tpl-children"></div>';
+
+        el.querySelector(':scope > .pp-tpl-row > .pp-tpl-name').value = data.name || '';
+        el.querySelector(':scope > .pp-tpl-row .pp-tpl-offset').value =
+            (data.offset_start_days != null) ? data.offset_start_days : 0;
+        el.querySelector(':scope > .pp-tpl-row .pp-tpl-dur').value =
+            (data.duration_days != null) ? Math.max(1, data.duration_days) : 1;
+        el.querySelector(':scope > .pp-tpl-content').value = data.content || '';
+        if (data.planned_duration != null) { el.dataset.plannedDuration = data.planned_duration; }
+
+        const childrenC = el.querySelector(':scope > .pp-tpl-children');
+        (Array.isArray(data.children) ? data.children : []).forEach(function (c) {
+            childrenC.appendChild(buildTplTask(c));
+        });
+        return el;
+    }
+
+    function buildTplProject(data) {
+        data = data || {};
+        const stateId     = parseInt(data.projectstates_id, 10) || 0;
+        const ptypeId     = parseInt(data.projecttypes_id, 10) || 0;
+        const userId      = parseInt(data.users_id, 10) || 0;
+        const budget      = parseFloat(data.budget) || 0;
+        const hasChildren = (Array.isArray(data.tasks) && data.tasks.length > 0) ||
+                            (Array.isArray(data.subprojects) && data.subprojects.length > 0);
+        const auto        = (data.auto_percent_done != null) ? !!data.auto_percent_done : hasChildren;
+
+        const el = document.createElement('div');
+        el.className = 'pp-tpl-node pp-tpl-node--project';
+        el.innerHTML =
+            '<div class="pp-tpl-row">' +
+                '<span class="pp-tpl-handle" title="Subprojeto"><i class="ti ti-folder"></i></span>' +
+                '<input type="text" class="pp-tpl-name" placeholder="Nome do subprojeto" maxlength="255">' +
+                '<label class="pp-tpl-num">início (d)<input type="number" class="pp-tpl-offset" min="0" step="1" value="0"></label>' +
+                '<label class="pp-tpl-num">duração (d)<input type="number" class="pp-tpl-dur" min="1" step="1" value="1"></label>' +
+                '<button type="button" class="pp-tpl-mini" data-act="add-ptask">+ tarefa</button>' +
+                '<button type="button" class="pp-tpl-mini" data-act="add-psub">+ subprojeto</button>' +
+                '<button type="button" class="pp-tpl-mini pp-tpl-mini--danger" data-act="remove" title="Remover">&times;</button>' +
+            '</div>' +
+            '<div class="pp-tpl-meta">' +
+                '<label class="pp-tpl-field">Estado<select class="pp-tpl-state">' + tplOptions(ppTplRef.states, stateId) + '</select></label>' +
+                '<label class="pp-tpl-field">Tipo<select class="pp-tpl-ptype">' + tplOptions(ppTplRef.ptypes, ptypeId) + '</select></label>' +
+                '<label class="pp-tpl-field">Gestor<select class="pp-tpl-user">' + tplOptions(ppTplRef.users, userId) + '</select></label>' +
+                '<label class="pp-tpl-field">Orçamento (R$)<input type="number" class="pp-tpl-budget" min="0" step="0.01" value="' + budget + '"></label>' +
+                '<label class="pp-tpl-check"><input type="checkbox" class="pp-tpl-auto"' + (auto ? ' checked' : '') + '> calcular % automático</label>' +
+            '</div>' +
+            '<textarea class="pp-tpl-content" rows="1" placeholder="Descrição (opcional)"></textarea>' +
+            '<div class="pp-tpl-psection"><div class="pp-tpl-plabel">Tarefas</div><div class="pp-tpl-ptasks pp-tpl-list"></div></div>' +
+            '<div class="pp-tpl-psection"><div class="pp-tpl-plabel">Subprojetos</div><div class="pp-tpl-psubs pp-tpl-list"></div></div>';
+
+        el.querySelector(':scope > .pp-tpl-row > .pp-tpl-name').value = data.name || '';
+        el.querySelector(':scope > .pp-tpl-row .pp-tpl-offset').value =
+            (data.offset_start_days != null) ? data.offset_start_days : 0;
+        el.querySelector(':scope > .pp-tpl-row .pp-tpl-dur').value =
+            (data.duration_days != null) ? Math.max(1, data.duration_days) : 1;
+        el.querySelector(':scope > .pp-tpl-content').value = data.content || '';
+
+        const ptasks = el.querySelector(':scope > .pp-tpl-psection > .pp-tpl-ptasks');
+        (Array.isArray(data.tasks) ? data.tasks : []).forEach(function (t) {
+            ptasks.appendChild(buildTplTask(t));
+        });
+        const psubs = el.querySelector(':scope > .pp-tpl-psection > .pp-tpl-psubs');
+        (Array.isArray(data.subprojects) ? data.subprojects : []).forEach(function (p) {
+            psubs.appendChild(buildTplProject(p));
+        });
+        return el;
+    }
+
+    function serializeTplTasks(container) {
+        const out = [];
+        Array.prototype.forEach.call(container.children, function (el) {
+            if (!el.classList || !el.classList.contains('pp-tpl-node--task')) { return; }
+            const row  = el.querySelector(':scope > .pp-tpl-row');
+            const meta = el.querySelector(':scope > .pp-tpl-meta');
+            const name = (row.querySelector('.pp-tpl-name').value || '').trim();
+            if (!name) { return; } // ignora nós sem nome
+            const t = {
+                name: name,
+                content: el.querySelector(':scope > .pp-tpl-content').value || '',
+                offset_start_days: Math.max(0, parseInt(row.querySelector('.pp-tpl-offset').value, 10) || 0),
+                duration_days: Math.max(1, parseInt(row.querySelector('.pp-tpl-dur').value, 10) || 1),
+                projectstates_id: parseInt(meta.querySelector('.pp-tpl-state').value, 10) || 0,
+                projecttasktypes_id: parseInt(meta.querySelector('.pp-tpl-ttype').value, 10) || 0,
+                users_id: parseInt(meta.querySelector('.pp-tpl-user').value, 10) || 0,
+                auto_percent_done: meta.querySelector('.pp-tpl-auto').checked ? 1 : 0
+            };
+            if (el.dataset.plannedDuration) {
+                t.planned_duration = parseInt(el.dataset.plannedDuration, 10) || 0;
+            }
+            const ch = serializeTplTasks(el.querySelector(':scope > .pp-tpl-children'));
+            if (ch.length) { t.children = ch; }
+            out.push(t);
+        });
+        return out;
+    }
+
+    function serializeTplProjects(container) {
+        const out = [];
+        Array.prototype.forEach.call(container.children, function (el) {
+            if (!el.classList || !el.classList.contains('pp-tpl-node--project')) { return; }
+            const row  = el.querySelector(':scope > .pp-tpl-row');
+            const meta = el.querySelector(':scope > .pp-tpl-meta');
+            const name = (row.querySelector('.pp-tpl-name').value || '').trim();
+            if (!name) { return; }
+            const p = {
+                name: name,
+                content: el.querySelector(':scope > .pp-tpl-content').value || '',
+                offset_start_days: Math.max(0, parseInt(row.querySelector('.pp-tpl-offset').value, 10) || 0),
+                duration_days: Math.max(1, parseInt(row.querySelector('.pp-tpl-dur').value, 10) || 1),
+                projectstates_id: parseInt(meta.querySelector('.pp-tpl-state').value, 10) || 0,
+                projecttypes_id: parseInt(meta.querySelector('.pp-tpl-ptype').value, 10) || 0,
+                users_id: parseInt(meta.querySelector('.pp-tpl-user').value, 10) || 0,
+                budget: Math.max(0, parseFloat(meta.querySelector('.pp-tpl-budget').value) || 0),
+                auto_percent_done: meta.querySelector('.pp-tpl-auto').checked ? 1 : 0,
+                tasks: serializeTplTasks(el.querySelector(':scope > .pp-tpl-psection > .pp-tpl-ptasks')),
+                subprojects: serializeTplProjects(el.querySelector(':scope > .pp-tpl-psection > .pp-tpl-psubs'))
+            };
+            out.push(p);
+        });
+        return out;
+    }
+
+    // ------------------------------------------------------------------
     // Sino de alertas (consome ajax/alerts.php)
     // ------------------------------------------------------------------
 

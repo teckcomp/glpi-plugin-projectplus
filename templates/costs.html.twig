@@ -24,6 +24,11 @@
                 <li class="projectplus-sidebar__item">
                     <a href="{{ plugin_web_dir }}/front/timeline.php"><i class="ti ti-stopwatch"></i>{{ __('Timeline', 'projectplus') }}</a>
                 </li>
+                {% if can_templates %}
+                <li class="projectplus-sidebar__item">
+                    <a href="{{ plugin_web_dir }}/front/projecttemplates.php"><i class="ti ti-clipboard-list"></i>{{ __('Modelos', 'projectplus') }}</a>
+                </li>
+                {% endif %}
                 <li class="projectplus-sidebar__item projectplus-sidebar__item--soon">
                     <span><i class="ti ti-calendar"></i>{{ __('Calendário', 'projectplus') }}</span><em>{{ __('em breve', 'projectplus') }}</em>
                 </li>

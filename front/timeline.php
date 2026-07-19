@@ -41,6 +41,7 @@ TemplateRenderer::getInstance()->display(
         'glpi_root'      => $CFG_GLPI['root_doc'] ?? '',
         'timeline'       => Timeline::getData($onlyUser),
         'only_mine'      => $onlyUser !== null,
+        'can_templates'  => Session::haveRight('config', UPDATE),
     ]
 );
 

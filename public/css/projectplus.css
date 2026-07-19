@@ -741,3 +741,82 @@
     border: 1px dashed #b4c0cc; border-radius: 8px; padding: 1px 8px;
     cursor: help; white-space: nowrap; z-index: 12;
 }
+
+/* ===== Etapa 4 — Editor visual de modelos ===== */
+.pp-tpl-list { display: flex; flex-direction: column; gap: 8px; margin: 8px 0; }
+
+.pp-tpl-node {
+    border: 1px solid #e1e5ea; border-radius: 8px; background: #fff;
+    padding: 8px 10px;
+}
+.pp-tpl-node--project { border-left: 3px solid #4a9fd4; background: #fafcfe; }
+.pp-tpl-node--task    { border-left: 3px solid #cfd8e0; }
+
+.pp-tpl-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pp-tpl-handle { color: #7c8a99; font-size: 1rem; flex: 0 0 auto; }
+.pp-tpl-node--project > .pp-tpl-row > .pp-tpl-handle { color: #4a9fd4; }
+
+.pp-tpl-row .pp-tpl-name {
+    flex: 1 1 200px; min-width: 140px;
+    border: 1px solid #c6d0d9; border-radius: 6px; padding: 6px 9px; font-size: 0.9rem;
+}
+.pp-tpl-num {
+    display: flex; flex-direction: column; gap: 2px;
+    font-size: 0.68rem; color: #8a97a5; font-weight: 600;
+}
+.pp-tpl-num input {
+    width: 74px; border: 1px solid #c6d0d9; border-radius: 6px;
+    padding: 5px 7px; font-size: 0.85rem;
+}
+.pp-tpl-content {
+    width: 100%; margin-top: 6px; border: 1px solid #e1e5ea; border-radius: 6px;
+    padding: 5px 8px; font-size: 0.82rem; color: #2c3e50; resize: vertical; min-height: 30px;
+}
+
+.pp-tpl-mini {
+    border: 1px solid #4a9fd4; background: #fff; color: #4a9fd4;
+    border-radius: 6px; padding: 4px 9px; font-size: 0.74rem; font-weight: 700;
+    cursor: pointer; flex: 0 0 auto;
+}
+.pp-tpl-mini:hover { background: #eaf4fb; }
+.pp-tpl-mini--danger { border-color: #d9534f; color: #d9534f; font-size: 0.95rem; line-height: 1; padding: 3px 9px; }
+.pp-tpl-mini--danger:hover { background: #d9534f; color: #fff; }
+
+/* Aninhamento: recuo dos filhos */
+.pp-tpl-children { margin: 8px 0 0 22px; display: flex; flex-direction: column; gap: 8px; }
+.pp-tpl-children:empty { margin: 0; }
+
+.pp-tpl-psection { margin: 8px 0 0 22px; }
+.pp-tpl-plabel {
+    font-size: 0.68rem; font-weight: 700; color: #8a97a5;
+    text-transform: uppercase; letter-spacing: .4px; margin-bottom: 4px;
+}
+
+.pp-tpl-add { margin-top: 6px; }
+
+/* ===== Etapa 4 — campos extras nos itens do modelo (Estado/Tipo/Gestor/Orçamento/auto) ===== */
+.pp-tpl-meta {
+    display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px;
+    margin-top: 8px; padding-top: 8px; border-top: 1px dashed #eef1f4;
+}
+.pp-tpl-field {
+    display: flex; flex-direction: column; gap: 2px;
+    font-size: 0.68rem; color: #8a97a5; font-weight: 600;
+}
+.pp-tpl-field select,
+.pp-tpl-field input {
+    border: 1px solid #c6d0d9; border-radius: 6px; padding: 5px 7px;
+    font-size: 0.82rem; color: #2c3e50; font-weight: 400; min-width: 120px;
+}
+.pp-tpl-field input[type="number"] { min-width: 96px; }
+.pp-tpl-check {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 0.78rem; color: #2c3e50; font-weight: 600; padding-bottom: 4px;
+}
+.pp-tpl-check input { margin: 0; }
+
+.pp-tpl-projmeta .pp-tpl-meta { border-top: 0; margin-top: 0; padding-top: 0; }
+.pp-pm-content {
+    width: 100%; margin-top: 8px; border: 1px solid #e1e5ea; border-radius: 6px;
+    padding: 6px 8px; font-size: 0.85rem; color: #2c3e50; resize: vertical;
+}

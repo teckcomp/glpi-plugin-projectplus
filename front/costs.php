@@ -123,6 +123,7 @@ TemplateRenderer::getInstance()->display(
         'projects_list'  => $allRoots,
         'filter_project' => $filterId,
         'generated_at'   => date('d/m/Y H:i'),
+        'can_templates'  => Session::haveRight('config', UPDATE),
     ]
 );
 
