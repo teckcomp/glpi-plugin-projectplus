@@ -2,7 +2,7 @@
 
 **Plugin de gestão avançada de projetos para GLPI 11**
 Repositório: [github.com/teckcomp/glpi-plugin-projectplus](https://github.com/teckcomp/glpi-plugin-projectplus) · Licença GPL-2.0
-Versão atual: **v0.5.0-alpha** · Atualizado em 18/07/2026
+Versão atual: **v0.5.0-alpha** · Atualizado em 19/07/2026
 
 ---
 
@@ -50,7 +50,7 @@ Versão atual: **v0.5.0-alpha** · Atualizado em 18/07/2026
 - [x] Validação visual no painel (dropdowns e nomes de fase) e classificação dos itens existentes
 - [x] Bloco 3: chip de fase colorido (cor do estado) na árvore de tarefas, tabelas de projetos/subprojetos e tarefas em andamento + donut "Projetos por fase" (respeita o filtro de período)
 
-## 📍 Etapa 3 — Trabalho do dia a dia `em andamento`
+## ✅ Etapa 3 — Trabalho do dia a dia `concluída em 19/07/2026`
 
 - [x] **Bloco 1 (18/07/2026)** — Tela "Minhas tarefas": tarefas do usuário logado agrupadas por projeto, KPIs pessoais (abertas, atrasadas, sem datas, concluídas), hierarquia mãe/filha (aninhada quando a mãe também é do usuário; contexto "Mãe ›" quando não), edição inline com barra de prazo e toggle de concluídas
 - [x] **Bloco 1 / fixes** — "Tarefas em andamento" do painel lista só tarefas-raiz com expansão recursiva de subtarefas (mesmo padrão de "Projetos em andamento"); regra "tarefa mãe só conclui com todas as filhas fechadas" (bloqueio na UI e no endpoint); `auto_percent_done` respeitado (campo % desabilitado, sem ✓, endpoint recusa)
@@ -60,7 +60,7 @@ Versão atual: **v0.5.0-alpha** · Atualizado em 18/07/2026
 - [x] **Bloco 3 / Fix 1** — Regra geral "filhos abertos bloqueiam o pai": subtarefas abertas bloqueiam a mãe (itens implícitos no painel/aba, sem remoção); projeto com filhos abertos mostra 🔒 e não pode ir para fase finalizada (`is_finished`) — hook `PRE_ITEM_UPDATE`, vale na ficha nativa
 - [x] **Bloco 4 (18/07/2026) — Ajustes de layout/UX da Visão geral**: KPIs reorganizados (sai "Recursos alocados", entra "Tarefas em atraso"; ordem Projetos → Projetos em atraso → Tarefas → Tarefas em atraso → Progresso médio → Projetos concluídos); linha com 4 donuts (Projetos por Status, Projetos por fase, Tarefas por status e o novo Tarefas por Estado, por `glpi_projectstates`); "Projetos em andamento" e "Tarefas em andamento" em largura total com campo de busca (filhos e painéis seguem o pai no filtro); 🔗/💬/🔒 nas linhas de "Tarefas em andamento" (inclusive subtarefas expandidas); removidos "Progresso dos projetos", "Atividades recentes" e os itens de menu Projetos/Tarefas; "Custos" renomeado para "Orçamento" no menu
 - [x] **Bloco 4 / Fix 1** — `front/dashboard.php` passa `task_state_chart` ao template (variável ausente virava `null` no JSON e a exceção no donut derrubava toda a inicialização do JS); donuts dinâmicos blindados contra payload não-array
-- [ ] Timeline em HTML/JS puro, fluxo contínuo (tira o "em breve" da sidebar)
+- [x] **Timeline (19/07/2026)** — Gantt somente-leitura em HTML/JS puro (tela própria `front/timeline.php`, dados embutidos na página): projetos em árvore com suas tarefas, barras coloridas pela fase com preenchimento = progresso, linha "hoje", losango para item com só uma data planejada, chip "sem datas", 🔒 em bloqueada, borda vermelha em atraso; zoom Dia/Semana/Mês, botão "Hoje", busca, toggle de concluídas e recolher/expandir por projeto; clique na barra/nome abre a ficha nativa. Sidebar com ícone de cronômetro (tira o "em breve"). **Escopo por usuário**: mostra somente as tarefas em que o usuário logado está na equipe (mesmo critério de "Minhas tarefas") — a permissão configurável "ver todos os projetos" (que devolve a timeline completa a gestor/admin) foi remetida à Etapa 8
 
 ## 📍 Etapa 4 — Modelos de projeto
 
@@ -89,6 +89,7 @@ Versão atual: **v0.5.0-alpha** · Atualizado em 18/07/2026
 ## 📍 Etapa 8 — Níveis de acesso
 
 - Direitos granulares por **módulo/painel** do plugin: Visão geral, Minhas tarefas, Projetos, Tarefas, Kanban, Custos, Modelos, Relatórios, Alertas, Configuração
+- **Permissão "ver todos os projetos"** (visão global × visão pessoal): hoje a Timeline mostra só as tarefas do usuário logado (mesmo critério de "Minhas tarefas") porque nenhum direito disponível separou de forma confiável gestor/admin de técnico no ambiente de homologação; nesta etapa isso vira uma permissão configurável por perfil que, quando marcada, devolve a timeline (e demais telas globais) completa
 - Quatro níveis por módulo, no padrão do GLPI: **ver** (READ), **interagir** (UPDATE), **criar** (CREATE) e **editar/excluir** (PURGE)
 - Matriz de permissões na aba do plugin em **Administração → Perfis** (cada perfil marca o que pode em cada módulo)
 - Migração do direito único atual (`plugin_projectplus_dashboard`) para os novos direitos, preservando o acesso de quem já usa
