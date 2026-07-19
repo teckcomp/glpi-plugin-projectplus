@@ -70,11 +70,13 @@ Versão atual: **v0.5.0-alpha** · Atualizado em 19/07/2026
   - Regra do percentual: só o interruptor automático/manual (`auto_percent_done`), com default ligado quando o item tem filhos
 - Modelo em JSON: `{ project:{...}, tasks:[...], subprojects:[...] }` na tabela `glpi_plugin_projectplus_templates.structure`
 
-## 📍 Etapa 5 — Relatórios
+## 🔶 Etapa 5 — Relatórios `em andamento`
 
-- Exportação CSV das tabelas do painel
-- Burndown por projeto
-- (Relatório de custos consolidado já entregue no Bloco 5)
+- [x] **Bloco 1** — Tela "Relatórios" na sidebar (mesmo direito da Visão geral) com exportação CSV de três conjuntos de dados: Projetos (fase, tipo, gestor, % concluído, datas, orçamento), Tarefas (projeto, tarefa mãe, fase, tipo, responsáveis, datas, atraso, bloqueio) e Custos (mesma consolidação da tela Orçamento, linha a linha). Filtro por projeto raiz (+ descendentes), igual ao da tela Orçamento. CSV com `;` e BOM UTF-8 para abrir certo no Excel PT-BR.
+- [x] **Bloco 1.1** — Filtros extras na tela Relatórios: Tarefa (busca por nome), Gestor/Responsável (mesmo campo para gestor de projeto e responsável de tarefa), Fase e Tipo (campo único com optgroup "Tipo de projeto"/"Tipo de tarefa", cada um só filtra sua tabela). Valem para Projetos e Tarefas; Custos continua só com o filtro de Projeto. Botão "Limpar". CSV de cada bloco reflete os filtros aplicados na tela.
+- [x] **Bloco 1.2** — Filtro de Período (De/Até) na tela Relatórios, reaproveitando `Dashboard::periodCriteria` (mesma semântica da Visão geral: sobreposição de intervalo pelo planejado, itens sem data sempre entram). Vale para Projetos e Tarefas, não para Custos.
+- [ ] Burndown por projeto ← RETOMAR DAQUI
+- (Relatório de custos consolidado em tela já entregue no Bloco 5)
 
 ## 📍 Etapa 6 — Refinamento e pré-produção
 

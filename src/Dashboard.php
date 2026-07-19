@@ -46,7 +46,12 @@ class Dashboard extends CommonGLPI
      * Critérios de sobreposição do período planejado com [from, until].
      * Itens sem datas planejadas sempre entram.
      */
-    private static function periodCriteria(?string $from, ?string $until, string $prefix): array
+    /**
+     * Pública (Etapa 5, Bloco 1.2): reaproveitada por Reports.php para o
+     * filtro "Período" da tela Relatórios — mesma semântica da Visão
+     * geral (sobreposição de intervalo, datas em aberto sempre entram).
+     */
+    public static function periodCriteria(?string $from, ?string $until, string $prefix): array
     {
         $crit = [];
         if ($until) {

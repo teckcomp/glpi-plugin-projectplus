@@ -1,0 +1,218 @@
+{# ProjectPlus — tela "Relatórios" (Etapa 5, Bloco 1) #}
+
+<link rel="stylesheet" href="{{ plugin_web_dir }}/css/projectplus.css">
+
+<div class="projectplus-app" id="projectplus-reports">
+
+    {# ================= COLUNA ESQUERDA: título + sidebar ================= #}
+    <div class="projectplus-left projectplus-noprint">
+        <div class="projectplus-pagetitle">
+            <h2>{{ __('Relatórios', 'projectplus') }}</h2>
+            <span>{{ __('Exportação em CSV dos dados do painel', 'projectplus') }}</span>
+        </div>
+        <nav class="projectplus-sidebar">
+            <ul>
+                <li class="projectplus-sidebar__item">
+                    <a href="{{ plugin_web_dir }}/front/dashboard.php"><i class="ti ti-layout-dashboard"></i>{{ __('Visão geral', 'projectplus') }}</a>
+                </li>
+                <li class="projectplus-sidebar__item">
+                    <a href="{{ plugin_web_dir }}/front/mytasks.php"><i class="ti ti-user-check"></i>{{ __('Minhas tarefas', 'projectplus') }}</a>
+                </li>
+                <li class="projectplus-sidebar__item">
+                    <a href="{{ glpi_root }}/front/project.form.php?showglobalkanban=1"><i class="ti ti-layout-kanban"></i>{{ __('Kanban global', 'projectplus') }}</a>
+                </li>
+                <li class="projectplus-sidebar__item">
+                    <a href="{{ plugin_web_dir }}/front/timeline.php"><i class="ti ti-stopwatch"></i>{{ __('Timeline', 'projectplus') }}</a>
+                </li>
+                {% if can_templates %}
+                <li class="projectplus-sidebar__item">
+                    <a href="{{ plugin_web_dir }}/front/projecttemplates.php"><i class="ti ti-clipboard-list"></i>{{ __('Modelos', 'projectplus') }}</a>
+                </li>
+                {% endif %}
+                <li class="projectplus-sidebar__item projectplus-sidebar__item--soon">
+                    <span><i class="ti ti-calendar"></i>{{ __('Calendário', 'projectplus') }}</span><em>{{ __('em breve', 'projectplus') }}</em>
+                </li>
+                <li class="projectplus-sidebar__item projectplus-sidebar__item--soon">
+                    <span><i class="ti ti-users"></i>{{ __('Recursos', 'projectplus') }}</span><em>{{ __('em breve', 'projectplus') }}</em>
+                </li>
+                <li class="projectplus-sidebar__item">
+                    <a href="{{ plugin_web_dir }}/front/costs.php"><i class="ti ti-coin"></i>{{ __('Orçamento', 'projectplus') }}</a>
+                </li>
+                <li class="projectplus-sidebar__item projectplus-sidebar__item--active">
+                    <a href="{{ plugin_web_dir }}/front/reports.php"><i class="ti ti-report-analytics"></i>{{ __('Relatórios', 'projectplus') }}</a>
+                </li>
+                <li class="projectplus-sidebar__item">
+                    <a href="{{ plugin_web_dir }}/front/config.form.php"><i class="ti ti-settings"></i>{{ __('Configurações', 'projectplus') }}</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+
+    {# ================= ÁREA PRINCIPAL ================= #}
+    <div class="projectplus-main">
+
+        <div class="projectplus-header projectplus-noprint">
+            <form method="get" class="pp-filters" action="">
+                <div class="pp-filter-field">
+                    <label for="pp-f-project">{{ __('Projeto', 'projectplus') }}</label>
+                    <select name="project" id="pp-f-project">
+                        <option value="0">{{ __('— Todos —', 'projectplus') }}</option>
+                        {% for p in projects_list %}
+                            <option value="{{ p.id }}" {{ p.id == filter_project ? 'selected' : '' }}>{{ p.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="pp-filter-field">
+                    <label for="pp-f-task">{{ __('Tarefa', 'projectplus') }}</label>
+                    <input type="text" id="pp-f-task" name="task" value="{{ filter_task }}"
+                           placeholder="{{ __('buscar por nome…', 'projectplus') }}">
+                </div>
+                <div class="pp-filter-field">
+                    <label for="pp-f-user">{{ __('Gestor / Responsável', 'projectplus') }}</label>
+                    <select name="user" id="pp-f-user">
+                        <option value="0">{{ __('— Todos —', 'projectplus') }}</option>
+                        {% for u in users_list %}
+                            <option value="{{ u.id }}" {{ u.id == filter_user ? 'selected' : '' }}>{{ u.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="pp-filter-field">
+                    <label for="pp-f-state">{{ __('Fase', 'projectplus') }}</label>
+                    <select name="state" id="pp-f-state">
+                        <option value="0">{{ __('— Todas —', 'projectplus') }}</option>
+                        {% for s in states_list %}
+                            <option value="{{ s.id }}" {{ s.id == filter_state ? 'selected' : '' }}>{{ s.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="pp-filter-field">
+                    <label for="pp-f-type">{{ __('Tipo', 'projectplus') }}</label>
+                    <select name="typefilter" id="pp-f-type">
+                        <option value="">{{ __('— Todos —', 'projectplus') }}</option>
+                        <optgroup label="{{ __('Tipo de projeto', 'projectplus') }}">
+                            {% for t in project_types_list %}
+                                <option value="p:{{ t.id }}" {{ filter_typefilter == 'p:' ~ t.id ? 'selected' : '' }}>{{ t.name }}</option>
+                            {% endfor %}
+                        </optgroup>
+                        <optgroup label="{{ __('Tipo de tarefa', 'projectplus') }}">
+                            {% for t in task_types_list %}
+                                <option value="t:{{ t.id }}" {{ filter_typefilter == 't:' ~ t.id ? 'selected' : '' }}>{{ t.name }}</option>
+                            {% endfor %}
+                        </optgroup>
+                    </select>
+                </div>
+                <div class="pp-filter-field">
+                    <label for="pp-f-from">{{ __('Período', 'projectplus') }}</label>
+                    <div class="pp-filter-daterange">
+                        <input type="date" id="pp-f-from" name="from" value="{{ filter_from }}">
+                        <span>{{ __('até', 'projectplus') }}</span>
+                        <input type="date" name="until" value="{{ filter_until }}">
+                    </div>
+                </div>
+                <div class="pp-filter-field pp-filter-actions">
+                    <label>&nbsp;</label>
+                    <div>
+                        <button type="submit" class="projectplus-btn">{{ __('Aplicar', 'projectplus') }}</button>
+                        <a class="projectplus-btn projectplus-btn--ghost" href="{{ plugin_web_dir }}/front/reports.php">{{ __('Limpar', 'projectplus') }}</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="pp-report-title">
+            <h2>{{ __('Relatórios', 'projectplus') }}</h2>
+            <span class="projectplus-muted">{{ __('Gerado em', 'projectplus') }} {{ generated_at }}</span>
+            <span class="projectplus-muted">{{ __('Fase/Tipo/Gestor/Período filtram só Projetos e Tarefas — Custos usa apenas o filtro de Projeto', 'projectplus') }}</span>
+        </div>
+
+        {% set pp_qs = '&task=' ~ filter_task|url_encode ~ '&user=' ~ filter_user ~ '&state=' ~ filter_state ~ '&typefilter=' ~ filter_typefilter|url_encode ~ '&from=' ~ filter_from ~ '&until=' ~ filter_until %}
+
+        {# -------- Projetos -------- #}
+        <div class="projectplus-card pp-report-card">
+            <div class="pp-report-projhead">
+                <h3>{{ __('Projetos', 'projectplus') }} <span class="projectplus-muted">({{ projects_report.rows|length }})</span></h3>
+                <a class="projectplus-btn projectplus-btn--ghost"
+                   href="{{ plugin_web_dir }}/front/reports_export.php?type=projects&project={{ filter_project }}{{ pp_qs }}">
+                    <i class="ti ti-download"></i> {{ __('Baixar CSV', 'projectplus') }}
+                </a>
+            </div>
+            {% if projects_report.rows %}
+            <div class="pp-report-scroll">
+                <table class="projectplus-table pp-report-table">
+                    <thead>
+                        <tr>
+                            {% for h in projects_report.header %}<th>{{ h }}</th>{% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for row in projects_report.rows %}
+                        <tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+                <p class="projectplus-muted">{{ __('Nenhum projeto encontrado', 'projectplus') }}</p>
+            {% endif %}
+        </div>
+
+        {# -------- Tarefas -------- #}
+        <div class="projectplus-card pp-report-card">
+            <div class="pp-report-projhead">
+                <h3>{{ __('Tarefas', 'projectplus') }} <span class="projectplus-muted">({{ tasks_report.rows|length }})</span></h3>
+                <a class="projectplus-btn projectplus-btn--ghost"
+                   href="{{ plugin_web_dir }}/front/reports_export.php?type=tasks&project={{ filter_project }}{{ pp_qs }}">
+                    <i class="ti ti-download"></i> {{ __('Baixar CSV', 'projectplus') }}
+                </a>
+            </div>
+            {% if tasks_report.rows %}
+            <div class="pp-report-scroll">
+                <table class="projectplus-table pp-report-table">
+                    <thead>
+                        <tr>
+                            {% for h in tasks_report.header %}<th>{{ h }}</th>{% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for row in tasks_report.rows %}
+                        <tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+                <p class="projectplus-muted">{{ __('Nenhuma tarefa encontrada', 'projectplus') }}</p>
+            {% endif %}
+        </div>
+
+        {# -------- Custos -------- #}
+        <div class="projectplus-card pp-report-card">
+            <div class="pp-report-projhead">
+                <h3>{{ __('Custos', 'projectplus') }} <span class="projectplus-muted">({{ costs_report.rows|length }})</span></h3>
+                <a class="projectplus-btn projectplus-btn--ghost"
+                   href="{{ plugin_web_dir }}/front/reports_export.php?type=costs&project={{ filter_project }}">
+                    <i class="ti ti-download"></i> {{ __('Baixar CSV', 'projectplus') }}
+                </a>
+            </div>
+            {% if costs_report.rows %}
+            <div class="pp-report-scroll">
+                <table class="projectplus-table pp-report-table">
+                    <thead>
+                        <tr>
+                            {% for h in costs_report.header %}<th>{{ h }}</th>{% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for row in costs_report.rows %}
+                        <tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+                <p class="projectplus-muted">{{ __('Nenhum lançamento de custo encontrado', 'projectplus') }}</p>
+            {% endif %}
+        </div>
+
+    </div>
+</div>
