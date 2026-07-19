@@ -892,3 +892,84 @@
 .pp-burndown-legend__swatch--ideal { background: #c3ccd4; }
 .pp-burndown-legend__swatch--real { background: #4a9fd4; }
 .pp-burndown-note { margin-top: 8px; }
+
+/* ===== Etapa 7, Bloco 1 — Kanban avançado (colunas por fase + swimlanes) ===== */
+.pp-kb-controls {
+    display: flex; gap: 16px; flex-wrap: wrap; align-items: center;
+}
+.pp-kb-scroll { overflow: auto; max-height: 74vh; border-top: 1px solid #e3e7eb; }
+.pp-kb-board { display: inline-block; min-width: 100%; }
+.pp-kb-row {
+    display: grid;
+    grid-template-columns: 200px repeat(var(--pp-kb-cols, 1), minmax(230px, 1fr));
+}
+.pp-kb-corner, .pp-kb-col-head {
+    position: sticky; top: 0; z-index: 3;
+    background: #f7f9fb; padding: 10px 12px;
+    font-weight: 700; font-size: 0.8rem; color: #16323f;
+    border-bottom: 3px solid var(--pp-kb-color, #8a97a5);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.pp-kb-corner { left: 0; z-index: 4; border-bottom-color: transparent; }
+.pp-kb-lane-label {
+    position: sticky; left: 0; z-index: 2;
+    background: #fff; border-right: 1px solid #e3e7eb;
+    font-weight: 700; font-size: 0.82rem; color: #16323f;
+    display: flex; align-items: center; gap: 6px; padding-top: 10px; padding-bottom: 10px; padding-right: 10px;
+}
+.pp-kb-lane-label--nested { background: #f7fbfd; font-weight: 600; font-size: 0.78rem; color: #3d5a68; }
+.pp-kb-lane-toggle {
+    flex: 0 0 auto; width: 20px; height: 20px; line-height: 18px; padding: 0;
+    border: 1px solid #c6d0d9; border-radius: 4px; background: #fff; color: #4a9fd4;
+    font-weight: 700; cursor: pointer; font-size: 0.8rem;
+}
+.pp-kb-lane-toggle:hover { background: #eaf4fb; }
+.pp-kb-col {
+    padding: 8px; border-right: 1px solid #eef1f4; border-bottom: 1px solid #eef1f4;
+    display: flex; flex-direction: column; gap: 8px; min-height: 54px;
+}
+.pp-kb-card-item {
+    background: #fff; border: 1px solid #dbe2e8; border-radius: 8px;
+    padding: 8px 10px; font-size: 0.8rem;
+    box-shadow: 0 1px 2px rgba(15, 32, 45, .06);
+}
+.pp-kb-card-item:hover { border-color: #4a9fd4; box-shadow: 0 2px 6px rgba(15, 32, 45, .12); }
+.pp-kb-card-item--blocked { border-color: #d9534f; }
+.pp-kb-card-item--done { opacity: .55; }
+.pp-kb-card-item__link { display: block; text-decoration: none; color: inherit; }
+.pp-kb-card-item__name {
+    display: block; font-weight: 600; color: #16323f; margin-bottom: 6px;
+}
+.pp-kb-card-item__project {
+    display: block; color: #5a7684; font-size: 0.72rem; margin-bottom: 6px;
+}
+.pp-kb-card-item__badges {
+    display: flex; gap: 8px; align-items: center; font-size: 0.72rem; color: #5a7684;
+}
+.pp-kb-card-item__tasks-toggle {
+    display: block; margin-top: 8px; padding: 3px 0 0; border: 0; border-top: 1px dashed #dbe2e8;
+    background: none; color: #4a9fd4; font-size: 0.72rem; font-weight: 600; cursor: pointer; width: 100%; text-align: left;
+}
+.pp-kb-card-item__tasks-toggle:hover { color: #2c7fb0; }
+.pp-kb-card-item__tasks-toggle:disabled { cursor: default; color: #5a7684; }
+/* Bloco 1.3: subtarefa expandida usa o MESMO cartão da tarefa (cardEl com
+   nested=true), só recuada e com um filete à esquerda pra indicar aninhamento. */
+.pp-kb-card-item__subcards {
+    margin: 8px 0 0; padding: 8px 0 0 10px; border-left: 2px solid #eaf1f5;
+    display: flex; flex-direction: column; gap: 8px;
+}
+.pp-kb-card-item--sub {
+    background: #fbfdfe; box-shadow: none;
+}
+.pp-kb-card-item--sub .pp-kb-card-item__name { font-size: 0.78rem; }
+.pp-kb-empty {
+    grid-column: 1 / -1; padding: 24px; text-align: center; color: #8a97a5;
+}
+
+/* ===== Etapa 7, Bloco 1.1 — widget de Kanban embutido na aba nativa do projeto ===== */
+.pp-kb-widget--tab .pp-kb-controls {
+    padding: 8px 0; margin-bottom: 4px;
+}
+.pp-kb-widget--tab .pp-kb-scroll {
+    max-height: 55vh; border: 1px solid #e3e7eb; border-radius: 6px;
+}

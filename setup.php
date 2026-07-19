@@ -10,6 +10,7 @@
 use Glpi\Plugin\Hooks;
 use GlpiPlugin\Projectplus\Config;
 use GlpiPlugin\Projectplus\Dashboard;
+use GlpiPlugin\Projectplus\KanbanTab;
 use GlpiPlugin\Projectplus\Notification;
 use GlpiPlugin\Projectplus\ProjectCost;
 use GlpiPlugin\Projectplus\ProjectTracking;
@@ -54,6 +55,11 @@ function plugin_init_projectplus(): void
     // (a aba Custos NATIVA fica oculta via JS — fonte única de custos)
     Plugin::registerClass(ProjectCost::class, ['addtabon' => Project::class]);
 
+    // Aba "Kanban (ProjectPlus)" dentro do projeto nativo (Etapa 7,
+    // Bloco 1.1) — a aba Kanban NATIVA fica oculta via JS, mesmo padrão
+    // da aba Custos acima
+    Plugin::registerClass(KanbanTab::class, ['addtabon' => Project::class]);
+
     // Item de menu: Ferramentas > ProjectPlus (dashboard)
     if (Session::haveRight('plugin_projectplus_dashboard', READ)) {
         $PLUGIN_HOOKS['menu_toadd']['projectplus'] = [
@@ -74,11 +80,18 @@ function plugin_init_projectplus(): void
     // (o JS só age nas telas do plugin e no sino de alertas)
     $PLUGIN_HOOKS[Hooks::ADD_CSS]['projectplus'] = 'css/projectplus.css';
 
-    // hidenativecosts.js só entra se a opção estiver ativa (Configurações)
-    $pluginJs = ['js/projectplus.js'];
+    // kanban.js entra sempre (não só nas telas do plugin): a aba "Kanban
+    // (ProjectPlus)" da ficha nativa do projeto é carregada via AJAX pelo
+    // próprio GLPI e precisa de window.ProjectPlusKanban já disponível.
+    // hidenativecosts.js/hidenativekanban.js só entram se a opção
+    // correspondente estiver ativa (Configurações).
+    $pluginJs = ['js/projectplus.js', 'js/kanban.js'];
     $ppConfig = Config::get();
     if (!empty($ppConfig['hide_native_costs'])) {
         $pluginJs[] = 'js/hidenativecosts.js';
+    }
+    if (!empty($ppConfig['hide_native_kanban'])) {
+        $pluginJs[] = 'js/hidenativekanban.js';
     }
     $PLUGIN_HOOKS[Hooks::ADD_JAVASCRIPT]['projectplus'] = $pluginJs;
 

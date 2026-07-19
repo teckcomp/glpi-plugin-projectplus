@@ -23,6 +23,7 @@ class Config
         'menu_first'          => 1,   // 1 = Painel primeiro no menu Ferramentas
         'budget_warn_percent' => 80,  // % do teto que dispara o alerta de orçamento
         'hide_native_costs'   => 1,   // 1 = oculta a aba Custos nativa do projeto
+        'hide_native_kanban'  => 1,   // 1 = oculta a aba Kanban nativa do projeto (Etapa 7)
         'purge_on_uninstall'  => 0,   // 1 = apaga tabelas/dados ao desinstalar
     ];
 
@@ -113,6 +114,16 @@ class Config
         echo "<option value='1'" . ($config['hide_native_costs'] ? ' selected' : '') . '>'
             . __('Sim') . '</option>';
         echo "<option value='0'" . (!$config['hide_native_costs'] ? ' selected' : '') . '>'
+            . __('Não') . '</option>';
+        echo '</select></td></tr>';
+
+        echo '<tr class="tab_bg_1"><td>'
+            . __('Ocultar a aba "Kanban" nativa do projeto (fonte única: aba Kanban do ProjectPlus)', 'projectplus')
+            . '</td><td>';
+        echo "<select name='hide_native_kanban'>";
+        echo "<option value='1'" . ($config['hide_native_kanban'] ? ' selected' : '') . '>'
+            . __('Sim') . '</option>';
+        echo "<option value='0'" . (!$config['hide_native_kanban'] ? ' selected' : '') . '>'
             . __('Não') . '</option>';
         echo '</select></td></tr>';
 
