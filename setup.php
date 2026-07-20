@@ -60,6 +60,10 @@ function plugin_init_projectplus(): void
     // da aba Custos acima
     Plugin::registerClass(KanbanTab::class, ['addtabon' => Project::class]);
 
+    // Aba "ProjectPlus" na tela de Perfil (Administração → Perfis),
+    // Etapa 8, Bloco 1 — matriz de direitos granulares por módulo/escopo.
+    Plugin::registerClass(\GlpiPlugin\Projectplus\Profile::class, ['addtabon' => \Profile::class]);
+
     // Item de menu: Ferramentas > ProjectPlus (dashboard)
     if (Session::haveRight('plugin_projectplus_dashboard', READ)) {
         $PLUGIN_HOOKS['menu_toadd']['projectplus'] = [

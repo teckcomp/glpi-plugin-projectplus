@@ -217,6 +217,61 @@ class Install
         $migration->addRight('plugin_projectplus_dashboard', ALLSTANDARDRIGHT, ['config' => UPDATE]);
 
         // ------------------------------------------------------------------
+        // Etapa 8, Bloco 1 — direitos granulares por módulo + escopo.
+        //
+        // Migração (opção A "preservar"): quem já tinha o direito único
+        // 'plugin_projectplus_dashboard' (READ) recebe os módulos no nível
+        // máximo, para NINGUÉM perder acesso ao atualizar. O ajuste fino
+        // (retirar o que cada perfil não deve ter) é feito depois na aba
+        // "ProjectPlus" do Perfil. Os direitos de ESCOPO ("ver os que
+        // gerencia" / "ver todos") NÃO são soltos para todos: só o
+        // super-admin (config UPDATE) os recebe; o Gestor é marcado à mão.
+        //
+        // addRight é idempotente: se o direito já existe para o perfil,
+        // não sobrescreve — seguro rodar de novo (plugin:install --force).
+        //
+        // OBS.: este bloco só CRIA e MIGRA os direitos + exibe a matriz.
+        // O gate das telas por esses direitos é o Bloco 2 (nada de
+        // comportamento de tela muda ainda neste bloco).
+        // ------------------------------------------------------------------
+        $keepDashboard = ['plugin_projectplus_dashboard' => READ];
+
+        // Níveis da matriz do plugin: Ver/Interagir/Criar/Excluir
+        // (READ|UPDATE|CREATE|DELETE = 15). NÃO usar ALLSTANDARDRIGHT, que
+        // inclui PURGE (16) — bit sem coluna na matriz, que sumiria no
+        // primeiro save do perfil (viraria 15 na prática de qualquer jeito).
+        $crudBits = READ | UPDATE | CREATE | DELETE;
+
+        // Módulos com CRUD completo (Ver/Interagir/Criar/Excluir)
+        $migration->addRight('plugin_projectplus_projects', $crudBits, $keepDashboard);
+        $migration->addRight('plugin_projectplus_tasks', $crudBits, $keepDashboard);
+
+        // Kanban de tarefas: Ver + Interagir (mover fase)
+        $migration->addRight('plugin_projectplus_kanban', READ | UPDATE, $keepDashboard);
+
+        // Custos / Orçamento: Ver + Interagir (lançar)
+        $migration->addRight('plugin_projectplus_costs', READ | UPDATE, $keepDashboard);
+
+        // Somente leitura
+        $migration->addRight('plugin_projectplus_reports', READ, $keepDashboard);
+        $migration->addRight('plugin_projectplus_alerts', READ, $keepDashboard);
+
+        // Kanban de projetos (exclusivo do perfil Cliente): a linha existe
+        // para todos (valor 0) e é marcada à mão no perfil Cliente.
+        $migration->addRight('plugin_projectplus_projectkanban', 0);
+
+        // Modelos: hoje travado em super-admin (config UPDATE, lição 11).
+        // Vira direito próprio, preservando o comportamento (só quem tem
+        // config UPDATE recebe); a partir daqui é configurável por perfil.
+        $migration->addRight('plugin_projectplus_templates', $crudBits, ['config' => UPDATE]);
+
+        // Escopo: só super-admin por padrão (o Gestor recebe "ver os que
+        // gerencia" manualmente na aba do Perfil). A linha "seemanaged"
+        // existe para todos (valor 0) para aparecer na matriz.
+        $migration->addRight('plugin_projectplus_seemanaged', 0);
+        $migration->addRight('plugin_projectplus_seeall', READ, ['config' => UPDATE]);
+
+        // ------------------------------------------------------------------
         // Cron: verificação de prazos/pendências (requisito 5)
         // ------------------------------------------------------------------
         CronTask::register(
@@ -270,8 +325,21 @@ class Install
             );
         }
 
-        // Remove o direito de todos os perfis
-        ProfileRight::deleteProfileRights(['plugin_projectplus_dashboard']);
+        // Remove os direitos de todos os perfis (o único original +
+        // os granulares da Etapa 8)
+        ProfileRight::deleteProfileRights([
+            'plugin_projectplus_dashboard',
+            'plugin_projectplus_projects',
+            'plugin_projectplus_tasks',
+            'plugin_projectplus_kanban',
+            'plugin_projectplus_projectkanban',
+            'plugin_projectplus_costs',
+            'plugin_projectplus_reports',
+            'plugin_projectplus_templates',
+            'plugin_projectplus_alerts',
+            'plugin_projectplus_seemanaged',
+            'plugin_projectplus_seeall',
+        ]);
 
         // Remove o cron
         CronTask::unregister('projectplus');
