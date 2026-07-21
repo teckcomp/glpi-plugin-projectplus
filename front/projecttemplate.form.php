@@ -19,7 +19,7 @@ include('../../../inc/includes.php');
 /** @var array $CFG_GLPI */
 global $CFG_GLPI;
 
-Session::checkRight('config', UPDATE);
+Session::checkRight('plugin_projectplus_templates', UPDATE);
 
 $backUrl = Plugin::getWebDir('projectplus') . '/front/projecttemplates.php';
 

@@ -39,7 +39,9 @@ class Templates
      */
     public static function canAccess(): bool
     {
-        return Session::haveRight('config', UPDATE);
+        // Etapa 8, Bloco 2: gate de Modelos migrou de `config` (super-admin)
+        // para o direito próprio do módulo (Interagir = UPDATE).
+        return Session::haveRight('plugin_projectplus_templates', UPDATE);
     }
 
     /**

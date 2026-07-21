@@ -5,6 +5,7 @@
  */
 
 use Glpi\Application\View\TemplateRenderer;
+use GlpiPlugin\Projectplus\Access;
 use GlpiPlugin\Projectplus\Dashboard;
 
 include('../../../inc/includes.php');
@@ -95,8 +96,9 @@ TemplateRenderer::getInstance()->display(
         'parents'         => $parents,
         'current_user_id' => (int) Session::getLoginUserID(),
         'csrf_token'      => Session::getNewCSRFToken(),
-        'can_create'      => Session::haveRight('project', CREATE),
+        'can_create'      => Session::haveRight('plugin_projectplus_projects', CREATE),
         'can_templates'   => Session::haveRight('config', UPDATE),
+        'nav'             => Access::sidebar(),
     ]
 );
 

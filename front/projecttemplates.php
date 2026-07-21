@@ -13,6 +13,7 @@
  */
 
 use Glpi\Application\View\TemplateRenderer;
+use GlpiPlugin\Projectplus\Access;
 use GlpiPlugin\Projectplus\Dashboard;
 use GlpiPlugin\Projectplus\Templates;
 
@@ -21,7 +22,7 @@ include('../../../inc/includes.php');
 /** @var array $CFG_GLPI */
 global $CFG_GLPI;
 
-Session::checkRight('config', UPDATE);
+Session::checkRight('plugin_projectplus_templates', READ);
 
 Html::header(
     __('Modelos', 'projectplus'),
@@ -38,7 +39,8 @@ TemplateRenderer::getInstance()->display(
         'templates'      => Templates::listAll(),
         'projects'       => Templates::getProjectsForSelect(),
         'can_templates'  => true,
-        'can_create'     => Session::haveRight('project', CREATE),
+        'nav'             => Access::sidebar(),
+        'can_create'     => Session::haveRight('plugin_projectplus_projects', CREATE),
         'csrf_token'     => Session::getNewCSRFToken(),
     ]
 );

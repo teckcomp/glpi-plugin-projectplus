@@ -15,7 +15,7 @@ use GlpiPlugin\Projectplus\Reports;
 
 include('../../../inc/includes.php');
 
-Session::checkRight('plugin_projectplus_dashboard', READ);
+Session::checkRight('plugin_projectplus_reports', READ);
 
 $type     = (string) ($_GET['type'] ?? '');
 $filterId = (int) ($_GET['project'] ?? 0);

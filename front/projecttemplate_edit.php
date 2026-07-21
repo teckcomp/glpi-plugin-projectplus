@@ -15,6 +15,7 @@
  */
 
 use Glpi\Application\View\TemplateRenderer;
+use GlpiPlugin\Projectplus\Access;
 use GlpiPlugin\Projectplus\Dashboard;
 use GlpiPlugin\Projectplus\Templates;
 
@@ -23,7 +24,7 @@ include('../../../inc/includes.php');
 /** @var array $CFG_GLPI */
 global $CFG_GLPI;
 
-Session::checkRight('config', UPDATE);
+Session::checkRight('plugin_projectplus_templates', UPDATE);
 
 $id  = (int) ($_GET['id'] ?? 0);
 $tpl = $id > 0 ? Templates::getForEdit($id) : null;
@@ -48,6 +49,7 @@ TemplateRenderer::getInstance()->display(
         'plugin_web_dir' => Plugin::getWebDir('projectplus'),
         'glpi_root'      => $CFG_GLPI['root_doc'] ?? '',
         'can_templates'  => true,
+        'nav'             => Access::sidebar(),
         'tpl_id'         => $tpl['id'] ?? 0,
         'tpl_name'       => $tpl['name'] ?? '',
         'tpl_comment'    => $tpl['comment'] ?? '',

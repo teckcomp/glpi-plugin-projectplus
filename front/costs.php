@@ -9,6 +9,7 @@
  */
 
 use Glpi\Application\View\TemplateRenderer;
+use GlpiPlugin\Projectplus\Access;
 use GlpiPlugin\Projectplus\Budget;
 use GlpiPlugin\Projectplus\Dashboard;
 
@@ -18,7 +19,7 @@ include('../../../inc/includes.php');
 /** @var \DBmysql $DB */
 global $CFG_GLPI, $DB;
 
-Session::checkRight('plugin_projectplus_dashboard', READ);
+Session::checkRight('plugin_projectplus_costs', READ);
 
 Html::header(
     __('Custos consolidados', 'projectplus'),
@@ -124,6 +125,7 @@ TemplateRenderer::getInstance()->display(
         'filter_project' => $filterId,
         'generated_at'   => date('d/m/Y H:i'),
         'can_templates'  => Session::haveRight('config', UPDATE),
+        'nav'             => Access::sidebar(),
     ]
 );
 

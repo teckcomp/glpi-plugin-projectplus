@@ -16,6 +16,7 @@
  */
 
 use Glpi\Application\View\TemplateRenderer;
+use GlpiPlugin\Projectplus\Access;
 use GlpiPlugin\Projectplus\Dashboard;
 use GlpiPlugin\Projectplus\Reports;
 
@@ -24,7 +25,7 @@ include('../../../inc/includes.php');
 /** @var array $CFG_GLPI */
 global $CFG_GLPI;
 
-Session::checkRight('plugin_projectplus_dashboard', READ);
+Session::checkRight('plugin_projectplus_reports', READ);
 
 Html::header(
     __('Relatórios', 'projectplus'),
@@ -89,6 +90,7 @@ TemplateRenderer::getInstance()->display(
         'filter_until'      => $until ?? '',
         'generated_at'      => date('d/m/Y H:i'),
         'can_templates'     => Session::haveRight('config', UPDATE),
+        'nav'             => Access::sidebar(),
         'projects_report'   => $projects,
         'tasks_report'      => $tasks,
         'costs_report'      => $costs,

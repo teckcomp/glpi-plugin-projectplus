@@ -10,6 +10,7 @@
  */
 
 use Glpi\Application\View\TemplateRenderer;
+use GlpiPlugin\Projectplus\Access;
 use GlpiPlugin\Projectplus\Dashboard;
 use GlpiPlugin\Projectplus\Kanban;
 
@@ -18,7 +19,11 @@ include('../../../inc/includes.php');
 /** @var array $CFG_GLPI */
 global $CFG_GLPI;
 
-Session::checkRight('plugin_projectplus_dashboard', READ);
+// Kanban aparece para quem tem o board de tarefas OU o de projetos (Cliente).
+// O roteamento para o board de projetos em si é o Bloco 4 (Access::kanbanIsProjects()).
+if (!Access::canKanban()) {
+    Html::displayRightError();
+}
 
 Html::header(
     __('Kanban', 'projectplus'),
@@ -34,6 +39,7 @@ TemplateRenderer::getInstance()->display(
         'glpi_root'      => $CFG_GLPI['root_doc'] ?? '',
         'kanban'         => Kanban::getBoardData(),
         'can_templates'  => Session::haveRight('config', UPDATE),
+        'nav'             => Access::sidebar(),
         // Etapa 7, Bloco 2a — arrastar-e-soltar: quem pode editar tarefa
         // arrasta o cartão entre colunas (muda a fase). Token inicial para
         // a 1ª chamada AJAX (ajax/task.php action=kanban_move); o JS

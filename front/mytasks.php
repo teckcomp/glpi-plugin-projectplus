@@ -9,6 +9,7 @@
  */
 
 use Glpi\Application\View\TemplateRenderer;
+use GlpiPlugin\Projectplus\Access;
 use GlpiPlugin\Projectplus\Dashboard;
 
 include('../../../inc/includes.php');
@@ -16,7 +17,7 @@ include('../../../inc/includes.php');
 /** @var array $CFG_GLPI */
 global $CFG_GLPI;
 
-Session::checkRight('plugin_projectplus_dashboard', READ);
+Session::checkRight('plugin_projectplus_tasks', READ);
 
 Html::header(
     __('Minhas tarefas', 'projectplus'),
@@ -40,6 +41,7 @@ TemplateRenderer::getInstance()->display(
         'current_user_id' => (int) Session::getLoginUserID(),
         'csrf_token'      => Session::getNewCSRFToken(),
         'can_templates'   => Session::haveRight('config', UPDATE),
+        'nav'             => Access::sidebar(),
     ]
 );
 

@@ -12,20 +12,28 @@
             <span>{{ is_new ? __('Novo modelo', 'projectplus') : __('Editar modelo', 'projectplus') }}</span>
         </div>
         <nav class="projectplus-sidebar">
-            <ul>
+                        <ul>
+                {% if nav.dashboard %}
                 <li class="projectplus-sidebar__item">
                     <a href="{{ plugin_web_dir }}/front/dashboard.php"><i class="ti ti-layout-dashboard"></i>{{ __('Visão geral', 'projectplus') }}</a>
                 </li>
+                {% endif %}
+                {% if nav.tasks %}
                 <li class="projectplus-sidebar__item">
                     <a href="{{ plugin_web_dir }}/front/mytasks.php"><i class="ti ti-user-check"></i>{{ __('Minhas tarefas', 'projectplus') }}</a>
                 </li>
+                {% endif %}
+                {% if nav.kanban %}
                 <li class="projectplus-sidebar__item">
                     <a href="{{ plugin_web_dir }}/front/kanban.php"><i class="ti ti-layout-kanban"></i>{{ __('Kanban', 'projectplus') }}</a>
                 </li>
+                {% endif %}
+                {% if nav.timeline %}
                 <li class="projectplus-sidebar__item">
                     <a href="{{ plugin_web_dir }}/front/timeline.php"><i class="ti ti-stopwatch"></i>{{ __('Timeline', 'projectplus') }}</a>
                 </li>
-                {% if can_templates %}
+                {% endif %}
+                {% if nav.templates %}
                 <li class="projectplus-sidebar__item projectplus-sidebar__item--active">
                     <a href="{{ plugin_web_dir }}/front/projecttemplates.php"><i class="ti ti-clipboard-list"></i>{{ __('Modelos', 'projectplus') }}</a>
                 </li>
@@ -36,15 +44,21 @@
                 <li class="projectplus-sidebar__item projectplus-sidebar__item--soon">
                     <span><i class="ti ti-users"></i>{{ __('Recursos', 'projectplus') }}</span><em>{{ __('em breve', 'projectplus') }}</em>
                 </li>
+                {% if nav.costs %}
                 <li class="projectplus-sidebar__item">
                     <a href="{{ plugin_web_dir }}/front/costs.php"><i class="ti ti-coin"></i>{{ __('Orçamento', 'projectplus') }}</a>
                 </li>
+                {% endif %}
+                {% if nav.reports %}
                 <li class="projectplus-sidebar__item">
                     <a href="{{ plugin_web_dir }}/front/reports.php"><i class="ti ti-report-analytics"></i>{{ __('Relatórios', 'projectplus') }}</a>
                 </li>
+                {% endif %}
+                {% if nav.config %}
                 <li class="projectplus-sidebar__item">
                     <a href="{{ plugin_web_dir }}/front/config.form.php"><i class="ti ti-settings"></i>{{ __('Configurações', 'projectplus') }}</a>
                 </li>
+                {% endif %}
             </ul>
         </nav>
     </div>

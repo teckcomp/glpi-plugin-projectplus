@@ -9,6 +9,7 @@
  */
 
 use Glpi\Application\View\TemplateRenderer;
+use GlpiPlugin\Projectplus\Access;
 use GlpiPlugin\Projectplus\Dashboard;
 use GlpiPlugin\Projectplus\Timeline;
 
@@ -17,7 +18,7 @@ include('../../../inc/includes.php');
 /** @var array $CFG_GLPI */
 global $CFG_GLPI;
 
-Session::checkRight('plugin_projectplus_dashboard', READ);
+Session::checkRight('plugin_projectplus_tasks', READ);
 
 // Escopo: mesmo critério de "Minhas tarefas" — a Timeline mostra somente
 // as tarefas em que o usuário logado está na equipe (e os projetos dessas
@@ -42,6 +43,7 @@ TemplateRenderer::getInstance()->display(
         'timeline'       => Timeline::getData($onlyUser),
         'only_mine'      => $onlyUser !== null,
         'can_templates'  => Session::haveRight('config', UPDATE),
+        'nav'             => Access::sidebar(),
     ]
 );
 
