@@ -13,6 +13,7 @@ use Glpi\Application\View\TemplateRenderer;
 use GlpiPlugin\Projectplus\Access;
 use GlpiPlugin\Projectplus\Dashboard;
 use GlpiPlugin\Projectplus\Kanban;
+use GlpiPlugin\Projectplus\Scope;
 
 include('../../../inc/includes.php');
 
@@ -24,6 +25,16 @@ global $CFG_GLPI;
 if (!Access::canKanban()) {
     Html::displayRightError();
 }
+
+// Escopo (Etapa 8, Bloco 3): board cheio abre no PESSOAL (minhas tarefas);
+// quem tem direito de escopo amplia via ?scope=all.
+$scopeMode           = Scope::mode();
+$scopeMyTaskIds      = Scope::myTaskIds($scopeMode);      // personal
+$scopeTaskProjectIds = Scope::taskProjectIds($scopeMode); // managed
+$scopeCanExpand      = Scope::canExpand();
+$scopeIsExpanded     = Scope::isExpanded();
+$scopeToggleUrl      = Plugin::getWebDir('projectplus') . '/front/kanban.php'
+    . ($scopeIsExpanded ? '?scope=mine' : '');
 
 Html::header(
     __('Kanban', 'projectplus'),
@@ -37,9 +48,12 @@ TemplateRenderer::getInstance()->display(
     [
         'plugin_web_dir' => Plugin::getWebDir('projectplus'),
         'glpi_root'      => $CFG_GLPI['root_doc'] ?? '',
-        'kanban'         => Kanban::getBoardData(),
+        'kanban'         => Kanban::getBoardData(null, $scopeMyTaskIds, $scopeTaskProjectIds),
         'can_templates'  => Session::haveRight('config', UPDATE),
         'nav'             => Access::sidebar(),
+        'scope_can_expand'  => $scopeCanExpand,
+        'scope_is_expanded' => $scopeIsExpanded,
+        'scope_toggle_url'  => $scopeToggleUrl,
         // Etapa 7, Bloco 2a — arrastar-e-soltar: quem pode editar tarefa
         // arrasta o cartão entre colunas (muda a fase). Token inicial para
         // a 1ª chamada AJAX (ajax/task.php action=kanban_move); o JS

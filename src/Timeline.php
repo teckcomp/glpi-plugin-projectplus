@@ -33,13 +33,21 @@ class Timeline
      * @return array{range: array{min: string, max: string, today: string},
      *               groups: array}
      */
-    public static function getData(?int $onlyUserId = null): array
+    public static function getData(?int $onlyUserId = null, ?array $taskProjectIds = null): array
     {
         /** @var \DBmysql $DB */
         global $DB;
 
         $states = Dashboard::getStatesMap();
         $now    = time();
+
+        // Escopo (Bloco 3): personal usa $onlyUserId (minhas tarefas);
+        // managed usa $taskProjectIds (tarefas dos meus projetos); "todos"
+        // = ambos null. Só o "todos" mostra projetos sem tarefas no escopo.
+        $scopeProj = ($taskProjectIds !== null)
+            ? array_flip(array_map('intval', $taskProjectIds))
+            : null;
+        $showEmpty = ($onlyUserId === null && $taskProjectIds === null);
 
         // ---------- Projetos (todos, em árvore) ----------
         $projByParent = [];
@@ -101,7 +109,10 @@ class Timeline
             ]) as $row
         ) {
             if ($mine !== null && !isset($mine[(int) $row['id']])) {
-                continue; // fora do escopo do usuário
+                continue; // fora do escopo do usuário (personal)
+            }
+            if ($scopeProj !== null && !isset($scopeProj[(int) $row['projects_id']])) {
+                continue; // fora dos projetos do escopo (managed)
             }
             $tasksByProject[(int) $row['projects_id']][] = $row;
             $allTaskIds[] = (int) $row['id'];
@@ -123,7 +134,7 @@ class Timeline
             $states,
             $deps,
             $now,
-            $onlyUserId
+            $showEmpty
         ): void {
             foreach ($projByParent[$parentId] ?? [] as $p) {
                 $pid     = (int) $p['id'];
@@ -202,9 +213,10 @@ class Timeline
                 };
                 $walkTask(0, 0);
 
-                // No escopo por usuário, projeto sem tarefas dele sai da
-                // lista (os subprojetos ainda são percorridos)
-                if ($onlyUserId === null || !empty($group['tasks'])) {
+                // Nos escopos pessoal/gerência, projeto sem tarefas do
+                // escopo sai da lista (subprojetos ainda são percorridos);
+                // só o "Ver tudo" total mostra projetos vazios.
+                if ($showEmpty || !empty($group['tasks'])) {
                     if ($start) {
                         $dates[] = $start;
                     }

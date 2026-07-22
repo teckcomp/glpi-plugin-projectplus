@@ -7,6 +7,7 @@
 use Glpi\Application\View\TemplateRenderer;
 use GlpiPlugin\Projectplus\Access;
 use GlpiPlugin\Projectplus\Dashboard;
+use GlpiPlugin\Projectplus\Scope;
 
 include('../../../inc/includes.php');
 
@@ -29,7 +30,31 @@ Html::header(
 $from  = preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['from'] ?? '') ? $_GET['from'] : null;
 $until = preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['until'] ?? '') ? $_GET['until'] : null;
 
-$data = Dashboard::getData($from, $until);
+// Escopo (Etapa 8, Bloco 3): a tela abre sempre no PESSOAL; quem tem
+// direito de escopo pode ampliar via ?scope=all (sem memória em sessão).
+$scopeMode           = Scope::mode();
+$scopeProjectIds     = Scope::projectIds($scopeMode);      // projetos exatos (equipe/gerência)
+$scopeMyTaskIds      = Scope::myTaskIds($scopeMode);       // personal: minhas tarefas
+$scopeTaskProjectIds = Scope::taskProjectIds($scopeMode);  // managed: tarefas por projeto
+
+$data = Dashboard::getData($from, $until, $scopeProjectIds, $scopeMyTaskIds, $scopeTaskProjectIds);
+
+// Botão "Ver tudo" / "Ver só os meus" — preserva o filtro de período na URL.
+$scopeCanExpand  = Scope::canExpand();
+$scopeIsExpanded = Scope::isExpanded();
+$scopeToggle     = [];
+if ($from) {
+    $scopeToggle['from'] = $from;
+}
+if ($until) {
+    $scopeToggle['until'] = $until;
+}
+if ($scopeIsExpanded) {
+    // Do escopo amplo (padrão), o botão oferece REDUZIR ao pessoal.
+    $scopeToggle['scope'] = 'mine';
+}
+$scopeToggleUrl = Plugin::getWebDir('projectplus') . '/front/dashboard.php'
+    . ($scopeToggle === [] ? '' : ('?' . http_build_query($scopeToggle)));
 
 $ganttActive = false;
 $plugin      = new Plugin();
@@ -99,6 +124,9 @@ TemplateRenderer::getInstance()->display(
         'can_create'      => Session::haveRight('plugin_projectplus_projects', CREATE),
         'can_templates'   => Session::haveRight('config', UPDATE),
         'nav'             => Access::sidebar(),
+        'scope_can_expand'  => $scopeCanExpand,
+        'scope_is_expanded' => $scopeIsExpanded,
+        'scope_toggle_url'  => $scopeToggleUrl,
     ]
 );
 

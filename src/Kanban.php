@@ -93,8 +93,11 @@ class Kanban
      *   lanes: array{responsible: array<int, array{id:int, name:string}>}
      * }
      */
-    public static function getBoardData(?int $projectId = null): array
-    {
+    public static function getBoardData(
+        ?int $projectId = null,
+        ?array $myTaskIds = null,
+        ?array $taskProjectIds = null
+    ): array {
         /** @var \DBmysql $DB */
         global $DB;
 
@@ -129,8 +132,15 @@ class Kanban
         ] + getEntitiesRestrictCriteria('glpi_projects');
 
         if ($projectId !== null) {
+            // Aba do projeto (KanbanTab): escopo do projeto + descendentes.
             $scopeIds = array_merge([$projectId], Budget::getDescendantIds($projectId));
             $where['glpi_projecttasks.projects_id'] = $scopeIds;
+        } elseif ($myTaskIds !== null) {
+            // Board cheio, escopo PESSOAL: só as minhas tarefas.
+            $where['glpi_projecttasks.id'] = Scope::inList($myTaskIds);
+        } elseif ($taskProjectIds !== null) {
+            // Board cheio, escopo GERÊNCIA: tarefas dos meus projetos.
+            $where['glpi_projecttasks.projects_id'] = Scope::inList($taskProjectIds);
         }
 
         $rows       = [];

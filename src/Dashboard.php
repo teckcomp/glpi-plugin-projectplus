@@ -109,8 +109,13 @@ class Dashboard extends CommonGLPI
     // Dados do painel
     // ------------------------------------------------------------------
 
-    public static function getData(?string $from = null, ?string $until = null): array
-    {
+    public static function getData(
+        ?string $from = null,
+        ?string $until = null,
+        ?array $projectIds = null,
+        ?array $myTaskIds = null,
+        ?array $taskProjectIds = null
+    ): array {
         /** @var \DBmysql $DB */
         global $DB;
 
@@ -125,6 +130,15 @@ class Dashboard extends CommonGLPI
 
         foreach (self::periodCriteria($from, $until, 'glpi_projects.') as $c) {
             $where[] = $c;
+        }
+
+        // Escopo (Bloco 3): projetos EXATOS do escopo (cada um por si — raiz
+        // ou subprojeto). null = sem filtro (modo "todos", só raízes);
+        // lista vazia vira [0] = nada. Ao filtrar por id exato, remove-se a
+        // restrição de "só projetos-pai" para o subprojeto aparecer sozinho.
+        if ($projectIds !== null) {
+            unset($where['glpi_projects.projects_id']);
+            $where['glpi_projects.id'] = Scope::inList($projectIds);
         }
 
         $iterator = $DB->request([
@@ -186,7 +200,9 @@ class Dashboard extends CommonGLPI
                 'last_activity' => $tracking['last_activity'] ?? $row['date_mod'],
                 'is_stalled'    => (bool) ($tracking['is_stalled'] ?? false),
                 'is_overdue'    => $isOverdue,
-                'children'      => $children,
+                // No escopo pessoal a lista é PLANA: sem expandir para
+                // subprojetos que o usuário não participa (Bloco 3).
+                'children'      => ($myTaskIds !== null) ? 0 : $children,
                 'budget'        => $budgetInfo,
                 'deadline'      => Deadline::compute(
                     $row['plan_start_date'],
@@ -241,6 +257,13 @@ class Dashboard extends CommonGLPI
         foreach (self::periodCriteria($from, $until, '') as $c) {
             $taskWhere[] = $c;
         }
+        // Escopo (Bloco 3): personal = só as MINHAS tarefas; managed = todas
+        // as tarefas dos meus projetos (raízes + descendentes).
+        if ($myTaskIds !== null) {
+            $taskWhere['id'] = Scope::inList($myTaskIds);
+        } elseif ($taskProjectIds !== null) {
+            $taskWhere['projects_id'] = Scope::inList($taskProjectIds);
+        }
 
         $tasksChart     = ['done' => 0, 'in_progress' => 0, 'pending' => 0, 'overdue' => 0];
         $taskStateCount = []; // projectstates_id => quantidade (donut "Tarefas por Estado")
@@ -268,15 +291,20 @@ class Dashboard extends CommonGLPI
         $kpis['tasks_overdue'] = $tasksChart['overdue'];
 
         // --- Concluídos este mês (percent 100 com modificação no mês corrente) ---
+        $doneMonthWhere = [
+            'is_deleted'   => 0,
+            'is_template'  => 0,
+            'percent_done' => ['>=', 100],
+            'date_mod'     => ['>=', date('Y-m-01 00:00:00')],
+        ];
+        // Escopo (Bloco 3): conta só os projetos do escopo.
+        if ($projectIds !== null) {
+            $doneMonthWhere['id'] = Scope::inList($projectIds);
+        }
         $doneMonth = $DB->request([
             'COUNT' => 'cpt',
             'FROM'  => 'glpi_projects',
-            'WHERE' => [
-                'is_deleted'   => 0,
-                'is_template'  => 0,
-                'percent_done' => ['>=', 100],
-                'date_mod'     => ['>=', date('Y-m-01 00:00:00')],
-            ],
+            'WHERE' => $doneMonthWhere,
         ])->current();
         $kpis['done_month'] = (int) ($doneMonth['cpt'] ?? 0);
 
@@ -329,7 +357,7 @@ class Dashboard extends CommonGLPI
             'phase_chart'      => $phaseChart,
             'task_state_chart' => $taskStateChart,
             'projects'         => $projects,
-            'open_tasks'       => self::getOpenTasks($from, $until, 15),
+            'open_tasks'       => self::getOpenTasks($from, $until, 15, $myTaskIds, $taskProjectIds),
         ];
     }
 
@@ -338,15 +366,32 @@ class Dashboard extends CommonGLPI
      * Fix 2: lista apenas tarefas-RAIZ (como "Projetos em andamento");
      * as subtarefas aparecem ao expandir via getOpenTaskChildren().
      */
-    public static function getOpenTasks(?string $from, ?string $until, int $limit = 15): array
-    {
+    public static function getOpenTasks(
+        ?string $from,
+        ?string $until,
+        int $limit = 15,
+        ?array $myTaskIds = null,
+        ?array $taskProjectIds = null
+    ): array {
         /** @var \DBmysql $DB */
         global $DB;
 
         $where = [
-            'glpi_projecttasks.percent_done'    => ['<', 100],
-            'glpi_projecttasks.projecttasks_id' => 0,
+            'glpi_projecttasks.percent_done' => ['<', 100],
         ];
+        // Escopo (Bloco 3):
+        if ($myTaskIds !== null) {
+            // personal: só as MINHAS tarefas, planas (sem restrição de raiz,
+            // para que uma subtarefa minha também apareça).
+            $where['glpi_projecttasks.id'] = Scope::inList($myTaskIds);
+        } else {
+            // managed/todos: tarefas-raiz + expansão (comportamento original);
+            // managed ainda restringe aos projetos do escopo.
+            $where['glpi_projecttasks.projecttasks_id'] = 0;
+            if ($taskProjectIds !== null) {
+                $where['glpi_projecttasks.projects_id'] = Scope::inList($taskProjectIds);
+            }
+        }
         foreach (self::periodCriteria($from, $until, 'glpi_projecttasks.') as $c) {
             $where[] = $c;
         }
@@ -401,6 +446,15 @@ class Dashboard extends CommonGLPI
         }
 
         self::attachTeamAndChildren($tasks);
+
+        // No escopo pessoal a lista é PLANA: some o botão de expandir, para
+        // não revelar subtarefas de outros responsáveis (Bloco 3).
+        if ($myTaskIds !== null) {
+            foreach ($tasks as &$t) {
+                $t['children'] = 0;
+            }
+            unset($t);
+        }
 
         return $tasks;
     }

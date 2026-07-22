@@ -36,6 +36,10 @@ class Access
         'reports'       => 'plugin_projectplus_reports',
         'templates'     => 'plugin_projectplus_templates',
         'alerts'        => 'plugin_projectplus_alerts',
+        // Escopos (Bloco 3) — não entram na sidebar; usados por src/Scope.php
+        // para decidir o alcance do botão "Ver tudo".
+        'seemanaged'    => 'plugin_projectplus_seemanaged',
+        'seeall'        => 'plugin_projectplus_seeall',
     ];
 
     /**

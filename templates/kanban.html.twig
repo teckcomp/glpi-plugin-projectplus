@@ -83,6 +83,16 @@
                 <input type="search" class="pp-tablesearch" data-pp-role="search"
                        placeholder="{{ __('Buscar tarefa ou projeto…', 'projectplus') }}"
                        aria-label="{{ __('Buscar tarefa ou projeto', 'projectplus') }}">
+                {% if scope_can_expand %}
+                <a class="projectplus-btn projectplus-btn--ghost pp-scope-toggle" href="{{ scope_toggle_url }}"
+                   title="{{ scope_is_expanded ? __('Voltar ao escopo pessoal', 'projectplus') : __('Incluir todos os projetos que você pode ver', 'projectplus') }}">
+                    {% if scope_is_expanded %}
+                    <i class="ti ti-user"></i>{{ __('Ver só os meus', 'projectplus') }}
+                    {% else %}
+                    <i class="ti ti-eye"></i>{{ __('Ver tudo', 'projectplus') }}
+                    {% endif %}
+                </a>
+                {% endif %}
                 <a class="projectplus-btn projectplus-btn--ghost" href="{{ plugin_web_dir }}/front/dashboard.php">
                     {{ __('Visão geral', 'projectplus') }}
                 </a>
