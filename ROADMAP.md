@@ -2,7 +2,7 @@
 
 **Plugin de gestão avançada de projetos para GLPI 11**
 Repositório: [github.com/teckcomp/glpi-plugin-projectplus](https://github.com/teckcomp/glpi-plugin-projectplus) · Licença GPL-2.0
-Versão atual: **v0.5.0-alpha** · Atualizado em 25/07/2026 (Etapa 8 — Blocos 1/2/3 fechados; Bloco 4 entregue para homologação. Próximo: Etapa 6)
+Versão atual: **v0.5.0-alpha** · Atualizado em 25/07/2026 (Etapa 8 concluída; **Etapa 6 em andamento — Bloco 1 fechado**. Próximo: Bloco 2, e-mail real)
 
 > **Ordem de execução confirmada em 19/07/2026:** Etapa 7 → Etapa 8 → Etapa 6 (por último). A Etapa 6 (refinamento/pré-produção e release v1.0.0-beta) só começa depois que 7 e 8 estiverem validadas em homologação.
 
@@ -74,23 +74,39 @@ Versão atual: **v0.5.0-alpha** · Atualizado em 25/07/2026 (Etapa 8 — Blocos 
 - [x] **Bloco 1/1.1/1.2/1.3** — Board próprio (colunas=fase, swimlanes Projeto/Responsável), aba nativa "Kanban (ProjectPlus)", visibilidade direta + expandir, subprojeto como lane. Commit `6c2ac4b`.
 - [x] **Bloco 2** — Arrastar-e-soltar = só FASE (2b cancelado); toda tarefa é cartão comum; trava por dependência. Commit `eaaffc5`.
 
-## 📍 Etapa 8 — Níveis de acesso `EM ANDAMENTO`
+## ✅ Etapa 8 — Níveis de acesso `concluída em 25/07/2026`
 
 Papéis: **Gestor / Cliente / Técnico / Colaborador (Terceiro)** + Admin. Entidade única. Desenho travado (`etapa8-desenho-acessos-v3-final`).
 
 - [x] **Bloco 1** — Aba "ProjectPlus" no Perfil, matriz de 4 níveis, 10 direitos + migração. **FECHADO NO GITHUB em 20/07/2026 (commit `93e2b69`).**
 - [x] **Bloco 2** — Direitos de módulo: sidebar por direito, gate por front, Modelos → `plugin_projectplus_templates`, roteamento do Kanban; helper `src/Access.php`. **FECHADO NO GITHUB em 21/07/2026 (commit `b4a6473`).**
 - [x] **Bloco 3** — Escopo por tela (Visão geral, Kanban, Timeline). **FECHADO NO GITHUB em 22/07/2026 (commit `5ab519d`, 11 arquivos, +394/−33).** Novo helper `src/Scope.php`. Regras: PROJETOS do escopo = onde está na **equipe do projeto** (`glpi_projectteams`), cada um por si; TAREFAS = as **suas** (equipe da tarefa). No pessoal a lista é **plana**. **INVERSÃO final (21/07): o PADRÃO é VER TUDO** (maior escopo do perfil); o botão é **"Ver só os meus"** (`?scope=mine`), sem memória de sessão.
-- [x] **Bloco 4** — Cliente + Colaborador + escopo em Relatórios/Custos. Entregue em 25/07/2026 (zip `projectplus-etapa8-bloco4-1.zip`).
+- [x] **Bloco 4** — Cliente + Colaborador + escopo em Relatórios/Custos. **FECHADO NO GITHUB em 25/07/2026 (commit `a1c0225`, 21 arquivos, +1149/−81).**
   - **4a — Relatórios e Custos respeitando o escopo:** `Reports::projectsData/tasksData/costsData/burndownData` e `front/costs.php` passam a cruzar o filtro da tela com `src/Scope.php` (helper `Reports::combineIds`, interseção — o filtro nunca amplia o escopo). Botão "Ver só os meus" nas duas telas, preservando os filtros na URL e nos links de CSV. Com escopo ativo, a lista de custos é **plana** (sem descer para subprojetos de terceiros).
   - **4b — Kanban de PROJETOS:** novos `src/ProjectKanban.php`, `front/projectkanban.php`, `templates/projectkanban.html.twig` e `public/js/projectkanban.js`. Colunas = fases dos projetos, cartões = projetos/subprojetos (subprojeto com a tag "Subprojeto de: …", mesmo padrão da subtarefa), sem swimlanes. `front/kanban.php` redireciona para lá quando `Access::kanbanIsProjects()` — o item "Kanban" da sidebar continua único.
     - **4b.1** — botão "Kanban de projetos" no board de tarefas: sem ele, quem tem os dois Kanbans só chegaria ao board novo pela URL (a sidebar aponta para o de tarefas).
     - **4b.2** — arrastar cartão muda a **fase do projeto** (novo `ajax/project.php`, action `kanban_move`), para quem tem Projetos em UPDATE + direito nativo `project`. Cliente segue somente leitura. Mesma trava da ficha nativa (projeto com tarefa/subprojeto aberto não vai para fase finalizada), mas com **mensagem explicando** — pelo hook `PRE_ITEM_UPDATE` o campo voltava em silêncio. Sem update otimista; token rotacionado a cada resposta.
   - **4c — Cliente/Colaborador sem custos:** o painel esconde a coluna "Orçamento", o campo "Teto de orçamento" e (para o Cliente) todo o bloco de Tarefas; as abas "Custos (ProjectPlus)" de projeto e tarefa passam a exigir `plugin_projectplus_costs`; `budget.form.php` exige o direito em UPDATE. `Kanban::canAccess()` migrou do direito do Painel para `plugin_projectplus_kanban`.
 
-## 📍 Etapa 6 — Refinamento e pré-produção `próxima`
+## 📍 Etapa 6 — Refinamento e pré-produção `EM ANDAMENTO`
 
-- Teste de e-mail real (GLPIMailer), ciclo desinstalação/reinstalação, i18n (inglês + .po/.mo), release **v1.0.0-beta**, submissão ao catálogo oficial do GLPI.
+Última etapa do roadmap. Fecha com a release **v1.0.0-beta**.
+
+- [x] **Bloco 1** — Ciclo desinstalar/reinstalar seguro. **VALIDADO em homologação e FECHADO NO GITHUB em 25/07/2026** (zip `projectplus-etapa6-bloco1-1.zip`).
+  - **1a — Reconciliação de schema:** `Install::ensureSchema()` garante, em base já existente, as colunas que passaram a existir depois da criação da tabela (a guarda `tableExists` só protegia a CRIAÇÃO). Índices UNIQUE não são criados automaticamente — só reportados, porque falhariam em base com duplicata.
+  - **1b — Importação dos custos nativos marcada por flag:** nova chave de configuração `costs_migrated`. Antes a condição era "tabela do plugin vazia", o que reimportava tudo em quem tivesse apagado os custos migrados de propósito.
+  - **1c — Direitos preservados na desinstalação:** `ProfileRight::deleteProfileRights` passa a rodar **só** com `purge_on_uninstall` ligado — a mesma proteção que os dados já tinham. Antes, desinstalar apagava as 11 linhas de `glpi_profilerights` de todos os perfis e a reinstalação recompunha só os padrões, perdendo em silêncio o ajuste fino da Etapa 8.
+  - **1d — Diagnóstico na tela de Configuração:** `Install::healthReport()` + tabela na tela — 7 tabelas (existência, nº de registros, colunas/índices faltando), os 11 direitos (em quantos perfis a linha existe e em quantos há acesso), o cron e as marcas de purga/importação. É o instrumento de conferência do próprio ciclo de reinstalação.
+  - Constantes `Install::TABLES` e `Install::RIGHTS` viram fonte única (install, uninstall e diagnóstico). Removida uma chamada morta de `addRight` (ver lição 38).
+- [ ] **Bloco 2** — E-mail real: envio pelo GLPIMailer com as notificações do plugin (alertas de prazo/orçamento) e o cron `projectplusalerts`.
+- [ ] **Bloco 3** — i18n: extração das strings `__('…', 'projectplus')` para `.po`/`.mo`, inglês como segundo idioma (PT-BR continua primeiro).
+- [ ] **Bloco 4** — Release `v1.0.0-beta`: CHANGELOG, tag e pacote de distribuição.
+- [ ] **Bloco 5** — Submissão ao catálogo oficial do GLPI (depois da beta).
+
+### Decisões em aberto
+
+- Board de projetos restrito a quem tem `projectkanban` marcado? Hoje aparece para todos que têm o Kanban de tarefas (ver 4b.1). Baixa prioridade.
+- Tabela `glpi_plugin_projectplus_tasktimers` está órfã desde a Etapa 1 (o cronômetro por tarefa foi substituído pela barra de prazo). Continua sendo criada. Decidir antes da beta: parar de criá-la (bases novas ficam com 6 tabelas) ou mantê-la como está.
 
 ---
 

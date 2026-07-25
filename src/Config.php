@@ -24,8 +24,15 @@ class Config
         'budget_warn_percent' => 80,  // % do teto que dispara o alerta de orçamento
         'hide_native_costs'   => 1,   // 1 = oculta a aba Custos nativa do projeto
         'hide_native_kanban'  => 1,   // 1 = oculta a aba Kanban nativa do projeto (Etapa 7)
-        'purge_on_uninstall'  => 0,   // 1 = apaga tabelas/dados ao desinstalar
+        'purge_on_uninstall'  => 0,   // 1 = apaga tabelas/dados/direitos ao desinstalar
+        'costs_migrated'      => 0,   // 1 = custos nativos já importados (marca interna)
     ];
+
+    /**
+     * Chaves internas: existem em DEFAULTS (para serem apagadas na purga),
+     * mas não aparecem no formulário de configuração.
+     */
+    public const INTERNAL_KEYS = ['costs_migrated'];
 
     /**
      * Lê a configuração mesclada com os padrões.
@@ -43,6 +50,10 @@ class Config
     {
         $clean = [];
         foreach (self::DEFAULTS as $key => $default) {
+            // Chaves internas (marcas do instalador) nunca vêm do formulário
+            if (in_array($key, self::INTERNAL_KEYS, true)) {
+                continue;
+            }
             if (isset($values[$key])) {
                 $clean[$key] = max(0, (int) $values[$key]);
             }
@@ -128,11 +139,17 @@ class Config
         echo '</select></td></tr>';
 
         echo '<tr class="tab_bg_1"><td>'
-            . __('Apagar tabelas e dados do plugin ao desinstalar', 'projectplus')
-            . '</td><td>';
+            . __('Apagar tabelas, dados e direitos do plugin ao desinstalar', 'projectplus')
+            . '<br><small>'
+            . __(
+                'Com "Não", desinstalar preserva os dados E a configuração de direitos '
+                . 'por perfil — reinstalar devolve tudo como estava.',
+                'projectplus'
+            )
+            . '</small></td><td>';
         echo "<select name='purge_on_uninstall'>";
         echo "<option value='0'" . (!$config['purge_on_uninstall'] ? ' selected' : '') . '>'
-            . __('Não (manter dados)', 'projectplus') . '</option>';
+            . __('Não (manter dados e direitos)', 'projectplus') . '</option>';
         echo "<option value='1'" . ($config['purge_on_uninstall'] ? ' selected' : '') . '>'
             . __('Sim (expurgo completo)', 'projectplus') . '</option>';
         echo '</select></td></tr>';
@@ -142,5 +159,112 @@ class Config
         echo '</td></tr>';
         echo '</table>';
         Html::closeForm();
+
+        self::showDiagnostics();
+    }
+
+    /**
+     * Diagnóstico da instalação (Etapa 6, Bloco 1d).
+     *
+     * Mostra tabelas, direitos e cron em tela, para conferir um ciclo
+     * desinstalar/reinstalar sem precisar abrir o banco.
+     */
+    public static function showDiagnostics(): void
+    {
+        $report = Install::healthReport();
+
+        echo '<table class="tab_cadre_fixe" style="margin-top:20px">';
+        echo '<tr><th colspan="3">'
+            . __('Diagnóstico da instalação', 'projectplus')
+            . ' — v' . htmlspecialchars((string) $report['version'])
+            . '</th></tr>';
+
+        if ($report['issues'] === 0) {
+            echo '<tr class="tab_bg_1"><td colspan="3" style="color:#2e7d32;font-weight:bold">'
+                . __('Tudo certo: tabelas, direitos e cron no lugar.', 'projectplus')
+                . '</td></tr>';
+        } else {
+            echo '<tr class="tab_bg_1"><td colspan="3" style="color:#c62828;font-weight:bold">'
+                . sprintf(
+                    __('%d ponto(s) de atenção — ver as linhas marcadas abaixo.', 'projectplus'),
+                    (int) $report['issues']
+                )
+                . '<br><small>'
+                . __(
+                    'Reexecutar a instalação costuma resolver: '
+                    . 'php bin/console plugin:install --force projectplus '
+                    . 'e depois plugin:activate projectplus.',
+                    'projectplus'
+                )
+                . '</small></td></tr>';
+        }
+
+        // --- Tabelas -------------------------------------------------------
+        echo '<tr class="tab_bg_2"><th>' . __('Tabela', 'projectplus') . '</th>'
+            . '<th>' . __('Registros', 'projectplus') . '</th>'
+            . '<th>' . __('Situação', 'projectplus') . '</th></tr>';
+
+        foreach ($report['tables'] as $t) {
+            if (!$t['exists']) {
+                $status = '<span style="color:#c62828">' . __('AUSENTE', 'projectplus') . '</span>';
+                $rows   = '-';
+            } elseif (!empty($t['missing'])) {
+                $status = '<span style="color:#ef6c00">'
+                    . __('faltando:', 'projectplus') . ' '
+                    . htmlspecialchars(implode(', ', $t['missing']))
+                    . '</span>';
+                $rows   = (string) $t['rows'];
+            } else {
+                $status = '<span style="color:#2e7d32">OK</span>';
+                $rows   = (string) $t['rows'];
+            }
+
+            echo '<tr class="tab_bg_1"><td><code>'
+                . htmlspecialchars($t['name']) . '</code></td>'
+                . '<td>' . $rows . '</td>'
+                . '<td>' . $status . '</td></tr>';
+        }
+
+        // --- Direitos ------------------------------------------------------
+        echo '<tr class="tab_bg_2"><th>' . __('Direito', 'projectplus') . '</th>'
+            . '<th>' . __('Perfis com a linha', 'projectplus') . '</th>'
+            . '<th>' . __('Perfis com acesso', 'projectplus') . '</th></tr>';
+
+        foreach ($report['rights'] as $r) {
+            $color = $r['profiles'] === 0 ? '#c62828' : '#2e7d32';
+            echo '<tr class="tab_bg_1"><td><code>'
+                . htmlspecialchars($r['name']) . '</code></td>'
+                . '<td style="color:' . $color . '">' . (int) $r['profiles'] . '</td>'
+                . '<td>' . (int) $r['granted'] . '</td></tr>';
+        }
+
+        // --- Cron e marcas -------------------------------------------------
+        echo '<tr class="tab_bg_2"><th colspan="3">' . __('Outros', 'projectplus') . '</th></tr>';
+
+        $cron = $report['cron']['registered']
+            ? '<span style="color:#2e7d32">' . __('registrado', 'projectplus') . '</span>'
+              . ' — ' . __('última execução:', 'projectplus') . ' '
+              . htmlspecialchars((string) ($report['cron']['lastrun'] ?: __('nunca', 'projectplus')))
+            : '<span style="color:#c62828">' . __('NÃO registrado', 'projectplus') . '</span>';
+
+        echo '<tr class="tab_bg_1"><td colspan="2">'
+            . __('Cron projectplusalerts', 'projectplus') . '</td><td>' . $cron . '</td></tr>';
+
+        echo '<tr class="tab_bg_1"><td colspan="2">'
+            . __('Importação dos custos nativos', 'projectplus') . '</td><td>'
+            . ($report['costs_migrated']
+                ? __('já realizada (não repete)', 'projectplus')
+                : __('pendente (roda na próxima instalação)', 'projectplus'))
+            . '</td></tr>';
+
+        echo '<tr class="tab_bg_1"><td colspan="2">'
+            . __('Ao desinstalar', 'projectplus') . '</td><td>'
+            . ($report['purge_on_uninstall']
+                ? '<span style="color:#c62828">'
+                  . __('APAGA tabelas, dados e direitos', 'projectplus') . '</span>'
+                : __('preserva dados e direitos', 'projectplus'))
+            . '</td></tr>';
+
+        echo '</table>';
     }
 }
