@@ -5,6 +5,7 @@
  * Usa Project::add() nativo: o projeto criado é 100% nativo (Kanban, GANTT, buscas).
  */
 
+use GlpiPlugin\Projectplus\Access;
 use GlpiPlugin\Projectplus\Budget;
 use GlpiPlugin\Projectplus\ProjectTracking;
 
@@ -48,10 +49,11 @@ if (!$projectId) {
 // Indicadores do plugin
 ProjectTracking::touch((int) $projectId);
 
-// Teto de orçamento opcional já na criação (Etapa 2)
+// Teto de orçamento opcional já na criação (Etapa 2) — Bloco 4: só para
+// quem tem o direito de Custos (o campo nem aparece para os demais).
 $budgetRaw = str_replace(',', '.', (string) ($_POST['budget_planned'] ?? '0'));
 $budget    = max(0, (float) $budgetRaw);
-if ($budget > 0) {
+if ($budget > 0 && Access::can('costs', UPDATE)) {
     Budget::setPlanned((int) $projectId, $budget);
 }
 

@@ -126,8 +126,20 @@
                 <div class="pp-filter-field pp-filter-actions">
                     <label>&nbsp;</label>
                     <div>
+                        {# Escopo (Bloco 4): preserva o modo atual ao aplicar os filtros #}
+                        {% if filter_scope %}<input type="hidden" name="scope" value="{{ filter_scope }}">{% endif %}
                         <button type="submit" class="projectplus-btn">{{ __('Aplicar', 'projectplus') }}</button>
                         <a class="projectplus-btn projectplus-btn--ghost" href="{{ plugin_web_dir }}/front/reports.php">{{ __('Limpar', 'projectplus') }}</a>
+                        {% if scope_can_expand %}
+                        <a class="projectplus-btn projectplus-btn--ghost pp-scope-toggle" href="{{ scope_toggle_url }}"
+                           title="{{ scope_is_expanded ? __('Voltar ao escopo pessoal', 'projectplus') : __('Incluir todos os projetos que você pode ver', 'projectplus') }}">
+                            {% if scope_is_expanded %}
+                            <i class="ti ti-user"></i>{{ __('Ver só os meus', 'projectplus') }}
+                            {% else %}
+                            <i class="ti ti-eye"></i>{{ __('Ver tudo', 'projectplus') }}
+                            {% endif %}
+                        </a>
+                        {% endif %}
                     </div>
                 </div>
             </form>
@@ -139,7 +151,7 @@
             <span class="projectplus-muted">{{ __('Fase/Tipo/Gestor/Período filtram só Projetos e Tarefas — Custos usa apenas o filtro de Projeto', 'projectplus') }}</span>
         </div>
 
-        {% set pp_qs = '&task=' ~ filter_task|url_encode ~ '&user=' ~ filter_user ~ '&state=' ~ filter_state ~ '&typefilter=' ~ filter_typefilter|url_encode ~ '&from=' ~ filter_from ~ '&until=' ~ filter_until %}
+        {% set pp_qs = '&task=' ~ filter_task|url_encode ~ '&user=' ~ filter_user ~ '&state=' ~ filter_state ~ '&typefilter=' ~ filter_typefilter|url_encode ~ '&from=' ~ filter_from ~ '&until=' ~ filter_until ~ (filter_scope ? '&scope=' ~ filter_scope : '') %}
 
         {# -------- Projetos -------- #}
         <div class="projectplus-card pp-report-card">
@@ -232,7 +244,7 @@
             <div class="pp-report-projhead">
                 <h3>{{ __('Custos', 'projectplus') }} <span class="projectplus-muted">({{ costs_report.rows|length }})</span></h3>
                 <a class="projectplus-btn projectplus-btn--ghost"
-                   href="{{ plugin_web_dir }}/front/reports_export.php?type=costs&project={{ filter_project }}">
+                   href="{{ plugin_web_dir }}/front/reports_export.php?type=costs&project={{ filter_project }}{{ filter_scope ? '&scope=' ~ filter_scope : '' }}">
                     <i class="ti ti-download"></i> {{ __('Baixar CSV', 'projectplus') }}
                 </a>
             </div>

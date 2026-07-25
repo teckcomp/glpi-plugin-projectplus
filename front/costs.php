@@ -12,6 +12,7 @@ use Glpi\Application\View\TemplateRenderer;
 use GlpiPlugin\Projectplus\Access;
 use GlpiPlugin\Projectplus\Budget;
 use GlpiPlugin\Projectplus\Dashboard;
+use GlpiPlugin\Projectplus\Scope;
 
 include('../../../inc/includes.php');
 
@@ -30,30 +31,60 @@ Html::header(
 
 $filterId = (int) ($_GET['project'] ?? 0);
 
-// Projetos raiz para o seletor do filtro
+// Escopo (Etapa 8, Bloco 4): mesma regra das demais telas — padrão é o
+// MAIOR escopo do perfil e ?scope=mine reduz ao pessoal. Com escopo ativo
+// a lista é PLANA (só os projetos que o usuário vê, sem descer para
+// subprojetos de terceiros — mesma decisão do Bloco 3).
+$scopeIds        = Scope::projectIds();   // null = sem restrição
+$scopeFlat       = ($scopeIds !== null);
+$scopeCanExpand  = Scope::canExpand();
+$scopeIsExpanded = Scope::isExpanded();
+$scopeQuery      = [];
+if ($filterId > 0) {
+    $scopeQuery['project'] = $filterId;
+}
+if ($scopeIsExpanded) {
+    $scopeQuery['scope'] = 'mine';
+}
+$scopeToggleUrl = Plugin::getWebDir('projectplus') . '/front/costs.php'
+    . ($scopeQuery === [] ? '' : ('?' . http_build_query($scopeQuery)));
+
+// Projetos para o seletor do filtro: raízes (sem escopo) ou exatamente os
+// projetos do escopo (que podem ser subprojetos).
+$rootsWhere = [
+    'is_deleted'  => 0,
+    'is_template' => 0,
+] + getEntitiesRestrictCriteria('glpi_projects');
+if ($scopeFlat) {
+    $rootsWhere['id'] = Scope::inList($scopeIds);
+} else {
+    $rootsWhere['projects_id'] = 0;
+}
+
 $allRoots = [];
 foreach (
     $DB->request([
         'SELECT' => ['id', 'name'],
         'FROM'   => 'glpi_projects',
-        'WHERE'  => [
-            'projects_id' => 0,
-            'is_deleted'  => 0,
-            'is_template' => 0,
-        ] + getEntitiesRestrictCriteria('glpi_projects'),
+        'WHERE'  => $rootsWhere,
         'ORDER'  => 'name',
     ]) as $row
 ) {
     $allRoots[] = ['id' => (int) $row['id'], 'name' => $row['name']];
 }
 
-// Projetos do relatório: todos os raiz, ou apenas o filtrado
+// Projetos do relatório: todos os do escopo, ou apenas o filtrado
+// (o filtro NUNCA amplia o escopo — interseção dos dois).
 $where = [
     'is_deleted'  => 0,
     'is_template' => 0,
 ] + getEntitiesRestrictCriteria('glpi_projects');
 if ($filterId > 0) {
-    $where['id'] = $filterId;
+    $where['id'] = ($scopeFlat && !in_array($filterId, array_map('intval', $scopeIds), true))
+        ? [0]
+        : [$filterId];
+} elseif ($scopeFlat) {
+    $where['id'] = Scope::inList($scopeIds);
 } else {
     $where['projects_id'] = 0;
 }
@@ -72,7 +103,7 @@ foreach (
     // Lançamentos do projeto + de todos os descendentes
     $entries = Budget::getEntriesForProject($rootId, __('Projeto', 'projectplus'));
     $visited = [];
-    foreach (Budget::getDescendantIds($rootId, $visited) as $childId) {
+    foreach (($scopeFlat ? [] : Budget::getDescendantIds($rootId, $visited)) as $childId) {
         $childRow = $DB->request([
             'SELECT' => ['name'],
             'FROM'   => 'glpi_projects',
@@ -126,6 +157,10 @@ TemplateRenderer::getInstance()->display(
         'generated_at'   => date('d/m/Y H:i'),
         'can_templates'  => Session::haveRight('config', UPDATE),
         'nav'             => Access::sidebar(),
+        'filter_scope'      => $scopeIsExpanded ? '' : 'mine',
+        'scope_can_expand'  => $scopeCanExpand,
+        'scope_is_expanded' => $scopeIsExpanded,
+        'scope_toggle_url'  => $scopeToggleUrl,
     ]
 );
 

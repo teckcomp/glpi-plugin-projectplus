@@ -1,14 +1,14 @@
-{# ProjectPlus — "Kanban" (Etapa 7, Bloco 1): board próprio, colunas por fase, swimlanes alternáveis #}
+{# ProjectPlus — "Kanban de projetos" (Etapa 8, Bloco 4): colunas por fase, cartões = projetos/subprojetos, somente leitura #}
 
 <link rel="stylesheet" href="{{ plugin_web_dir }}/css/projectplus.css">
 
-<div class="projectplus-app" id="projectplus-kanban">
+<div class="projectplus-app" id="projectplus-projectkanban">
 
     {# ================= COLUNA ESQUERDA: título + sidebar ================= #}
     <div class="projectplus-left">
         <div class="projectplus-pagetitle">
             <h2>{{ __('Projetos', 'projectplus') }}</h2>
-            <span>{{ __('Kanban por fase, com swimlanes', 'projectplus') }}</span>
+            <span>{{ __('Kanban de projetos por fase', 'projectplus') }}</span>
         </div>
         <nav class="projectplus-sidebar">
                         <ul>
@@ -24,7 +24,7 @@
                 {% endif %}
                 {% if nav.kanban %}
                 <li class="projectplus-sidebar__item projectplus-sidebar__item--active">
-                    <a href="{{ plugin_web_dir }}/front/kanban.php"><i class="ti ti-layout-kanban"></i>{{ __('Kanban', 'projectplus') }}</a>
+                    <a href="{{ plugin_web_dir }}/front/projectkanban.php"><i class="ti ti-layout-kanban"></i>{{ __('Kanban', 'projectplus') }}</a>
                 </li>
                 {% endif %}
                 {% if nav.timeline %}
@@ -63,26 +63,22 @@
     </div>
 
     {# ================= ÁREA PRINCIPAL ================= #}
-    <div class="projectplus-main" id="pp-kb-widget"
-         data-ajax-url="{{ plugin_web_dir }}/ajax/task.php"
+    <div class="projectplus-main" id="pp-pkb-widget"
+         data-ajax-url="{{ plugin_web_dir }}/ajax/project.php"
          data-csrf="{{ csrf_token }}"
          data-can-edit="{{ can_edit ? '1' : '0' }}">
 
         <div class="projectplus-header">
             <div class="pp-kb-controls">
-                <div class="pp-seg pp-kb-seg" role="group" aria-label="{{ __('Agrupar por', 'projectplus') }}">
-                    <button type="button" class="pp-seg__btn pp-seg__btn--active" data-pp-lane="project">{{ __('Projeto', 'projectplus') }}</button>
-                    <button type="button" class="pp-seg__btn" data-pp-lane="responsible">{{ __('Responsável', 'projectplus') }}</button>
-                </div>
                 <label class="pp-mt-toggle">
                     <input type="checkbox" data-pp-role="done">
-                    {{ __('Mostrar tarefas concluídas', 'projectplus') }}
+                    {{ __('Mostrar projetos concluídos', 'projectplus') }}
                 </label>
             </div>
             <div class="projectplus-actions">
                 <input type="search" class="pp-tablesearch" data-pp-role="search"
-                       placeholder="{{ __('Buscar tarefa ou projeto…', 'projectplus') }}"
-                       aria-label="{{ __('Buscar tarefa ou projeto', 'projectplus') }}">
+                       placeholder="{{ __('Buscar projeto…', 'projectplus') }}"
+                       aria-label="{{ __('Buscar projeto', 'projectplus') }}">
                 {% if scope_can_expand %}
                 <a class="projectplus-btn projectplus-btn--ghost pp-scope-toggle" href="{{ scope_toggle_url }}"
                    title="{{ scope_is_expanded ? __('Voltar ao escopo pessoal', 'projectplus') : __('Incluir todos os projetos que você pode ver', 'projectplus') }}">
@@ -93,15 +89,16 @@
                     {% endif %}
                 </a>
                 {% endif %}
-                {% if can_project_kanban %}
-                <a class="projectplus-btn projectplus-btn--ghost" href="{{ plugin_web_dir }}/front/projectkanban.php"
-                   title="{{ __('Board com os PROJETOS nas colunas de fase', 'projectplus') }}">
-                    <i class="ti ti-layout-columns"></i>{{ __('Kanban de projetos', 'projectplus') }}
+                {% if can_task_kanban %}
+                <a class="projectplus-btn projectplus-btn--ghost" href="{{ plugin_web_dir }}/front/kanban.php">
+                    {{ __('Kanban de tarefas', 'projectplus') }}
                 </a>
                 {% endif %}
+                {% if nav.dashboard %}
                 <a class="projectplus-btn projectplus-btn--ghost" href="{{ plugin_web_dir }}/front/dashboard.php">
                     {{ __('Visão geral', 'projectplus') }}
                 </a>
+                {% endif %}
             </div>
         </div>
 
@@ -109,9 +106,9 @@
             <p class="projectplus-muted" style="padding: 0 16px 8px; margin: 0;">
                 <i class="ti ti-info-circle"></i>
                 {% if can_edit %}
-                {{ __('Arraste um cartão entre as colunas para mudar a fase da tarefa.', 'projectplus') }}
+                {{ __('Arraste um cartão entre as colunas para mudar a fase do projeto. Projeto com tarefa ou subprojeto aberto não vai para fase finalizada.', 'projectplus') }}
                 {% else %}
-                {{ __('Somente leitura — você não tem permissão para alterar tarefas.', 'projectplus') }}
+                {{ __('Somente leitura — cada cartão é um projeto ou subprojeto na coluna da fase atual.', 'projectplus') }}
                 {% endif %}
             </p>
             <div class="pp-kb-scroll" data-role="board">
@@ -121,11 +118,13 @@
     </div>
 </div>
 
-<script id="pp-kb-data" type="application/json">{{ kanban|json_encode|raw }}</script>
+{# Lição 12: o JSON é montado no PHP com JSON_HEX_TAG|HEX_AMP|HEX_APOS|HEX_QUOT
+   (nome de projeto com "</script>" não pode quebrar a página). #}
+<script id="pp-pkb-data" type="application/json">{{ board_json|raw }}</script>
 
-<script src="{{ plugin_web_dir }}/js/kanban.js"></script>
+<script src="{{ plugin_web_dir }}/js/projectkanban.js"></script>
 <script>
-    if (window.ProjectPlusKanban && typeof window.ProjectPlusKanban.init === 'function') {
-        window.ProjectPlusKanban.init();
+    if (window.ProjectPlusProjectKanban && typeof window.ProjectPlusProjectKanban.init === 'function') {
+        window.ProjectPlusProjectKanban.init();
     }
 </script>

@@ -26,24 +26,68 @@ class Reports
         return Session::haveRight('plugin_projectplus_dashboard', READ);
     }
 
+    // ------------------------------------------------------------------
+    // Escopo do usuário (Etapa 8, Bloco 4)
+    // ------------------------------------------------------------------
+
     /**
-     * Projetos raiz para o seletor de filtro (mesmo critério de costs.php).
+     * Interseção de duas restrições de IDs, onde `null` significa "sem
+     * restrição". Devolve `null` só quando NENHUMA das duas restringe.
+     *
+     * Usado para casar o filtro de Projeto da TELA (escolha do usuário) com
+     * o ESCOPO do perfil (src/Scope.php): as duas restrições valem ao mesmo
+     * tempo — o filtro nunca amplia o que o escopo permite ver.
+     */
+    private static function combineIds(?array $a, ?array $b): ?array
+    {
+        if ($a === null) {
+            return $b;
+        }
+        if ($b === null) {
+            return $a;
+        }
+        return array_values(array_intersect(array_map('intval', $a), array_map('intval', $b)));
+    }
+
+    /**
+     * Projetos do ESCOPO do usuário (null = sem restrição / "ver todos").
+     * Ponto único para a tela e para o export CSV usarem a mesma regra.
+     */
+    public static function scopeIdsForUser(): ?array
+    {
+        return Scope::projectIds();
+    }
+
+    /**
+     * Projetos para o seletor de filtro. Sem restrição de escopo, mantém o
+     * critério histórico (só projetos RAIZ, como em costs.php); com escopo
+     * ativo, lista exatamente os projetos que o usuário pode ver (que podem
+     * ser subprojetos) — mesma lista PLANA do Bloco 3.
      */
     public static function getRootProjectsForFilter(): array
     {
         /** @var \DBmysql $DB */
         global $DB;
 
+        $scopeIds = self::scopeIdsForUser();
+
+        $where = [
+            'is_deleted'  => 0,
+            'is_template' => 0,
+        ] + getEntitiesRestrictCriteria('glpi_projects');
+
+        if ($scopeIds === null) {
+            $where['projects_id'] = 0;
+        } else {
+            $where['id'] = Scope::inList($scopeIds);
+        }
+
         $out = [];
         foreach (
             $DB->request([
                 'SELECT' => ['id', 'name'],
                 'FROM'   => 'glpi_projects',
-                'WHERE'  => [
-                    'projects_id' => 0,
-                    'is_deleted'  => 0,
-                    'is_template' => 0,
-                ] + getEntitiesRestrictCriteria('glpi_projects'),
+                'WHERE'  => $where,
                 'ORDER'  => 'name',
             ]) as $row
         ) {
@@ -186,9 +230,11 @@ class Reports
             'glpi_projects.is_template' => 0,
         ] + getEntitiesRestrictCriteria('glpi_projects');
 
-        $scopeIds = self::scopeProjectIds($filterId);
+        // Filtro da tela (projeto + descendentes) ∩ escopo do perfil
+        // (Etapa 8, Bloco 4): as duas restrições valem juntas.
+        $scopeIds = self::combineIds(self::scopeProjectIds($filterId), self::scopeIdsForUser());
         if ($scopeIds !== null) {
-            $where['glpi_projects.id'] = $scopeIds;
+            $where['glpi_projects.id'] = Scope::inList($scopeIds);
         }
 
         // Filtros extras (Bloco 1.1): Gestor, Fase, Tipo de projeto
@@ -316,9 +362,17 @@ class Reports
         ];
 
         $where = [];
-        $scopeIds = self::scopeProjectIds($filterId);
+
+        // Escopo do perfil (Etapa 8, Bloco 4), mesma semântica do painel:
+        // - personal : só as MINHAS tarefas (equipe da tarefa);
+        // - managed  : tarefas dos projetos que gerencia/participa (+ descendentes);
+        // - all      : sem restrição.
+        $myTaskIds      = Scope::myTaskIds();      // != null só no personal
+        $taskProjectIds = Scope::taskProjectIds(); // != null só no managed
+
+        $scopeIds = self::combineIds(self::scopeProjectIds($filterId), $taskProjectIds);
         if ($scopeIds !== null) {
-            $where['glpi_projecttasks.projects_id'] = $scopeIds;
+            $where['glpi_projecttasks.projects_id'] = Scope::inList($scopeIds);
         } else {
             $where[] = ['glpi_projects.is_deleted' => 0, 'glpi_projects.is_template' => 0]
                 + getEntitiesRestrictCriteria('glpi_projects');
@@ -342,6 +396,11 @@ class Reports
         // Filtro de Responsável: mesmo campo "Gestor/Responsável" da tela,
         // aqui aplicado via equipe (glpi_projecttaskteams) — não é coluna
         // direta da tarefa (ver lição aprendida (15) do contexto).
+        //
+        // ATENÇÃO (Bloco 4): tanto este filtro quanto o escopo PESSOAL
+        // restringem a MESMA chave (`glpi_projecttasks.id`) — precisam ser
+        // INTERSECTADOS, senão um sobrescreveria o outro no array $where.
+        $idRestriction = null;
         if (!empty($filters['user'])) {
             $userTaskIds = [];
             foreach (
@@ -353,9 +412,13 @@ class Reports
             ) {
                 $userTaskIds[] = (int) $r['projecttasks_id'];
             }
-            // Lista vazia = nenhuma tarefa deste responsável; ID 0 nunca
-            // existe, garante zero resultados em vez de ignorar o filtro.
-            $where['glpi_projecttasks.id'] = !empty($userTaskIds) ? $userTaskIds : [0];
+            $idRestriction = $userTaskIds;
+        }
+        $idRestriction = self::combineIds($idRestriction, $myTaskIds);
+        if ($idRestriction !== null) {
+            // Lista vazia = nenhuma tarefa; ID 0 nunca existe, garante zero
+            // resultados em vez de ignorar o filtro (lição 18).
+            $where['glpi_projecttasks.id'] = Scope::inList($idRestriction);
         }
 
         $states = Dashboard::getStatesMap();
@@ -487,13 +550,26 @@ class Reports
             __('Autor', 'projectplus'), __('Valor', 'projectplus'),
         ];
 
+        // Escopo do perfil (Etapa 8, Bloco 4): sem restrição, mantém o
+        // comportamento histórico (projetos RAIZ + descendentes). Com
+        // escopo ativo, a lista é PLANA — só os projetos que o usuário vê,
+        // sem descer para subprojetos de que ele não participa (mesma regra
+        // do Bloco 3, para não vazar item de terceiro).
+        $scopeIds = self::scopeIdsForUser();
+        $flat     = ($scopeIds !== null);
+
         $where = [
-            'projects_id' => 0,
             'is_deleted'  => 0,
             'is_template' => 0,
         ] + getEntitiesRestrictCriteria('glpi_projects');
+        if ($scopeIds === null) {
+            $where['projects_id'] = 0;
+        } else {
+            $where['id'] = Scope::inList($scopeIds);
+        }
         if ($filterId > 0) {
-            $where = ['id' => $filterId] + getEntitiesRestrictCriteria('glpi_projects');
+            unset($where['projects_id']);
+            $where['id'] = Scope::inList(self::combineIds([$filterId], $scopeIds));
         }
 
         $rows = [];
@@ -504,7 +580,7 @@ class Reports
 
             $entries = Budget::getEntriesForProject($rootId, __('Projeto', 'projectplus'));
             $visited = [];
-            foreach (Budget::getDescendantIds($rootId, $visited) as $childId) {
+            foreach (($flat ? [] : Budget::getDescendantIds($rootId, $visited)) as $childId) {
                 $childRow = $DB->request([
                     'SELECT' => ['name'],
                     'FROM'   => 'glpi_projects',
@@ -594,6 +670,14 @@ class Reports
         ])->current();
 
         if (!$project) {
+            return null;
+        }
+
+        // Escopo (Etapa 8, Bloco 4): o burndown só abre para projeto que o
+        // usuário enxerga. Os DESCENDENTES continuam somando (o burndown é
+        // um agregado do projeto escolhido, que já está no escopo dele).
+        $userScope = self::scopeIdsForUser();
+        if ($userScope !== null && !in_array((int) $project['id'], array_map('intval', $userScope), true)) {
             return null;
         }
 

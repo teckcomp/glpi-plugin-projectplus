@@ -13,6 +13,7 @@ use Glpi\Application\View\TemplateRenderer;
 use GlpiPlugin\Projectplus\Access;
 use GlpiPlugin\Projectplus\Dashboard;
 use GlpiPlugin\Projectplus\Kanban;
+use GlpiPlugin\Projectplus\ProjectKanban;
 use GlpiPlugin\Projectplus\Scope;
 
 include('../../../inc/includes.php');
@@ -21,9 +22,17 @@ include('../../../inc/includes.php');
 global $CFG_GLPI;
 
 // Kanban aparece para quem tem o board de tarefas OU o de projetos (Cliente).
-// O roteamento para o board de projetos em si é o Bloco 4 (Access::kanbanIsProjects()).
 if (!Access::canKanban()) {
     Html::displayRightError();
+}
+
+// Roteamento (Etapa 8, Bloco 4): quem SÓ tem o Kanban de PROJETOS (Cliente)
+// cai no board de projetos. Assim o item "Kanban" da sidebar continua
+// apontando para esta URL em todas as telas — quem decide o destino é o
+// direito, não o template.
+if (Access::kanbanIsProjects()) {
+    Html::redirect(Plugin::getWebDir('projectplus') . '/front/projectkanban.php'
+        . (($_GET['scope'] ?? '') === 'mine' ? '?scope=mine' : ''));
 }
 
 // Escopo (Etapa 8, Bloco 3): board cheio abre no PESSOAL (minhas tarefas);
@@ -51,6 +60,10 @@ TemplateRenderer::getInstance()->display(
         'kanban'         => Kanban::getBoardData(null, $scopeMyTaskIds, $scopeTaskProjectIds),
         'can_templates'  => Session::haveRight('config', UPDATE),
         'nav'             => Access::sidebar(),
+        // Bloco 4 (ajuste 4b.1): caminho de IDA para o board de projetos —
+        // sem ele, quem tem os dois Kanbans só chegaria lá pela URL, porque
+        // a sidebar aponta para o board de tarefas.
+        'can_project_kanban' => ProjectKanban::canAccess(),
         'scope_can_expand'  => $scopeCanExpand,
         'scope_is_expanded' => $scopeIsExpanded,
         'scope_toggle_url'  => $scopeToggleUrl,

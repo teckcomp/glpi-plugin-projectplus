@@ -4,7 +4,6 @@ namespace GlpiPlugin\Projectplus;
 
 use Project;
 use ProjectTask;
-use Session;
 
 /**
  * ProjectPlus — Kanban avançado (Etapa 7, Bloco 1 + 1.1 + 1.2 + 1.3).
@@ -53,9 +52,15 @@ class Kanban
     /** id usado para a coluna/swimlane "sem fase" / "sem responsável". */
     public const UNSET_ID = 0;
 
+    /**
+     * Acesso ao board de TAREFAS (usado também pela aba na ficha do
+     * projeto). Etapa 8, Bloco 4: passou a exigir o direito próprio
+     * `plugin_projectplus_kanban` — antes era o direito do Painel, o que
+     * dava a aba de Kanban de tarefas ao Cliente.
+     */
     public static function canAccess(): bool
     {
-        return Session::haveRight('plugin_projectplus_dashboard', READ);
+        return Access::can('kanban');
     }
 
     /**

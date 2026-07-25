@@ -32,10 +32,20 @@ class TaskCost extends CommonDBTM
         return _n('Custo', 'Custos', $nb, 'projectplus');
     }
 
+    /**
+     * Ver custos da tarefa (Etapa 8, Bloco 4): agora depende do direito
+     * PRÓPRIO do módulo Custos — é o que tira a aba do Colaborador e do
+     * Cliente, que antes a viam por terem `project`/`projecttask` no core.
+     */
+    public static function canViewCosts(): bool
+    {
+        return Access::can('costs');
+    }
+
     public static function canEditCosts(): bool
     {
-        return Session::haveRight('projecttask', UPDATE)
-            || Session::haveRight('project', UPDATE);
+        return Access::can('costs', UPDATE)
+            && (Session::haveRight('projecttask', UPDATE) || Session::haveRight('project', UPDATE));
     }
 
     // ------------------------------------------------------------------
@@ -44,7 +54,7 @@ class TaskCost extends CommonDBTM
 
     public function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
     {
-        if ($item instanceof ProjectTask) {
+        if ($item instanceof ProjectTask && self::canViewCosts()) {
             $count = countElementsInTable(
                 self::getTable(),
                 ['projecttasks_id' => (int) $item->getID()]
@@ -59,7 +69,7 @@ class TaskCost extends CommonDBTM
         $tabnum = 1,
         $withtemplate = 0
     ) {
-        if ($item instanceof ProjectTask) {
+        if ($item instanceof ProjectTask && self::canViewCosts()) {
             self::showForTask($item);
         }
         return true;

@@ -8,7 +8,11 @@
      data-comment-url="{{ plugin_web_dir }}/ajax/comment.php"
      data-dep-url="{{ plugin_web_dir }}/ajax/taskdep.php"
      data-alerts-url="{{ plugin_web_dir }}/ajax/alerts.php"
-     data-csrf="{{ csrf_token }}">
+     data-csrf="{{ csrf_token }}"
+     {# Bloco 4: o JS monta as linhas de subprojeto/tarefa no cliente e
+        precisa saber quais colunas existem nesta tela. #}
+     data-pp-costs="{{ can_costs ? '1' : '0' }}"
+     data-pp-tasks="{{ can_tasks ? '1' : '0' }}">
 
     {# ================= COLUNA ESQUERDA: título + sidebar ================= #}
     <div class="projectplus-left">
@@ -136,6 +140,7 @@
                     <span class="projectplus-kpi__sub">{{ __('Em risco', 'projectplus') }}</span>
                 </div>
             </div>
+            {% if can_tasks %}
             <div class="projectplus-kpi">
                 <span class="projectplus-kpi__icon projectplus-kpi__icon--amber"><i class="ti ti-file-text"></i></span>
                 <div>
@@ -152,6 +157,7 @@
                     <span class="projectplus-kpi__sub">{{ __('Prazo vencido', 'projectplus') }}</span>
                 </div>
             </div>
+            {% endif %}
             <div class="projectplus-kpi">
                 <span class="projectplus-kpi__icon projectplus-kpi__icon--green"><i class="ti ti-percentage"></i></span>
                 <div>
@@ -185,6 +191,7 @@
                 <div id="projectplus-phase-chart" class="projectplus-donut"
                      data-phases="{{ phase_chart|json_encode }}"></div>
             </div>
+            {% if can_tasks %}
             <div class="projectplus-card projectplus-card--chart">
                 <h3>{{ __('Tarefas por status', 'projectplus') }}</h3>
                 <div id="projectplus-tasks-chart" class="projectplus-donut"
@@ -198,6 +205,7 @@
                 <div id="projectplus-taskstate-chart" class="projectplus-donut"
                      data-phases="{{ task_state_chart|json_encode }}"></div>
             </div>
+            {% endif %}
         </div>
 
         {# ================= LINHA 3: Projetos em andamento (largura total) ================= #}
@@ -218,7 +226,7 @@
                             <th>{{ __('Progresso', 'projectplus') }}</th>
                             <th>{{ __('Última atividade', 'projectplus') }}</th>
                             <th>{{ __('Situação', 'projectplus') }}</th>
-                            <th>{{ __('Orçamento', 'projectplus') }}</th>
+                            {% if can_costs %}<th>{{ __('Orçamento', 'projectplus') }}</th>{% endif %}
                             <th>{{ __('Prazo decorrido', 'projectplus') }}</th>
                             <th>{{ __('Prazo final', 'projectplus') }}</th>
                         </tr>
@@ -235,8 +243,10 @@
                             </td>
                             <td>{% if project.blocked %}<span class="pp-dep-lock"
                                     title="{{ __('Projeto com tarefas/subprojetos abertos — não pode ir para fase concluída', 'projectplus') }}">🔒</span> {% endif %}<a href="{{ project.url }}">{{ project.name }}</a>
+                                {% if can_tasks %}
                                 <button type="button" class="projectplus-tasksbtn"
                                         data-tasks-project="{{ project.id }}">{{ __('Tarefas', 'projectplus') }}</button>
+                                {% endif %}
                             </td>
                             <td class="pp-phase-cell">
                                 {% if project.state_name %}
@@ -261,6 +271,7 @@
                                     <span class="projectplus-badge projectplus-badge--ok">{{ __('No prazo', 'projectplus') }}</span>
                                 {% endif %}
                             </td>
+                            {% if can_costs %}
                             <td class="projectplus-budget-cell">
                                 {% if project.budget %}
                                     <div class="projectplus-budgetbar"><div
@@ -272,6 +283,7 @@
                                     <span class="projectplus-muted">—</span>
                                 {% endif %}
                             </td>
+                            {% endif %}
                             <td class="pp-deadline-cell">
                                 {% if project.deadline.state == 'done' %}
                                     <span class="projectplus-muted">—</span>
@@ -290,14 +302,17 @@
                             <td>{{ project.plan_end_date ? project.plan_end_date|date('d/m/Y') : '—' }}</td>
                         </tr>
                     {% else %}
-                        <tr><td colspan="9">{{ __('Nenhum projeto no período', 'projectplus') }}</td></tr>
+                        <tr><td colspan="{{ can_costs ? 9 : 8 }}">{{ __('Nenhum projeto no período', 'projectplus') }}</td></tr>
                     {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
 
-        {# ================= LINHA 4: Tarefas em andamento (largura total) ================= #}
+        {# ================= LINHA 4: Tarefas em andamento (largura total) =================
+           Bloco 4: bloco inteiro escondido para quem não tem o direito de
+           Tarefas (papel Cliente) — ele acompanha o projeto, não a tarefa. #}
+        {% if can_tasks %}
         <div class="projectplus-row">
             <div class="projectplus-card projectplus-card--full" id="tasks-table">
                 <div class="pp-tablehead">
@@ -392,6 +407,7 @@
                 </table>
             </div>
         </div>
+        {% endif %}
 
     </div>
 </div>
@@ -465,10 +481,12 @@
                 <input type="date" name="plan_end_date">
             </label>
 
+            {% if can_costs %}
             <label>
                 {{ __('Teto de orçamento', 'projectplus') }}
                 <input type="number" name="budget_planned" step="0.01" min="0" placeholder="0,00">
             </label>
+            {% endif %}
 
             <label class="projectplus-form__full">
                 {{ __('Descrição', 'projectplus') }}

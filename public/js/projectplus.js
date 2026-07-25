@@ -735,7 +735,9 @@
         const tr = document.createElement('tr');
         tr.className = 'projectplus-taskspanel-row';
         const td = document.createElement('td');
-        td.colSpan = 9;
+        // Bloco 4: o número de colunas da tabela de projetos varia com o
+        // direito de Custos — usa a própria linha como referência.
+        td.colSpan = projectRow.children.length || 9;
         td.innerHTML = '<div class="projectplus-taskspanel">Carregando tarefas…</div>';
         tr.appendChild(td);
         projectRow.insertAdjacentElement('afterend', tr);
@@ -1494,6 +1496,13 @@
 
     function insertChildren(parentRow, children) {
         const rootEl = document.getElementById('projectplus-dashboard');
+        // Etapa 8, Bloco 4: a linha de subprojeto tem que ter EXATAMENTE as
+        // mesmas colunas do <thead> — que agora dependem do direito do
+        // perfil (coluna Orçamento só com o direito de Custos; botão
+        // "Tarefas" só com o direito de Tarefas). As flags vêm do PHP nos
+        // data-attributes da raiz; ausente = ligado (compatibilidade).
+        const showBudget = !rootEl || rootEl.dataset.ppCosts !== '0';
+        const showTasks  = !rootEl || rootEl.dataset.ppTasks !== '0';
         let anchor = parentRow;
         children.forEach(function (child) {
             const tr = document.createElement('tr');
@@ -1525,7 +1534,9 @@
                     ? '<span class="pp-dep-lock" title="Projeto com tarefas/subprojetos abertos — não pode ir para fase concluída">🔒</span> '
                     : '') +
                 '<a href="' + escapeHtml(child.url) + '">' + escapeHtml(child.name) + '</a>' +
-                    ' <button type="button" class="projectplus-tasksbtn" data-tasks-project="' + child.id + '">Tarefas</button></td>' +
+                    (showTasks
+                        ? ' <button type="button" class="projectplus-tasksbtn" data-tasks-project="' + child.id + '">Tarefas</button>'
+                        : '') + '</td>' +
                 '<td class="pp-phase-cell">' + phaseChip(child.state_name, child.state_color) + '</td>' +
                 '<td>' +
                     '<div class="projectplus-progress">' +
@@ -1537,7 +1548,7 @@
                 '</td>' +
                 '<td>' + (child.last_activity || '—') + '</td>' +
                 '<td>' + badge + '</td>' +
-                '<td class="projectplus-budget-cell">' + budget + '</td>' +
+                (showBudget ? '<td class="projectplus-budget-cell">' + budget + '</td>' : '') +
                 '<td class="pp-deadline-cell">' + deadlineCell(child.deadline) + '</td>' +
                 '<td>' + (child.plan_end_date ? formatDate(child.plan_end_date) : '—') + '</td>';
             anchor.insertAdjacentElement('afterend', tr);

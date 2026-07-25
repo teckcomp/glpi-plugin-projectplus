@@ -123,6 +123,11 @@ TemplateRenderer::getInstance()->display(
         'csrf_token'      => Session::getNewCSRFToken(),
         'can_create'      => Session::haveRight('plugin_projectplus_projects', CREATE),
         'can_templates'   => Session::haveRight('config', UPDATE),
+        // Etapa 8, Bloco 4: o painel some com o que o perfil não pode ver —
+        // coluna/campo de Orçamento sem o direito de Custos (Cliente e
+        // Colaborador) e bloco de Tarefas sem o direito de Tarefas (Cliente).
+        'can_costs'       => Access::can('costs'),
+        'can_tasks'       => Access::can('tasks'),
         'nav'             => Access::sidebar(),
         'scope_can_expand'  => $scopeCanExpand,
         'scope_is_expanded' => $scopeIsExpanded,

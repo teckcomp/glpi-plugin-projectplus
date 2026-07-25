@@ -19,6 +19,7 @@ use Glpi\Application\View\TemplateRenderer;
 use GlpiPlugin\Projectplus\Access;
 use GlpiPlugin\Projectplus\Dashboard;
 use GlpiPlugin\Projectplus\Reports;
+use GlpiPlugin\Projectplus\Scope;
 
 include('../../../inc/includes.php');
 
@@ -65,6 +66,26 @@ $projects = Reports::projectsData($filterId, $filters);
 $tasks    = Reports::tasksData($filterId, $filters);
 $costs    = Reports::costsData($filterId);
 
+// Escopo (Etapa 8, Bloco 4): mesma regra das demais telas — o padrão é o
+// MAIOR escopo do perfil e o botão REDUZ ao pessoal (?scope=mine). Todos os
+// filtros da tela são preservados na URL do botão e nos links de export.
+$scopeCanExpand  = Scope::canExpand();
+$scopeIsExpanded = Scope::isExpanded();
+$scopeQuery      = array_filter([
+    'project'    => $filterId ?: null,
+    'task'       => $taskSearch !== '' ? $taskSearch : null,
+    'user'       => $userId ?: null,
+    'state'      => $stateId ?: null,
+    'typefilter' => $typeRaw !== '' ? $typeRaw : null,
+    'from'       => $from,
+    'until'      => $until,
+], static fn ($v): bool => $v !== null);
+if ($scopeIsExpanded) {
+    $scopeQuery['scope'] = 'mine';
+}
+$scopeToggleUrl = Plugin::getWebDir('projectplus') . '/front/reports.php'
+    . ($scopeQuery === [] ? '' : ('?' . http_build_query($scopeQuery)));
+
 // Lista de fases (mesma tabela glpi_projectstates para Projetos e Tarefas)
 $states = [];
 foreach (Dashboard::getStatesMap() as $sid => $s) {
@@ -91,6 +112,10 @@ TemplateRenderer::getInstance()->display(
         'generated_at'      => date('d/m/Y H:i'),
         'can_templates'     => Session::haveRight('config', UPDATE),
         'nav'             => Access::sidebar(),
+        'filter_scope'      => $scopeIsExpanded ? '' : 'mine',
+        'scope_can_expand'  => $scopeCanExpand,
+        'scope_is_expanded' => $scopeIsExpanded,
+        'scope_toggle_url'  => $scopeToggleUrl,
         'projects_report'   => $projects,
         'tasks_report'      => $tasks,
         'costs_report'      => $costs,

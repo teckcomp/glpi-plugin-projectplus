@@ -4,11 +4,16 @@
  * ProjectPlus — grava o teto de orçamento de um projeto.
  */
 
+use GlpiPlugin\Projectplus\Access;
 use GlpiPlugin\Projectplus\Budget;
 
 include('../../../inc/includes.php');
 
 Session::checkLoginUser();
+
+// Etapa 8, Bloco 4: gravar o teto de orçamento exige o direito de Custos
+// (Colaborador e Cliente ficam de fora, mesmo podendo editar o projeto).
+Session::checkRight(Access::RIGHTS['costs'], UPDATE);
 
 $projectId = (int) ($_POST['projects_id'] ?? 0);
 

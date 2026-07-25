@@ -2,7 +2,9 @@
 
 **Plugin de gestão avançada de projetos para GLPI 11**
 Repositório: [github.com/teckcomp/glpi-plugin-projectplus](https://github.com/teckcomp/glpi-plugin-projectplus) · Licença GPL-2.0
-Versão atual: **v0.5.0-alpha** · Atualizado em 19/07/2026 (Etapa 5 concluída — commit `a9862f1`)
+Versão atual: **v0.5.0-alpha** · Atualizado em 25/07/2026 (Etapa 8 — Blocos 1/2/3 fechados; Bloco 4 entregue para homologação. Próximo: Etapa 6)
+
+> **Ordem de execução confirmada em 19/07/2026:** Etapa 7 → Etapa 8 → Etapa 6 (por último). A Etapa 6 (refinamento/pré-produção e release v1.0.0-beta) só começa depois que 7 e 8 estiverem validadas em homologação.
 
 ---
 
@@ -47,58 +49,48 @@ Versão atual: **v0.5.0-alpha** · Atualizado em 19/07/2026 (Etapa 5 concluída 
 - [x] Diagnóstico dos dados (estados, tipos, categorias)
 - [x] Modelo de 5 fases aplicado: 1. Iniciação · 2. Planejamento · 3. Execução · 4. Monitoramento · 5. Encerramento (com cores e `is_finished`)
 - [x] Tipos de projeto e de tarefa criados (kit TI/MSP)
-- [x] Validação visual no painel (dropdowns e nomes de fase) e classificação dos itens existentes
-- [x] Bloco 3: chip de fase colorido na árvore de tarefas, tabelas de projetos/subprojetos e tarefas em andamento + donut "Projetos por fase"
+- [x] Validação visual no painel e classificação dos itens existentes
+- [x] Bloco 3: chip de fase colorido na árvore de tarefas, tabelas e donut "Projetos por fase"
 
 ## ✅ Etapa 3 — Trabalho do dia a dia `concluída em 19/07/2026`
 
 - [x] **Bloco 1** — Tela "Minhas tarefas": tarefas do usuário logado agrupadas por projeto, KPIs pessoais, hierarquia mãe/filha, edição inline com barra de prazo
 - [x] **Bloco 2** — Comentários por tarefa: tabela própria, balão com contador e painel expansível, aba nativa "Comentários (ProjectPlus)", alerta no sino
-- [x] **Bloco 3** — Dependências entre tarefas na tabela nativa `glpi_projecttasklinks` (finish_to_start): coluna 🔗, cadeado 🔒, painel expansível, aba nativa, regra no servidor (bloqueada não conclui), prevenção de ciclo/duplicata; filhos abertos bloqueiam o pai
-- [x] **Bloco 4** — Ajustes de layout/UX da Visão geral: KPIs reorganizados, 4 donuts (inclui "Tarefas por Estado"), busca nas tabelas, 🔗/💬/🔒 nas linhas
-- [x] **Timeline** — Gantt somente-leitura em HTML/JS puro, escopo por usuário (mesmo critério de "Minhas tarefas")
+- [x] **Bloco 3** — Dependências entre tarefas na tabela nativa `glpi_projecttasklinks` (finish_to_start): coluna 🔗, cadeado 🔒, painel expansível, aba nativa, regra no servidor, prevenção de ciclo/duplicata
+- [x] **Bloco 4** — Ajustes de layout/UX da Visão geral: KPIs reorganizados, 4 donuts, busca nas tabelas, 🔗/💬/🔒 nas linhas
+- [x] **Timeline** — Gantt somente-leitura em HTML/JS puro, escopo por usuário
 
 ## ✅ Etapa 4 — Modelos de projeto `concluída em 19/07/2026`
 
-- [x] **Tela "Modelos"** na sidebar, restrita a super-admin (`config` UPDATE); a atribuição por perfil a gestores foi remetida à Etapa 8
-- [x] **Salvar projeto existente como modelo**: captura recursiva da árvore COMPLETA (tarefas + todos os subprojetos, com suas tarefas), incluindo atributos de cada item; o projeto de origem não é alterado
-- [x] **Editor visual** (criar do zero + editar a qualquer tempo): monta a árvore de tarefas/subtarefas e subprojetos aninhados no cliente (DOM como fonte da verdade; POST tradicional do JSON)
-- [x] **Criar projeto a partir do modelo** (`TemplateCloner`): clonagem completa com subprojetos recursivos; offsets de tudo relativos à data de início escolhida; anti-duplicação (dedup de tarefas por projeto e de subprojetos por pai, trava anti-ciclo); nunca toca em templates nativos, então o bug do core #21804 não se aplica
-- [x] **Campos por item no modelo**, aplicados na clonagem:
-  - Projeto raiz e subprojetos: início (d), duração (d), Estado, Tipo (`projecttypes_id`), Gestor, Orçamento (teto do plugin), Descrição e interruptor "calcular % automático"
-  - Tarefas e subtarefas: início (d), duração (d), Estado, Tipo (`projecttasktypes_id`), Responsável (equipe da tarefa, `glpi_projecttaskteams`), Descrição e interruptor "calcular % automático"
-  - Regra do percentual: só o interruptor automático/manual (`auto_percent_done`), com default ligado quando o item tem filhos
-- Modelo em JSON: `{ project:{...}, tasks:[...], subprojects:[...] }` na tabela `glpi_plugin_projectplus_templates.structure`
+- [x] Tela "Modelos" na sidebar; salvar projeto como modelo (captura recursiva); editor visual; criar projeto a partir do modelo (`TemplateCloner`, offsets relativos, anti-duplicação); campos por item; JSON em `glpi_plugin_projectplus_templates.structure`. Commit `9c940a1`, tag `v0.5.0-alpha`.
 
 ## ✅ Etapa 5 — Relatórios `concluída em 19/07/2026`
 
-- [x] **Bloco 1** — Tela "Relatórios" na sidebar (mesmo direito da Visão geral) com exportação CSV de três conjuntos de dados: Projetos (fase, tipo, gestor, % concluído, datas, orçamento), Tarefas (projeto, tarefa mãe, fase, tipo, responsáveis, datas, atraso, bloqueio) e Custos (mesma consolidação da tela Orçamento, linha a linha). Filtro por projeto raiz (+ descendentes), igual ao da tela Orçamento. CSV com `;` e BOM UTF-8 para abrir certo no Excel PT-BR.
-- [x] **Bloco 1.1** — Filtros extras na tela Relatórios: Tarefa (busca por nome), Gestor/Responsável (mesmo campo para gestor de projeto e responsável de tarefa), Fase e Tipo (campo único com optgroup "Tipo de projeto"/"Tipo de tarefa", cada um só filtra sua tabela). Valem para Projetos e Tarefas; Custos continua só com o filtro de Projeto. Botão "Limpar". CSV de cada bloco reflete os filtros aplicados na tela.
-- [x] **Bloco 1.2** — Filtro de Período (De/Até) na tela Relatórios, reaproveitando `Dashboard::periodCriteria` (mesma semântica da Visão geral: sobreposição de intervalo pelo planejado, itens sem data sempre entram). Vale para Projetos e Tarefas, não para Custos.
-- [x] **Bloco 2** — Burndown por projeto: **validado em homologação e commitado/pushado em 19/07/2026** (commit `a9862f1` em `origin/master`). Novo card "Burndown" na tela Relatórios, com seletor de projeto único (raiz + descendentes, mesmo escopo de Tarefas) e toggle **Semana / Dia / Mês**. Burndown por CONTAGEM de tarefas (não duração). Conclusão de cada tarefa aproximada por `date_mod` quando `percent_done = 100` (sem histórico diário de snapshot). O servidor devolve só dados brutos (total de tarefas + lista de conclusões); toda a agregação por semana/dia/mês e o desenho do gráfico (SVG puro, sem lib externa) acontecem no cliente — trocar o toggle não gera nova requisição. O passo mensal é de calendário, ancorado em "início + k meses" (mês curto não desalinha os ticks seguintes). Linha "ideal" usa as datas planejadas do próprio projeto (separadas do eixo do gráfico, que se estende até hoje em projetos atrasados).
-- (Relatório de custos consolidado em tela já entregue no Bloco 5)
+- [x] **Bloco 1/1.1/1.2** — Tela "Relatórios" + CSV (Projetos/Tarefas/Custos), filtros (tarefa, gestor/responsável, fase, tipo com optgroup, período). Commit `f0eee3e`.
+- [x] **Bloco 2** — Burndown por projeto (SVG puro, toggle Semana/Dia/Mês client-side; conclusão por `date_mod` quando `percent_done=100`; linha ideal por datas planejadas). Commit `a9862f1`.
 
-## 📍 Etapa 6 — Refinamento e pré-produção
+## ✅ Etapa 7 — Kanban avançado `concluída em 19/07/2026`
 
-- Teste de e-mail real via GLPIMailer
-- Ciclo completo de desinstalação/reinstalação
-- i18n: inglês + arquivos .po/.mo (PT-BR primeiro, conforme decisão de publicação)
-- Release formal **v1.0.0-beta** no GitHub
-- `plugin.xml` e submissão ao catálogo oficial do GLPI
+- [x] **Bloco 1/1.1/1.2/1.3** — Board próprio (colunas=fase, swimlanes Projeto/Responsável), aba nativa "Kanban (ProjectPlus)", visibilidade direta + expandir, subprojeto como lane. Commit `6c2ac4b`.
+- [x] **Bloco 2** — Arrastar-e-soltar = só FASE (2b cancelado); toda tarefa é cartão comum; trava por dependência. Commit `eaaffc5`.
 
-## 📍 Etapa 7 — Kanban avançado
+## 📍 Etapa 8 — Níveis de acesso `EM ANDAMENTO`
 
-- Swimlanes (por projeto / responsável)
-- Refinamentos de arrastar-e-soltar sobre o Kanban global
+Papéis: **Gestor / Cliente / Técnico / Colaborador (Terceiro)** + Admin. Entidade única. Desenho travado (`etapa8-desenho-acessos-v3-final`).
 
-## 📍 Etapa 8 — Níveis de acesso
+- [x] **Bloco 1** — Aba "ProjectPlus" no Perfil, matriz de 4 níveis, 10 direitos + migração. **FECHADO NO GITHUB em 20/07/2026 (commit `93e2b69`).**
+- [x] **Bloco 2** — Direitos de módulo: sidebar por direito, gate por front, Modelos → `plugin_projectplus_templates`, roteamento do Kanban; helper `src/Access.php`. **FECHADO NO GITHUB em 21/07/2026 (commit `b4a6473`).**
+- [x] **Bloco 3** — Escopo por tela (Visão geral, Kanban, Timeline). **FECHADO NO GITHUB em 22/07/2026 (commit `5ab519d`, 11 arquivos, +394/−33).** Novo helper `src/Scope.php`. Regras: PROJETOS do escopo = onde está na **equipe do projeto** (`glpi_projectteams`), cada um por si; TAREFAS = as **suas** (equipe da tarefa). No pessoal a lista é **plana**. **INVERSÃO final (21/07): o PADRÃO é VER TUDO** (maior escopo do perfil); o botão é **"Ver só os meus"** (`?scope=mine`), sem memória de sessão.
+- [x] **Bloco 4** — Cliente + Colaborador + escopo em Relatórios/Custos. Entregue em 25/07/2026 (zip `projectplus-etapa8-bloco4-1.zip`).
+  - **4a — Relatórios e Custos respeitando o escopo:** `Reports::projectsData/tasksData/costsData/burndownData` e `front/costs.php` passam a cruzar o filtro da tela com `src/Scope.php` (helper `Reports::combineIds`, interseção — o filtro nunca amplia o escopo). Botão "Ver só os meus" nas duas telas, preservando os filtros na URL e nos links de CSV. Com escopo ativo, a lista de custos é **plana** (sem descer para subprojetos de terceiros).
+  - **4b — Kanban de PROJETOS:** novos `src/ProjectKanban.php`, `front/projectkanban.php`, `templates/projectkanban.html.twig` e `public/js/projectkanban.js`. Colunas = fases dos projetos, cartões = projetos/subprojetos (subprojeto com a tag "Subprojeto de: …", mesmo padrão da subtarefa), sem swimlanes. `front/kanban.php` redireciona para lá quando `Access::kanbanIsProjects()` — o item "Kanban" da sidebar continua único.
+    - **4b.1** — botão "Kanban de projetos" no board de tarefas: sem ele, quem tem os dois Kanbans só chegaria ao board novo pela URL (a sidebar aponta para o de tarefas).
+    - **4b.2** — arrastar cartão muda a **fase do projeto** (novo `ajax/project.php`, action `kanban_move`), para quem tem Projetos em UPDATE + direito nativo `project`. Cliente segue somente leitura. Mesma trava da ficha nativa (projeto com tarefa/subprojeto aberto não vai para fase finalizada), mas com **mensagem explicando** — pelo hook `PRE_ITEM_UPDATE` o campo voltava em silêncio. Sem update otimista; token rotacionado a cada resposta.
+  - **4c — Cliente/Colaborador sem custos:** o painel esconde a coluna "Orçamento", o campo "Teto de orçamento" e (para o Cliente) todo o bloco de Tarefas; as abas "Custos (ProjectPlus)" de projeto e tarefa passam a exigir `plugin_projectplus_costs`; `budget.form.php` exige o direito em UPDATE. `Kanban::canAccess()` migrou do direito do Painel para `plugin_projectplus_kanban`.
 
-- Direitos granulares por **módulo/painel** do plugin: Visão geral, Minhas tarefas, Projetos, Tarefas, Kanban, Custos, Modelos, Relatórios, Alertas, Configuração
-- **Permissão "ver todos os projetos"** (visão global × visão pessoal): hoje a Timeline mostra só as tarefas do usuário logado; a tela de Modelos é restrita a super-admin. Nesta etapa isso vira permissão configurável por perfil
-- Quatro níveis por módulo (ver/interagir/criar/editar-excluir), matriz em Administração → Perfis
-- Migração do direito único atual (`plugin_projectplus_dashboard`) para os novos direitos
+## 📍 Etapa 6 — Refinamento e pré-produção `próxima`
 
-> Nota: se fizer sentido restringir acesso já no lançamento público, esta etapa pode ser antecipada para antes da v1.0.0-beta (Etapa 6). Decisão em aberto.
+- Teste de e-mail real (GLPIMailer), ciclo desinstalação/reinstalação, i18n (inglês + .po/.mo), release **v1.0.0-beta**, submissão ao catálogo oficial do GLPI.
 
 ---
 
