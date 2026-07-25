@@ -2,7 +2,7 @@
 
 **Plugin de gestão avançada de projetos para GLPI 11**
 Repositório: [github.com/teckcomp/glpi-plugin-projectplus](https://github.com/teckcomp/glpi-plugin-projectplus) · Licença GPL-2.0
-Versão atual: **v0.5.0-alpha** · Atualizado em 25/07/2026 (Etapa 8 concluída; **Etapa 6 em andamento — Blocos 1 e 2 fechados**. Próximo: Bloco 3, i18n)
+Versão atual: **v0.5.0-alpha** · Atualizado em 25/07/2026 (Etapa 8 concluída; **Etapa 6 em andamento — Blocos 1, 2 e 2b fechados**. Próximo: Bloco 3, i18n)
 
 > **Ordem de execução confirmada em 19/07/2026:** Etapa 7 → Etapa 8 → Etapa 6 (por último). A Etapa 6 (refinamento/pré-produção e release v1.0.0-beta) só começa depois que 7 e 8 estiverem validadas em homologação.
 
@@ -106,7 +106,16 @@ Papéis: **Gestor / Cliente / Técnico / Colaborador (Terceiro)** + Admin. Entid
   - **Equipe por grupo:** `notifyTaskTeam` filtrava `itemtype = 'User'` — tarefa atribuída a um GRUPO não notificava ninguém. Agora expande por `glpi_groups_users`, sem duplicar quem está nos dois. Schema de `glpi_projecttaskteams` confirmado contra o core (a pendência "VALIDAR" do código está fechada).
   - **Bug colateral corrigido (lição 44):** a `action` do formulário de Configuração usava `$_SERVER['PHP_SELF']`, que no GLPI 11 vale `/index.php` por causa do front controller — o POST caía no endpoint de inventário (`XML not well formed!`) e o botão **Salvar já estava quebrado desde sempre**. Agora a URL é montada a partir de `root_doc`.
   - Tela de Configuração ganhou o botão "Salvar e enviar e-mail de teste" e a seção **E-mail** no diagnóstico (canal, remetente, DSN com senha oculta, url_base).
-- [ ] **Bloco 3** — i18n: extração das strings `__('…', 'projectplus')` para `.po`/`.mo`, inglês como segundo idioma (PT-BR continua primeiro).
+- [x] **Bloco 2b** — Identidade visual (inserido a pedido, antes do i18n, para congelar o vocabulário das telas). **VALIDADO em homologação e FECHADO NO GITHUB em 25/07/2026.**
+  - Marca própria: `logo.png` na raiz (o GLPI 11 a serve em `/Plugin/projectplus/Logo` quando o arquivo existe — senão mostra um quadrado com a inicial) e `public/img/projectplus-mark.svg` ao lado do título nas 9 telas. Barras de Gantt com progresso, na paleta que o plugin já usava (`#065a82` → `#16323f`, verde `#4caf7d`). Tamanho da marca na variável CSS `--pp-mark-size` (42px).
+  - Menu renomeado: "Painel de Projetos" → **"Gestor de Projetos"** (4 pontos: menu, tela de Configuração e 2 textos de ajuda).
+  - Itens "Calendário" e "Recursos" (marcados como "em breve") removidos dos 9 templates, junto com as regras CSS `--soon` órfãs. Eram placeholders sem rota e não constavam do roadmap.
+
+- [ ] **Bloco 3** — i18n: extração das strings para `.po`/`.mo`, inglês como segundo idioma (PT-BR continua primeiro).
+  - **Decisão de 25/07/2026:** o texto-fonte (msgid) permanece em PT-BR — as 748 chamadas `__()` não serão tocadas. Traduz-se PT-BR → inglês no `.po`.
+  - **Obrigatório:** gerar TAMBÉM um `pt_BR.mo` (identidade). `Plugin::loadLang` cai em `en_GB.mo` quando não acha `.mo` para o idioma do usuário — sem o `pt_BR.mo`, todo usuário PT-BR passaria a ver a interface em inglês.
+  - Volume: ~400 strings únicas (269 nos PHP + 195 nos Twig, com sobreposição). Inclui `tools/update-locales.sh` para regenerar `.pot`/`.mo`.
+  - Resolver os avisos do `xgettext`: "Custo" aparece com e sem plural (`_n`), o que gettext não aceita no mesmo msgid.
 - [ ] **Bloco 4** — Release `v1.0.0-beta`: CHANGELOG, tag e pacote de distribuição.
 - [ ] **Bloco 5** — Submissão ao catálogo oficial do GLPI (depois da beta).
 

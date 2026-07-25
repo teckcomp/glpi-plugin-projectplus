@@ -342,7 +342,7 @@ class TaskComment extends CommonDBTM
         echo '</table></div>';
 
         echo "<p class='projectplus-muted' style='margin:6px 2px'>"
-            . __('Estes comentários também aparecem no Painel de Projetos (árvore de tarefas e Minhas tarefas).', 'projectplus')
+            . __('Estes comentários também aparecem no Gestor de Projetos (árvore de tarefas e Minhas tarefas).', 'projectplus')
             . '</p>';
     }
 }

@@ -26,7 +26,7 @@ class Dashboard extends CommonGLPI
 
     public static function getMenuName()
     {
-        return __('Painel de Projetos', 'projectplus');
+        return __('Gestor de Projetos', 'projectplus');
     }
 
     public static function getMenuContent()

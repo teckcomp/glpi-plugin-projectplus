@@ -7,7 +7,11 @@
     {# ================= COLUNA ESQUERDA: título + sidebar ================= #}
     <div class="projectplus-left">
         <div class="projectplus-pagetitle">
-            <h2>{{ __('Projetos', 'projectplus') }}</h2>
+            <div class="projectplus-brand">
+                <img class="projectplus-brand__mark" alt=""
+                     src="{{ plugin_web_dir }}/img/projectplus-mark.svg">
+                <h2>{{ __('Projetos', 'projectplus') }}</h2>
+            </div>
             <span>{{ __('Linha do tempo de projetos e tarefas', 'projectplus') }}</span>
         </div>
         <nav class="projectplus-sidebar">
@@ -37,12 +41,6 @@
                     <a href="{{ plugin_web_dir }}/front/projecttemplates.php"><i class="ti ti-clipboard-list"></i>{{ __('Modelos', 'projectplus') }}</a>
                 </li>
                 {% endif %}
-                <li class="projectplus-sidebar__item projectplus-sidebar__item--soon">
-                    <span><i class="ti ti-calendar"></i>{{ __('Calendário', 'projectplus') }}</span><em>{{ __('em breve', 'projectplus') }}</em>
-                </li>
-                <li class="projectplus-sidebar__item projectplus-sidebar__item--soon">
-                    <span><i class="ti ti-users"></i>{{ __('Recursos', 'projectplus') }}</span><em>{{ __('em breve', 'projectplus') }}</em>
-                </li>
                 {% if nav.costs %}
                 <li class="projectplus-sidebar__item">
                     <a href="{{ plugin_web_dir }}/front/costs.php"><i class="ti ti-coin"></i>{{ __('Orçamento', 'projectplus') }}</a>

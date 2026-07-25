@@ -740,7 +740,7 @@ class TaskDep extends CommonGLPI
         }
 
         echo "<p class='projectplus-muted' style='margin:6px 2px'>"
-            . __('Regra geral: subtarefas abertas bloqueiam a tarefa mãe automaticamente (itens "subtarefa" acima). Uma tarefa bloqueada não pode ser concluída enquanto as bloqueadoras estiverem abertas. As dependências também aparecem no Painel de Projetos (🔗).', 'projectplus')
+            . __('Regra geral: subtarefas abertas bloqueiam a tarefa mãe automaticamente (itens "subtarefa" acima). Uma tarefa bloqueada não pode ser concluída enquanto as bloqueadoras estiverem abertas. As dependências também aparecem no Gestor de Projetos (🔗).', 'projectplus')
             . '</p>';
     }
 }

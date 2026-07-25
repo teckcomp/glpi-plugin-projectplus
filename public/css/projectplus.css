@@ -120,13 +120,6 @@
     background: #eaf4fb; color: #065a82; font-weight: 700;
     border-left: 3px solid #4a9fd4;
 }
-.projectplus-sidebar__item--soon { opacity: 0.55; }
-.projectplus-sidebar__item--soon span { display: inline-block; padding-right: 4px; }
-.projectplus-sidebar__item--soon em {
-    font-size: 0.68rem; font-style: normal; color: #fff;
-    background: #b4c0cc; border-radius: 8px; padding: 1px 7px;
-    vertical-align: 1px;
-}
 
 .projectplus-main { flex: 1 1 auto; min-width: 0; }
 .projectplus-subtitle { color: #8a97a5; font-size: 0.85rem; }
@@ -228,6 +221,19 @@
 .projectplus-pagetitle { padding: 4px 6px 12px; }
 .projectplus-pagetitle h2 { margin: 0; font-size: 1.4rem; color: #16323f; }
 .projectplus-pagetitle span { color: #8a97a5; font-size: 0.8rem; }
+
+/* Identidade: marca ao lado do título da tela.
+   --pp-mark-size controla o tamanho em um lugar só. */
+.projectplus-brand {
+    --pp-mark-size: 42px;
+    display: flex; align-items: center; gap: 12px;
+}
+.projectplus-brand__mark {
+    width: var(--pp-mark-size); height: var(--pp-mark-size);
+    border-radius: calc(var(--pp-mark-size) * 0.22);
+    flex: 0 0 auto; display: block;
+}
+.projectplus-brand h2 { margin: 0; }
 .projectplus-left .projectplus-sidebar { margin: 0; width: 100%; }
 .projectplus-sidebar__item a i,
 .projectplus-sidebar__item span i {

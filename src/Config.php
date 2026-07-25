@@ -123,7 +123,7 @@ class Config
         echo '</select></td></tr>';
 
         echo '<tr class="tab_bg_1"><td>'
-            . __('Painel de Projetos como primeiro item do menu Ferramentas', 'projectplus')
+            . __('Gestor de Projetos como primeiro item do menu Ferramentas', 'projectplus')
             . '</td><td>';
         echo "<select name='menu_first'>";
         echo "<option value='1'" . ($config['menu_first'] ? ' selected' : '') . '>'
