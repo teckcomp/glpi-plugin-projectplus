@@ -2,7 +2,7 @@
 
 **Plugin de gestão avançada de projetos para GLPI 11**
 Repositório: [github.com/teckcomp/glpi-plugin-projectplus](https://github.com/teckcomp/glpi-plugin-projectplus) · Licença GPL-2.0
-Versão atual: **v0.5.0-alpha** · Atualizado em 25/07/2026 (Etapa 8 concluída; **Etapa 6 em andamento — Bloco 1 fechado**. Próximo: Bloco 2, e-mail real)
+Versão atual: **v0.5.0-alpha** · Atualizado em 25/07/2026 (Etapa 8 concluída; **Etapa 6 em andamento — Blocos 1 e 2 fechados**. Próximo: Bloco 3, i18n)
 
 > **Ordem de execução confirmada em 19/07/2026:** Etapa 7 → Etapa 8 → Etapa 6 (por último). A Etapa 6 (refinamento/pré-produção e release v1.0.0-beta) só começa depois que 7 e 8 estiverem validadas em homologação.
 
@@ -98,10 +98,21 @@ Papéis: **Gestor / Cliente / Técnico / Colaborador (Terceiro)** + Admin. Entid
   - **1c — Direitos preservados na desinstalação:** `ProfileRight::deleteProfileRights` passa a rodar **só** com `purge_on_uninstall` ligado — a mesma proteção que os dados já tinham. Antes, desinstalar apagava as 11 linhas de `glpi_profilerights` de todos os perfis e a reinstalação recompunha só os padrões, perdendo em silêncio o ajuste fino da Etapa 8.
   - **1d — Diagnóstico na tela de Configuração:** `Install::healthReport()` + tabela na tela — 7 tabelas (existência, nº de registros, colunas/índices faltando), os 11 direitos (em quantos perfis a linha existe e em quantos há acesso), o cron e as marcas de purga/importação. É o instrumento de conferência do próprio ciclo de reinstalação.
   - Constantes `Install::TABLES` e `Install::RIGHTS` viram fonte única (install, uninstall e diagnóstico). Removida uma chamada morta de `addRight` (ver lição 38).
-- [ ] **Bloco 2** — E-mail real: envio pelo GLPIMailer com as notificações do plugin (alertas de prazo/orçamento) e o cron `projectplusalerts`.
+- [x] **Bloco 2** — E-mail real. **VALIDADO em homologação e FECHADO NO GITHUB em 25/07/2026** (zip `projectplus-etapa6-bloco2-2.zip`). Envio confirmado ponta a ponta (SMTP do Gmail, mensagem recebida).
+  - **Causa raiz do e-mail que não saía:** o construtor do `GLPIMailer` define apenas `sender` (e só se `smtp_sender` estiver preenchido) — nunca o `from`. Como `send()` chama `ensureValidity()`, a mensagem era rejeitada antes de sair, e o `catch` genérico do plugin engolia o motivo. O `from` agora vem de `Config::getEmailSender()` (from_email → admin_email), com fallback ao `$CFG_GLPI`.
+  - **Canal respeitado:** `use_notifications` e `notifications_mailing` desligados no GLPI impedem o envio. Chave ausente NÃO bloqueia (evita falso negativo).
+  - **Erro visível:** falhas gravam o motivo real (inclusive `GLPIMailer::getError()`) em `files/_log/projectplus.log`; o cron anota `enviado/falhou/ignorado` via `CronTask::log()`.
+  - **Link no corpo:** e-mails trazem a URL da ficha nativa, montada com `url_base`.
+  - **Equipe por grupo:** `notifyTaskTeam` filtrava `itemtype = 'User'` — tarefa atribuída a um GRUPO não notificava ninguém. Agora expande por `glpi_groups_users`, sem duplicar quem está nos dois. Schema de `glpi_projecttaskteams` confirmado contra o core (a pendência "VALIDAR" do código está fechada).
+  - **Bug colateral corrigido (lição 44):** a `action` do formulário de Configuração usava `$_SERVER['PHP_SELF']`, que no GLPI 11 vale `/index.php` por causa do front controller — o POST caía no endpoint de inventário (`XML not well formed!`) e o botão **Salvar já estava quebrado desde sempre**. Agora a URL é montada a partir de `root_doc`.
+  - Tela de Configuração ganhou o botão "Salvar e enviar e-mail de teste" e a seção **E-mail** no diagnóstico (canal, remetente, DSN com senha oculta, url_base).
 - [ ] **Bloco 3** — i18n: extração das strings `__('…', 'projectplus')` para `.po`/`.mo`, inglês como segundo idioma (PT-BR continua primeiro).
 - [ ] **Bloco 4** — Release `v1.0.0-beta`: CHANGELOG, tag e pacote de distribuição.
 - [ ] **Bloco 5** — Submissão ao catálogo oficial do GLPI (depois da beta).
+
+### Pendências pré-beta (baixo risco)
+
+- `$_SERVER['PHP_SELF']` ainda é passado como 2º argumento de `Html::header()` em 9 arquivos de `front/`. Não quebra nada (afeta só o destaque de menu/breadcrumb), mas cabe padronizar na limpeza da beta.
 
 ### Decisões em aberto
 

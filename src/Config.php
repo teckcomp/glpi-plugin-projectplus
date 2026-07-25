@@ -64,6 +64,27 @@ class Config
     }
 
     /**
+     * URL desta tela.
+     *
+     * ATENÇÃO (Etapa 6, Bloco 2 — lição 44): no GLPI 11 TODA requisição
+     * passa pelo front controller (`public/index.php`), então
+     * `$_SERVER['PHP_SELF']` vale `/index.php` e NÃO a rota real. Usar
+     * PHP_SELF como `action` fazia o formulário postar na raiz do GLPI,
+     * onde o endpoint de inventário responde
+     * `<REPLY><ERROR>XML not well formed!</ERROR></REPLY>`.
+     * O caminho estável é montar a rota a partir de `root_doc`
+     * (`Plugin::getWebDir()` existe, mas está deprecated no 11).
+     */
+    public static function formUrl(): string
+    {
+        /** @var array $CFG_GLPI */
+        global $CFG_GLPI;
+
+        return ($CFG_GLPI['root_doc'] ?? '')
+            . '/plugins/projectplus/front/config.form.php';
+    }
+
+    /**
      * Formulário simples de configuração.
      */
     public static function showForm(): void
@@ -71,7 +92,7 @@ class Config
         Session::checkRight('config', UPDATE);
 
         $config = self::get();
-        $action = htmlspecialchars($_SERVER['PHP_SELF'] ?? '');
+        $action = htmlspecialchars(self::formUrl());
 
         echo "<form method='post' action='{$action}'>";
         echo '<table class="tab_cadre_fixe">';
@@ -156,6 +177,17 @@ class Config
 
         echo '<tr class="tab_bg_2"><td colspan="2" class="center">';
         echo "<input type='submit' name='update' value='" . _sx('button', 'Save') . "' class='btn btn-primary'>";
+        echo '&nbsp;';
+        echo "<input type='submit' name='test_mail' value='"
+            . __('Salvar e enviar e-mail de teste', 'projectplus')
+            . "' class='btn btn-secondary'>";
+        echo '<br><small>'
+            . __(
+                'O e-mail de teste vai para o endereço do seu próprio usuário e não '
+                . 'depende da opção "Enviar e-mails" acima — serve para testar o canal.',
+                'projectplus'
+            )
+            . '</small>';
         echo '</td></tr>';
         echo '</table>';
         Html::closeForm();
@@ -264,6 +296,56 @@ class Config
                   . __('APAGA tabelas, dados e direitos', 'projectplus') . '</span>'
                 : __('preserva dados e direitos', 'projectplus'))
             . '</td></tr>';
+
+        // --- E-mail (Etapa 6, Bloco 2) -------------------------------------
+        $mail = Notification::mailStatus();
+
+        echo '<tr class="tab_bg_2"><th colspan="3">' . __('E-mail', 'projectplus') . '</th></tr>';
+
+        echo '<tr class="tab_bg_1"><td colspan="2">'
+            . __('Alertas por e-mail (opção do plugin)', 'projectplus') . '</td><td>'
+            . ($mail['plugin_enabled']
+                ? __('ligados', 'projectplus')
+                : '<span style="color:#ef6c00">' . __('desligados (só o sino)', 'projectplus') . '</span>')
+            . '</td></tr>';
+
+        echo '<tr class="tab_bg_1"><td colspan="2">'
+            . __('Canal de e-mail do GLPI', 'projectplus') . '</td><td>'
+            . ($mail['blocked'] === null
+                ? '<span style="color:#2e7d32">' . __('liberado', 'projectplus') . '</span>'
+                : '<span style="color:#c62828">' . __('BLOQUEADO:', 'projectplus') . ' '
+                  . htmlspecialchars($mail['blocked']) . '</span>')
+            . '</td></tr>';
+
+        echo '<tr class="tab_bg_1"><td colspan="2">'
+            . __('Remetente que será usado', 'projectplus') . '</td><td>'
+            . (empty($mail['sender_email'])
+                ? '<span style="color:#c62828">'
+                  . __('NENHUM — preencha "E-mail do remetente" em Configurar > Notificações '
+                      . 'ou "E-mail do administrador" em Configurar > Geral', 'projectplus')
+                  . '</span>'
+                : htmlspecialchars(
+                    (string) $mail['sender_email']
+                    . (!empty($mail['sender_name']) ? ' (' . $mail['sender_name'] . ')' : '')
+                ))
+            . '</td></tr>';
+
+        echo '<tr class="tab_bg_1"><td colspan="2">'
+            . __('Transporte (DSN, senha oculta)', 'projectplus') . '</td><td><code>'
+            . htmlspecialchars($mail['dsn']) . '</code></td></tr>';
+
+        echo '<tr class="tab_bg_1"><td colspan="2">'
+            . __('Link nos e-mails (URL da base)', 'projectplus') . '</td><td>'
+            . (empty($mail['url_base'])
+                ? '<span style="color:#ef6c00">'
+                  . __('não configurada — os e-mails saem sem link', 'projectplus') . '</span>'
+                : htmlspecialchars($mail['url_base']))
+            . '</td></tr>';
+
+        echo '<tr class="tab_bg_1"><td colspan="3"><small>'
+            . __('Falhas de envio ficam registradas em files/_log/projectplus.log; '
+                . 'o cron projectplusalerts anota quantos e-mails saíram no próprio log da tarefa.', 'projectplus')
+            . '</small></td></tr>';
 
         echo '</table>';
     }
