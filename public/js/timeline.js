@@ -133,10 +133,29 @@
         return dayIndex(state.data.range.max) + 1;
     }
 
-    function fmtBr(iso) {
+    // Data no formato preferido do usuario (Bloco 4c). Antes chamava-se
+    // fmtBr e fixava dd/mm/aaaa; a mascara agora vem do servidor, junto do
+    // dicionario de traducao. O fallback existe para o caso de o
+    // #pp-i18n nao estar na pagina — usa o mesmo separador do GLPI.
+    // Rotulo curto do eixo (dia e mes, sem ano). Nao ha preferencia de
+    // formato curto no GLPI, mas a ORDEM tem de seguir a do usuario: para
+    // quem usa m-d-Y — ou o ISO Y-m-d, que tambem poe o mes antes — '07-06'
+    // precisa ser julho, dia 6.
+    function shortTick(d) {
+        const dd  = pad(d.getDate());
+        const mm  = pad(d.getMonth() + 1);
+        const fmt = (window.ProjectPlusI18n && window.ProjectPlusI18n.dateFormat)
+            ? window.ProjectPlusI18n.dateFormat() : 'd-m-Y';
+        return fmt === 'd-m-Y' ? dd + '-' + mm : mm + '-' + dd;
+    }
+
+    function fmtDate(iso) {
+        if (window.ProjectPlusI18n && window.ProjectPlusI18n.fmtDate) {
+            return window.ProjectPlusI18n.fmtDate(iso);
+        }
         if (!iso) { return '—'; }
-        const p = iso.split('-');
-        return p[2] + '/' + p[1] + '/' + p[0];
+        const p = String(iso).split('-');
+        return p.length === 3 ? p[2] + '-' + p[1] + '-' + p[0] : String(iso);
     }
 
     // ------------------------------------------------------------------
@@ -204,7 +223,8 @@
                 d = new Date(d.getTime() + MS_DAY);
             }
         } else if (state.zoom === 'week') {
-            // Um marcador por segunda-feira (dd/mm)
+            // Um marcador por segunda-feira (dia e mes, na ordem da
+            // preferencia do usuario — ver shortTick abaixo)
             let d = new Date(min);
             while (d.getDay() !== 1) {
                 d = new Date(d.getTime() + MS_DAY);
@@ -212,7 +232,7 @@
             while (d <= max) {
                 const left = Math.round((d - min) / MS_DAY) * ppd;
                 ticks += '<div class="pp-tl-wtick" style="left:' + left + 'px">' +
-                    pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '</div>';
+                    shortTick(d) + '</div>';
                 d = new Date(d.getTime() + (7 * MS_DAY));
             }
         }
@@ -315,7 +335,7 @@
     }
 
     function barHtml(it, ppd, isProj) {
-        const tip = escapeHtml(it.name) + ' — ' + fmtBr(it.start) + ' a ' + fmtBr(it.end) +
+        const tip = escapeHtml(it.name) + ' — ' + fmtDate(it.start) + ' a ' + fmtDate(it.end) +
             ' — ' + (it.percent || 0) + '%';
 
         if (it.start && it.end) {

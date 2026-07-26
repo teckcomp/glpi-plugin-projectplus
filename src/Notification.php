@@ -143,7 +143,7 @@ class Notification
             $message = sprintf(
                 __('Tarefa "%s" está atrasada (prazo: %s)', 'projectplus'),
                 $row['name'],
-                date('d/m/Y', strtotime($row['plan_end_date']))
+                DateFmt::date($row['plan_end_date'])
             );
             $count += self::notifyTaskTeam(
                 (int) $row['id'],
@@ -177,7 +177,7 @@ class Notification
             $message = sprintf(
                 __('Tarefa "%s" vence em breve (%s)', 'projectplus'),
                 $row['name'],
-                date('d/m/Y', strtotime($row['plan_end_date']))
+                DateFmt::date($row['plan_end_date'])
             );
             $count += self::notifyTaskTeam((int) $row['id'], 'pending', $message);
         }
@@ -917,7 +917,7 @@ class Notification
             $mail->text(
                 __('Este é um e-mail de teste do plugin ProjectPlus.', 'projectplus')
                 . "\n" . __('Se você recebeu esta mensagem, os alertas por e-mail estão funcionando.', 'projectplus')
-                . "\n\n" . sprintf(__('Enviado em %s', 'projectplus'), date('d/m/Y H:i:s'))
+                . "\n\n" . sprintf(__('Enviado em %s', 'projectplus'), DateFmt::now())
             );
 
             if ($mailer->send()) {

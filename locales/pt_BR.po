@@ -12,7 +12,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ProjectPlus\n"
 "Report-Msgid-Bugs-To: https://github.com/teckcomp/glpi-plugin-projectplus/issues\n"
-"POT-Creation-Date: 2026-07-26 11:27+0000\n"
+"POT-Creation-Date: 2026-07-26 12:49+0000\n"
 "PO-Revision-Date: 2026-07-25 00:00+0000\n"
 "Last-Translator: Teckcomp I.T. Services\n"
 "Language-Team: Portugues do Brasil\n"
@@ -541,7 +541,7 @@ msgstr "Custos (ProjectPlus)"
 msgid "Custos / Orçamento"
 msgstr "Custos / Orçamento"
 
-#: front/costs.php:28
+#: front/costs.php:29
 msgid "Custos consolidados"
 msgstr "Custos consolidados"
 
@@ -1505,7 +1505,7 @@ msgstr "ProjectPlus — acessos por módulo"
 msgid "ProjectPlus: atrasos, pendências e projetos parados"
 msgstr "ProjectPlus: atrasos, pendências e projetos parados"
 
-#: front/costs.php:112 src/I18nJs.php:61 src/KanbanTab.php:80
+#: front/costs.php:113 src/I18nJs.php:61 src/KanbanTab.php:80
 #: src/Reports.php:217 src/Reports.php:357 src/Reports.php:581
 #: templates/dashboard.html.twig:222 templates/dashboard.html.twig:327
 #: templates/kanban.html.twig:72 templates/reports.html.twig:69
@@ -1627,7 +1627,7 @@ msgstr "Regra geral: subtarefas abertas bloqueiam a tarefa mãe automaticamente 
 msgid "Relatório de custos consolidados"
 msgstr "Relatório de custos consolidados"
 
-#: front/reports.php:34 src/Profile.php:103 templates/costs.html.twig:51
+#: front/reports.php:35 src/Profile.php:103 templates/costs.html.twig:51
 #: templates/dashboard.html.twig:61 templates/kanban.html.twig:51
 #: templates/mytasks.html.twig:57 templates/projectkanban.html.twig:51
 #: templates/projecttemplate_edit.html.twig:52
@@ -1810,7 +1810,7 @@ msgstr "Suas tarefas em todos os projetos"
 msgid "Subprojeto"
 msgstr "Subprojeto"
 
-#: front/costs.php:122 src/Reports.php:591
+#: front/costs.php:123 src/Reports.php:591
 #, php-format
 msgid "Subprojeto \"%s\""
 msgstr "Subprojeto \"%s\""

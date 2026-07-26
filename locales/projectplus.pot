@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ProjectPlus 0.5.0-alpha\n"
 "Report-Msgid-Bugs-To: https://github.com/teckcomp/glpi-plugin-projectplus/issues\n"
-"POT-Creation-Date: 2026-07-26 11:27+0000\n"
+"POT-Creation-Date: 2026-07-26 12:49+0000\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -548,7 +548,7 @@ msgstr ""
 msgid "Custos / Orçamento"
 msgstr ""
 
-#: front/costs.php:28
+#: front/costs.php:29
 msgid "Custos consolidados"
 msgstr ""
 
@@ -1537,7 +1537,7 @@ msgstr ""
 msgid "ProjectPlus: atrasos, pendências e projetos parados"
 msgstr ""
 
-#: front/costs.php:112 src/I18nJs.php:61 src/KanbanTab.php:80
+#: front/costs.php:113 src/I18nJs.php:61 src/KanbanTab.php:80
 #: src/Reports.php:217 src/Reports.php:357 src/Reports.php:581
 #: templates/dashboard.html.twig:222 templates/dashboard.html.twig:327
 #: templates/kanban.html.twig:72 templates/reports.html.twig:69
@@ -1666,7 +1666,7 @@ msgstr ""
 msgid "Relatório de custos consolidados"
 msgstr ""
 
-#: front/reports.php:34 src/Profile.php:103 templates/costs.html.twig:51
+#: front/reports.php:35 src/Profile.php:103 templates/costs.html.twig:51
 #: templates/dashboard.html.twig:61 templates/kanban.html.twig:51
 #: templates/mytasks.html.twig:57 templates/projectkanban.html.twig:51
 #: templates/projecttemplate_edit.html.twig:52
@@ -1851,7 +1851,7 @@ msgstr ""
 msgid "Subprojeto"
 msgstr ""
 
-#: front/costs.php:122 src/Reports.php:591
+#: front/costs.php:123 src/Reports.php:591
 #, php-format
 msgid "Subprojeto \"%s\""
 msgstr ""

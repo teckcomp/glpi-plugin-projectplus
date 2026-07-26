@@ -12,6 +12,7 @@ use Glpi\Application\View\TemplateRenderer;
 use GlpiPlugin\Projectplus\Access;
 use GlpiPlugin\Projectplus\Budget;
 use GlpiPlugin\Projectplus\Dashboard;
+use GlpiPlugin\Projectplus\DateFmt;
 use GlpiPlugin\Projectplus\I18nJs;
 use GlpiPlugin\Projectplus\Scope;
 use GlpiPlugin\Projectplus\Url;
@@ -132,7 +133,7 @@ foreach (
     foreach ($entries as &$e) {
         $total += $e['cost'];
         $e['cost_fmt'] = number_format($e['cost'], 2, ',', '.');
-        $e['date_fmt'] = !empty($e['date']) ? date('d/m/Y', strtotime($e['date'])) : '—';
+        $e['date_fmt'] = !empty($e['date']) ? DateFmt::date($e['date']) : '—';
     }
     unset($e);
 
@@ -162,7 +163,7 @@ TemplateRenderer::getInstance()->display(
         'report'         => $report,
         'projects_list'  => $allRoots,
         'filter_project' => $filterId,
-        'generated_at'   => date('d/m/Y H:i'),
+        'generated_at'   => DateFmt::now(),
         'can_templates'  => Session::haveRight('config', UPDATE),
         'nav'             => Access::sidebar(),
         'filter_scope'      => $scopeIsExpanded ? '' : 'mine',

@@ -432,7 +432,7 @@ class Dashboard extends CommonGLPI
                 'percent'     => (int) $row['percent_done'],
                 'state_name'  => $states[(int) $row['projectstates_id']]['name'] ?? null,
                 'state_color' => $states[(int) $row['projectstates_id']]['color'] ?? self::PHASE_DEFAULT_COLOR,
-                'end'        => $row['plan_end_date'] ? date('d/m/Y', strtotime($row['plan_end_date'])) : null,
+                'end'        => $row['plan_end_date'] ? DateFmt::date($row['plan_end_date']) : null,
                 'is_overdue' => !empty($row['plan_end_date'])
                     && strtotime($row['plan_end_date']) < $now,
                 'deadline'   => Deadline::compute(
@@ -506,7 +506,7 @@ class Dashboard extends CommonGLPI
                 'percent'     => $pct,
                 'state_name'  => $states[(int) $row['projectstates_id']]['name'] ?? null,
                 'state_color' => $states[(int) $row['projectstates_id']]['color'] ?? self::PHASE_DEFAULT_COLOR,
-                'end'         => $row['plan_end_date'] ? date('d/m/Y', strtotime($row['plan_end_date'])) : null,
+                'end'         => $row['plan_end_date'] ? DateFmt::date($row['plan_end_date']) : null,
                 'is_overdue'  => !empty($row['plan_end_date'])
                     && strtotime($row['plan_end_date']) < $now
                     && $pct < 100,
@@ -712,8 +712,8 @@ class Dashboard extends CommonGLPI
                 'parent_name'  => $row['parent_name'],
                 'auto_percent' => (bool) $row['auto_percent_done'],
                 'percent'      => $pct,
-                'start'       => $row['plan_start_date'] ? date('d/m/Y', strtotime($row['plan_start_date'])) : null,
-                'end'         => $row['plan_end_date'] ? date('d/m/Y', strtotime($row['plan_end_date'])) : null,
+                'start'       => $row['plan_start_date'] ? DateFmt::date($row['plan_start_date']) : null,
+                'end'         => $row['plan_end_date'] ? DateFmt::date($row['plan_end_date']) : null,
                 'start_iso'   => $row['plan_start_date'] ? substr($row['plan_start_date'], 0, 10) : '',
                 'end_iso'     => $row['plan_end_date'] ? substr($row['plan_end_date'], 0, 10) : '',
                 'state_id'    => $stateId,
@@ -841,7 +841,7 @@ class Dashboard extends CommonGLPI
                 'class'   => $meta['class'],
                 'message' => $row['message'],
                 'date'    => $row['date_creation']
-                    ? date('d/m/Y H:i', strtotime($row['date_creation'])) : '',
+                    ? DateFmt::dateTime($row['date_creation']) : '',
             ];
         }
         return $out;
@@ -905,7 +905,7 @@ class Dashboard extends CommonGLPI
                 'state_color'   => $states[$childState]['color'] ?? self::PHASE_DEFAULT_COLOR,
                 'percent_done'  => (int) $row['percent_done'],
                 'plan_end_date' => $row['plan_end_date'],
-                'last_activity' => $lastActivity ? date('d/m/Y H:i', strtotime($lastActivity)) : null,
+                'last_activity' => $lastActivity ? DateFmt::dateTime($lastActivity) : null,
                 'is_stalled'    => (bool) ($tracking['is_stalled'] ?? false),
                 'is_overdue'    => $isOverdue,
                 'budget'        => $budgetInfo,
@@ -1011,8 +1011,8 @@ class Dashboard extends CommonGLPI
                     'depth'        => $depth,
                     'auto_percent' => (bool) $t['auto_percent_done'],
                     'percent'      => (int) $t['percent_done'],
-                    'start'      => $t['plan_start_date'] ? date('d/m/Y', strtotime($t['plan_start_date'])) : null,
-                    'end'        => $t['plan_end_date'] ? date('d/m/Y', strtotime($t['plan_end_date'])) : null,
+                    'start'      => $t['plan_start_date'] ? DateFmt::date($t['plan_start_date']) : null,
+                    'end'        => $t['plan_end_date'] ? DateFmt::date($t['plan_end_date']) : null,
                     'start_iso'  => $t['plan_start_date'] ? substr($t['plan_start_date'], 0, 10) : '',
                     'end_iso'    => $t['plan_end_date'] ? substr($t['plan_end_date'], 0, 10) : '',
                     'state_id'    => (int) $t['projectstates_id'],

@@ -1657,17 +1657,26 @@
 
     function pad(n) { return String(n).padStart(2, '0'); }
 
+    // Data no formato preferido do usuario (Bloco 4c): a mascara vem do
+    // servidor junto do dicionario de traducao. Antes era dd/mm/aaaa fixo.
+    //
+    // Passou a NAO usar mais `new Date(...)`: para uma data seca
+    // ('2026-07-26') o construtor interpreta como UTC e, num fuso a oeste
+    // como o do Brasil, devolvia o DIA ANTERIOR. O parse agora e textual.
     function formatDate(iso) {
-        const d = new Date(iso);
-        return isNaN(d) ? iso : pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear();
+        if (window.ProjectPlusI18n && window.ProjectPlusI18n.fmtDate) {
+            return window.ProjectPlusI18n.fmtDate(iso, '');
+        }
+        const p = String(iso || '').split('-');
+        return p.length === 3 ? p[2] + '-' + p[1] + '-' + p[0].substring(0, 4) : String(iso || '');
     }
 
     function formatDateTime(sql) {
         if (!sql) { return ''; }
-        const d = new Date(String(sql).replace(' ', 'T'));
-        return isNaN(d) ? String(sql)
-            : pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear() +
-              ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+        if (window.ProjectPlusI18n && window.ProjectPlusI18n.fmtDateTime) {
+            return window.ProjectPlusI18n.fmtDateTime(sql, '');
+        }
+        return String(sql);
     }
 
     // Escapa também as aspas: boa parte das chamadas alimenta ATRIBUTOS
@@ -1731,8 +1740,15 @@
             return d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate());
         }
 
+        // Rotulo curto do eixo X do burndown. Sem ano, mas a ORDEM tem de
+        // seguir a preferencia: para quem usa m-d-Y (ou o ISO Y-m-d, que
+        // tambem poe o mes antes do dia), '07-06' precisa ser julho/dia 6.
         function shortLabel(d) {
-            return pad(d.getUTCDate()) + '/' + pad(d.getUTCMonth() + 1);
+            const dd = pad(d.getUTCDate());
+            const mm = pad(d.getUTCMonth() + 1);
+            const fmt = (window.ProjectPlusI18n && window.ProjectPlusI18n.dateFormat)
+                ? window.ProjectPlusI18n.dateFormat() : 'd-m-Y';
+            return fmt === 'd-m-Y' ? dd + '-' + mm : mm + '-' + dd;
         }
 
         // Datas dos "cortes" do eixo X: sempre inclui o início e o fim do

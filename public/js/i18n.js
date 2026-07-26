@@ -29,6 +29,9 @@
 
     var DICT_ID     = 'pp-i18n';
     var PLURAL_SEP  = '\u0000';   // mesma convenção do .mo e de I18nJs::pkey()
+    // Os TRES formatos do GLPI 11 (Toolbox::getDateFormats). Nenhum usa barra.
+    var FORMATS     = ['Y-m-d', 'd-m-Y', 'm-d-Y'];
+    var DEFAULT_FMT = 'Y-m-d';    // padrao de fabrica do GLPI
     var cache       = null;
 
     // Lê o dicionário uma única vez por página. Payload ausente, quebrado ou
@@ -37,7 +40,7 @@
         if (cache !== null) {
             return cache;
         }
-        cache = { s: {}, p: {} };
+        cache = { s: {}, p: {}, d: DEFAULT_FMT };
 
         var el = document.getElementById(DICT_ID);
         if (!el) {
@@ -48,6 +51,9 @@
             if (parsed && typeof parsed === 'object') {
                 if (parsed.s && typeof parsed.s === 'object') { cache.s = parsed.s; }
                 if (parsed.p && typeof parsed.p === 'object') { cache.p = parsed.p; }
+                // Mascara de data (Bloco 4c). Aceita so os tres formatos que
+                // o GLPI 11 oferece; qualquer outra coisa cai no padrao.
+                if (FORMATS.indexOf(parsed.d) !== -1) { cache.d = parsed.d; }
             }
         } catch (e) {
             /* mantém vazio */
@@ -103,10 +109,57 @@
         return parts;
     }
 
+    // ------------------------------------------------------------------
+    // Data (Bloco 4c)
+    //
+    // O servidor manda a preferencia do usuario junto do dicionario; aqui
+    // so se aplica a mascara. Entrada esperada: 'YYYY-MM-DD' ou
+    // 'YYYY-MM-DD HH:MM:SS' (o que o MySQL devolve). Entrada que nao casa
+    // com isso volta inalterada — nunca 'NaN' nem 'undefined' na tela.
+    // ------------------------------------------------------------------
+
+    var ISO_RE = /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}))?/;
+
+    function parts(value) {
+        if (!value) { return null; }
+        var m = ISO_RE.exec(String(value));
+        return m ? m : null;
+    }
+
+    function applyMask(m) {
+        var y = m[1], mo = m[2], d = m[3];
+        switch (dict().d) {
+            case 'd-m-Y': return d + '-' + mo + '-' + y;
+            case 'm-d-Y': return mo + '-' + d + '-' + y;
+            default:      return y + '-' + mo + '-' + d;
+        }
+    }
+
+    // Data sem hora. Devolve o marcador quando nao ha data.
+    function fmtDate(value, empty) {
+        var m = parts(value);
+        if (!m) { return value ? String(value) : (empty === undefined ? '—' : empty); }
+        return applyMask(m);
+    }
+
+    // Data com hora (HH:MM). Sem a parte de hora, comporta-se como fmtDate.
+    function fmtDateTime(value, empty) {
+        var m = parts(value);
+        if (!m) { return value ? String(value) : (empty === undefined ? '—' : empty); }
+        var out = applyMask(m);
+        if (m[4] !== undefined && m[5] !== undefined) {
+            out += ' ' + m[4] + ':' + m[5];
+        }
+        return out;
+    }
+
     window.ProjectPlusI18n = {
         t: t,
         tn: tn,
         tlist: tlist,
+        fmtDate: fmtDate,
+        fmtDateTime: fmtDateTime,
+        dateFormat: function () { return dict().d; },
         // só para os testes isolados (jsdom): força reler o #pp-i18n
         _reset: function () { cache = null; }
     };

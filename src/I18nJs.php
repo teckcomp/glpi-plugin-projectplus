@@ -241,8 +241,16 @@ class I18nJs
      */
     public static function json(): string
     {
+        // A máscara de data viaja na chave 'd', FORA de map(): map() é o
+        // dicionário puro e é o que tools/check-js-strings.php confere
+        // chave por chave contra os .js — misturar metadado ali geraria
+        // falso "chave que nenhum JS usa". O i18n.js ignora chaves que não
+        // conhece, então acrescentar 'd' não quebra nada retroativamente.
+        $payload = self::map();
+        $payload['d'] = DateFmt::jsFormat();
+
         return (string) json_encode(
-            self::map(),
+            $payload,
             JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE
         );
     }

@@ -174,7 +174,7 @@ class ProjectCost extends CommonDBTM
 
             echo "<tr class='tab_bg_1'>";
             echo '<td>' . htmlspecialchars($row['name']) . '</td>';
-            echo '<td>' . (!empty($row['date']) ? date('d/m/Y', strtotime($row['date'])) : '—') . '</td>';
+            echo '<td>' . (!empty($row['date']) ? DateFmt::date($row['date']) : '—') . '</td>';
             echo '<td>' . number_format((float) $row['cost'], 2, ',', '.') . '</td>';
             echo '<td>' . htmlspecialchars($author) . '</td>';
             echo '<td>' . htmlspecialchars($row['comment'] ?? '') . '</td>';

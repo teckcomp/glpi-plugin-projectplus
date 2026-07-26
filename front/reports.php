@@ -18,6 +18,7 @@
 use Glpi\Application\View\TemplateRenderer;
 use GlpiPlugin\Projectplus\Access;
 use GlpiPlugin\Projectplus\Dashboard;
+use GlpiPlugin\Projectplus\DateFmt;
 use GlpiPlugin\Projectplus\I18nJs;
 use GlpiPlugin\Projectplus\Reports;
 use GlpiPlugin\Projectplus\Scope;
@@ -117,7 +118,7 @@ TemplateRenderer::getInstance()->display(
         'filter_typefilter' => $typeRaw,
         'filter_from'       => $from ?? '',
         'filter_until'      => $until ?? '',
-        'generated_at'      => date('d/m/Y H:i'),
+        'generated_at'      => DateFmt::now(),
         'can_templates'     => Session::haveRight('config', UPDATE),
         'nav'             => Access::sidebar(),
         'filter_scope'      => $scopeIsExpanded ? '' : 'mine',

@@ -259,7 +259,7 @@
                                 </div>
                                 <span class="projectplus-progress__pct">{{ project.percent_done }}%</span>
                             </td>
-                            <td>{{ project.last_activity|date('d/m/Y H:i') }}</td>
+                            <td>{{ project.last_activity|formatted_datetime }}</td>
                             <td>
                                 {% if project.is_overdue %}
                                     <span class="projectplus-badge projectplus-badge--overdue">{{ __('Atrasado', 'projectplus') }}</span>
@@ -297,7 +297,7 @@
                                     <span class="pp-deadline__label pp-deadline__label--{{ project.deadline.state }}">{{ project.deadline.label }}</span>
                                 {% endif %}
                             </td>
-                            <td>{{ project.plan_end_date ? project.plan_end_date|date('d/m/Y') : '—' }}</td>
+                            <td>{{ project.plan_end_date ? project.plan_end_date|formatted_date : '—' }}</td>
                         </tr>
                     {% else %}
                         <tr><td colspan="{{ can_costs ? 9 : 8 }}">{{ __('Nenhum projeto no período', 'projectplus') }}</td></tr>

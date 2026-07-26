@@ -101,7 +101,7 @@
                                 <span class="projectplus-muted">· {{ t.subcount }} {{ t.subcount == 1 ? 'subprojeto' : 'subprojetos' }}</span>
                             {% endif %}
                         </td>
-                        <td>{{ t.date_mod ? t.date_mod|date('d/m/Y H:i') : '—' }}</td>
+                        <td>{{ t.date_mod ? t.date_mod|formatted_datetime : '—' }}</td>
                         <td style="white-space:nowrap">
                             {% if can_create %}
                             <button type="button" class="projectplus-btn pp-tpl-instantiate-btn"

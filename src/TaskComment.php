@@ -165,7 +165,7 @@ class TaskComment extends CommonDBTM
                 'author'   => $author,
                 'content'  => (string) $row['content'],
                 'date'     => $row['date_creation']
-                    ? date('d/m/Y H:i', strtotime($row['date_creation'])) : '',
+                    ? DateFmt::dateTime($row['date_creation']) : '',
                 'edited'   => !empty($row['date_mod'])
                     && $row['date_mod'] !== $row['date_creation'],
                 'can_edit' => self::canManage((int) $row['users_id']),
