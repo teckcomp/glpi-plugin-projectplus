@@ -21,6 +21,7 @@ use GlpiPlugin\Projectplus\Dashboard;
 use GlpiPlugin\Projectplus\I18nJs;
 use GlpiPlugin\Projectplus\Reports;
 use GlpiPlugin\Projectplus\Scope;
+use GlpiPlugin\Projectplus\Url;
 
 include('../../../inc/includes.php');
 
@@ -31,7 +32,7 @@ Session::checkRight('plugin_projectplus_reports', READ);
 
 Html::header(
     __('Relatórios', 'projectplus'),
-    $_SERVER['PHP_SELF'],
+    '', // \Html::header ignora o 2o argumento no GLPI 11 (Bloco 4a)
     'tools',
     Dashboard::class
 );
@@ -90,7 +91,7 @@ $scopeQuery      = array_filter([
 if ($scopeIsExpanded) {
     $scopeQuery['scope'] = 'mine';
 }
-$scopeToggleUrl = Plugin::getWebDir('projectplus') . '/front/reports.php'
+$scopeToggleUrl = Url::to('front/reports.php')
     . ($scopeQuery === [] ? '' : ('?' . http_build_query($scopeQuery)));
 
 // Lista de fases (mesma tabela glpi_projectstates para Projetos e Tarefas)
@@ -102,7 +103,7 @@ foreach (Dashboard::getStatesMap() as $sid => $s) {
 TemplateRenderer::getInstance()->display(
     '@projectplus/reports.html.twig',
     [
-        'plugin_web_dir'    => Plugin::getWebDir('projectplus'),
+        'plugin_web_dir'    => Url::base(),
         'glpi_root'         => $CFG_GLPI['root_doc'] ?? '',
         'projects_list'     => Reports::getRootProjectsForFilter(),
         'users_list'        => Reports::getFilterUsers(),

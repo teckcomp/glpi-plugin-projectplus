@@ -2,7 +2,7 @@
 
 **Plugin de gestão avançada de projetos para GLPI 11**
 Repositório: [github.com/teckcomp/glpi-plugin-projectplus](https://github.com/teckcomp/glpi-plugin-projectplus) · Licença GPL-2.0
-Versão atual: **v0.5.0-alpha** · Atualizado em 26/07/2026 (Etapa 8 concluída; **Etapa 6 em andamento — Blocos 1, 2, 2b, 3a e 3b fechados; i18n COMPLETO (servidor + cliente)**. Próximo: Bloco 4, release v1.0.0-beta. **Etapa 9 planejada** — fases por tipo de projeto, depois da beta)
+Versão atual: **v0.5.0-alpha** · Atualizado em 26/07/2026 (Etapa 8 concluída; **Etapa 6 em andamento — Blocos 1, 2, 2b, 3a, 3b e 4a fechados; i18n COMPLETO (servidor + cliente)**. Próximo: Bloco 4b, direitos do Super-Admin. **Etapa 9 planejada** — fases por tipo de projeto, depois da beta)
 
 > **Ordem de execução confirmada em 19/07/2026:** Etapa 7 → Etapa 8 → Etapa 6 (por último). A Etapa 6 (refinamento/pré-produção e release v1.0.0-beta) só começa depois que 7 e 8 estiverem validadas em homologação.
 
@@ -122,7 +122,7 @@ Papéis: **Gestor / Cliente / Técnico / Colaborador (Terceiro)** + Admin. Entid
     - `__('Sim')` / `__('Não')` em `src/Config.php` (8 ocorrências) usavam o domínio **do core**, cujos msgid são em inglês — nunca traduziriam, em idioma nenhum. Trocados por `__('Yes')` / `__('No')`.
     - `Prazo: 50% consumido` (e 75/90) eram marcados como `php-format` pelo `xgettext` (o `% c` parece uma diretiva), o que deixava as entradas *fuzzy* e, portanto, **fora do `.mo`**. Reescritos como `Prazo consumido: 50%`.
   - Validado por harness de runtime que carrega os `.mo` compilados e confere o *lookup* (1706 asserções, 0 falhas), por conferência de cobertura (696/696 chamadas do código presentes no catálogo compilado) e por teste de idempotência do script.
-- [x] **Bloco 3b** — i18n do JavaScript. **VALIDADO em homologação em 26/07/2026** (zip `projectplus-etapa6-bloco3b-1.zip`, 27 arquivos). Com ele a Etapa 6 fecha o i18n: servidor (3a) + cliente (3b).
+- [x] **Bloco 3b** — i18n do JavaScript. **VALIDADO em homologação e FECHADO NO GITHUB em 26/07/2026** (commit `f1ca741`, `cfdb40e..f1ca741`, 27 arquivos, +2288/−329; zip `projectplus-etapa6-bloco3b-1.zip`). Com ele a Etapa 6 fecha o i18n: servidor (3a) + cliente (3b).
   - **Premissa corrigida no levantamento:** não eram ~55 strings, eram **123** (95 só em `projectplus.js`). O catálogo passou de 427 para **511 strings únicas** — 84 novas; ~30 das strings do JS já existiam no catálogo do 3a e foram reaproveitadas.
   - **Como funciona:** o GLPI 11 não tem runtime de i18n no cliente, então a tradução acontece no **servidor**. `src/I18nJs.php` (novo) monta o dicionário do idioma do usuário com chamadas `__()`/`_n()` **literais** — é isso que faz o `xgettext` do pipeline do 3a enxergar as strings do JS **sem precisar de extrator para `.js`**. `I18nJs::render()` imprime `<script type="application/json" id="pp-i18n">` e `public/js/i18n.js` (novo) expõe `t()` / `tn()` / `tlist()`.
   - **A chave é o próprio texto em PT-BR** (mesma decisão de msgid do 3a). Consequência: dicionário ausente ⇒ o JS devolve a chave e a tela fica em português. Nunca em branco, nunca quebrada. Nos `.js` as funções chamam-se `__()` e `_n()`, como no PHP — `t()` colidiria com o parâmetro `t` dos vários `forEach` de tarefa.
@@ -135,13 +135,24 @@ Papéis: **Gestor / Cliente / Técnico / Colaborador (Terceiro)** + Admin. Entid
   - **`Plural-Forms` mudou de `(n > 1)` para `(n != 1)`** nos dois catálogos e no gerador: com a regra antiga, zero usava o singular ("0 tarefa"). Só o cabeçalho mudou; as 511 traduções ficaram intactas.
   - **Fora de escopo, registrado:** o **formato de data** continua `dd/mm/aaaa` fixo no JS (`fmtBr`, `formatDate`, `formatDateTime`) e não segue a preferência de formato do GLPI. Vale como item da beta.
   - Validado por **968 asserções automatizadas**: sincronia dicionário↔JS (123 chaves), `msgfmt --check --check-format --check-header` (511/511, zero *fuzzy* nos dois idiomas), harness de runtime dos `.mo` (894), ponte PHP→JSON→JS (7) e teste em DOM headless com jsdom rodando os JS de verdade **contra o catálogo `en_GB` real** (67), incluindo o caso do nome com aspas.
-- [ ] **Bloco 4** — Release `v1.0.0-beta`: CHANGELOG, tag e pacote de distribuição.
+- [x] **Bloco 4a** — Limpeza de URLs: fim das deprecações no log. **VALIDADO em homologação em 26/07/2026** (zip `projectplus-etapa6-bloco4a-1.zip`, 22 arquivos). Não mexe no instalador.
+  - **Novo `src/Url.php`** — helper único (`Url::base()`, `Url::to()`). As **26 chamadas** a `Plugin::getWebDir('projectplus')` foram trocadas por ele. O método está **deprecated** no GLPI 11: sua primeira linha é `Toolbox::deprecated('All plugins resources should be accessed from the /plugins/ path.')`, ou seja, cada chamada gravava uma linha de aviso no log — várias por página.
+  - **Fixar `/plugins/` é seguro mesmo em instalação pelo marketplace.** O `getWebDir()` devolvia `/marketplace/<key>` quando o plugin ficava na pasta do marketplace, o que fazia a troca parecer arriscada. Não é: quem resolve a rota no GLPI 11 é o `PluginsRouterListener`, que casa o caminho contra `Plugin::PLUGIN_RESOURCE_PATTERN` = `#^/(?:plugins|marketplace)/(?<plugin_key>[^/]+)(?<plugin_resource>/.*|)$#` e localiza o plugin pela **chave**, não pela pasta física. Os dois prefixos levam ao mesmo lugar. Importa para o Bloco 5, quando o plugin passará a ser instalado pelo marketplace.
+  - **`$_SERVER['PHP_SELF']` no `Html::header()` — a premissa anterior estava errada.** O roadmap dizia que afetava "o destaque de menu/breadcrumb". Não afeta **nada**: o 2º parâmetro (`$url`) de `Html::header()` **não é usado em lugar nenhum** do corpo do método no core 11.0.6 (conferido linha a linha) — sobrevive só por compatibilidade. Quem posiciona o menu são o 3º e o 4º argumentos, `$sector` e `$item`. Passou a ser `''` nos 9 `front/` de tela **e** em `front/config.form.php` (que passava `Config::formUrl()`, igualmente ignorado).
+  - `Config::formUrl()` deixou de montar a URL à mão e passou a usar o helper — a URL final é idêntica (o form de Configuração continua postando no lugar certo).
+  - Removido o `use Plugin;` que ficou órfão em 6 classes de `src/`.
+  - Validado por **157 asserções**: runtime do `Url` (inclusive `root_doc` vazio e ausente), `Config::formUrl()` byte a byte igual à de antes, resolução de nomes em todos os 52 arquivos PHP (quem usa `Url::` alcança a classe; nenhum `Plugin::` sem import), ausência de resíduo de `getWebDir`/`PHP_SELF` em código, e conferência de que todo `plugin_web_dir`/`glpi_root` consumido pelos Twig continua sendo passado pelo `front/`.
+- [ ] **Bloco 4b** — Direitos do perfil Super-Admin (mexe no instalador → `plugin:install --force` + `plugin:activate`).
+- [ ] **Bloco 4c** — Formato de data conforme a preferência do GLPI. **Escopo maior do que o registrado:** não é só o JavaScript — há **~25 pontos em PHP/Twig** com `date('d/m/Y')` fixo, além das 3 funções do JS. **Decisão pendente**, porque o GLPI 11 só oferece 3 formatos (`Y-m-d`, `d-m-Y`, `m-d-Y`, em `$_SESSION['glpidate_format']`) e **nenhum deles usa barra** — seguir a preferência muda `26/07/2026` para `26-07-2026` (ou `2026-07-26`, que é o padrão de fábrica).
+- [ ] **Bloco 4d** — Release `v1.0.0-beta`: bump de versão, CHANGELOG, tag e pacote de distribuição.
 - [ ] **Bloco 5** — Submissão ao catálogo oficial do GLPI (depois da beta).
 
 ### Pendências pré-beta (baixo risco)
 
-- `$_SERVER['PHP_SELF']` ainda é passado como 2º argumento de `Html::header()` em 9 arquivos de `front/`. Não quebra nada (afeta só o destaque de menu/breadcrumb), mas cabe padronizar na limpeza da beta.
-- **Formato de data fixo no JavaScript** (`dd/mm/aaaa`): `fmtBr` em `timeline.js` e `formatDate`/`formatDateTime` em `projectplus.js` não seguem a preferência de formato do GLPI. Aparece na timeline, no sino de alertas e na coluna de fim das linhas de subprojeto. Descoberto no Bloco 3b e deixado fora dele de propósito (é formatação, não tradução).
+- ~~`$_SERVER['PHP_SELF']` como 2º argumento de `Html::header()`~~ — **resolvido no Bloco 4a** (e a premissa era errada: o parâmetro é ignorado pelo core, não afeta breadcrumb).
+- ~~`Plugin::getWebDir()` deprecated em ~25 pontos~~ — **resolvido no Bloco 4a** (26 pontos, helper `src/Url.php`).
+- **Perfil Super-Admin com direitos só de leitura** em vez de completos. Causa: `Migration::addRight` **nunca rebaixa nem eleva** entrada existente e **retorna cedo** se todos os perfis já têm a linha (lição 38) — só a primeira execução por nome de direito tem efeito. Alvo do **Bloco 4b**.
+- **Formato de data fixo `dd/mm/aaaa`** — alvo do **Bloco 4c**. Levantamento do Bloco 4a: além de `fmtBr` (`timeline.js`) e `formatDate`/`formatDateTime` (`projectplus.js`), há **~25 ocorrências de `date('d/m/Y')` / `|date('d/m/Y')`** em `src/Dashboard.php`, `src/Reports.php`, `src/Notification.php`, `src/TaskCost.php`, `src/ProjectCost.php`, `src/TaskComment.php`, `front/costs.php`, `front/reports.php` e 2 templates Twig. Só `src/ProjectTracking.php` usa `Html::convDateTime()`.
 
 ### Decisões em aberto
 

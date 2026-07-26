@@ -14,6 +14,7 @@ use GlpiPlugin\Projectplus\Dashboard;
 use GlpiPlugin\Projectplus\I18nJs;
 use GlpiPlugin\Projectplus\Scope;
 use GlpiPlugin\Projectplus\Timeline;
+use GlpiPlugin\Projectplus\Url;
 
 include('../../../inc/includes.php');
 
@@ -32,12 +33,12 @@ $scopeTaskProjectIds = Scope::taskProjectIds($scopeMode); // managed: por projet
 // Botão "Ver tudo" / "Ver só os meus".
 $scopeCanExpand  = Scope::canExpand();
 $scopeIsExpanded = Scope::isExpanded();
-$scopeToggleUrl  = Plugin::getWebDir('projectplus') . '/front/timeline.php'
+$scopeToggleUrl  = Url::to('front/timeline.php')
     . ($scopeIsExpanded ? '?scope=mine' : '');
 
 Html::header(
     __('Timeline', 'projectplus'),
-    $_SERVER['PHP_SELF'],
+    '', // \Html::header ignora o 2o argumento no GLPI 11 (Bloco 4a)
     'tools',
     Dashboard::class
 );
@@ -51,7 +52,7 @@ I18nJs::render();
 TemplateRenderer::getInstance()->display(
     '@projectplus/timeline.html.twig',
     [
-        'plugin_web_dir' => Plugin::getWebDir('projectplus'),
+        'plugin_web_dir' => Url::base(),
         'glpi_root'      => $CFG_GLPI['root_doc'] ?? '',
         'timeline'       => Timeline::getData($onlyUser, $scopeTaskProjectIds),
         'only_mine'      => $scopeMode === 'personal',

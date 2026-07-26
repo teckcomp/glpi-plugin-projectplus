@@ -4,7 +4,6 @@ namespace GlpiPlugin\Projectplus;
 
 use CommonGLPI;
 use Html;
-use Plugin;
 use Project;
 use ProjectTask;
 use Session;
@@ -668,7 +667,7 @@ class TaskDep extends CommonGLPI
     {
         $taskId  = (int) $task->getID();
         $canEdit = self::canManage();
-        $action  = Plugin::getWebDir('projectplus') . '/front/taskdep.form.php';
+        $action  = Url::to('front/taskdep.form.php');
         $data    = self::getPanelData($taskId);
 
         // ---- Formulário de novo vínculo ----

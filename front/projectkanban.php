@@ -15,6 +15,7 @@ use GlpiPlugin\Projectplus\Dashboard;
 use GlpiPlugin\Projectplus\I18nJs;
 use GlpiPlugin\Projectplus\ProjectKanban;
 use GlpiPlugin\Projectplus\Scope;
+use GlpiPlugin\Projectplus\Url;
 
 include('../../../inc/includes.php');
 
@@ -33,12 +34,12 @@ $scopeMode       = Scope::mode();
 $scopeProjectIds = Scope::projectIds($scopeMode);
 $scopeCanExpand  = Scope::canExpand();
 $scopeIsExpanded = Scope::isExpanded();
-$scopeToggleUrl  = Plugin::getWebDir('projectplus') . '/front/projectkanban.php'
+$scopeToggleUrl  = Url::to('front/projectkanban.php')
     . ($scopeIsExpanded ? '?scope=mine' : '');
 
 Html::header(
     __('Kanban de projetos', 'projectplus'),
-    $_SERVER['PHP_SELF'],
+    '', // \Html::header ignora o 2o argumento no GLPI 11 (Bloco 4a)
     'tools',
     Dashboard::class
 );
@@ -52,7 +53,7 @@ I18nJs::render();
 TemplateRenderer::getInstance()->display(
     '@projectplus/projectkanban.html.twig',
     [
-        'plugin_web_dir'    => Plugin::getWebDir('projectplus'),
+        'plugin_web_dir'    => Url::base(),
         'glpi_root'         => $CFG_GLPI['root_doc'] ?? '',
         // Lição 12: JSON embutido em <script> com texto do usuário precisa
         // dos flags HEX (um "</script>" no nome do projeto quebraria a tela).

@@ -16,6 +16,7 @@ use GlpiPlugin\Projectplus\I18nJs;
 use GlpiPlugin\Projectplus\Kanban;
 use GlpiPlugin\Projectplus\ProjectKanban;
 use GlpiPlugin\Projectplus\Scope;
+use GlpiPlugin\Projectplus\Url;
 
 include('../../../inc/includes.php');
 
@@ -32,7 +33,7 @@ if (!Access::canKanban()) {
 // apontando para esta URL em todas as telas — quem decide o destino é o
 // direito, não o template.
 if (Access::kanbanIsProjects()) {
-    Html::redirect(Plugin::getWebDir('projectplus') . '/front/projectkanban.php'
+    Html::redirect(Url::to('front/projectkanban.php')
         . (($_GET['scope'] ?? '') === 'mine' ? '?scope=mine' : ''));
 }
 
@@ -43,12 +44,12 @@ $scopeMyTaskIds      = Scope::myTaskIds($scopeMode);      // personal
 $scopeTaskProjectIds = Scope::taskProjectIds($scopeMode); // managed
 $scopeCanExpand      = Scope::canExpand();
 $scopeIsExpanded     = Scope::isExpanded();
-$scopeToggleUrl      = Plugin::getWebDir('projectplus') . '/front/kanban.php'
+$scopeToggleUrl      = Url::to('front/kanban.php')
     . ($scopeIsExpanded ? '?scope=mine' : '');
 
 Html::header(
     __('Kanban', 'projectplus'),
-    $_SERVER['PHP_SELF'],
+    '', // \Html::header ignora o 2o argumento no GLPI 11 (Bloco 4a)
     'tools',
     Dashboard::class
 );
@@ -62,7 +63,7 @@ I18nJs::render();
 TemplateRenderer::getInstance()->display(
     '@projectplus/kanban.html.twig',
     [
-        'plugin_web_dir' => Plugin::getWebDir('projectplus'),
+        'plugin_web_dir' => Url::base(),
         'glpi_root'      => $CFG_GLPI['root_doc'] ?? '',
         'kanban'         => Kanban::getBoardData(null, $scopeMyTaskIds, $scopeTaskProjectIds),
         'can_templates'  => Session::haveRight('config', UPDATE),

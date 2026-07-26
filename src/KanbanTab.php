@@ -62,7 +62,7 @@ class KanbanTab extends CommonDBTM
         // Etapa 7, Bloco 2a — arrastar-e-soltar também na aba nativa:
         // mesmas data-attributes que a tela cheia (endpoint AJAX, token
         // inicial e flag de edição). O token é rotacionado pelo JS.
-        $ajaxUrl = \Plugin::getWebDir('projectplus') . '/ajax/task.php';
+        $ajaxUrl = Url::to('ajax/task.php');
         $canEdit = \Session::haveRight('projecttask', UPDATE) || \Session::haveRight('project', UPDATE);
 
         // Dicionario de traducao do JavaScript (Etapa 6, Bloco 3b). A aba e

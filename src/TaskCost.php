@@ -5,7 +5,6 @@ namespace GlpiPlugin\Projectplus;
 use CommonDBTM;
 use CommonGLPI;
 use Html;
-use Plugin;
 use ProjectTask;
 use Session;
 
@@ -137,7 +136,7 @@ class TaskCost extends CommonDBTM
 
         $taskId  = (int) $task->getID();
         $canedit = self::canEditCosts();
-        $action  = Plugin::getWebDir('projectplus') . '/front/taskcost.form.php';
+        $action  = Url::to('front/taskcost.form.php');
 
         // ---- Formulário de lançamento ----
         if ($canedit) {

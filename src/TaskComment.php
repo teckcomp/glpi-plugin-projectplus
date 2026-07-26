@@ -5,7 +5,6 @@ namespace GlpiPlugin\Projectplus;
 use CommonDBTM;
 use CommonGLPI;
 use Html;
-use Plugin;
 use ProjectTask;
 use Session;
 use User;
@@ -287,7 +286,7 @@ class TaskComment extends CommonDBTM
     {
         $taskId     = (int) $task->getID();
         $canComment = self::canComment();
-        $action     = Plugin::getWebDir('projectplus') . '/front/taskcomment.form.php';
+        $action     = Url::to('front/taskcomment.form.php');
         $comments   = self::getForTask($taskId);
 
         // ---- Formulário de novo comentário ----

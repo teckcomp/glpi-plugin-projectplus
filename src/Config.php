@@ -72,16 +72,12 @@ class Config
      * PHP_SELF como `action` fazia o formulário postar na raiz do GLPI,
      * onde o endpoint de inventário responde
      * `<REPLY><ERROR>XML not well formed!</ERROR></REPLY>`.
-     * O caminho estável é montar a rota a partir de `root_doc`
-     * (`Plugin::getWebDir()` existe, mas está deprecated no 11).
+     * O caminho estável é montar a rota a partir de `root_doc` — o que
+     * agora é feito num lugar só, em `Url` (Etapa 6, Bloco 4a).
      */
     public static function formUrl(): string
     {
-        /** @var array $CFG_GLPI */
-        global $CFG_GLPI;
-
-        return ($CFG_GLPI['root_doc'] ?? '')
-            . '/plugins/projectplus/front/config.form.php';
+        return Url::to('front/config.form.php');
     }
 
     /**

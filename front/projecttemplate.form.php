@@ -13,6 +13,7 @@
 
 use GlpiPlugin\Projectplus\TemplateCloner;
 use GlpiPlugin\Projectplus\Templates;
+use GlpiPlugin\Projectplus\Url;
 
 include('../../../inc/includes.php');
 
@@ -21,7 +22,7 @@ global $CFG_GLPI;
 
 Session::checkRight('plugin_projectplus_templates', UPDATE);
 
-$backUrl = Plugin::getWebDir('projectplus') . '/front/projecttemplates.php';
+$backUrl = Url::to('front/projecttemplates.php');
 
 if (isset($_POST['save'])) {
     $result = Templates::saveFromProject(
@@ -43,7 +44,7 @@ if (isset($_POST['save'])) {
     Session::addMessageAfterRedirect($result['message'], true, $result['ok'] ? INFO : ERROR);
     if (!$result['ok']) {
         // Volta ao editor mantendo o que estava sendo editado
-        $editUrl = Plugin::getWebDir('projectplus') . '/front/projecttemplate_edit.php';
+        $editUrl = Url::to('front/projecttemplate_edit.php');
         $id      = (int) ($_POST['id'] ?? 0);
         Html::redirect($editUrl . ($id > 0 ? '?id=' . $id : ''));
     }

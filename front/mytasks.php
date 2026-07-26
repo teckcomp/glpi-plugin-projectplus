@@ -12,6 +12,7 @@ use Glpi\Application\View\TemplateRenderer;
 use GlpiPlugin\Projectplus\Access;
 use GlpiPlugin\Projectplus\Dashboard;
 use GlpiPlugin\Projectplus\I18nJs;
+use GlpiPlugin\Projectplus\Url;
 
 include('../../../inc/includes.php');
 
@@ -22,7 +23,7 @@ Session::checkRight('plugin_projectplus_tasks', READ);
 
 Html::header(
     __('Minhas tarefas', 'projectplus'),
-    $_SERVER['PHP_SELF'],
+    '', // \Html::header ignora o 2o argumento no GLPI 11 (Bloco 4a)
     'tools',
     Dashboard::class
 );
@@ -42,7 +43,7 @@ foreach (Dashboard::getStatesMap() as $sid => $s) {
 TemplateRenderer::getInstance()->display(
     '@projectplus/mytasks.html.twig',
     [
-        'plugin_web_dir'  => Plugin::getWebDir('projectplus'),
+        'plugin_web_dir'  => Url::base(),
         'glpi_root'       => $CFG_GLPI['root_doc'] ?? '',
         'states'          => $states,
         'current_user_id' => (int) Session::getLoginUserID(),

@@ -5,7 +5,6 @@ namespace GlpiPlugin\Projectplus;
 use CommonDBTM;
 use CommonGLPI;
 use Html;
-use Plugin;
 use Project;
 use Session;
 
@@ -105,7 +104,7 @@ class ProjectCost extends CommonDBTM
 
         $projectId = (int) $project->getID();
         $canedit   = self::canEditCosts();
-        $action    = Plugin::getWebDir('projectplus') . '/front/projectcost.form.php';
+        $action    = Url::to('front/projectcost.form.php');
 
         // ---- Formulário de lançamento ----
         if ($canedit) {

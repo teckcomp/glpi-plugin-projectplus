@@ -8,6 +8,7 @@
 use GlpiPlugin\Projectplus\Access;
 use GlpiPlugin\Projectplus\Budget;
 use GlpiPlugin\Projectplus\ProjectTracking;
+use GlpiPlugin\Projectplus\Url;
 
 include('../../../inc/includes.php');
 
@@ -62,4 +63,4 @@ Session::addMessageAfterRedirect(
     true,
     INFO
 );
-Html::redirect(Plugin::getWebDir('projectplus') . '/front/dashboard.php');
+Html::redirect(Url::to('front/dashboard.php'));

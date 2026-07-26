@@ -3,7 +3,6 @@
 namespace GlpiPlugin\Projectplus;
 
 use CommonGLPI;
-use Plugin;
 use Project;
 use ProjectTask;
 
@@ -33,7 +32,7 @@ class Dashboard extends CommonGLPI
     {
         return [
             'title' => self::getMenuName(),
-            'page'  => Plugin::getWebDir('projectplus') . '/front/dashboard.php',
+            'page'  => Url::to('front/dashboard.php'),
             'icon'  => 'ti ti-layout-dashboard',
         ];
     }

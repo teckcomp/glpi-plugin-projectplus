@@ -9,6 +9,7 @@ use GlpiPlugin\Projectplus\Access;
 use GlpiPlugin\Projectplus\Dashboard;
 use GlpiPlugin\Projectplus\I18nJs;
 use GlpiPlugin\Projectplus\Scope;
+use GlpiPlugin\Projectplus\Url;
 
 include('../../../inc/includes.php');
 
@@ -19,7 +20,7 @@ Session::checkRight('plugin_projectplus_dashboard', READ);
 
 Html::header(
     Dashboard::getMenuName(),
-    $_SERVER['PHP_SELF'],
+    '', // \Html::header ignora o 2o argumento no GLPI 11 (Bloco 4a)
     'tools',
     Dashboard::class
 );
@@ -60,7 +61,7 @@ if ($scopeIsExpanded) {
     // Do escopo amplo (padrão), o botão oferece REDUZIR ao pessoal.
     $scopeToggle['scope'] = 'mine';
 }
-$scopeToggleUrl = Plugin::getWebDir('projectplus') . '/front/dashboard.php'
+$scopeToggleUrl = Url::to('front/dashboard.php')
     . ($scopeToggle === [] ? '' : ('?' . http_build_query($scopeToggle)));
 
 $ganttActive = false;
@@ -110,7 +111,7 @@ foreach (
 TemplateRenderer::getInstance()->display(
     '@projectplus/dashboard.html.twig',
     [
-        'plugin_web_dir'  => Plugin::getWebDir('projectplus'),
+        'plugin_web_dir'  => Url::base(),
         'glpi_root'       => $CFG_GLPI['root_doc'] ?? '',
         'gantt_active'    => $ganttActive,
         'kpis'             => $data['kpis'],

@@ -5,7 +5,6 @@ namespace GlpiPlugin\Projectplus;
 use CommonDBTM;
 use CommonGLPI;
 use Html;
-use Plugin;
 use Project;
 use ProjectTask;
 use Session;
@@ -85,7 +84,7 @@ class ProjectTracking extends CommonDBTM
 
         echo '<tr class="tab_bg_1"><td>' . __('Teto planejado', 'projectplus') . '</td><td>';
         if ($canUpdate) {
-            $formUrl = Plugin::getWebDir('projectplus') . '/front/budget.form.php';
+            $formUrl = Url::to('front/budget.form.php');
             echo "<form method='post' action='{$formUrl}' style='display:inline-flex;gap:8px;align-items:center'>";
             echo Html::hidden('projects_id', ['value' => (int) $item->getID()]);
             echo Html::hidden('_glpi_csrf_token', ['value' => Session::getNewCSRFToken()]);

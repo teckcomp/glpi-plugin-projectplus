@@ -14,6 +14,7 @@ use GlpiPlugin\Projectplus\Budget;
 use GlpiPlugin\Projectplus\Dashboard;
 use GlpiPlugin\Projectplus\I18nJs;
 use GlpiPlugin\Projectplus\Scope;
+use GlpiPlugin\Projectplus\Url;
 
 include('../../../inc/includes.php');
 
@@ -25,7 +26,7 @@ Session::checkRight('plugin_projectplus_costs', READ);
 
 Html::header(
     __('Custos consolidados', 'projectplus'),
-    $_SERVER['PHP_SELF'],
+    '', // \Html::header ignora o 2o argumento no GLPI 11 (Bloco 4a)
     'tools',
     Dashboard::class
 );
@@ -53,7 +54,7 @@ if ($filterId > 0) {
 if ($scopeIsExpanded) {
     $scopeQuery['scope'] = 'mine';
 }
-$scopeToggleUrl = Plugin::getWebDir('projectplus') . '/front/costs.php'
+$scopeToggleUrl = Url::to('front/costs.php')
     . ($scopeQuery === [] ? '' : ('?' . http_build_query($scopeQuery)));
 
 // Projetos para o seletor do filtro: raízes (sem escopo) ou exatamente os
@@ -156,7 +157,7 @@ foreach (
 TemplateRenderer::getInstance()->display(
     '@projectplus/costs.html.twig',
     [
-        'plugin_web_dir' => Plugin::getWebDir('projectplus'),
+        'plugin_web_dir' => Url::base(),
         'glpi_root'      => $CFG_GLPI['root_doc'] ?? '',
         'report'         => $report,
         'projects_list'  => $allRoots,
