@@ -266,6 +266,36 @@ class Config
                 . '<td>' . (int) $r['granted'] . '</td></tr>';
         }
 
+        // --- Administradores (Etapa 6, Bloco 4b) ---------------------------
+        echo '<tr class="tab_bg_2"><th>' . __('Perfil administrador', 'projectplus') . '</th>'
+            . '<th colspan="2">' . __('Direitos do plugin no nível máximo', 'projectplus') . '</th></tr>';
+
+        if (empty($report['admins'])) {
+            echo '<tr class="tab_bg_1"><td colspan="3" style="color:#c62828">'
+                . __('Nenhum perfil com o direito Configuração (atualizar).', 'projectplus')
+                . '</td></tr>';
+        }
+
+        foreach ($report['admins'] as $a) {
+            if (empty($a['missing'])) {
+                $cell = '<span style="color:#2e7d32">'
+                    . __('completo', 'projectplus') . '</span>';
+            } else {
+                $cell = '<span style="color:#c62828">'
+                    . sprintf(
+                        __('abaixo do máximo em %d direito(s)', 'projectplus'),
+                        count($a['missing'])
+                    )
+                    . '</span> — <code>'
+                    . htmlspecialchars(implode(', ', $a['missing']))
+                    . '</code>';
+            }
+
+            echo '<tr class="tab_bg_1"><td>'
+                . htmlspecialchars((string) $a['name']) . '</td>'
+                . '<td colspan="2">' . $cell . '</td></tr>';
+        }
+
         // --- Cron e marcas -------------------------------------------------
         echo '<tr class="tab_bg_2"><th colspan="3">' . __('Outros', 'projectplus') . '</th></tr>';
 

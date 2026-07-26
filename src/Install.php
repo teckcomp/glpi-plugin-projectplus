@@ -384,6 +384,22 @@ class Install
         $migration->addRight('plugin_projectplus_seeall', READ, ['config' => UPDATE]);
 
         // ------------------------------------------------------------------
+        // Etapa 6, Bloco 4b — reconciliação dos direitos do administrador.
+        //
+        // POR QUE ISTO EXISTE: `Migration::addRight` (lição 38) só INSERE a
+        // linha que falta; se a linha já existe ele nunca altera o valor, e
+        // se TODOS os perfis já a têm ele nem chega a rodar (`return` na
+        // contagem zero). Consequência real observada em homologação: o
+        // Super-Admin ficou com LEITURA nos módulos em vez de acesso
+        // completo, porque as linhas nasceram numa versão anterior do
+        // plugin — e nenhuma reinstalação corrigia isso.
+        //
+        // É a mesma ideia do `ensureSchema()` do Bloco 1: o install não se
+        // limita a criar, ele RECONCILIA o que já existe.
+        // ------------------------------------------------------------------
+        self::ensureAdminRights();
+
+        // ------------------------------------------------------------------
         // Cron: verificação de prazos/pendências (requisito 5).
         // CronTask::register já é idempotente (ignora duplicata pelo nome).
         // ------------------------------------------------------------------
@@ -519,6 +535,101 @@ class Install
     }
 
     /**
+     * Perfis "administradores" — os que têm o direito NATIVO `config`
+     * com o bit UPDATE. É o mesmo critério que o plugin já usa para
+     * liberar a tela de Configuração, então não inventa um conceito novo.
+     *
+     * @return array<int,int> ids de perfil
+     */
+    public static function getAdminProfileIds(): array
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        $ids = [];
+        if (!$DB->tableExists('glpi_profilerights')) {
+            return $ids;
+        }
+
+        // O teste de bit é feito em PHP de propósito: QueryExpression com
+        // "rights & 2 = 2" funciona, mas some do log de depuração e é o
+        // tipo de coisa que quebra silenciosamente numa troca de versão.
+        $it = $DB->request([
+            'SELECT' => ['profiles_id', 'rights'],
+            'FROM'   => 'glpi_profilerights',
+            'WHERE'  => ['name' => 'config'],
+        ]);
+        foreach ($it as $row) {
+            if (((int) $row['rights'] & UPDATE) === UPDATE) {
+                $ids[] = (int) $row['profiles_id'];
+            }
+        }
+
+        return $ids;
+    }
+
+    /**
+     * Compara os direitos do plugin de um perfil com o MÁXIMO da matriz.
+     *
+     * @return array<string,array{current:int,max:int}> só os que estão abaixo
+     */
+    public static function missingAdminRights(int $profileId): array
+    {
+        $max     = Profile::getMaxRights();
+        $current = ProfileRight::getProfileRights($profileId, array_keys($max));
+
+        $missing = [];
+        foreach ($max as $name => $bits) {
+            $cur = (int) ($current[$name] ?? 0);
+            if (($cur | $bits) !== $cur) {
+                $missing[$name] = ['current' => $cur, 'max' => $bits];
+            }
+        }
+
+        return $missing;
+    }
+
+    /**
+     * Garante que todo perfil administrador tenha os 11 direitos do
+     * plugin no nível máximo da matriz (Etapa 6, Bloco 4b).
+     *
+     * REGRA DE OURO — só ELEVA, nunca rebaixa. O valor gravado é
+     * `atual | máximo`, então:
+     *  - bit que o administrador já tinha continua ligado;
+     *  - bit fora da matriz (um PURGE herdado de `ALLSTANDARDRIGHT`, por
+     *    exemplo) é preservado em vez de ser zerado;
+     *  - reexecutar o install não muda mais nada — é idempotente.
+     *
+     * `ProfileRight::updateProfileRights()` foi escolhido em vez de um
+     * UPDATE direto porque dispara `post_updateItem`, que atualiza
+     * `glpi_profiles.last_rights_update`: é o que faz a sessão aberta
+     * recarregar os direitos SEM exigir logout.
+     *
+     * @return array<int,int> id do perfil => quantos direitos foram elevados
+     */
+    public static function ensureAdminRights(): array
+    {
+        $changed = [];
+
+        foreach (self::getAdminProfileIds() as $profileId) {
+            $missing = self::missingAdminRights($profileId);
+            if ($missing === []) {
+                continue;
+            }
+
+            $update = [];
+            foreach ($missing as $name => $info) {
+                $update[$name] = $info['current'] | $info['max'];
+            }
+
+            ProfileRight::updateProfileRights($profileId, $update);
+            $changed[$profileId] = count($update);
+        }
+
+        return $changed;
+    }
+
+    /**
      * Diagnóstico do estado da instalação (Etapa 6, Bloco 1d).
      *
      * Usado pela tela de Configuração para conferir, sem SQL manual, o
@@ -629,11 +740,43 @@ class Install
             }
         }
 
+        // --- Administradores (Etapa 6, Bloco 4b) ---------------------------
+        // Um perfil com `config` UPDATE que não tenha os 11 direitos no
+        // máximo é um problema de verdade: foi exatamente o sintoma que
+        // deixou o Super-Admin só com leitura.
+        $admins = [];
+        foreach (self::getAdminProfileIds() as $profileId) {
+            $missing = self::missingAdminRights($profileId);
+            $name    = '#' . $profileId;
+            if ($DB->tableExists('glpi_profiles')) {
+                $prow = $DB->request([
+                    'SELECT' => ['name'],
+                    'FROM'   => 'glpi_profiles',
+                    'WHERE'  => ['id' => $profileId],
+                    'LIMIT'  => 1,
+                ])->current();
+                if ($prow && !empty($prow['name'])) {
+                    $name = (string) $prow['name'];
+                }
+            }
+
+            if ($missing !== []) {
+                $issues++;
+            }
+
+            $admins[] = [
+                'id'      => $profileId,
+                'name'    => $name,
+                'missing' => array_keys($missing),
+            ];
+        }
+
         return [
             'version'            => defined('PLUGIN_PROJECTPLUS_VERSION')
                 ? PLUGIN_PROJECTPLUS_VERSION : '?',
             'tables'             => $tables,
             'rights'             => $rights,
+            'admins'             => $admins,
             'cron'               => $cron,
             'costs_migrated'     => !empty($config['costs_migrated']),
             'purge_on_uninstall' => !empty($config['purge_on_uninstall']),

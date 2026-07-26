@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ProjectPlus 0.5.0-alpha\n"
 "Report-Msgid-Bugs-To: https://github.com/teckcomp/glpi-plugin-projectplus/issues\n"
-"POT-Creation-Date: 2026-07-26 01:59+0000\n"
+"POT-Creation-Date: 2026-07-26 11:27+0000\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -26,12 +26,12 @@ msgstr ""
 msgid "% orçamento consumido"
 msgstr ""
 
-#: src/TaskComment.php:232
+#: src/TaskComment.php:231
 #, php-format
 msgid "%1$s comentou na tarefa \"%2$s\": %3$s"
 msgstr ""
 
-#: src/Config.php:221
+#: src/Config.php:217
 #, php-format
 msgid "%d ponto(s) de atenção — ver as linhas marcadas abaixo."
 msgstr ""
@@ -79,7 +79,7 @@ msgstr ""
 msgid "%s está sem datas planejadas — corrija o planejamento"
 msgstr ""
 
-#: src/ProjectTracking.php:97
+#: src/ProjectTracking.php:96
 msgid "(0 = sem controle de orçamento)"
 msgstr ""
 
@@ -114,11 +114,11 @@ msgid ""
 "não é alterado."
 msgstr ""
 
-#: src/Config.php:296
+#: src/Config.php:322
 msgid "APAGA tabelas, dados e direitos"
 msgstr ""
 
-#: src/Config.php:241
+#: src/Config.php:237
 msgid "AUSENTE"
 msgstr ""
 
@@ -126,15 +126,15 @@ msgstr ""
 msgid "Abrir no GLPI:"
 msgstr ""
 
-#: src/I18nJs.php:73 src/TaskDep.php:698
+#: src/I18nJs.php:73 src/TaskDep.php:697
 msgid "Adicionar"
 msgstr ""
 
-#: src/ProjectCost.php:114
+#: src/ProjectCost.php:113
 msgid "Adicionar custo ao projeto"
 msgstr ""
 
-#: src/TaskCost.php:146
+#: src/TaskCost.php:145
 msgid "Adicionar custo à tarefa"
 msgstr ""
 
@@ -158,7 +158,7 @@ msgstr ""
 msgid "Agrupar por"
 msgstr ""
 
-#: src/Config.php:136
+#: src/Config.php:132
 #, php-format
 msgid "Alerta de orçamento ao atingir (% do teto)"
 msgstr ""
@@ -172,7 +172,7 @@ msgstr ""
 msgid "Alertas (sino)"
 msgstr ""
 
-#: src/Config.php:306
+#: src/Config.php:332
 msgid "Alertas por e-mail (opção do plugin)"
 msgstr ""
 
@@ -180,15 +180,15 @@ msgstr ""
 msgid "Alta"
 msgstr ""
 
-#: src/Config.php:109
+#: src/Config.php:105
 msgid "Antecedência (dias) para alertar prazo se aproximando"
 msgstr ""
 
-#: src/Config.php:293
+#: src/Config.php:319
 msgid "Ao desinstalar"
 msgstr ""
 
-#: src/Config.php:163
+#: src/Config.php:159
 msgid "Apagar tabelas, dados e direitos do plugin ao desinstalar"
 msgstr ""
 
@@ -213,11 +213,11 @@ msgid ""
 "tarefa ou subprojeto aberto não vai para fase finalizada."
 msgstr ""
 
-#: src/TaskDep.php:389
+#: src/TaskDep.php:388
 msgid "As tarefas precisam ser do mesmo projeto"
 msgstr ""
 
-#: src/ProjectTracking.php:74
+#: src/ProjectTracking.php:73
 msgid "Ativo"
 msgstr ""
 
@@ -245,11 +245,11 @@ msgstr ""
 msgid "Atualizado em"
 msgstr ""
 
-#: src/Reports.php:550 src/TaskComment.php:318
+#: src/Reports.php:550 src/TaskComment.php:317
 msgid "Autor"
 msgstr ""
 
-#: src/Config.php:316
+#: src/Config.php:342
 msgid "BLOQUEADO:"
 msgstr ""
 
@@ -270,7 +270,7 @@ msgstr ""
 msgid "Bloqueada por"
 msgstr ""
 
-#: src/TaskDep.php:706
+#: src/TaskDep.php:705
 msgid "Bloqueada por (precisam terminar antes)"
 msgstr ""
 
@@ -286,7 +286,7 @@ msgstr ""
 msgid "Bloqueia"
 msgstr ""
 
-#: src/TaskDep.php:707
+#: src/TaskDep.php:706
 msgid "Bloqueia (só concluem depois desta)"
 msgstr ""
 
@@ -330,7 +330,7 @@ msgstr ""
 msgid "Buscar tarefa…"
 msgstr ""
 
-#: src/Config.php:313
+#: src/Config.php:339
 msgid "Canal de e-mail do GLPI"
 msgstr ""
 
@@ -378,18 +378,18 @@ msgstr ""
 msgid "Chave \"tasks\" inválida"
 msgstr ""
 
-#: src/Config.php:166
+#: src/Config.php:162
 msgid ""
 "Com \"Não\", desinstalar preserva os dados E a configuração de direitos por "
 "perfil — reinstalar devolve tudo como estava."
 msgstr ""
 
-#: src/I18nJs.php:119 src/TaskComment.php:304
+#: src/I18nJs.php:119 src/TaskComment.php:303
 msgid "Comentar"
 msgstr ""
 
-#: src/ProjectCost.php:139 src/TaskComment.php:37 src/TaskComment.php:320
-#: src/TaskCost.php:171 templates/costs.html.twig:126
+#: src/ProjectCost.php:138 src/TaskComment.php:36 src/TaskComment.php:319
+#: src/TaskCost.php:170 templates/costs.html.twig:126
 #: templates/projecttemplate_edit.html.twig:94
 #: templates/projecttemplates.html.twig:87
 #: templates/projecttemplates.html.twig:166
@@ -398,7 +398,7 @@ msgid_plural "Comentários"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/ProjectCost.php:123 src/TaskCost.php:155
+#: src/ProjectCost.php:122 src/TaskCost.php:154
 msgid "Comentário (opcional)"
 msgstr ""
 
@@ -422,11 +422,11 @@ msgstr ""
 msgid "Comentários"
 msgstr ""
 
-#: src/TaskComment.php:64
+#: src/TaskComment.php:63
 msgid "Comentários (ProjectPlus)"
 msgstr ""
 
-#: src/TaskComment.php:311
+#: src/TaskComment.php:310
 msgid "Comentários da tarefa"
 msgstr ""
 
@@ -447,7 +447,7 @@ msgstr ""
 msgid "Concluído"
 msgstr ""
 
-#: src/Config.php:99
+#: src/Config.php:95
 msgid "Configuração do ProjectPlus"
 msgstr ""
 
@@ -468,7 +468,7 @@ msgstr ""
 msgid "Consumido"
 msgstr ""
 
-#: src/ProjectTracking.php:117
+#: src/ProjectTracking.php:116
 msgid "Consumo do teto"
 msgstr ""
 
@@ -509,7 +509,7 @@ msgid ""
 "salva"
 msgstr ""
 
-#: src/Config.php:283
+#: src/Config.php:309
 msgid "Cron projectplusalerts"
 msgstr ""
 
@@ -517,8 +517,8 @@ msgstr ""
 msgid "Crítica"
 msgstr ""
 
-#: src/ProjectCost.php:31 src/ProjectCost.php:137 src/TaskCost.php:32
-#: src/TaskCost.php:169
+#: src/ProjectCost.php:30 src/ProjectCost.php:136 src/TaskCost.php:31
+#: src/TaskCost.php:168
 msgid "Custo"
 msgid_plural "Custos"
 msgstr[0] ""
@@ -540,7 +540,7 @@ msgstr ""
 msgid "Custos"
 msgstr ""
 
-#: src/ProjectCost.php:59 src/TaskCost.php:62
+#: src/ProjectCost.php:58 src/TaskCost.php:61
 msgid "Custos (ProjectPlus)"
 msgstr ""
 
@@ -548,7 +548,7 @@ msgstr ""
 msgid "Custos / Orçamento"
 msgstr ""
 
-#: front/costs.php:27
+#: front/costs.php:28
 msgid "Custos consolidados"
 msgstr ""
 
@@ -556,11 +556,11 @@ msgstr ""
 msgid "Custos consolidados por projeto"
 msgstr ""
 
-#: src/TaskCost.php:165
+#: src/TaskCost.php:164
 msgid "Custos da tarefa"
 msgstr ""
 
-#: src/ProjectCost.php:133
+#: src/ProjectCost.php:132
 msgid "Custos do projeto"
 msgstr ""
 
@@ -568,8 +568,8 @@ msgstr ""
 msgid "Cálculo automático a partir das subtarefas"
 msgstr ""
 
-#: src/ProjectCost.php:136 src/Reports.php:549 src/TaskComment.php:319
-#: src/TaskCost.php:168 templates/costs.html.twig:123
+#: src/ProjectCost.php:135 src/Reports.php:549 src/TaskComment.php:318
+#: src/TaskCost.php:167 templates/costs.html.twig:123
 msgid "Data"
 msgstr ""
 
@@ -581,17 +581,17 @@ msgstr ""
 msgid "Data de início inválida"
 msgstr ""
 
-#: src/TaskDep.php:50
+#: src/TaskDep.php:49
 msgid "Dependência"
 msgid_plural "Dependências"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/TaskDep.php:426
+#: src/TaskDep.php:425
 msgid "Dependência criada"
 msgstr ""
 
-#: src/TaskDep.php:458
+#: src/TaskDep.php:457
 msgid "Dependência removida"
 msgstr ""
 
@@ -599,11 +599,11 @@ msgstr ""
 msgid "Dependências"
 msgstr ""
 
-#: src/TaskDep.php:85
+#: src/TaskDep.php:84
 msgid "Dependências (ProjectPlus)"
 msgstr ""
 
-#: src/ProjectCost.php:135 src/Reports.php:549 src/TaskCost.php:167
+#: src/ProjectCost.php:134 src/Reports.php:549 src/TaskCost.php:166
 #: templates/costs.html.twig:122 templates/dashboard.html.twig:490
 msgid "Descrição"
 msgstr ""
@@ -612,7 +612,7 @@ msgstr ""
 msgid "Descrição (opcional)"
 msgstr ""
 
-#: src/ProjectCost.php:117 src/TaskCost.php:149
+#: src/ProjectCost.php:116 src/TaskCost.php:148
 msgid "Descrição do custo"
 msgstr ""
 
@@ -628,7 +628,7 @@ msgstr ""
 msgid "Dia"
 msgstr ""
 
-#: src/Config.php:210
+#: src/Config.php:206
 msgid "Diagnóstico da instalação"
 msgstr ""
 
@@ -636,12 +636,16 @@ msgstr ""
 msgid "Dias após a data de início escolhida ao criar"
 msgstr ""
 
-#: src/Config.php:102
+#: src/Config.php:98
 msgid "Dias sem atividade para marcar projeto como \"parado\""
 msgstr ""
 
-#: src/Config.php:261
+#: src/Config.php:257
 msgid "Direito"
+msgstr ""
+
+#: src/Config.php:271
+msgid "Direitos do plugin no nível máximo"
 msgstr ""
 
 #: src/I18nJs.php:163
@@ -652,7 +656,7 @@ msgstr ""
 msgid "Duração do projeto em dias (define a data de fim)"
 msgstr ""
 
-#: src/Config.php:303
+#: src/Config.php:329
 msgid "E-mail"
 msgstr ""
 
@@ -694,7 +698,7 @@ msgstr ""
 msgid "Enviado em %s"
 msgstr ""
 
-#: src/Config.php:116
+#: src/Config.php:112
 msgid "Enviar e-mails (além do sino)"
 msgstr ""
 
@@ -722,7 +726,7 @@ msgstr ""
 msgid "Escopo: ver todos os projetos"
 msgstr ""
 
-#: src/TaskComment.php:300
+#: src/TaskComment.php:299
 msgid "Escreva um comentário…"
 msgstr ""
 
@@ -730,11 +734,11 @@ msgstr ""
 msgid "Escreva um comentário… (Ctrl+Enter envia)"
 msgstr ""
 
-#: src/TaskDep.php:682
+#: src/TaskDep.php:681
 msgid "Esta tarefa BLOQUEIA"
 msgstr ""
 
-#: src/TaskDep.php:681
+#: src/TaskDep.php:680
 msgid "Esta tarefa é BLOQUEADA por"
 msgstr ""
 
@@ -761,7 +765,7 @@ msgstr ""
 msgid "Este projeto não tem tarefas nem subprojetos para capturar"
 msgstr ""
 
-#: src/TaskDep.php:403
+#: src/TaskDep.php:402
 msgid "Este vínculo já existe"
 msgstr ""
 
@@ -769,13 +773,13 @@ msgstr ""
 msgid "Este é um e-mail de teste do plugin ProjectPlus."
 msgstr ""
 
-#: src/TaskComment.php:345
+#: src/TaskComment.php:344
 msgid ""
 "Estes comentários também aparecem no Gestor de Projetos (árvore de tarefas e "
 "Minhas tarefas)."
 msgstr ""
 
-#: src/TaskCost.php:237
+#: src/TaskCost.php:236
 msgid ""
 "Estes custos consomem o orçamento do projeto (junto com a aba Custos nativa "
 "do projeto)."
@@ -810,7 +814,7 @@ msgstr ""
 msgid "Exportação em CSV dos dados do painel"
 msgstr ""
 
-#: src/TaskDep.php:428
+#: src/TaskDep.php:427
 msgid "Falha ao criar a dependência"
 msgstr ""
 
@@ -818,7 +822,7 @@ msgstr ""
 msgid "Falha ao criar a tarefa"
 msgstr ""
 
-#: front/project_create.form.php:45 front/projecttemplate.form.php:81
+#: front/project_create.form.php:46 front/projecttemplate.form.php:82
 #: src/TemplateCloner.php:135
 msgid "Falha ao criar o projeto"
 msgstr ""
@@ -832,7 +836,7 @@ msgstr ""
 msgid "Falha no envio: %s"
 msgstr ""
 
-#: src/Config.php:346
+#: src/Config.php:372
 msgid ""
 "Falhas de envio ficam registradas em files/_log/projectplus.log; o cron "
 "projectplusalerts anota quantos e-mails saíram no próprio log da tarefa."
@@ -843,7 +847,7 @@ msgstr ""
 msgid "Fase"
 msgstr ""
 
-#: src/TaskDep.php:654
+#: src/TaskDep.php:653
 #, php-format
 msgid "Fase não alterada: o projeto tem %d item(ns) aberto(s) — %s"
 msgstr ""
@@ -867,21 +871,21 @@ msgstr ""
 msgid "Fim planejado"
 msgstr ""
 
-#: src/ProjectCost.php:205
+#: src/ProjectCost.php:204
 msgid ""
 "Fonte única de custos do projeto (a aba Custos nativa foi desativada pelo "
 "ProjectPlus)."
 msgstr ""
 
-#: src/ProjectTracking.php:111
+#: src/ProjectTracking.php:110
 msgid "Gasto consolidado"
 msgstr ""
 
-#: src/ProjectTracking.php:103
+#: src/ProjectTracking.php:102
 msgid "Gasto neste projeto"
 msgstr ""
 
-#: src/ProjectTracking.php:107
+#: src/ProjectTracking.php:106
 msgid "Gasto nos subprojetos"
 msgstr ""
 
@@ -897,11 +901,11 @@ msgstr ""
 msgid "Gestor / Responsável"
 msgstr ""
 
-#: src/Dashboard.php:29
+#: src/Dashboard.php:28
 msgid "Gestor de Projetos"
 msgstr ""
 
-#: src/Config.php:126
+#: src/Config.php:122
 msgid "Gestor de Projetos como primeiro item do menu Ferramentas"
 msgstr ""
 
@@ -925,7 +929,7 @@ msgstr ""
 msgid "Ideal"
 msgstr ""
 
-#: src/Config.php:286
+#: src/Config.php:312
 msgid "Importação dos custos nativos"
 msgstr ""
 
@@ -939,7 +943,7 @@ msgstr ""
 msgid "Incluir todos os projetos que você pode ver"
 msgstr ""
 
-#: src/ProjectTracking.php:28
+#: src/ProjectTracking.php:27
 msgid "Indicadores (ProjectPlus)"
 msgstr ""
 
@@ -951,11 +955,11 @@ msgstr ""
 msgid "Informe o nome do modelo."
 msgstr ""
 
-#: front/project_create.form.php:19
+#: front/project_create.form.php:20
 msgid "Informe o nome do projeto"
 msgstr ""
 
-#: front/projecttemplate.form.php:61
+#: front/projecttemplate.form.php:62
 msgid "Informe o nome do projeto e a data de início"
 msgstr ""
 
@@ -986,7 +990,7 @@ msgstr ""
 
 #. #-#-#-#-#  php.pot (ProjectPlus 0.5.0-alpha)  #-#-#-#-#
 #. TRANSLATORS: rótulo da aba "Kanban" do NÚCLEO do GLPI.
-#: front/kanban.php:50 src/I18nJs.php:206 templates/costs.html.twig:31
+#: front/kanban.php:51 src/I18nJs.php:206 templates/costs.html.twig:31
 #: templates/dashboard.html.twig:41 templates/kanban.html.twig:31
 #: templates/mytasks.html.twig:37 templates/projectkanban.html.twig:31
 #: templates/projecttemplate_edit.html.twig:32
@@ -1003,7 +1007,7 @@ msgstr ""
 msgid "Kanban (tarefas)"
 msgstr ""
 
-#: front/projectkanban.php:40 templates/kanban.html.twig:97
+#: front/projectkanban.php:41 templates/kanban.html.twig:97
 msgid "Kanban de projetos"
 msgstr ""
 
@@ -1023,7 +1027,7 @@ msgstr ""
 msgid "Kanban por fase, com swimlanes"
 msgstr ""
 
-#: src/ProjectCost.php:138 src/TaskCost.php:170 templates/costs.html.twig:125
+#: src/ProjectCost.php:137 src/TaskCost.php:169 templates/costs.html.twig:125
 msgid "Lançado por"
 msgstr ""
 
@@ -1043,7 +1047,7 @@ msgstr ""
 msgid "Linha do tempo de projetos e tarefas"
 msgstr ""
 
-#: src/Config.php:338
+#: src/Config.php:364
 msgid "Link nos e-mails (URL da base)"
 msgstr ""
 
@@ -1063,7 +1067,7 @@ msgstr ""
 msgid "Marco (só uma data planejada)"
 msgstr ""
 
-#: front/mytasks.php:24 templates/costs.html.twig:26
+#: front/mytasks.php:25 templates/costs.html.twig:26
 #: templates/dashboard.html.twig:36 templates/kanban.html.twig:26
 #: templates/mytasks.html.twig:32 templates/projectkanban.html.twig:26
 #: templates/projecttemplate_edit.html.twig:27
@@ -1090,16 +1094,16 @@ msgstr ""
 msgid "Modelo criado"
 msgstr ""
 
-#: front/projecttemplate.form.php:53
+#: front/projecttemplate.form.php:54
 msgid "Modelo excluído"
 msgstr ""
 
-#: front/projecttemplate_edit.php:34 src/TemplateCloner.php:66
+#: front/projecttemplate_edit.php:35 src/TemplateCloner.php:66
 #: src/Templates.php:531
 msgid "Modelo não encontrado"
 msgstr ""
 
-#: front/projecttemplate_edit.php:39 front/projecttemplates.php:29
+#: front/projecttemplate_edit.php:40 front/projecttemplates.php:30
 #: src/Profile.php:108 templates/costs.html.twig:41
 #: templates/dashboard.html.twig:51 templates/kanban.html.twig:41
 #: templates/mytasks.html.twig:47 templates/projectkanban.html.twig:41
@@ -1149,7 +1153,7 @@ msgstr ""
 msgid "Mês"
 msgstr ""
 
-#: src/Config.php:324
+#: src/Config.php:350
 msgid ""
 "NENHUM — preencha \"E-mail do remetente\" em Configurar > Notificações ou "
 "\"E-mail do administrador\" em Configurar > Geral"
@@ -1163,15 +1167,15 @@ msgstr ""
 msgid "Nenhum comentário ainda."
 msgstr ""
 
-#: src/TaskComment.php:315
+#: src/TaskComment.php:314
 msgid "Nenhum comentário nesta tarefa"
 msgstr ""
 
-#: src/TaskCost.php:228
+#: src/TaskCost.php:227
 msgid "Nenhum custo lançado nesta tarefa"
 msgstr ""
 
-#: src/ProjectCost.php:196
+#: src/ProjectCost.php:195
 msgid "Nenhum custo lançado neste projeto"
 msgstr ""
 
@@ -1185,6 +1189,10 @@ msgstr ""
 
 #: templates/projecttemplates.html.twig:131
 msgid "Nenhum modelo cadastrado ainda."
+msgstr ""
+
+#: src/Config.php:275
+msgid "Nenhum perfil com o direito Configuração (atualizar)."
 msgstr ""
 
 #: templates/costs.html.twig:154 templates/reports.html.twig:179
@@ -1209,7 +1217,7 @@ msgid ""
 "> Notificações ou \"E-mail do administrador\" em Configurar > Geral."
 msgstr ""
 
-#: src/I18nJs.php:78 src/TaskDep.php:713
+#: src/I18nJs.php:78 src/TaskDep.php:712
 msgid "Nenhuma"
 msgstr ""
 
@@ -1266,7 +1274,7 @@ msgstr ""
 msgid "Nome e projeto são obrigatórios"
 msgstr ""
 
-#: src/TaskDep.php:678
+#: src/TaskDep.php:677
 msgid "Nova dependência"
 msgstr ""
 
@@ -1274,7 +1282,7 @@ msgstr ""
 msgid "Nova tarefa…"
 msgstr ""
 
-#: src/TaskComment.php:297
+#: src/TaskComment.php:296
 msgid "Novo comentário"
 msgstr ""
 
@@ -1290,7 +1298,7 @@ msgstr ""
 msgid "Novo projeto"
 msgstr ""
 
-#: src/Config.php:280
+#: src/Config.php:306
 msgid "NÃO registrado"
 msgstr ""
 
@@ -1298,7 +1306,7 @@ msgstr ""
 msgid "Não"
 msgstr ""
 
-#: src/Config.php:173
+#: src/Config.php:169
 msgid "Não (manter dados e direitos)"
 msgstr ""
 
@@ -1334,7 +1342,7 @@ msgstr ""
 msgid "Não é possível mover para uma fase finalizada — %s"
 msgstr ""
 
-#: src/Config.php:186
+#: src/Config.php:182
 msgid ""
 "O e-mail de teste vai para o endereço do seu próprio usuário e não depende "
 "da opção \"Enviar e-mails\" acima — serve para testar o canal."
@@ -1349,12 +1357,12 @@ msgid ""
 "O percentual desta tarefa é calculado automaticamente a partir das subtarefas"
 msgstr ""
 
-#: src/Config.php:143
+#: src/Config.php:139
 msgid ""
 "Ocultar a aba \"Custos\" nativa do projeto (fonte única: abas do ProjectPlus)"
 msgstr ""
 
-#: src/Config.php:153
+#: src/Config.php:149
 msgid ""
 "Ocultar a aba \"Kanban\" nativa do projeto (fonte única: aba Kanban do "
 "ProjectPlus)"
@@ -1373,7 +1381,7 @@ msgstr ""
 msgid "Orçamento"
 msgstr ""
 
-#: src/ProjectTracking.php:84
+#: src/ProjectTracking.php:83
 msgid "Orçamento (ProjectPlus)"
 msgstr ""
 
@@ -1411,7 +1419,7 @@ msgstr ""
 msgid "Orçamento próximo do teto"
 msgstr ""
 
-#: src/Config.php:274
+#: src/Config.php:300
 msgid "Outros"
 msgstr ""
 
@@ -1423,7 +1431,7 @@ msgstr ""
 msgid "Painel (Visão geral)"
 msgstr ""
 
-#: src/I18nJs.php:104 src/ProjectTracking.php:72
+#: src/I18nJs.php:104 src/ProjectTracking.php:71
 #: templates/dashboard.html.twig:267
 msgid "Parado"
 msgstr ""
@@ -1436,11 +1444,15 @@ msgstr ""
 msgid "Percentual finalizado"
 msgstr ""
 
-#: src/Config.php:262
+#: src/Config.php:270
+msgid "Perfil administrador"
+msgstr ""
+
+#: src/Config.php:258
 msgid "Perfis com a linha"
 msgstr ""
 
-#: src/Config.php:263
+#: src/Config.php:259
 msgid "Perfis com acesso"
 msgstr ""
 
@@ -1508,7 +1520,7 @@ msgstr ""
 msgid "Progresso médio"
 msgstr ""
 
-#: front/config.form.php:35 src/Dashboard.php:24 src/Notification.php:453
+#: front/config.form.php:38 src/Dashboard.php:23 src/Notification.php:453
 #: src/Notification.php:591 src/Profile.php:36
 msgid "ProjectPlus"
 msgstr ""
@@ -1517,7 +1529,7 @@ msgstr ""
 msgid "ProjectPlus (GLPI)"
 msgstr ""
 
-#: src/Profile.php:160
+#: src/Profile.php:185
 msgid "ProjectPlus — acessos por módulo"
 msgstr ""
 
@@ -1525,7 +1537,7 @@ msgstr ""
 msgid "ProjectPlus: atrasos, pendências e projetos parados"
 msgstr ""
 
-#: front/costs.php:111 src/I18nJs.php:61 src/KanbanTab.php:80
+#: front/costs.php:112 src/I18nJs.php:61 src/KanbanTab.php:80
 #: src/Reports.php:217 src/Reports.php:357 src/Reports.php:581
 #: templates/dashboard.html.twig:222 templates/dashboard.html.twig:327
 #: templates/kanban.html.twig:72 templates/reports.html.twig:69
@@ -1537,7 +1549,7 @@ msgstr ""
 msgid "Projeto \"%s\""
 msgstr ""
 
-#: front/project_create.form.php:61
+#: front/project_create.form.php:62
 #, php-format
 msgid "Projeto \"%s\" criado"
 msgstr ""
@@ -1628,13 +1640,13 @@ msgstr ""
 msgid "Recolher subprojetos"
 msgstr ""
 
-#: src/Config.php:226
+#: src/Config.php:222
 msgid ""
 "Reexecutar a instalação costuma resolver: php bin/console plugin:install --"
 "force projectplus e depois plugin:activate projectplus."
 msgstr ""
 
-#: src/Config.php:236
+#: src/Config.php:232
 msgid "Registros"
 msgstr ""
 
@@ -1642,7 +1654,7 @@ msgstr ""
 msgid "Regra geral: subtarefa aberta bloqueia a mãe"
 msgstr ""
 
-#: src/TaskDep.php:743
+#: src/TaskDep.php:742
 msgid ""
 "Regra geral: subtarefas abertas bloqueiam a tarefa mãe automaticamente "
 "(itens \"subtarefa\" acima). Uma tarefa bloqueada não pode ser concluída "
@@ -1654,7 +1666,7 @@ msgstr ""
 msgid "Relatório de custos consolidados"
 msgstr ""
 
-#: front/reports.php:33 src/Profile.php:103 templates/costs.html.twig:51
+#: front/reports.php:34 src/Profile.php:103 templates/costs.html.twig:51
 #: templates/dashboard.html.twig:61 templates/kanban.html.twig:51
 #: templates/mytasks.html.twig:57 templates/projectkanban.html.twig:51
 #: templates/projecttemplate_edit.html.twig:52
@@ -1664,7 +1676,7 @@ msgstr ""
 msgid "Relatórios"
 msgstr ""
 
-#: src/Config.php:321
+#: src/Config.php:347
 msgid "Remetente que será usado"
 msgstr ""
 
@@ -1676,7 +1688,7 @@ msgstr ""
 msgid "Remover este vínculo de dependência?"
 msgstr ""
 
-#: src/I18nJs.php:130 src/TaskDep.php:733
+#: src/I18nJs.php:130 src/TaskDep.php:732
 msgid "Remover vínculo"
 msgstr ""
 
@@ -1692,7 +1704,7 @@ msgstr ""
 msgid "Responsável(is)"
 msgstr ""
 
-#: src/ProjectTracking.php:123 src/Reports.php:222
+#: src/ProjectTracking.php:122 src/Reports.php:222
 #: templates/costs.html.twig:108
 msgid "Saldo"
 msgstr ""
@@ -1705,7 +1717,7 @@ msgstr ""
 msgid "Salvar alterações"
 msgstr ""
 
-#: src/Config.php:182
+#: src/Config.php:178
 msgid "Salvar e enviar e-mail de teste"
 msgstr ""
 
@@ -1743,11 +1755,11 @@ msgstr ""
 msgid "Sem datas planejadas — corrija o planejamento"
 msgstr ""
 
-#: src/Dashboard.php:346
+#: src/Dashboard.php:345
 msgid "Sem estado"
 msgstr ""
 
-#: src/Dashboard.php:326 src/Kanban.php:390 src/ProjectKanban.php:195
+#: src/Dashboard.php:325 src/Kanban.php:390 src/ProjectKanban.php:195
 msgid "Sem fase"
 msgstr ""
 
@@ -1755,7 +1767,7 @@ msgstr ""
 msgid "Sem gestor"
 msgstr ""
 
-#: src/TaskDep.php:685
+#: src/TaskDep.php:684
 msgid "Sem outras tarefas neste projeto"
 msgstr ""
 
@@ -1784,7 +1796,7 @@ msgstr ""
 msgid "Sem permissão para gerenciar dependências"
 msgstr ""
 
-#: src/ProjectTracking.php:66
+#: src/ProjectTracking.php:65
 msgid "Sem registro"
 msgstr ""
 
@@ -1812,11 +1824,11 @@ msgstr ""
 msgid "Sim"
 msgstr ""
 
-#: src/Config.php:175
+#: src/Config.php:171
 msgid "Sim (expurgo completo)"
 msgstr ""
 
-#: src/Config.php:237 src/ProjectTracking.php:69
+#: src/Config.php:233 src/ProjectTracking.php:68
 #: templates/dashboard.html.twig:226
 msgid "Situação"
 msgstr ""
@@ -1839,7 +1851,7 @@ msgstr ""
 msgid "Subprojeto"
 msgstr ""
 
-#: front/costs.php:121 src/Reports.php:591
+#: front/costs.php:122 src/Reports.php:591
 #, php-format
 msgid "Subprojeto \"%s\""
 msgstr ""
@@ -1866,7 +1878,7 @@ msgstr ""
 msgid "Só o autor pode excluir este comentário"
 msgstr ""
 
-#: src/Config.php:235
+#: src/Config.php:231
 msgid "Tabela"
 msgstr ""
 
@@ -1923,7 +1935,7 @@ msgstr ""
 
 #: ajax/comment.php:54 ajax/task.php:136 ajax/task.php:151 ajax/task.php:176
 #: ajax/task.php:197 ajax/task.php:226 front/taskcomment.form.php:34
-#: front/taskcost.form.php:35 front/taskdep.form.php:31 src/TaskDep.php:386
+#: front/taskcost.form.php:35 front/taskdep.form.php:31 src/TaskDep.php:385
 msgid "Tarefa não encontrada"
 msgstr ""
 
@@ -1952,7 +1964,7 @@ msgstr ""
 msgid "Tarefas em atraso"
 msgstr ""
 
-#: src/TaskDep.php:380
+#: src/TaskDep.php:379
 msgid "Tarefas inválidas para o vínculo"
 msgstr ""
 
@@ -1972,11 +1984,11 @@ msgstr ""
 msgid "Teto de orçamento"
 msgstr ""
 
-#: src/ProjectTracking.php:86
+#: src/ProjectTracking.php:85
 msgid "Teto planejado"
 msgstr ""
 
-#: front/timeline.php:39 templates/costs.html.twig:36
+#: front/timeline.php:40 templates/costs.html.twig:36
 #: templates/dashboard.html.twig:46 templates/kanban.html.twig:36
 #: templates/mytasks.html.twig:42 templates/projectkanban.html.twig:36
 #: templates/projecttemplate_edit.html.twig:37
@@ -2002,7 +2014,7 @@ msgstr ""
 msgid "Tipo de tarefa"
 msgstr ""
 
-#: src/ProjectCost.php:198 src/TaskCost.php:230
+#: src/ProjectCost.php:197 src/TaskCost.php:229
 msgid "Total"
 msgstr ""
 
@@ -2014,11 +2026,11 @@ msgstr ""
 msgid "Total histórico"
 msgstr ""
 
-#: src/Config.php:334
+#: src/Config.php:360
 msgid "Transporte (DSN, senha oculta)"
 msgstr ""
 
-#: src/Config.php:216
+#: src/Config.php:212
 msgid "Tudo certo: tabelas, direitos e cron no lugar."
 msgstr ""
 
@@ -2078,11 +2090,11 @@ msgstr ""
 msgid "Voltar ao escopo pessoal"
 msgstr ""
 
-#: src/TaskDep.php:449
+#: src/TaskDep.php:448
 msgid "Vínculo não encontrado"
 msgstr ""
 
-#: src/TaskDep.php:409
+#: src/TaskDep.php:408
 msgid "Vínculo recusado: criaria um ciclo de bloqueio entre as tarefas"
 msgstr ""
 
@@ -2090,11 +2102,16 @@ msgstr ""
 msgid "Zoom"
 msgstr ""
 
+#: src/Config.php:286
+#, php-format
+msgid "abaixo do máximo em %d direito(s)"
+msgstr ""
+
 #: src/I18nJs.php:126
 msgid "aberta"
 msgstr ""
 
-#: src/TaskDep.php:725
+#: src/TaskDep.php:724
 #, php-format
 msgid "aberta (%d%%)"
 msgstr ""
@@ -2124,7 +2141,11 @@ msgstr ""
 msgid "campo \"name\" obrigatório"
 msgstr ""
 
-#: src/I18nJs.php:127 src/TaskDep.php:726
+#: src/Config.php:282
+msgid "completo"
+msgstr ""
+
+#: src/I18nJs.php:127 src/TaskDep.php:725
 msgid "concluída"
 msgstr ""
 
@@ -2136,7 +2157,7 @@ msgstr ""
 msgid "concluído"
 msgstr ""
 
-#: src/Config.php:309
+#: src/Config.php:335
 msgid "desligados (só o sino)"
 msgstr ""
 
@@ -2153,11 +2174,11 @@ msgstr ""
 msgid "duração (d)"
 msgstr ""
 
-#: src/I18nJs.php:117 src/TaskComment.php:327
+#: src/I18nJs.php:117 src/TaskComment.php:326
 msgid "editado"
 msgstr ""
 
-#: src/Config.php:245
+#: src/Config.php:241
 msgid "faltando:"
 msgstr ""
 
@@ -2172,15 +2193,15 @@ msgstr ""
 msgid "jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez"
 msgstr ""
 
-#: src/Config.php:288
+#: src/Config.php:314
 msgid "já realizada (não repete)"
 msgstr ""
 
-#: src/Config.php:315
+#: src/Config.php:341
 msgid "liberado"
 msgstr ""
 
-#: src/Config.php:308
+#: src/Config.php:334
 msgid "ligados"
 msgstr ""
 
@@ -2188,11 +2209,11 @@ msgstr ""
 msgid "motivo não informado"
 msgstr ""
 
-#: src/Config.php:279
+#: src/Config.php:305
 msgid "nunca"
 msgstr ""
 
-#: src/Config.php:341
+#: src/Config.php:367
 msgid "não configurada — os e-mails saem sem link"
 msgstr ""
 
@@ -2204,15 +2225,15 @@ msgstr ""
 msgid "o canal de e-mail está desativado no GLPI"
 msgstr ""
 
-#: src/Config.php:289
+#: src/Config.php:315
 msgid "pendente (roda na próxima instalação)"
 msgstr ""
 
-#: src/Config.php:297
+#: src/Config.php:323
 msgid "preserva dados e direitos"
 msgstr ""
 
-#: src/Config.php:277
+#: src/Config.php:303
 msgid "registrado"
 msgstr ""
 
@@ -2224,7 +2245,7 @@ msgstr ""
 msgid "sem datas"
 msgstr ""
 
-#: src/I18nJs.php:128 src/TaskDep.php:721
+#: src/I18nJs.php:128 src/TaskDep.php:720
 msgid "subtarefa"
 msgstr ""
 
@@ -2236,11 +2257,11 @@ msgstr ""
 msgid "É bloqueada por"
 msgstr ""
 
-#: src/ProjectTracking.php:63 templates/dashboard.html.twig:225
+#: src/ProjectTracking.php:62 templates/dashboard.html.twig:225
 msgid "Última atividade"
 msgstr ""
 
-#: src/Config.php:278
+#: src/Config.php:304
 msgid "última execução:"
 msgstr ""
 

@@ -117,6 +117,31 @@ class Profile extends CommonDBTM
         ];
     }
 
+    /**
+     * Valor MÁXIMO de cada direito, derivado da própria matriz
+     * (Etapa 6, Bloco 4b).
+     *
+     * É o OR dos bits que a linha oferece: um módulo com
+     * Ver/Interagir/Criar/Excluir vale 15; um liga/desliga vale 1
+     * (READ). Derivar de `getAllRights()` evita ter uma segunda lista
+     * de máximos para sair de sincronia com a matriz — quem acrescentar
+     * uma coluna nova na matriz já a ganha aqui de graça.
+     *
+     * @return array<string,int> nome do direito => bits máximos
+     */
+    public static function getMaxRights(): array
+    {
+        $max = [];
+        foreach (self::getAllRights() as $row) {
+            $bits = 0;
+            foreach (array_keys($row['rights']) as $bit) {
+                $bits |= (int) $bit;
+            }
+            $max[(string) $row['field']] = $bits;
+        }
+        return $max;
+    }
+
     public function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
     {
         if ($item instanceof GlpiProfile && (int) $item->getID() > 0) {
