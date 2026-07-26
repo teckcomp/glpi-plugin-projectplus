@@ -18,7 +18,7 @@ use GlpiPlugin\Projectplus\TaskComment;
 use GlpiPlugin\Projectplus\TaskCost;
 use GlpiPlugin\Projectplus\TaskDep;
 
-define('PLUGIN_PROJECTPLUS_VERSION', '0.5.0-alpha');
+define('PLUGIN_PROJECTPLUS_VERSION', '1.0.0-beta');
 
 // Versões mínima/máxima do GLPI suportadas
 define('PLUGIN_PROJECTPLUS_MIN_GLPI', '11.0.0');

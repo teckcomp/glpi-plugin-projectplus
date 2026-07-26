@@ -2,7 +2,7 @@
 
 **Plugin de gestão avançada de projetos para GLPI 11**
 Repositório: [github.com/teckcomp/glpi-plugin-projectplus](https://github.com/teckcomp/glpi-plugin-projectplus) · Licença GPL-2.0
-Versão atual: **v0.5.0-alpha** · Atualizado em 26/07/2026 (Etapa 8 concluída; **Etapa 6 em andamento — Blocos 1, 2, 2b, 3a, 3b, 4a e 4b fechados; i18n COMPLETO (servidor + cliente)**. Próximo: Bloco 4c, formato de data. **Etapa 9 planejada** — fases por tipo de projeto, depois da beta)
+Versão atual: **v1.0.0-beta** · Atualizado em 26/07/2026 (**Etapa 6 CONCLUÍDA** — com ela fecham as etapas 0 a 8 e sai a release `v1.0.0-beta`). Próximo: **Etapa 9** — fases por tipo de projeto. O Bloco 5 (catálogo oficial do GLPI) fica para depois de a beta rodar em produção.
 
 > **Ordem de execução confirmada em 19/07/2026:** Etapa 7 → Etapa 8 → Etapa 6 (por último). A Etapa 6 (refinamento/pré-produção e release v1.0.0-beta) só começa depois que 7 e 8 estiverem validadas em homologação.
 
@@ -88,7 +88,7 @@ Papéis: **Gestor / Cliente / Técnico / Colaborador (Terceiro)** + Admin. Entid
     - **4b.2** — arrastar cartão muda a **fase do projeto** (novo `ajax/project.php`, action `kanban_move`), para quem tem Projetos em UPDATE + direito nativo `project`. Cliente segue somente leitura. Mesma trava da ficha nativa (projeto com tarefa/subprojeto aberto não vai para fase finalizada), mas com **mensagem explicando** — pelo hook `PRE_ITEM_UPDATE` o campo voltava em silêncio. Sem update otimista; token rotacionado a cada resposta.
   - **4c — Cliente/Colaborador sem custos:** o painel esconde a coluna "Orçamento", o campo "Teto de orçamento" e (para o Cliente) todo o bloco de Tarefas; as abas "Custos (ProjectPlus)" de projeto e tarefa passam a exigir `plugin_projectplus_costs`; `budget.form.php` exige o direito em UPDATE. `Kanban::canAccess()` migrou do direito do Painel para `plugin_projectplus_kanban`.
 
-## 📍 Etapa 6 — Refinamento e pré-produção `EM ANDAMENTO`
+## ✅ Etapa 6 — Refinamento e pré-produção `concluída em 26/07/2026`
 
 Última etapa do roadmap. Fecha com a release **v1.0.0-beta**.
 
@@ -150,8 +150,23 @@ Papéis: **Gestor / Cliente / Técnico / Colaborador (Terceiro)** + Admin. Entid
   - **Diagnóstico:** a tela de Configuração ganhou a seção **Perfil administrador**, que mostra, por perfil, se os 11 direitos estão no máximo e quais estão abaixo. Perfil incompleto entra na contagem de "pontos de atenção" — e a receita que a tela já sugere (reexecutar a instalação) agora resolve de fato.
   - 5 strings novas nos catálogos: 516 no total, `en_GB` e `pt_BR` 516/516, zero *fuzzy*.
   - Validado por **65 asserções** com `$DB` e `ProfileRight` falsos, reproduzindo o defeito: admin com tudo em READ é elevado nos 5 módulos que ficam acima de READ; perfil **não**-administrador fica intacto; 2ª execução não escreve nada; bit fora da matriz é preservado; direito zerado à mão volta ao máximo; e os casos de borda (sem perfil admin, sem a tabela, admin sem nenhuma linha do plugin → recebe os 11).
-- [ ] **Bloco 4c** — Formato de data conforme a preferência do GLPI. **Escopo maior do que o registrado:** não é só o JavaScript — há **~25 pontos em PHP/Twig** com `date('d/m/Y')` fixo, além das 3 funções do JS. **Decisão pendente**, porque o GLPI 11 só oferece 3 formatos (`Y-m-d`, `d-m-Y`, `m-d-Y`, em `$_SESSION['glpidate_format']`) e **nenhum deles usa barra** — seguir a preferência muda `26/07/2026` para `26-07-2026` (ou `2026-07-26`, que é o padrão de fábrica).
-- [ ] **Bloco 4d** — Release `v1.0.0-beta`: bump de versão, CHANGELOG, tag e pacote de distribuição.
+- [x] **Bloco 4c** — Formato de data conforme a preferência do GLPI. **VALIDADO em homologação e FECHADO NO GITHUB em 26/07/2026** (zip `projectplus-etapa6-bloco4c-1.zip`, 20 arquivos de código). Não mexe no instalador.
+  - **Decisão: seguir a preferência do usuário** (a alternativa era manter `dd/mm/aaaa` fixo). O argumento decisivo não foi estética, foi **ambiguidade**: `07/06/2026` é 7 de junho para quem usa `d-m-Y` e 6 de julho para quem usa `m-d-Y`. O plugin escrevia sempre no formato brasileiro, então para qualquer usuário fora do PT-BR as datas estavam **erradas de forma indetectável** — e isso ficou mais grave depois do Bloco 3b, com o plugin já falando inglês mas datando em português. Pesa também para o Bloco 5: um revisor do catálogo apontaria.
+  - **Consequência visível, aceita:** o GLPI 11 oferece só três formatos (`Y-m-d` padrão de fábrica, `d-m-Y`, `m-d-Y`, em `$_SESSION['glpidate_format']`) e **nenhum usa barra**. Uma instalação em Português (Brasil) passa a mostrar `26-07-2026`, e quem estiver no padrão de fábrica vê `2026-07-26`. Cada usuário ajusta em Preferências.
+  - **`src/DateFmt.php`** (novo) — porta única: `date()`, `dateTime()`, `now()`, `phpFormat()`, `jsFormat()`. Delega a `Html::convDate()`/`convDateTime()` do core. **Voltar ao formato fixo é trocar o corpo de `phpFormat()`** — a razão de o helper existir mesmo se a decisão fosse a oposta.
+  - **22 pontos de PHP** trocados em `src/Dashboard.php` (8), `src/Reports.php` (5), `src/Notification.php` (3), `src/TaskCost.php`, `src/ProjectCost.php`, `src/TaskComment.php`, `front/costs.php` (2) e `front/reports.php`. Cada condicional em volta foi **preservado**: mudou só a função de formatação, não a semântica de vazio/null.
+  - **3 pontos de Twig** passaram a usar os filtros **nativos** `|formatted_date` / `|formatted_datetime`, que o core já expõe (`DataHelpersExtension`) e que chamam o mesmo `Html::convDate()`. Não fazia sentido inventar filtro próprio.
+  - **JavaScript:** a máscara viaja na chave `d` do payload de `I18nJs`, **fora de `map()`** (que é o dicionário puro conferido pelo `check-js-strings.php`). `public/js/i18n.js` ganhou `fmtDate()`, `fmtDateTime()` e `dateFormat()`; `timeline.js` e `projectplus.js` passaram a delegar. Payload sem a chave `d` (a versão do 3b) cai no padrão de fábrica — compatível para trás.
+  - **Dois defeitos encontrados no caminho, ambos anteriores a este bloco:**
+    - **Erro de UM DIA no `formatDate` de `projectplus.js`.** Ele fazia `new Date('2026-07-26')`, que o padrão manda interpretar como **UTC** — num fuso a oeste como o do Brasil, `getDate()` devolvia **25**. A coluna "fim" das linhas de subprojeto mostrava o dia anterior. O parse passou a ser textual, sem `new Date`. Comprovado no harness: o código antigo devolve `25/07/2026` para `2026-07-26`.
+    - **Um segundo formato fixo, não catalogado**, no cabeçalho do eixo da timeline (`timeline.js`, marcador semanal) — o levantamento por `grep` de `date('d/m` não o pegava porque era `pad()` concatenado. Virou `shortTick()`, que segue a ordem da preferência. O mesmo vale para o `shortLabel()` do eixo do burndown em `projectplus.js`.
+  - Nenhuma string nova: catálogo segue em **516**, 516/516 nos dois idiomas. Só as referências de linha dos `.po`/`.pot` mudaram; os `.mo` ficaram **byte a byte idênticos**.
+  - Validado por **169 asserções**: 109 em PHP (as três preferências, data seca x data-hora, os 7 casos de ausência de data, `Html::convDate` stubado com **cópia fiel do corpo do core**, e a conferência de que `map()` continua só com `s` e `p`) e 60 em JavaScript rodando o `i18n.js` **de verdade em jsdom** no fuso `America/Sao_Paulo` (as três máscaras, o bug de fuso comprovado e corrigido, entradas ruins que não podem virar `NaN`/`undefined`, e o payload antigo sem a chave `d`).
+- [x] **Bloco 4d** — Release **`v1.0.0-beta`**. **FECHADO em 26/07/2026.**
+  - `PLUGIN_PROJECTPLUS_VERSION` de `0.5.0-alpha` para `1.0.0-beta` em `setup.php`; status do `README.md` atualizado.
+  - `CHANGELOG.md` com a seção `[1.0.0-beta]`, consolidando as etapas 7, 8 e 6 em Adicionado / Alterado / Corrigido / Removido. A seção de **Corrigido** registra os defeitos que só apareceram no refinamento — entre eles o botão Salvar da Configuração, que **nunca funcionou** até o Bloco 2, e o erro de um dia nas datas em fusos a oeste, achado no 4c.
+  - Tag `v1.0.0-beta` no commit da release.
+  - **Nota de atualização para quem vinha da alpha:** as datas passam a usar hífen (o GLPI 11 não oferece formato com barra). Quem quer dia-mês-ano escolhe **DD-MM-YYYY** em Preferências.
 - [ ] **Bloco 5** — Submissão ao catálogo oficial do GLPI (depois da beta).
 
 ### Pendências pré-beta (baixo risco)
@@ -159,7 +174,7 @@ Papéis: **Gestor / Cliente / Técnico / Colaborador (Terceiro)** + Admin. Entid
 - ~~`$_SERVER['PHP_SELF']` como 2º argumento de `Html::header()`~~ — **resolvido no Bloco 4a** (e a premissa era errada: o parâmetro é ignorado pelo core, não afeta breadcrumb).
 - ~~`Plugin::getWebDir()` deprecated em ~25 pontos~~ — **resolvido no Bloco 4a** (26 pontos, helper `src/Url.php`).
 - ~~Perfil Super-Admin com direitos só de leitura~~ — **resolvido no Bloco 4b** (`Install::ensureAdminRights()`, reconciliação que só eleva).
-- **Formato de data fixo `dd/mm/aaaa`** — alvo do **Bloco 4c**. Levantamento do Bloco 4a: além de `fmtBr` (`timeline.js`) e `formatDate`/`formatDateTime` (`projectplus.js`), há **~25 ocorrências de `date('d/m/Y')` / `|date('d/m/Y')`** em `src/Dashboard.php`, `src/Reports.php`, `src/Notification.php`, `src/TaskCost.php`, `src/ProjectCost.php`, `src/TaskComment.php`, `front/costs.php`, `front/reports.php` e 2 templates Twig. Só `src/ProjectTracking.php` usa `Html::convDateTime()`.
+- ~~Formato de data fixo `dd/mm/aaaa`~~ — **resolvido no Bloco 4c** (e o levantamento estava incompleto: faltavam 2 rótulos de eixo, e havia um erro de um dia por fuso horário). Levantamento original do Bloco 4a: além de `fmtBr` (`timeline.js`) e `formatDate`/`formatDateTime` (`projectplus.js`), há **~25 ocorrências de `date('d/m/Y')` / `|date('d/m/Y')`** em `src/Dashboard.php`, `src/Reports.php`, `src/Notification.php`, `src/TaskCost.php`, `src/ProjectCost.php`, `src/TaskComment.php`, `front/costs.php`, `front/reports.php` e 2 templates Twig. Só `src/ProjectTracking.php` usa `Html::convDateTime()`.
 
 ### Decisões em aberto
 
@@ -168,7 +183,7 @@ Papéis: **Gestor / Cliente / Técnico / Colaborador (Terceiro)** + Admin. Entid
 
 ---
 
-## 🔜 Etapa 9 — Fases por tipo de projeto `PLANEJADA` (depois da v1.0.0-beta)
+## 📍 Etapa 9 — Fases por tipo de projeto `PRÓXIMA` (a v1.0.0-beta saiu em 26/07/2026)
 
 **O problema.** `glpi_projectstates` é uma lista **global e única** da instância — o schema do core 11.0.6 **não tem `entities_id`**, então nem separando por entidade dá para ter vocabulários de fase diferentes. Hoje o `Dashboard::getStatesMap()` lê a tabela inteira e alimenta Kanban de tarefas, Kanban de projetos, Timeline, os donuts da Visão geral e o filtro de Relatórios.
 

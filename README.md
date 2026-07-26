@@ -2,7 +2,7 @@
 
 Camada extra de **gestão de projetos** para o GLPI 11: painel executivo com KPIs, orçamento com teto e alertas, barra de contagem de prazo com escalonamento de cores, custos por projeto e por tarefa com autor, sino de alertas e relatório de custos consolidados — tudo **sem alterar nenhuma tabela nativa** do GLPI.
 
-> **Status:** `v0.5.0-alpha` — em desenvolvimento ativo, já em uso em ambiente de homologação. Feedbacks e issues são muito bem-vindos!
+> **Status:** `v1.0.0-beta` — funcionalidade completa e validada em homologação, interface em português e inglês. Candidata a produção; feedbacks e issues são muito bem-vindos!
 
 ## ✨ Funcionalidades
 
