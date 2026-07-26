@@ -2,7 +2,7 @@
 
 **Plugin de gestão avançada de projetos para GLPI 11**
 Repositório: [github.com/teckcomp/glpi-plugin-projectplus](https://github.com/teckcomp/glpi-plugin-projectplus) · Licença GPL-2.0
-Versão atual: **v0.5.0-alpha** · Atualizado em 25/07/2026 (Etapa 8 concluída; **Etapa 6 em andamento — Blocos 1, 2, 2b e 3a fechados**. Próximo: Bloco 3b, i18n do JavaScript. **Etapa 9 planejada** — fases por tipo de projeto, depois da beta)
+Versão atual: **v0.5.0-alpha** · Atualizado em 26/07/2026 (Etapa 8 concluída; **Etapa 6 em andamento — Blocos 1, 2, 2b, 3a e 3b fechados; i18n COMPLETO (servidor + cliente)**. Próximo: Bloco 4, release v1.0.0-beta. **Etapa 9 planejada** — fases por tipo de projeto, depois da beta)
 
 > **Ordem de execução confirmada em 19/07/2026:** Etapa 7 → Etapa 8 → Etapa 6 (por último). A Etapa 6 (refinamento/pré-produção e release v1.0.0-beta) só começa depois que 7 e 8 estiverem validadas em homologação.
 
@@ -122,13 +122,26 @@ Papéis: **Gestor / Cliente / Técnico / Colaborador (Terceiro)** + Admin. Entid
     - `__('Sim')` / `__('Não')` em `src/Config.php` (8 ocorrências) usavam o domínio **do core**, cujos msgid são em inglês — nunca traduziriam, em idioma nenhum. Trocados por `__('Yes')` / `__('No')`.
     - `Prazo: 50% consumido` (e 75/90) eram marcados como `php-format` pelo `xgettext` (o `% c` parece uma diretiva), o que deixava as entradas *fuzzy* e, portanto, **fora do `.mo`**. Reescritos como `Prazo consumido: 50%`.
   - Validado por harness de runtime que carrega os `.mo` compilados e confere o *lookup* (1706 asserções, 0 falhas), por conferência de cobertura (696/696 chamadas do código presentes no catálogo compilado) e por teste de idempotência do script.
-- [ ] **Bloco 3b** — i18n do JavaScript. O GLPI 11 **não tem runtime de tradução em JS** (não existe Jed/`dgettext` no core — verificado): as ~55 strings de `public/js/*.js` só podem ser traduzidas injetando um dicionário do PHP para o cliente. Separado do 3a de propósito — é outra área e outro teste.
+- [x] **Bloco 3b** — i18n do JavaScript. **VALIDADO em homologação em 26/07/2026** (zip `projectplus-etapa6-bloco3b-1.zip`, 27 arquivos). Com ele a Etapa 6 fecha o i18n: servidor (3a) + cliente (3b).
+  - **Premissa corrigida no levantamento:** não eram ~55 strings, eram **123** (95 só em `projectplus.js`). O catálogo passou de 427 para **511 strings únicas** — 84 novas; ~30 das strings do JS já existiam no catálogo do 3a e foram reaproveitadas.
+  - **Como funciona:** o GLPI 11 não tem runtime de i18n no cliente, então a tradução acontece no **servidor**. `src/I18nJs.php` (novo) monta o dicionário do idioma do usuário com chamadas `__()`/`_n()` **literais** — é isso que faz o `xgettext` do pipeline do 3a enxergar as strings do JS **sem precisar de extrator para `.js`**. `I18nJs::render()` imprime `<script type="application/json" id="pp-i18n">` e `public/js/i18n.js` (novo) expõe `t()` / `tn()` / `tlist()`.
+  - **A chave é o próprio texto em PT-BR** (mesma decisão de msgid do 3a). Consequência: dicionário ausente ⇒ o JS devolve a chave e a tela fica em português. Nunca em branco, nunca quebrada. Nos `.js` as funções chamam-se `__()` e `_n()`, como no PHP — `t()` colidiria com o parâmetro `t` dos vários `forEach` de tarefa.
+  - **Injeção em 10 pontos:** os 9 `front/*.php` (logo após `Html::header`) e `src/KanbanTab.php`. A aba nativa entra por AJAX na ficha do projeto, que não passa por nenhum `front/` do plugin — sem a linha lá, o board da aba ficaria em PT-BR para um usuário em inglês. `render()` é idempotente por requisição.
+  - **`public/js/i18n.js` é o primeiro do `add_javascript`** em `setup.php`: é ele que registra `window.ProjectPlusI18n`.
+  - **`tools/check-js-strings.php`** (novo): confere os dois sentidos — chave usada no JS que falta no dicionário é **erro**; chave no dicionário que nenhum `.js` usa é **aviso**; tradução com aspas duplas nos `.po` é **erro** (o texto entra em atributo HTML montado por concatenação). Hoje: 123/123, zero avisos.
+  - **Dois defeitos corrigidos no caminho:**
+    - `hidenativecosts.js` / `hidenativekanban.js` escondiam a aba nativa comparando o **texto** da aba (`/^Custos\s*\d*$/`). O rótulo vem do **core** e muda com o idioma: em inglês a aba vira "Costs", o filtro deixava de casar e **a aba nativa reaparecia** — o plugin perdia o papel de fonte única de custos. Agora comparam contra uma lista de rótulos (PT + EN + o traduzido, quando o dicionário está na página). *Limitação conhecida:* num terceiro idioma a aba nativa de Custos continua coberta pelo filtro por `href*="ProjectCost"`, mas a de Kanban voltaria a aparecer.
+    - `escapeHtml()` de `projectplus.js` era `textNode` + `innerHTML`, que **não escapa aspas** — e boa parte das chamadas alimenta atributos (`title=`, `placeholder=`). Uma tarefa chamada `Trocar "switch" do rack` partia o atributo ao meio. Trocado pela implementação por regex já usada em `timeline.js`.
+  - **`Plural-Forms` mudou de `(n > 1)` para `(n != 1)`** nos dois catálogos e no gerador: com a regra antiga, zero usava o singular ("0 tarefa"). Só o cabeçalho mudou; as 511 traduções ficaram intactas.
+  - **Fora de escopo, registrado:** o **formato de data** continua `dd/mm/aaaa` fixo no JS (`fmtBr`, `formatDate`, `formatDateTime`) e não segue a preferência de formato do GLPI. Vale como item da beta.
+  - Validado por **968 asserções automatizadas**: sincronia dicionário↔JS (123 chaves), `msgfmt --check --check-format --check-header` (511/511, zero *fuzzy* nos dois idiomas), harness de runtime dos `.mo` (894), ponte PHP→JSON→JS (7) e teste em DOM headless com jsdom rodando os JS de verdade **contra o catálogo `en_GB` real** (67), incluindo o caso do nome com aspas.
 - [ ] **Bloco 4** — Release `v1.0.0-beta`: CHANGELOG, tag e pacote de distribuição.
 - [ ] **Bloco 5** — Submissão ao catálogo oficial do GLPI (depois da beta).
 
 ### Pendências pré-beta (baixo risco)
 
 - `$_SERVER['PHP_SELF']` ainda é passado como 2º argumento de `Html::header()` em 9 arquivos de `front/`. Não quebra nada (afeta só o destaque de menu/breadcrumb), mas cabe padronizar na limpeza da beta.
+- **Formato de data fixo no JavaScript** (`dd/mm/aaaa`): `fmtBr` em `timeline.js` e `formatDate`/`formatDateTime` em `projectplus.js` não seguem a preferência de formato do GLPI. Aparece na timeline, no sino de alertas e na coluna de fim das linhas de subprojeto. Descoberto no Bloco 3b e deixado fora dele de propósito (é formatação, não tradução).
 
 ### Decisões em aberto
 

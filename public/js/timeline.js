@@ -9,13 +9,46 @@
 (function () {
     'use strict';
 
+    // ------------------------------------------------------------------
+    // i18n (Etapa 6, Bloco 3b)
+    //
+    // O dicionario vem do PHP em <script type="application/json" id="pp-i18n">
+    // (src/I18nJs.php) e e lido por public/js/i18n.js. A chave e o proprio
+    // texto em PT-BR: sem dicionario na pagina, __() devolve a chave e a tela
+    // continua em portugues.
+    // ------------------------------------------------------------------
+
+    function __() {
+        var i = window.ProjectPlusI18n;
+        return i ? i.t.apply(i, arguments) : arguments[0];
+    }
+
+    function _n(singular, plural, n) {
+        var i = window.ProjectPlusI18n;
+        return i ? i.tn.apply(i, arguments) : (Number(n) === 1 ? singular : plural);
+    }
+
+    // Lista traduzida "a|b|c" (meses do cabecalho).
+    function _list(msgid, expected) {
+        var i = window.ProjectPlusI18n;
+        return i ? i.tlist(msgid, expected) : String(msgid).split('|');
+    }
+
     const MS_DAY  = 86400000;
     const LABEL_W = 280; // largura da coluna de nomes (sincronizada no CSS)
 
     const ZOOMS = { day: 28, week: 12, month: 4 };
 
-    const MONTHS_PT = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun',
-        'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+    // Meses abreviados do cabecalho. Sao resolvidos na PRIMEIRA chamada, e
+    // nao no carregamento do arquivo: o dicionario so existe no DOM depois
+    // que a pagina monta.
+    let monthsCache = null;
+    function monthNames() {
+        if (monthsCache === null) {
+            monthsCache = _list('jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez', 12);
+        }
+        return monthsCache;
+    }
 
     const state = {
         zoom: 'week',
@@ -42,7 +75,8 @@
         }
         // Defesa da lição nº 9: payload ausente/errado não pode derrubar a tela
         if (!data || !Array.isArray(data.groups) || !data.range) {
-            holder.innerHTML = '<p class="projectplus-muted">Não foi possível carregar os dados da timeline.</p>';
+            holder.innerHTML = '<p class="projectplus-muted">' +
+                escapeHtml(__('Não foi possível carregar os dados da timeline.')) + '</p>';
             return;
         }
         state.data = data;
@@ -132,7 +166,8 @@
         html += '</div></div>';
 
         if (visibleRows === 0) {
-            html = '<p class="projectplus-muted pp-tl-empty">Nenhum projeto ou tarefa encontrado.</p>';
+            html = '<p class="projectplus-muted pp-tl-empty">' +
+                escapeHtml(__('Nenhum projeto ou tarefa encontrado.')) + '</p>';
         }
 
         holder.innerHTML = html;
@@ -155,7 +190,7 @@
             const end      = monthEnd < max ? monthEnd : max;
             const daysIn   = Math.round((end - cursor) / MS_DAY) + 1;
             months += '<div class="pp-tl-month" style="width:' + (daysIn * ppd) + 'px">' +
-                MONTHS_PT[cursor.getMonth()] + ' ' + cursor.getFullYear() + '</div>';
+                monthNames()[cursor.getMonth()] + ' ' + cursor.getFullYear() + '</div>';
             cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
         }
 
@@ -183,7 +218,7 @@
         }
 
         return '<div class="pp-tl-head">' +
-            '<div class="pp-tl-head__label">Projeto / tarefa</div>' +
+            '<div class="pp-tl-head__label">' + escapeHtml(__('Projeto / tarefa')) + '</div>' +
             '<div class="pp-tl-head__track" style="width:' + trackW + 'px">' +
             '<div class="pp-tl-months">' + months + '</div>' +
             '<div class="pp-tl-ticks' + (state.zoom === 'month' ? ' pp-tl-ticks--empty' : '') + '">' + ticks + '</div>' +
@@ -259,7 +294,9 @@
                 (opts.collapsed ? '▸' : '▾') + '</button>';
         }
 
-        const lock  = it.blocked ? '<span class="pp-dep-lock" title="Bloqueada — veja as dependências">🔒</span> ' : '';
+        const lock  = it.blocked
+            ? '<span class="pp-dep-lock" title="' + escapeHtml(__('Bloqueada — veja as dependências')) + '">🔒</span> '
+            : '';
         const chip  = it.state_name
             ? '<span class="pp-phase pp-tl-chip" style="--pp-phase-color:' + escapeHtml(it.state_color) + '">' + escapeHtml(it.state_name) + '</span>'
             : '';
@@ -303,7 +340,8 @@
 
         const ndLeft = dayIndex(state.data.range.today) * ppd + Math.round(ppd / 2) + 10;
         return '<span class="pp-tl-nodates" style="left:' + ndLeft + 'px"' +
-            ' title="Sem datas planejadas — corrija o planejamento">sem datas</span>';
+            ' title="' + escapeHtml(__('Sem datas planejadas — corrija o planejamento')) + '">' +
+            escapeHtml(__('sem datas')) + '</span>';
     }
 
     function bindRows(holder) {

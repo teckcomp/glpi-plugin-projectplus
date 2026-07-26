@@ -30,6 +30,25 @@
 (function () {
     'use strict';
 
+    // ------------------------------------------------------------------
+    // i18n (Etapa 6, Bloco 3b)
+    //
+    // O dicionario vem do PHP em <script type="application/json" id="pp-i18n">
+    // (src/I18nJs.php) e e lido por public/js/i18n.js. A chave e o proprio
+    // texto em PT-BR: sem dicionario na pagina, __() devolve a chave e a tela
+    // continua em portugues.
+    // ------------------------------------------------------------------
+
+    function __() {
+        var i = window.ProjectPlusI18n;
+        return i ? i.t.apply(i, arguments) : arguments[0];
+    }
+
+    function _n(singular, plural, n) {
+        var i = window.ProjectPlusI18n;
+        return i ? i.tn.apply(i, arguments) : (Number(n) === 1 ? singular : plural);
+    }
+
     const ProjectPlusKanban = {};
 
     // Compatibilidade com a tela cheia (front/kanban.php + kanban.html.twig)
@@ -54,7 +73,8 @@
         }
         // Defesa da lição nº 9: payload ausente/errado não pode derrubar a tela
         if (!data || !Array.isArray(data.columns) || !Array.isArray(data.cards) || !data.lanes || !data.projects) {
-            holder.innerHTML = '<p class="projectplus-muted">Não foi possível carregar o Kanban.</p>';
+            holder.innerHTML = '<p class="projectplus-muted">' +
+                escapeText(__('Não foi possível carregar o Kanban.')) + '</p>';
             return;
         }
 
@@ -172,7 +192,7 @@
 
         if (cards.length === 0) {
             holder.innerHTML = '<p class="projectplus-muted" style="padding:16px;">'
-                + 'Nenhuma tarefa encontrada com os filtros atuais.</p>';
+                + escapeText(__('Nenhuma tarefa encontrada com os filtros atuais.')) + '</p>';
             return;
         }
 
@@ -201,7 +221,7 @@
         headRow.className = 'pp-kb-row';
         const corner = document.createElement('div');
         corner.className = 'pp-kb-corner';
-        corner.textContent = state.lane === 'responsible' ? 'Responsável' : 'Projeto';
+        corner.textContent = state.lane === 'responsible' ? __('Responsável') : __('Projeto');
         headRow.appendChild(corner);
         columns.forEach(function (col) {
             const h = document.createElement('div');
@@ -215,7 +235,7 @@
         if (activeLanes.length === 0) {
             const empty = document.createElement('div');
             empty.className = 'pp-kb-empty';
-            empty.textContent = 'Nenhuma tarefa encontrada com os filtros atuais.';
+            empty.textContent = __('Nenhuma tarefa encontrada com os filtros atuais.');
             board.appendChild(empty);
         }
 
@@ -233,7 +253,7 @@
                 toggle.className = 'pp-kb-lane-toggle';
                 const isOpen = state.expandedLanes.has(lane.id);
                 toggle.textContent = isOpen ? '−' : '+';
-                toggle.title = isOpen ? 'Recolher subprojetos' : 'Mostrar subprojetos';
+                toggle.title = isOpen ? __('Recolher subprojetos') : __('Mostrar subprojetos');
                 toggle.addEventListener('click', function () {
                     if (state.expandedLanes.has(lane.id)) {
                         state.expandedLanes.delete(lane.id);
@@ -426,11 +446,19 @@
             const parent = byId[c.task_parent_id];
             const tag = document.createElement('div');
             tag.className = 'pp-kb-card-item__subtag';
-            tag.textContent = 'Subtarefa da tarefa: ' + (parent ? parent.name : '—');
+            tag.textContent = __('Subtarefa da tarefa: %s', parent ? parent.name : '—');
             wrap.appendChild(tag);
         }
 
         return wrap;
+    }
+
+    // Escapa texto que entra em HTML/atributo montado por concatenacao.
+    // So e usado com texto TRADUZIDO (o resto do cartao usa textContent).
+    function escapeText(str) {
+        return String(str).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
     }
 
     // Mesmo markup/classes do painel PHP (dashboard.html.twig), aqui
@@ -445,7 +473,7 @@
         }
         if (d.state === 'none') {
             wrap.innerHTML = '<div class="pp-deadline pp-deadline--none" '
-                + 'title="Sem datas planejadas — corrija o planejamento">'
+                + 'title="' + escapeText(__('Sem datas planejadas — corrija o planejamento')) + '">'
                 + '<div class="pp-deadline__fill" style="width:0%"></div></div>';
             return wrap;
         }

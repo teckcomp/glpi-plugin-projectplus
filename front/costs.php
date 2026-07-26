@@ -12,6 +12,7 @@ use Glpi\Application\View\TemplateRenderer;
 use GlpiPlugin\Projectplus\Access;
 use GlpiPlugin\Projectplus\Budget;
 use GlpiPlugin\Projectplus\Dashboard;
+use GlpiPlugin\Projectplus\I18nJs;
 use GlpiPlugin\Projectplus\Scope;
 
 include('../../../inc/includes.php');
@@ -28,6 +29,12 @@ Html::header(
     'tools',
     Dashboard::class
 );
+
+// Dicionario de traducao do JavaScript (Etapa 6, Bloco 3b): imprime o
+// <script type="application/json" id="pp-i18n"> que public/js/i18n.js le.
+// Tem que vir DEPOIS do Html::header (o echo cai dentro do body) e ANTES
+// dos <script> das telas.
+I18nJs::render();
 
 $filterId = (int) ($_GET['project'] ?? 0);
 

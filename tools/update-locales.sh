@@ -88,7 +88,7 @@ msgstr ""
 "MIME-Version: 1.0\\n"
 "Content-Type: text/plain; charset=UTF-8\\n"
 "Content-Transfer-Encoding: 8bit\\n"
-"Plural-Forms: nplurals=2; plural=(n > 1);\\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\\n"
 POTHEADER
     # tudo depois da primeira linha em branco = as entradas, sem o cabecalho
     awk 'BEGIN { skip = 1 } skip && /^$/ { skip = 0; next } !skip { print }' "${TMP}/merged.pot"

@@ -65,6 +65,12 @@ class KanbanTab extends CommonDBTM
         $ajaxUrl = \Plugin::getWebDir('projectplus') . '/ajax/task.php';
         $canEdit = \Session::haveRight('projecttask', UPDATE) || \Session::haveRight('project', UPDATE);
 
+        // Dicionario de traducao do JavaScript (Etapa 6, Bloco 3b). A aba e
+        // carregada por AJAX dentro da ficha NATIVA do projeto, que nao passa
+        // por nenhum front/ do plugin — sem esta linha, o board da aba ficaria
+        // em portugues para um usuario em ingles.
+        I18nJs::render();
+
         echo '<div class="pp-kb-widget pp-kb-widget--tab" id="' . htmlspecialchars($uid) . '"'
             . ' data-ajax-url="' . htmlspecialchars($ajaxUrl) . '"'
             . ' data-csrf="' . htmlspecialchars(\Session::getNewCSRFToken()) . '"'

@@ -89,7 +89,10 @@ function plugin_init_projectplus(): void
     // próprio GLPI e precisa de window.ProjectPlusKanban já disponível.
     // hidenativecosts.js/hidenativekanban.js só entram se a opção
     // correspondente estiver ativa (Configurações).
-    $pluginJs = ['js/projectplus.js', 'js/kanban.js'];
+    // js/i18n.js vem SEMPRE PRIMEIRO: é ele que registra window.ProjectPlusI18n,
+    // usado por todos os outros (Etapa 6, Bloco 3b). Se faltar, os JS caem no
+    // texto em PT-BR — não quebram, mas não traduzem.
+    $pluginJs = ['js/i18n.js', 'js/projectplus.js', 'js/kanban.js'];
     $ppConfig = Config::get();
     if (!empty($ppConfig['hide_native_costs'])) {
         $pluginJs[] = 'js/hidenativecosts.js';

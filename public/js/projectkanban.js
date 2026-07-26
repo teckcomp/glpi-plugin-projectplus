@@ -22,6 +22,25 @@
 (function () {
     'use strict';
 
+    // ------------------------------------------------------------------
+    // i18n (Etapa 6, Bloco 3b)
+    //
+    // O dicionario vem do PHP em <script type="application/json" id="pp-i18n">
+    // (src/I18nJs.php) e e lido por public/js/i18n.js. A chave e o proprio
+    // texto em PT-BR: sem dicionario na pagina, __() devolve a chave e a tela
+    // continua em portugues.
+    // ------------------------------------------------------------------
+
+    function __() {
+        var i = window.ProjectPlusI18n;
+        return i ? i.t.apply(i, arguments) : arguments[0];
+    }
+
+    function _n(singular, plural, n) {
+        var i = window.ProjectPlusI18n;
+        return i ? i.tn.apply(i, arguments) : (Number(n) === 1 ? singular : plural);
+    }
+
     const ProjectPlusProjectKanban = {};
 
     ProjectPlusProjectKanban.init = function () {
@@ -44,7 +63,8 @@
         }
         // Defesa da lição nº 9: payload ausente/errado não derruba a tela.
         if (!data || !Array.isArray(data.columns) || !Array.isArray(data.cards)) {
-            holder.innerHTML = '<p class="projectplus-muted">Não foi possível carregar o Kanban de projetos.</p>';
+            holder.innerHTML = '<p class="projectplus-muted">' +
+                escapeText(__('Não foi possível carregar o Kanban de projetos.')) + '</p>';
             return;
         }
 
@@ -96,7 +116,7 @@
 
         if (cards.length === 0) {
             holder.innerHTML = '<p class="projectplus-muted" style="padding:16px;">'
-                + 'Nenhum projeto encontrado com os filtros atuais.</p>';
+                + escapeText(__('Nenhum projeto encontrado com os filtros atuais.')) + '</p>';
             return;
         }
 
@@ -115,7 +135,7 @@
         headRow.className = 'pp-kb-row';
         const corner = document.createElement('div');
         corner.className = 'pp-kb-corner';
-        corner.textContent = 'Fase';
+        corner.textContent = __('Fase');
         headRow.appendChild(corner);
         columns.forEach(function (col) {
             const h = document.createElement('div');
@@ -133,7 +153,7 @@
         label.className = 'pp-kb-lane-label';
         label.style.paddingLeft = '12px';
         const labelText = document.createElement('span');
-        labelText.textContent = 'Projetos';
+        labelText.textContent = __('Projetos');
         label.appendChild(labelText);
         row.appendChild(label);
 
@@ -215,7 +235,7 @@
         badges.className = 'pp-kb-card-item__badges';
         let text = c.percent + '%';
         if (c.tasks_total > 0) {
-            text += '  •  ' + c.tasks_done + '/' + c.tasks_total + ' tarefas';
+            text += '  •  ' + c.tasks_done + '/' + c.tasks_total + ' ' + __('tarefas');
         }
         badges.textContent = text;
         a.appendChild(badges);
@@ -225,7 +245,7 @@
         if (isSub) {
             const tag = document.createElement('div');
             tag.className = 'pp-kb-card-item__subtag';
-            tag.textContent = 'Subprojeto de: ' + (c.parent_name || '—');
+            tag.textContent = __('Subprojeto de: %s', c.parent_name || '—');
             wrap.appendChild(tag);
         }
 
@@ -290,6 +310,13 @@
         });
     }
 
+    // Escapa texto que entra em HTML/atributo montado por concatenacao.
+    function escapeText(str) {
+        return String(str).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
+
     // Mesmo markup/classes da barra de prazo do painel (dashboard.html.twig),
     // montado no cliente a partir do objeto Deadline::compute() embutido.
     function deadlineEl(d) {
@@ -302,7 +329,7 @@
         }
         if (d.state === 'none') {
             wrap.innerHTML = '<div class="pp-deadline pp-deadline--none" '
-                + 'title="Sem datas planejadas — corrija o planejamento">'
+                + 'title="' + escapeText(__('Sem datas planejadas — corrija o planejamento')) + '">'
                 + '<div class="pp-deadline__fill" style="width:0%"></div></div>';
             return wrap;
         }

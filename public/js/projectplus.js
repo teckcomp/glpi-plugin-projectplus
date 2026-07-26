@@ -8,6 +8,28 @@
 (function () {
     'use strict';
 
+    // ------------------------------------------------------------------
+    // i18n (Etapa 6, Bloco 3b)
+    //
+    // O dicionario vem do PHP em <script type="application/json" id="pp-i18n">
+    // (src/I18nJs.php) e e lido por public/js/i18n.js. A chave e o proprio
+    // texto em PT-BR: sem dicionario na pagina, __() devolve a chave e a tela
+    // continua em portugues.
+    //
+    // Os nomes sao __ e _n (como no PHP) de proposito: "t" colidiria com o
+    // parametro `t` usado nos forEach de tarefa espalhados pelo arquivo.
+    // ------------------------------------------------------------------
+
+    function __() {
+        var i = window.ProjectPlusI18n;
+        return i ? i.t.apply(i, arguments) : arguments[0];
+    }
+
+    function _n(singular, plural, n) {
+        var i = window.ProjectPlusI18n;
+        return i ? i.tn.apply(i, arguments) : (Number(n) === 1 ? singular : plural);
+    }
+
     const ProjectPlus = {};
 
     // ------------------------------------------------------------------
@@ -152,12 +174,14 @@
             tr.innerHTML =
                 '<td class="projectplus-expand">' + (t.children > 0
                     ? '<button type="button" class="projectplus-expand__btn pp-taskexp"' +
-                      ' title="' + t.children + ' subtarefa(s)" data-task-id="' + t.id + '">+</button>'
+                      ' title="' + escapeHtml(_n('%d subtarefa', '%d subtarefas', t.children, t.children)) +
+                      '" data-task-id="' + t.id + '">+</button>'
                     : '') + '</td>' +
                 '<td style="padding-left:' + (8 + depth * 18) + 'px">' +
                     '<span class="pp-task-branch">└</span> ' +
                     (t.blocked
-                        ? '<span class="pp-dep-lock" title="Bloqueada por outra(s) tarefa(s) — veja 🔗">🔒</span> '
+                        ? '<span class="pp-dep-lock" title="' +
+                          escapeHtml(__('Bloqueada por outra(s) tarefa(s) — veja 🔗')) + '">🔒</span> '
                         : '') +
                     '<a href="' + escapeHtml(t.url) + '" target="_blank">' + escapeHtml(t.name) + '</a></td>' +
                 '<td>' + escapeHtml(t.project || '—') + '</td>' +
@@ -221,7 +245,8 @@
                 .then(render)
                 .catch(function () {
                     groupsEl.innerHTML = '<div class="projectplus-card">' +
-                        '<p class="projectplus-muted">Erro ao carregar suas tarefas.</p></div>';
+                        '<p class="projectplus-muted">' +
+                        escapeHtml(__('Erro ao carregar suas tarefas.')) + '</p></div>';
                 });
         }
 
@@ -235,8 +260,9 @@
             const groups = (data && Array.isArray(data.groups)) ? data.groups : [];
             if (groups.length === 0) {
                 groupsEl.innerHTML = '<div class="projectplus-card">' +
-                    '<p class="projectplus-muted">Nenhuma tarefa atribuída a você' +
-                    ((doneToggle && doneToggle.checked) ? '' : ' em aberto') + '.</p></div>';
+                    '<p class="projectplus-muted">' + escapeHtml((doneToggle && doneToggle.checked)
+                        ? __('Nenhuma tarefa atribuída a você.')
+                        : __('Nenhuma tarefa atribuída a você em aberto.')) + '</p></div>';
                 return;
             }
 
@@ -245,7 +271,8 @@
                 return '<div class="projectplus-card pp-mt-group">' +
                     '<div class="pp-report-projhead">' +
                         '<h3><a href="' + escapeHtml(g.project_url) + '">' + escapeHtml(g.project_name) + '</a></h3>' +
-                        '<span class="projectplus-muted">' + n + (n === 1 ? ' tarefa' : ' tarefas') + '</span>' +
+                        '<span class="projectplus-muted">' +
+                            escapeHtml(_n('%d tarefa', '%d tarefas', n, n)) + '</span>' +
                     '</div>' +
                     taskTableHtml(g.tasks) +
                     '</div>';
@@ -402,7 +429,7 @@
             const name = (nameInput.value || '').trim();
             if (!name) {
                 e.preventDefault();
-                alert('Informe o nome do modelo.');
+                alert(__('Informe o nome do modelo.'));
                 nameInput.focus();
                 return;
             }
@@ -413,7 +440,7 @@
             };
             if (s.tasks.length === 0 && s.subprojects.length === 0) {
                 e.preventDefault();
-                alert('Adicione ao menos uma tarefa ou subprojeto.');
+                alert(__('Adicione ao menos uma tarefa ou subprojeto.'));
                 return;
             }
             out.value = JSON.stringify(s);
@@ -434,15 +461,15 @@
 
         container.innerHTML =
             '<div class="pp-tpl-meta">' +
-                '<label class="pp-tpl-num" title="Dias após a data de início escolhida ao criar">início (d)<input type="number" class="pp-pm-offset" min="0" step="1" value="' + offset + '"></label>' +
-                '<label class="pp-tpl-num" title="Duração do projeto em dias (define a data de fim)">duração (d)<input type="number" class="pp-pm-dur" min="1" step="1" value="' + dur + '"></label>' +
-                '<label class="pp-tpl-field">Estado<select class="pp-pm-state">' + tplOptions(ppTplRef.states, stateId) + '</select></label>' +
-                '<label class="pp-tpl-field">Tipo<select class="pp-pm-ptype">' + tplOptions(ppTplRef.ptypes, ptypeId) + '</select></label>' +
-                '<label class="pp-tpl-field">Gestor<select class="pp-pm-user">' + tplOptions(ppTplRef.users, userId) + '</select></label>' +
-                '<label class="pp-tpl-field">Orçamento (R$)<input type="number" class="pp-pm-budget" min="0" step="0.01" value="' + budget + '"></label>' +
-                '<label class="pp-tpl-check"><input type="checkbox" class="pp-pm-auto"' + (auto ? ' checked' : '') + '> calcular % automático</label>' +
+                '<label class="pp-tpl-num" title="' + escapeHtml(__('Dias após a data de início escolhida ao criar')) + '">' + escapeHtml(__('início (d)')) + '<input type="number" class="pp-pm-offset" min="0" step="1" value="' + offset + '"></label>' +
+                '<label class="pp-tpl-num" title="' + escapeHtml(__('Duração do projeto em dias (define a data de fim)')) + '">' + escapeHtml(__('duração (d)')) + '<input type="number" class="pp-pm-dur" min="1" step="1" value="' + dur + '"></label>' +
+                '<label class="pp-tpl-field">' + escapeHtml(__('Estado')) + '<select class="pp-pm-state">' + tplOptions(ppTplRef.states, stateId) + '</select></label>' +
+                '<label class="pp-tpl-field">' + escapeHtml(__('Tipo')) + '<select class="pp-pm-ptype">' + tplOptions(ppTplRef.ptypes, ptypeId) + '</select></label>' +
+                '<label class="pp-tpl-field">' + escapeHtml(__('Gestor')) + '<select class="pp-pm-user">' + tplOptions(ppTplRef.users, userId) + '</select></label>' +
+                '<label class="pp-tpl-field">' + escapeHtml(__('Orçamento (R$)')) + '<input type="number" class="pp-pm-budget" min="0" step="0.01" value="' + budget + '"></label>' +
+                '<label class="pp-tpl-check"><input type="checkbox" class="pp-pm-auto"' + (auto ? ' checked' : '') + '> ' + escapeHtml(__('calcular automaticamente o %')) + '</label>' +
             '</div>' +
-            '<textarea class="pp-pm-content" rows="2" placeholder="Descrição do projeto (opcional)"></textarea>';
+            '<textarea class="pp-pm-content" rows="2" placeholder="' + escapeHtml(__('Descrição do projeto (opcional)')) + '"></textarea>';
         container.querySelector('.pp-pm-content').value = data.content || '';
     }
 
@@ -471,20 +498,20 @@
         el.className = 'pp-tpl-node pp-tpl-node--task';
         el.innerHTML =
             '<div class="pp-tpl-row">' +
-                '<span class="pp-tpl-handle" title="Tarefa"><i class="ti ti-list-check"></i></span>' +
-                '<input type="text" class="pp-tpl-name" placeholder="Nome da tarefa" maxlength="255">' +
-                '<label class="pp-tpl-num">início (d)<input type="number" class="pp-tpl-offset" min="0" step="1" value="0"></label>' +
-                '<label class="pp-tpl-num">duração (d)<input type="number" class="pp-tpl-dur" min="1" step="1" value="1"></label>' +
-                '<button type="button" class="pp-tpl-mini" data-act="add-subtask">+ subtarefa</button>' +
-                '<button type="button" class="pp-tpl-mini pp-tpl-mini--danger" data-act="remove" title="Remover">&times;</button>' +
+                '<span class="pp-tpl-handle" title="' + escapeHtml(__('Tarefa')) + '"><i class="ti ti-list-check"></i></span>' +
+                '<input type="text" class="pp-tpl-name" placeholder="' + escapeHtml(__('Nome da tarefa')) + '" maxlength="255">' +
+                '<label class="pp-tpl-num">' + escapeHtml(__('início (d)')) + '<input type="number" class="pp-tpl-offset" min="0" step="1" value="0"></label>' +
+                '<label class="pp-tpl-num">' + escapeHtml(__('duração (d)')) + '<input type="number" class="pp-tpl-dur" min="1" step="1" value="1"></label>' +
+                '<button type="button" class="pp-tpl-mini" data-act="add-subtask">' + escapeHtml(__('+ subtarefa')) + '</button>' +
+                '<button type="button" class="pp-tpl-mini pp-tpl-mini--danger" data-act="remove" title="' + escapeHtml(__('Remover')) + '">&times;</button>' +
             '</div>' +
             '<div class="pp-tpl-meta">' +
-                '<label class="pp-tpl-field">Estado<select class="pp-tpl-state">' + tplOptions(ppTplRef.states, stateId) + '</select></label>' +
-                '<label class="pp-tpl-field">Tipo<select class="pp-tpl-ttype">' + tplOptions(ppTplRef.ttypes, ttypeId) + '</select></label>' +
-                '<label class="pp-tpl-field">Responsável<select class="pp-tpl-user">' + tplOptions(ppTplRef.users, userId) + '</select></label>' +
-                '<label class="pp-tpl-check"><input type="checkbox" class="pp-tpl-auto"' + (auto ? ' checked' : '') + '> calcular % automático</label>' +
+                '<label class="pp-tpl-field">' + escapeHtml(__('Estado')) + '<select class="pp-tpl-state">' + tplOptions(ppTplRef.states, stateId) + '</select></label>' +
+                '<label class="pp-tpl-field">' + escapeHtml(__('Tipo')) + '<select class="pp-tpl-ttype">' + tplOptions(ppTplRef.ttypes, ttypeId) + '</select></label>' +
+                '<label class="pp-tpl-field">' + escapeHtml(__('Responsável')) + '<select class="pp-tpl-user">' + tplOptions(ppTplRef.users, userId) + '</select></label>' +
+                '<label class="pp-tpl-check"><input type="checkbox" class="pp-tpl-auto"' + (auto ? ' checked' : '') + '> ' + escapeHtml(__('calcular automaticamente o %')) + '</label>' +
             '</div>' +
-            '<textarea class="pp-tpl-content" rows="1" placeholder="Descrição (opcional)"></textarea>' +
+            '<textarea class="pp-tpl-content" rows="1" placeholder="' + escapeHtml(__('Descrição (opcional)')) + '"></textarea>' +
             '<div class="pp-tpl-children"></div>';
 
         el.querySelector(':scope > .pp-tpl-row > .pp-tpl-name').value = data.name || '';
@@ -516,24 +543,24 @@
         el.className = 'pp-tpl-node pp-tpl-node--project';
         el.innerHTML =
             '<div class="pp-tpl-row">' +
-                '<span class="pp-tpl-handle" title="Subprojeto"><i class="ti ti-folder"></i></span>' +
-                '<input type="text" class="pp-tpl-name" placeholder="Nome do subprojeto" maxlength="255">' +
-                '<label class="pp-tpl-num">início (d)<input type="number" class="pp-tpl-offset" min="0" step="1" value="0"></label>' +
-                '<label class="pp-tpl-num">duração (d)<input type="number" class="pp-tpl-dur" min="1" step="1" value="1"></label>' +
-                '<button type="button" class="pp-tpl-mini" data-act="add-ptask">+ tarefa</button>' +
-                '<button type="button" class="pp-tpl-mini" data-act="add-psub">+ subprojeto</button>' +
-                '<button type="button" class="pp-tpl-mini pp-tpl-mini--danger" data-act="remove" title="Remover">&times;</button>' +
+                '<span class="pp-tpl-handle" title="' + escapeHtml(__('Subprojeto')) + '"><i class="ti ti-folder"></i></span>' +
+                '<input type="text" class="pp-tpl-name" placeholder="' + escapeHtml(__('Nome do subprojeto')) + '" maxlength="255">' +
+                '<label class="pp-tpl-num">' + escapeHtml(__('início (d)')) + '<input type="number" class="pp-tpl-offset" min="0" step="1" value="0"></label>' +
+                '<label class="pp-tpl-num">' + escapeHtml(__('duração (d)')) + '<input type="number" class="pp-tpl-dur" min="1" step="1" value="1"></label>' +
+                '<button type="button" class="pp-tpl-mini" data-act="add-ptask">' + escapeHtml(__('+ tarefa')) + '</button>' +
+                '<button type="button" class="pp-tpl-mini" data-act="add-psub">' + escapeHtml(__('+ subprojeto')) + '</button>' +
+                '<button type="button" class="pp-tpl-mini pp-tpl-mini--danger" data-act="remove" title="' + escapeHtml(__('Remover')) + '">&times;</button>' +
             '</div>' +
             '<div class="pp-tpl-meta">' +
-                '<label class="pp-tpl-field">Estado<select class="pp-tpl-state">' + tplOptions(ppTplRef.states, stateId) + '</select></label>' +
-                '<label class="pp-tpl-field">Tipo<select class="pp-tpl-ptype">' + tplOptions(ppTplRef.ptypes, ptypeId) + '</select></label>' +
-                '<label class="pp-tpl-field">Gestor<select class="pp-tpl-user">' + tplOptions(ppTplRef.users, userId) + '</select></label>' +
-                '<label class="pp-tpl-field">Orçamento (R$)<input type="number" class="pp-tpl-budget" min="0" step="0.01" value="' + budget + '"></label>' +
-                '<label class="pp-tpl-check"><input type="checkbox" class="pp-tpl-auto"' + (auto ? ' checked' : '') + '> calcular % automático</label>' +
+                '<label class="pp-tpl-field">' + escapeHtml(__('Estado')) + '<select class="pp-tpl-state">' + tplOptions(ppTplRef.states, stateId) + '</select></label>' +
+                '<label class="pp-tpl-field">' + escapeHtml(__('Tipo')) + '<select class="pp-tpl-ptype">' + tplOptions(ppTplRef.ptypes, ptypeId) + '</select></label>' +
+                '<label class="pp-tpl-field">' + escapeHtml(__('Gestor')) + '<select class="pp-tpl-user">' + tplOptions(ppTplRef.users, userId) + '</select></label>' +
+                '<label class="pp-tpl-field">' + escapeHtml(__('Orçamento (R$)')) + '<input type="number" class="pp-tpl-budget" min="0" step="0.01" value="' + budget + '"></label>' +
+                '<label class="pp-tpl-check"><input type="checkbox" class="pp-tpl-auto"' + (auto ? ' checked' : '') + '> ' + escapeHtml(__('calcular automaticamente o %')) + '</label>' +
             '</div>' +
-            '<textarea class="pp-tpl-content" rows="1" placeholder="Descrição (opcional)"></textarea>' +
-            '<div class="pp-tpl-psection"><div class="pp-tpl-plabel">Tarefas</div><div class="pp-tpl-ptasks pp-tpl-list"></div></div>' +
-            '<div class="pp-tpl-psection"><div class="pp-tpl-plabel">Subprojetos</div><div class="pp-tpl-psubs pp-tpl-list"></div></div>';
+            '<textarea class="pp-tpl-content" rows="1" placeholder="' + escapeHtml(__('Descrição (opcional)')) + '"></textarea>' +
+            '<div class="pp-tpl-psection"><div class="pp-tpl-plabel">' + escapeHtml(__('Tarefas')) + '</div><div class="pp-tpl-ptasks pp-tpl-list"></div></div>' +
+            '<div class="pp-tpl-psection"><div class="pp-tpl-plabel">' + escapeHtml(__('Subprojetos')) + '</div><div class="pp-tpl-psubs pp-tpl-list"></div></div>';
 
         el.querySelector(':scope > .pp-tpl-row > .pp-tpl-name').value = data.name || '';
         el.querySelector(':scope > .pp-tpl-row .pp-tpl-offset').value =
@@ -634,7 +661,8 @@
                     '<em>' + escapeHtml(formatDateTime(a.date_creation)) + '</em>' +
                 '</div>' +
                 (isRead ? ''
-                    : '<button type="button" class="pp-bell__read" title="Marcar como lida">✓</button>') +
+                    : '<button type="button" class="pp-bell__read" title="' +
+                        escapeHtml(__('Marcar como lida')) + '">✓</button>') +
                 '</li>';
         }
 
@@ -648,12 +676,13 @@
 
             let html = '';
             if (n === 0) {
-                html += '<li class="pp-bell__empty">Nenhum alerta não lido</li>';
+                html += '<li class="pp-bell__empty">' +
+                    escapeHtml(__('Nenhum alerta não lido')) + '</li>';
             } else {
                 html += unread.map(function (a) { return bellItem(a, false); }).join('');
             }
             if (read.length > 0) {
-                html += '<li class="pp-bell__section">Lidas recentemente</li>' +
+                html += '<li class="pp-bell__section">' + escapeHtml(__('Lidas recentemente')) + '</li>' +
                     read.map(function (a) { return bellItem(a, true); }).join('');
             }
             list.innerHTML = html;
@@ -738,7 +767,8 @@
         // Bloco 4: o número de colunas da tabela de projetos varia com o
         // direito de Custos — usa a própria linha como referência.
         td.colSpan = projectRow.children.length || 9;
-        td.innerHTML = '<div class="projectplus-taskspanel">Carregando tarefas…</div>';
+        td.innerHTML = '<div class="projectplus-taskspanel">' +
+            escapeHtml(__('Carregando tarefas…')) + '</div>';
         tr.appendChild(td);
         projectRow.insertAdjacentElement('afterend', tr);
 
@@ -753,7 +783,8 @@
                 bindTaskPanel(container, projectId, ajaxUrl, taskUrl, tasks);
             })
             .catch(function () {
-                container.innerHTML = '<div class="projectplus-taskspanel">Erro ao carregar tarefas.</div>';
+                container.innerHTML = '<div class="projectplus-taskspanel">' +
+                    escapeHtml(__('Erro ao carregar tarefas.')) + '</div>';
             });
     }
 
@@ -762,25 +793,26 @@
 
         // Formulário de nova tarefa
         html += '<div class="projectplus-newtask">' +
-            '<input type="text" class="pp-nt-name" placeholder="Nova tarefa…" maxlength="255">' +
-            '<select class="pp-nt-parent"><option value="0">Sem tarefa pai</option>' +
+            '<input type="text" class="pp-nt-name" placeholder="' + escapeHtml(__('Nova tarefa…')) + '" maxlength="255">' +
+            '<select class="pp-nt-parent"><option value="0">' + escapeHtml(__('Sem tarefa pai')) + '</option>' +
             tasks.map(function (t) {
                 return '<option value="' + t.id + '">' + '&nbsp;'.repeat(t.depth * 2) + escapeHtml(t.name) + '</option>';
             }).join('') +
             '</select>' +
-            '<select class="pp-nt-user"><option value="0">Sem responsável</option>' +
+            '<select class="pp-nt-user"><option value="0">' + escapeHtml(__('Sem responsável')) + '</option>' +
             ppData.users.map(function (u) {
                 const sel = (u.id === ppData.current_user_id) ? ' selected' : '';
                 return '<option value="' + u.id + '"' + sel + '>' + escapeHtml(u.name) + '</option>';
             }).join('') +
             '</select>' +
-            '<input type="date" class="pp-nt-start" title="Início planejado">' +
-            '<input type="date" class="pp-nt-end" title="Fim planejado">' +
-            '<button type="button" class="projectplus-btn pp-nt-create">Criar tarefa</button>' +
+            '<input type="date" class="pp-nt-start" title="' + escapeHtml(__('Início planejado')) + '">' +
+            '<input type="date" class="pp-nt-end" title="' + escapeHtml(__('Fim planejado')) + '">' +
+            '<button type="button" class="projectplus-btn pp-nt-create">' + escapeHtml(__('Criar tarefa')) + '</button>' +
             '</div>';
 
         if (tasks.length === 0) {
-            html += '<p class="projectplus-muted">Nenhuma tarefa neste projeto ainda.</p></div>';
+            html += '<p class="projectplus-muted">' +
+                escapeHtml(__('Nenhuma tarefa neste projeto ainda.')) + '</p></div>';
             return html;
         }
 
@@ -792,8 +824,13 @@
     // por projeto e a tela "Minhas tarefas" (Etapa 3, Bloco 1).
     function taskTableHtml(tasks) {
         let html = '<table class="projectplus-tasktable"><thead><tr>' +
-            '<th>Tarefa</th><th>Responsáveis</th><th>Início</th><th>Fim</th>' +
-            '<th>%</th><th>Estado</th><th>Prazo</th><th></th><th></th><th></th>' +
+            '<th>' + escapeHtml(__('Tarefa')) + '</th>' +
+            '<th>' + escapeHtml(__('Responsáveis')) + '</th>' +
+            '<th>' + escapeHtml(__('Início')) + '</th>' +
+            '<th>' + escapeHtml(__('Fim')) + '</th>' +
+            '<th>%</th>' +
+            '<th>' + escapeHtml(__('Estado')) + '</th>' +
+            '<th>' + escapeHtml(__('Prazo')) + '</th><th></th><th></th><th></th>' +
             '</tr></thead><tbody>';
 
         tasks.forEach(function (t) {
@@ -805,10 +842,11 @@
                 '<td style="padding-left:' + (10 + t.depth * 22) + 'px">' +
                     (t.depth > 0 ? '<span class="pp-task-branch">└</span> ' : '') +
                     (t.depth === 0 && t.parent_name
-                        ? '<span class="pp-task-parent" title="Tarefa mãe">' + escapeHtml(t.parent_name) + ' › </span>'
+                        ? '<span class="pp-task-parent" title="' + escapeHtml(__('Tarefa mãe')) + '">' + escapeHtml(t.parent_name) + ' › </span>'
                         : '') +
                     (t.blocked
-                        ? '<span class="pp-dep-lock" title="Bloqueada por outra(s) tarefa(s) — veja 🔗">🔒</span> '
+                        ? '<span class="pp-dep-lock" title="' +
+                          escapeHtml(__('Bloqueada por outra(s) tarefa(s) — veja 🔗')) + '">🔒</span> '
                         : '') +
                     '<a href="' + escapeHtml(t.url) + '" target="_blank">' + escapeHtml(t.name) + '</a></td>' +
                 '<td>' + (t.team.length ? escapeHtml(t.team.join(', ')) : '<span class="projectplus-muted">—</span>') + '</td>' +
@@ -816,7 +854,7 @@
                 '<td><input type="date" class="pp-task-end" value="' + (t.end_iso || '') + '"></td>' +
                 '<td><input type="number" class="pp-task-percent" min="0" max="100" value="' + t.percent + '"' +
                     (t.auto_percent
-                        ? ' disabled title="Cálculo automático a partir das subtarefas"'
+                        ? ' disabled title="' + escapeHtml(__('Cálculo automático a partir das subtarefas')) + '"'
                         : '') + '></td>' +
                 '<td class="pp-state-cell"><span class="pp-phase-dot" style="background:' + stateColor(t.state_id) + '"></span>' +
                     '<select class="pp-task-state"><option value="0">—</option>' + stateOpts + '</select></td>' +
@@ -824,7 +862,7 @@
                 '<td class="pp-dep-cell">' + depBtnHtml(t) + '</td>' +
                 '<td class="pp-cmt-cell">' + commentBtnHtml(t) + '</td>' +
                 '<td>' + (t.percent < 100 && !t.auto_percent
-                    ? '<button type="button" class="pp-task-complete" title="Concluir">✓</button>'
+                    ? '<button type="button" class="pp-task-complete" title="' + escapeHtml(__('Concluir')) + '">✓</button>'
                     : '') + '</td>' +
                 '</tr>';
         });
@@ -936,7 +974,7 @@
     function commentBtnHtml(t) {
         const n = parseInt(t.comments, 10) || 0;
         return '<button type="button" class="pp-cmt-btn' + (n > 0 ? ' pp-cmt-btn--has' : '') +
-            '" title="Comentários">💬' +
+            '" title="' + escapeHtml(__('Comentários')) + '">💬' +
             (n > 0 ? '<span class="pp-cmt-count">' + n + '</span>' : '') +
             '</button>';
     }
@@ -962,7 +1000,8 @@
         tr.className = 'pp-cmt-row';
         const td = document.createElement('td');
         td.colSpan = row.children.length;
-        td.innerHTML = '<div class="pp-cmt-panel"><span class="projectplus-muted">Carregando comentários…</span></div>';
+        td.innerHTML = '<div class="pp-cmt-panel"><span class="projectplus-muted">' +
+            escapeHtml(__('Carregando comentários…')) + '</span></div>';
         tr.appendChild(td);
         row.insertAdjacentElement('afterend', tr);
         loadComments(td, row, taskId);
@@ -976,7 +1015,8 @@
             .then(function (comments) { renderComments(container, row, taskId, comments); })
             .catch(function () {
                 container.innerHTML = '<div class="pp-cmt-panel">' +
-                    '<span class="projectplus-muted">Erro ao carregar comentários.</span></div>';
+                    '<span class="projectplus-muted">' +
+                    escapeHtml(__('Erro ao carregar comentários.')) + '</span></div>';
             });
     }
 
@@ -984,18 +1024,19 @@
         let html = '<div class="pp-cmt-panel">';
 
         if (!comments.length) {
-            html += '<p class="projectplus-muted" style="margin:2px 0">Nenhum comentário ainda.</p>';
+            html += '<p class="projectplus-muted" style="margin:2px 0">' +
+                escapeHtml(__('Nenhum comentário ainda.')) + '</p>';
         } else {
             html += comments.map(function (c) {
                 return '<div class="pp-cmt-item" data-comment-id="' + c.id + '">' +
                     '<div class="pp-cmt-item__head">' +
                         '<strong>' + escapeHtml(c.author) + '</strong>' +
                         '<span class="projectplus-muted">' + escapeHtml(c.date) +
-                            (c.edited ? ' · editado' : '') + '</span>' +
+                            (c.edited ? ' · ' + escapeHtml(__('editado')) : '') + '</span>' +
                         (c.can_edit
                             ? '<span class="pp-cmt-item__actions">' +
-                              '<button type="button" class="pp-cmt-edit" title="Editar">✎</button>' +
-                              '<button type="button" class="pp-cmt-del" title="Excluir">×</button>' +
+                              '<button type="button" class="pp-cmt-edit" title="' + escapeHtml(__('Editar')) + '">✎</button>' +
+                              '<button type="button" class="pp-cmt-del" title="' + escapeHtml(__('Excluir')) + '">×</button>' +
                               '</span>'
                             : '') +
                     '</div>' +
@@ -1007,8 +1048,8 @@
 
         html += '<div class="pp-cmt-new">' +
             '<textarea class="pp-cmt-text" rows="2" maxlength="4000" ' +
-                'placeholder="Escreva um comentário… (Ctrl+Enter envia)"></textarea>' +
-            '<button type="button" class="projectplus-btn pp-cmt-send">Comentar</button>' +
+                'placeholder="' + escapeHtml(__('Escreva um comentário… (Ctrl+Enter envia)')) + '"></textarea>' +
+            '<button type="button" class="projectplus-btn pp-cmt-send">' + escapeHtml(__('Comentar')) + '</button>' +
             '</div></div>';
 
         container.innerHTML = html;
@@ -1048,7 +1089,7 @@
             const del = item.querySelector('.pp-cmt-del');
             if (del) {
                 del.addEventListener('click', function () {
-                    if (!window.confirm('Excluir este comentário?')) { return; }
+                    if (!window.confirm(__('Excluir este comentário?'))) { return; }
                     taskPost(ppCommentUrl, { action: 'delete', id: cid }, function (resp) {
                         if (resp.ok) {
                             setCommentCount(row, resp.count);
@@ -1071,8 +1112,8 @@
                     }
                     body.innerHTML = '<div class="pp-cmt-new">' +
                         '<textarea class="pp-cmt-text" rows="2" maxlength="4000"></textarea>' +
-                        '<button type="button" class="projectplus-btn pp-cmt-save">Salvar</button>' +
-                        '<button type="button" class="projectplus-btn projectplus-btn--ghost pp-cmt-cancel">Cancelar</button>' +
+                        '<button type="button" class="projectplus-btn pp-cmt-save">' + escapeHtml(__('Salvar')) + '</button>' +
+                        '<button type="button" class="projectplus-btn projectplus-btn--ghost pp-cmt-cancel">' + escapeHtml(__('Cancelar')) + '</button>' +
                         '</div>';
                     const ta = body.querySelector('textarea');
                     ta.value = original;
@@ -1122,7 +1163,7 @@
         const n = parseInt(t.deps, 10) || 0;
         return '<button type="button" class="pp-dep-btn' + (n > 0 ? ' pp-dep-btn--has' : '') +
             (t.blocked ? ' pp-dep-btn--blocked' : '') +
-            '" title="Dependências">🔗' +
+            '" title="' + escapeHtml(__('Dependências')) + '">🔗' +
             (n > 0 ? '<span class="pp-dep-count">' + n + '</span>' : '') +
             '</button>';
     }
@@ -1137,7 +1178,8 @@
         tr.className = 'pp-dep-row';
         const td = document.createElement('td');
         td.colSpan = row.children.length;
-        td.innerHTML = '<div class="pp-dep-panel"><span class="projectplus-muted">Carregando dependências…</span></div>';
+        td.innerHTML = '<div class="pp-dep-panel"><span class="projectplus-muted">' +
+            escapeHtml(__('Carregando dependências…')) + '</span></div>';
         tr.appendChild(td);
         row.insertAdjacentElement('afterend', tr);
         loadDeps(td, row, taskId);
@@ -1151,19 +1193,24 @@
             .then(function (data) { renderDeps(container, row, taskId, data); })
             .catch(function () {
                 container.innerHTML = '<div class="pp-dep-panel">' +
-                    '<span class="projectplus-muted">Erro ao carregar as dependências.</span></div>';
+                    '<span class="projectplus-muted">' +
+                    escapeHtml(__('Erro ao carregar as dependências.')) + '</span></div>';
             });
     }
 
     function depItemHtml(d, canEdit) {
         return '<div class="pp-dep-item">' +
             '<span class="pp-dep-item__status ' + (d.open ? 'pp-dep-item__status--open' : 'pp-dep-item__status--done') + '"' +
-                ' title="' + (d.open ? 'aberta (' + d.percent + '%)' : 'concluída') + '"></span>' +
+                ' title="' + escapeHtml(d.open ? __('aberta') + ' (' + d.percent + '%)' : __('concluída')) + '"></span>' +
             '<a href="' + escapeHtml(d.url) + '" target="_blank">' + escapeHtml(d.name) + '</a>' +
-            (d.implicit ? '<span class="pp-dep-tag" title="Regra geral: subtarefa aberta bloqueia a mãe">subtarefa</span>' : '') +
-            '<span class="projectplus-muted"> — ' + (d.open ? d.percent + '%' : 'concluída') + '</span>' +
+            (d.implicit
+                ? '<span class="pp-dep-tag" title="' + escapeHtml(__('Regra geral: subtarefa aberta bloqueia a mãe')) + '">' +
+                  escapeHtml(__('subtarefa')) + '</span>'
+                : '') +
+            '<span class="projectplus-muted"> — ' + (d.open ? d.percent + '%' : escapeHtml(__('concluída'))) + '</span>' +
             (canEdit && !d.implicit
-                ? '<button type="button" class="pp-dep-del" data-link-id="' + d.link_id + '" title="Remover vínculo">×</button>'
+                ? '<button type="button" class="pp-dep-del" data-link-id="' + d.link_id + '" title="' +
+                  escapeHtml(__('Remover vínculo')) + '">×</button>'
                 : '') +
             '</div>';
     }
@@ -1176,35 +1223,37 @@
 
         let html = '<div class="pp-dep-panel">';
 
-        html += '<div class="pp-dep-group"><div class="pp-dep-group__title">⛔ Bloqueada por ' +
-            '<span class="projectplus-muted">(precisam terminar antes)</span></div>';
+        html += '<div class="pp-dep-group"><div class="pp-dep-group__title">⛔ ' +
+            escapeHtml(__('Bloqueada por')) + ' ' +
+            '<span class="projectplus-muted">' + escapeHtml(__('(precisam terminar antes)')) + '</span></div>';
         html += blockers.length
             ? blockers.map(function (d) { return depItemHtml(d, canEdit); }).join('')
-            : '<div class="projectplus-muted">Nenhuma</div>';
+            : '<div class="projectplus-muted">' + escapeHtml(__('Nenhuma')) + '</div>';
         html += '</div>';
 
-        html += '<div class="pp-dep-group"><div class="pp-dep-group__title">⏩ Bloqueia ' +
-            '<span class="projectplus-muted">(só concluem depois desta)</span></div>';
+        html += '<div class="pp-dep-group"><div class="pp-dep-group__title">⏩ ' +
+            escapeHtml(__('Bloqueia')) + ' ' +
+            '<span class="projectplus-muted">' + escapeHtml(__('(só concluem depois desta)')) + '</span></div>';
         html += blocked.length
             ? blocked.map(function (d) { return depItemHtml(d, canEdit); }).join('')
-            : '<div class="projectplus-muted">Nenhuma</div>';
+            : '<div class="projectplus-muted">' + escapeHtml(__('Nenhuma')) + '</div>';
         html += '</div>';
 
         if (canEdit) {
             html += '<div class="pp-dep-new">' +
                 '<select class="pp-dep-dir">' +
-                    '<option value="blocked_by">É bloqueada por</option>' +
-                    '<option value="blocks">Bloqueia</option>' +
+                    '<option value="blocked_by">' + escapeHtml(__('É bloqueada por')) + '</option>' +
+                    '<option value="blocks">' + escapeHtml(__('Bloqueia')) + '</option>' +
                 '</select>' +
                 '<select class="pp-dep-other">' +
                 (candidates.length
                     ? candidates.map(function (c) {
                         return '<option value="' + c.id + '">' + escapeHtml(c.name) + ' (' + c.percent + '%)</option>';
                     }).join('')
-                    : '<option value="0">— sem outras tarefas neste projeto —</option>') +
+                    : '<option value="0">' + escapeHtml(__('— sem outras tarefas neste projeto —')) + '</option>') +
                 '</select>' +
                 '<button type="button" class="projectplus-btn pp-dep-add"' +
-                    (candidates.length ? '' : ' disabled') + '>Adicionar</button>' +
+                    (candidates.length ? '' : ' disabled') + '>' + escapeHtml(__('Adicionar')) + '</button>' +
                 '</div>';
         }
 
@@ -1234,7 +1283,7 @@
 
         container.querySelectorAll('.pp-dep-del').forEach(function (btn) {
             btn.addEventListener('click', function () {
-                if (!window.confirm('Remover este vínculo de dependência?')) { return; }
+                if (!window.confirm(__('Remover este vínculo de dependência?'))) { return; }
                 taskPost(ppDepUrl, { action: 'delete', link_id: btn.dataset.linkId }, function () {
                     reload();
                 });
@@ -1273,7 +1322,7 @@
             if (link) {
                 lock = document.createElement('span');
                 lock.className = 'pp-dep-lock';
-                lock.title = 'Bloqueada por outra(s) tarefa(s) — veja 🔗';
+                lock.title = __('Bloqueada por outra(s) tarefa(s) — veja 🔗');
                 lock.textContent = '🔒';
                 link.parentNode.insertBefore(lock, link);
                 link.parentNode.insertBefore(document.createTextNode(' '), link);
@@ -1318,7 +1367,7 @@
         }
         if (dl.state === 'none') {
             return '<div class="pp-deadline pp-deadline--none" ' +
-                'title="Sem datas planejadas — corrija o planejamento">' +
+                'title="' + escapeHtml(__('Sem datas planejadas — corrija o planejamento')) + '">' +
                 '<div class="pp-deadline__fill" style="width:0%"></div></div>' +
                 '<span class="projectplus-muted">—</span>';
         }
@@ -1369,10 +1418,10 @@
         const el = document.getElementById('projectplus-status-chart');
         if (!el) { return; }
         drawDonut(el, [
-            { label: 'Concluído',    value: parseInt(el.dataset.done, 10) || 0,       color: '#4caf7d' },
-            { label: 'Em andamento', value: parseInt(el.dataset.inprogress, 10) || 0, color: '#4a9fd4' },
-            { label: 'Planejado',    value: parseInt(el.dataset.planned, 10) || 0,    color: '#e8a33d' },
-            { label: 'Atrasado',     value: parseInt(el.dataset.overdue, 10) || 0,    color: '#d9534f' }
+            { label: __('Concluído'),    value: parseInt(el.dataset.done, 10) || 0,       color: '#4caf7d' },
+            { label: __('Em andamento'), value: parseInt(el.dataset.inprogress, 10) || 0, color: '#4a9fd4' },
+            { label: __('Planejado'),    value: parseInt(el.dataset.planned, 10) || 0,    color: '#e8a33d' },
+            { label: __('Atrasado'),     value: parseInt(el.dataset.overdue, 10) || 0,    color: '#d9534f' }
         ]);
     }
 
@@ -1406,10 +1455,10 @@
         const el = document.getElementById('projectplus-tasks-chart');
         if (!el) { return; }
         drawDonut(el, [
-            { label: 'Concluídas',   value: parseInt(el.dataset.done, 10) || 0,       color: '#4caf7d' },
-            { label: 'Em andamento', value: parseInt(el.dataset.inprogress, 10) || 0, color: '#4a9fd4' },
-            { label: 'Pendentes',    value: parseInt(el.dataset.pending, 10) || 0,    color: '#e8a33d' },
-            { label: 'Atrasadas',    value: parseInt(el.dataset.overdue, 10) || 0,    color: '#d9534f' }
+            { label: __('Concluídas'),   value: parseInt(el.dataset.done, 10) || 0,       color: '#4caf7d' },
+            { label: __('Em andamento'), value: parseInt(el.dataset.inprogress, 10) || 0, color: '#4a9fd4' },
+            { label: __('Pendentes'),    value: parseInt(el.dataset.pending, 10) || 0,    color: '#e8a33d' },
+            { label: __('Atrasadas'),    value: parseInt(el.dataset.overdue, 10) || 0,    color: '#d9534f' }
         ]);
     }
 
@@ -1417,7 +1466,8 @@
         const total = data.reduce(function (s, d) { return s + d.value; }, 0);
 
         if (total === 0) {
-            el.innerHTML = '<p class="projectplus-donut__empty">Sem dados para exibir</p>';
+            el.innerHTML = '<p class="projectplus-donut__empty">' +
+                escapeHtml(__('Sem dados para exibir')) + '</p>';
             return;
         }
 
@@ -1445,20 +1495,21 @@
                 ' A' + r + ' ' + r + ' 0 ' + large + ' 1 ' + x1 + ' ' + y1 +
                 ' L' + xi1 + ' ' + yi1 +
                 ' A' + ir + ' ' + ir + ' 0 ' + large + ' 0 ' + xi0 + ' ' + yi0 +
-                ' Z" fill="' + d.color + '"><title>' + d.label + ': ' + d.value + '</title></path>';
+                ' Z" fill="' + d.color + '"><title>' + escapeHtml(d.label) + ': ' + d.value + '</title></path>';
             angle = a1;
         });
 
         let legend = '<ul class="projectplus-donut__legend">';
         data.forEach(function (d) {
             legend += '<li><span class="projectplus-donut__swatch" style="background:' +
-                d.color + '"></span>' + d.label + ' (' + d.value + ')</li>';
+                d.color + '"></span>' + escapeHtml(d.label) + ' (' + d.value + ')</li>';
         });
         legend += '</ul>';
 
         el.innerHTML =
             '<div class="projectplus-donut__wrap">' +
-            '<svg viewBox="0 0 180 180" width="180" height="180" role="img" aria-label="Distribuição por status">' +
+            '<svg viewBox="0 0 180 180" width="180" height="180" role="img" aria-label="' +
+            escapeHtml(__('Distribuição por status')) + '">' +
             paths + '</svg>' + legend + '</div>';
     }
 
@@ -1512,11 +1563,14 @@
 
             let badge;
             if (child.is_overdue) {
-                badge = '<span class="projectplus-badge projectplus-badge--overdue">Atrasado</span>';
+                badge = '<span class="projectplus-badge projectplus-badge--overdue">' +
+                    escapeHtml(__('Atrasado')) + '</span>';
             } else if (child.is_stalled) {
-                badge = '<span class="projectplus-badge projectplus-badge--stalled">Parado</span>';
+                badge = '<span class="projectplus-badge projectplus-badge--stalled">' +
+                    escapeHtml(__('Parado')) + '</span>';
             } else {
-                badge = '<span class="projectplus-badge projectplus-badge--ok">No prazo</span>';
+                badge = '<span class="projectplus-badge projectplus-badge--ok">' +
+                    escapeHtml(__('No prazo')) + '</span>';
             }
 
             let budget = '<span class="projectplus-muted">—</span>';
@@ -1531,11 +1585,14 @@
             tr.innerHTML =
                 '<td></td>' +
                 '<td>' + (child.blocked
-                    ? '<span class="pp-dep-lock" title="Projeto com tarefas/subprojetos abertos — não pode ir para fase concluída">🔒</span> '
+                    ? '<span class="pp-dep-lock" title="' +
+                      escapeHtml(__('Projeto com tarefas/subprojetos abertos — não pode ir para fase concluída')) +
+                      '">🔒</span> '
                     : '') +
                 '<a href="' + escapeHtml(child.url) + '">' + escapeHtml(child.name) + '</a>' +
                     (showTasks
-                        ? ' <button type="button" class="projectplus-tasksbtn" data-tasks-project="' + child.id + '">Tarefas</button>'
+                        ? ' <button type="button" class="projectplus-tasksbtn" data-tasks-project="' + child.id + '">' +
+                          escapeHtml(__('Tarefas')) + '</button>'
                         : '') + '</td>' +
                 '<td class="pp-phase-cell">' + phaseChip(child.state_name, child.state_color) + '</td>' +
                 '<td>' +
@@ -1613,10 +1670,15 @@
               ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
     }
 
+    // Escapa também as aspas: boa parte das chamadas alimenta ATRIBUTOS
+    // (title=", placeholder=", aria-label=") montados por concatenação, e a
+    // serialização de um textNode não escapa " nem ' — uma tarefa chamada
+    // 'Trocar "switch" do rack' partia o atributo ao meio. Mesma
+    // implementação de public/js/timeline.js.
     function escapeHtml(str) {
-        const div = document.createElement('div');
-        div.appendChild(document.createTextNode(String(str)));
-        return div.innerHTML;
+        return String(str).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
     }
 
     // ------------------------------------------------------------------
@@ -1775,14 +1837,15 @@
             });
 
             const realDots = realSeries.map(function (v, i) {
+                const rest = Math.round(v);
                 return '<circle cx="' + xAt(i).toFixed(1) + '" cy="' + yAt(v).toFixed(1) +
-                    '" r="2.6" fill="#4a9fd4"><title>' + shortLabel(dates[i]) + ': ' + Math.round(v) +
-                    ' restante(s)</title></circle>';
+                    '" r="2.6" fill="#4a9fd4"><title>' + shortLabel(dates[i]) + ': ' +
+                    escapeHtml(_n('%d restante', '%d restantes', rest, rest)) + '</title></circle>';
             }).join('');
 
             chartEl.innerHTML =
                 '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" height="' + H +
-                '" role="img" aria-label="' + escapeHtml('Gráfico de burndown') + '">' +
+                '" role="img" aria-label="' + escapeHtml(__('Gráfico de burndown')) + '">' +
                 gridLines +
                 '<path d="' + pathFor(idealSeries) + '" fill="none" stroke="#c3ccd4" stroke-width="2" stroke-dasharray="5 4"/>' +
                 '<path d="' + pathFor(realSeries) + '" fill="none" stroke="#4a9fd4" stroke-width="2.5"/>' +
@@ -1790,9 +1853,9 @@
                 '</svg>' +
                 '<ul class="pp-burndown-legend">' +
                 '<li><span class="pp-burndown-legend__swatch pp-burndown-legend__swatch--ideal"></span>' +
-                'Ideal</li>' +
+                escapeHtml(__('Ideal')) + '</li>' +
                 '<li><span class="pp-burndown-legend__swatch pp-burndown-legend__swatch--real"></span>' +
-                'Real (tarefas restantes)</li>' +
+                escapeHtml(__('Real (tarefas restantes)')) + '</li>' +
                 '</ul>';
         }
 
@@ -1801,7 +1864,8 @@
                 return;
             }
             if (!currentData.total_tasks) {
-                chartEl.innerHTML = '<p class="projectplus-muted">Este projeto (e seus subprojetos) não tem tarefas.</p>';
+                chartEl.innerHTML = '<p class="projectplus-muted">' +
+                    escapeHtml(__('Este projeto (e seus subprojetos) não tem tarefas.')) + '</p>';
                 kpiEl.innerHTML = '';
                 return;
             }
@@ -1820,27 +1884,29 @@
             const doneNow = completedBy(completions, parseISODate(currentData.axis_end));
             const pct = total > 0 ? Math.round((doneNow / total) * 100) : 0;
             kpiEl.innerHTML =
-                '<span><strong>' + total + '</strong> tarefas</span>' +
-                '<span><strong>' + doneNow + '</strong> concluídas</span>' +
-                '<span><strong>' + (total - doneNow) + '</strong> restantes</span>' +
-                '<span><strong>' + pct + '%</strong> concluído</span>';
+                '<span><strong>' + total + '</strong> ' + escapeHtml(__('tarefas')) + '</span>' +
+                '<span><strong>' + doneNow + '</strong> ' + escapeHtml(__('concluídas')) + '</span>' +
+                '<span><strong>' + (total - doneNow) + '</strong> ' + escapeHtml(__('restantes')) + '</span>' +
+                '<span><strong>' + pct + '%</strong> ' + escapeHtml(__('concluído')) + '</span>';
         }
 
         function loadProject(id) {
             if (!id || id === '0') {
                 currentData = null;
-                chartEl.innerHTML = '<p class="projectplus-muted">Selecione um projeto para ver o burndown.</p>';
+                chartEl.innerHTML = '<p class="projectplus-muted">' +
+                    escapeHtml(__('Selecione um projeto para ver o burndown.')) + '</p>';
                 kpiEl.innerHTML = '';
                 return;
             }
-            chartEl.innerHTML = '<p class="projectplus-muted">Carregando…</p>';
+            chartEl.innerHTML = '<p class="projectplus-muted">' + escapeHtml(__('Carregando…')) + '</p>';
             kpiEl.innerHTML = '';
             fetch(ajaxUrl + '?action=burndown&project=' + encodeURIComponent(id), { credentials: 'same-origin' })
                 .then(function (r) { return r.json(); })
                 .then(function (data) {
                     if (!data) {
                         currentData = null;
-                        chartEl.innerHTML = '<p class="projectplus-muted">Projeto não encontrado.</p>';
+                        chartEl.innerHTML = '<p class="projectplus-muted">' +
+                            escapeHtml(__('Projeto não encontrado.')) + '</p>';
                         return;
                     }
                     currentData = data;
@@ -1848,7 +1914,8 @@
                 })
                 .catch(function () {
                     currentData = null;
-                    chartEl.innerHTML = '<p class="projectplus-muted">Não foi possível carregar o burndown.</p>';
+                    chartEl.innerHTML = '<p class="projectplus-muted">' +
+                        escapeHtml(__('Não foi possível carregar o burndown.')) + '</p>';
                 });
         }
 
