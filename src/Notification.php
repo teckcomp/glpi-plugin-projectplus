@@ -445,9 +445,9 @@ class Notification
         global $DB;
 
         $subject = match ($kind) {
-            'deadline_50'      => __('Prazo: 50% consumido', 'projectplus'),
-            'deadline_75'      => __('Prazo: 75% consumido', 'projectplus'),
-            'deadline_90'      => __('Prazo: 90% consumido', 'projectplus'),
+            'deadline_50'      => __('Prazo consumido: 50%', 'projectplus'),
+            'deadline_75'      => __('Prazo consumido: 75%', 'projectplus'),
+            'deadline_90'      => __('Prazo consumido: 90%', 'projectplus'),
             'deadline_over'    => __('PRAZO ESTOURADO', 'projectplus'),
             'deadline_nodates' => __('Tarefa sem datas planejadas', 'projectplus'),
             default            => __('ProjectPlus', 'projectplus'),

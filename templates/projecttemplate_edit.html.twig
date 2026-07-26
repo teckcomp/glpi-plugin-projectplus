@@ -91,7 +91,7 @@
                         <input type="text" name="name" id="pp-tpl-name" required maxlength="255" value="{{ tpl_name }}">
                     </label>
                     <label class="projectplus-form__full">
-                        {{ __('Comentário', 'projectplus') }}
+                        {{ _n('Comentário', 'Comentários', 1, 'projectplus') }}
                         <textarea name="comment" rows="2">{{ tpl_comment }}</textarea>
                     </label>
                 </div>

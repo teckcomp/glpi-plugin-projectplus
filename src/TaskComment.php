@@ -317,7 +317,7 @@ class TaskComment extends CommonDBTM
             echo '<tr>'
                 . '<th>' . __('Autor', 'projectplus') . '</th>'
                 . '<th>' . __('Data', 'projectplus') . '</th>'
-                . '<th>' . __('Comentário', 'projectplus') . '</th>'
+                . '<th>' . _n('Comentário', 'Comentários', 1, 'projectplus') . '</th>'
                 . '<th></th></tr>';
 
             foreach ($comments as $c) {

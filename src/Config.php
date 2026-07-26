@@ -117,9 +117,9 @@ class Config
             . '</td><td>';
         echo "<select name='email_enabled'>";
         echo "<option value='1'" . ($config['email_enabled'] ? ' selected' : '') . '>'
-            . __('Sim') . '</option>';
+            . __('Yes') . '</option>';
         echo "<option value='0'" . (!$config['email_enabled'] ? ' selected' : '') . '>'
-            . __('Não') . '</option>';
+            . __('No') . '</option>';
         echo '</select></td></tr>';
 
         echo '<tr class="tab_bg_1"><td>'
@@ -127,9 +127,9 @@ class Config
             . '</td><td>';
         echo "<select name='menu_first'>";
         echo "<option value='1'" . ($config['menu_first'] ? ' selected' : '') . '>'
-            . __('Sim') . '</option>';
+            . __('Yes') . '</option>';
         echo "<option value='0'" . (!$config['menu_first'] ? ' selected' : '') . '>'
-            . __('Não') . '</option>';
+            . __('No') . '</option>';
         echo '</select></td></tr>';
 
         echo '<tr class="tab_bg_1"><td>'
@@ -144,9 +144,9 @@ class Config
             . '</td><td>';
         echo "<select name='hide_native_costs'>";
         echo "<option value='1'" . ($config['hide_native_costs'] ? ' selected' : '') . '>'
-            . __('Sim') . '</option>';
+            . __('Yes') . '</option>';
         echo "<option value='0'" . (!$config['hide_native_costs'] ? ' selected' : '') . '>'
-            . __('Não') . '</option>';
+            . __('No') . '</option>';
         echo '</select></td></tr>';
 
         echo '<tr class="tab_bg_1"><td>'
@@ -154,9 +154,9 @@ class Config
             . '</td><td>';
         echo "<select name='hide_native_kanban'>";
         echo "<option value='1'" . ($config['hide_native_kanban'] ? ' selected' : '') . '>'
-            . __('Sim') . '</option>';
+            . __('Yes') . '</option>';
         echo "<option value='0'" . (!$config['hide_native_kanban'] ? ' selected' : '') . '>'
-            . __('Não') . '</option>';
+            . __('No') . '</option>';
         echo '</select></td></tr>';
 
         echo '<tr class="tab_bg_1"><td>'

@@ -84,7 +84,7 @@
                 <thead>
                     <tr>
                         <th>{{ __('Modelo', 'projectplus') }}</th>
-                        <th>{{ __('Comentário', 'projectplus') }}</th>
+                        <th>{{ _n('Comentário', 'Comentários', 1, 'projectplus') }}</th>
                         <th>{{ __('Estrutura', 'projectplus') }}</th>
                         <th>{{ __('Atualizado em', 'projectplus') }}</th>
                         <th></th>
@@ -163,7 +163,7 @@
             </label>
 
             <label class="projectplus-form__full">
-                {{ __('Comentário', 'projectplus') }}
+                {{ _n('Comentário', 'Comentários', 1, 'projectplus') }}
                 <textarea name="comment" rows="2"></textarea>
             </label>
 

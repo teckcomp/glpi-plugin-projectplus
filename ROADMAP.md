@@ -2,7 +2,7 @@
 
 **Plugin de gestão avançada de projetos para GLPI 11**
 Repositório: [github.com/teckcomp/glpi-plugin-projectplus](https://github.com/teckcomp/glpi-plugin-projectplus) · Licença GPL-2.0
-Versão atual: **v0.5.0-alpha** · Atualizado em 25/07/2026 (Etapa 8 concluída; **Etapa 6 em andamento — Blocos 1, 2 e 2b fechados**. Próximo: Bloco 3, i18n)
+Versão atual: **v0.5.0-alpha** · Atualizado em 25/07/2026 (Etapa 8 concluída; **Etapa 6 em andamento — Blocos 1, 2, 2b e 3a fechados**. Próximo: Bloco 3b, i18n do JavaScript. **Etapa 9 planejada** — fases por tipo de projeto, depois da beta)
 
 > **Ordem de execução confirmada em 19/07/2026:** Etapa 7 → Etapa 8 → Etapa 6 (por último). A Etapa 6 (refinamento/pré-produção e release v1.0.0-beta) só começa depois que 7 e 8 estiverem validadas em homologação.
 
@@ -111,11 +111,18 @@ Papéis: **Gestor / Cliente / Técnico / Colaborador (Terceiro)** + Admin. Entid
   - Menu renomeado: "Painel de Projetos" → **"Gestor de Projetos"** (4 pontos: menu, tela de Configuração e 2 textos de ajuda).
   - Itens "Calendário" e "Recursos" (marcados como "em breve") removidos dos 9 templates, junto com as regras CSS `--soon` órfãs. Eram placeholders sem rota e não constavam do roadmap.
 
-- [ ] **Bloco 3** — i18n: extração das strings para `.po`/`.mo`, inglês como segundo idioma (PT-BR continua primeiro).
-  - **Decisão de 25/07/2026:** o texto-fonte (msgid) permanece em PT-BR — as 748 chamadas `__()` não serão tocadas. Traduz-se PT-BR → inglês no `.po`.
-  - **Obrigatório:** gerar TAMBÉM um `pt_BR.mo` (identidade). `Plugin::loadLang` cai em `en_GB.mo` quando não acha `.mo` para o idioma do usuário — sem o `pt_BR.mo`, todo usuário PT-BR passaria a ver a interface em inglês.
-  - Volume: ~400 strings únicas (269 nos PHP + 195 nos Twig, com sobreposição). Inclui `tools/update-locales.sh` para regenerar `.pot`/`.mo`.
-  - Resolver os avisos do `xgettext`: "Custo" aparece com e sem plural (`_n`), o que gettext não aceita no mesmo msgid.
+- [x] **Bloco 3a** — i18n do que é renderizado no servidor (PHP + Twig). **VALIDADO em homologação e FECHADO NO GITHUB em 25/07/2026** (zip `projectplus-etapa6-bloco3a-1.zip`).
+  - **Decisão mantida:** o texto-fonte (msgid) permanece em PT-BR — nenhuma das 705 chamadas `__()`/`_n()` teve o texto alterado. Traduz-se PT-BR → inglês no `.po`.
+  - **427 strings únicas** catalogadas (269 extraídas dos `.php`, 192 dos `.twig`, com sobreposição). `locales/en_GB.po` e `locales/pt_BR.po`, ambos 427/427 traduzidos e sem entradas *fuzzy*.
+  - **`pt_BR.mo` de identidade (msgstr = msgid) é obrigatório**, não opcional: `Plugin::loadLang()` cai em `en_GB.mo` quando não encontra o `.mo` do idioma do usuário. Sem ele, todo usuário em Português (Brasil) passaria a ver a interface em inglês. Confirmado lendo o core 11.0.6.
+  - **`tools/extract-twig-strings.php`** (novo): o `xgettext` não lê Twig e ignoraria 192 strings. O extrator gera um fragmento `.pot` que é unido ao dos PHP com `msgcat`. Escrito em PHP de propósito — servidor GLPI sempre tem PHP.
+  - **`tools/update-locales.sh`** (novo): pipeline completo (xgettext → extrator Twig → msgcat → msgmerge → msgfmt), idempotente. Escreve um cabeçalho `.pot` limpo, porque o `msgcat` funde os dois cabeçalhos num só, marcado como *fuzzy* e cheio de `#-#-#-#-#`. Para o `pt_BR.po` roda `msgen` depois do `msgmerge`, de modo que string nova entre já como identidade.
+  - **Três defeitos corrigidos no caminho:**
+    - `Custo` e `Comentário` apareciam com `_n()` em uns lugares e `__()` em outros — o gettext recusa o mesmo msgid nas duas formas. Uniformizados para `_n(…, 1, …)` em 3 arquivos PHP e 3 templates (texto exibido não muda).
+    - `__('Sim')` / `__('Não')` em `src/Config.php` (8 ocorrências) usavam o domínio **do core**, cujos msgid são em inglês — nunca traduziriam, em idioma nenhum. Trocados por `__('Yes')` / `__('No')`.
+    - `Prazo: 50% consumido` (e 75/90) eram marcados como `php-format` pelo `xgettext` (o `% c` parece uma diretiva), o que deixava as entradas *fuzzy* e, portanto, **fora do `.mo`**. Reescritos como `Prazo consumido: 50%`.
+  - Validado por harness de runtime que carrega os `.mo` compilados e confere o *lookup* (1706 asserções, 0 falhas), por conferência de cobertura (696/696 chamadas do código presentes no catálogo compilado) e por teste de idempotência do script.
+- [ ] **Bloco 3b** — i18n do JavaScript. O GLPI 11 **não tem runtime de tradução em JS** (não existe Jed/`dgettext` no core — verificado): as ~55 strings de `public/js/*.js` só podem ser traduzidas injetando um dicionário do PHP para o cliente. Separado do 3a de propósito — é outra área e outro teste.
 - [ ] **Bloco 4** — Release `v1.0.0-beta`: CHANGELOG, tag e pacote de distribuição.
 - [ ] **Bloco 5** — Submissão ao catálogo oficial do GLPI (depois da beta).
 
@@ -126,12 +133,49 @@ Papéis: **Gestor / Cliente / Técnico / Colaborador (Terceiro)** + Admin. Entid
 ### Decisões em aberto
 
 - Board de projetos restrito a quem tem `projectkanban` marcado? Hoje aparece para todos que têm o Kanban de tarefas (ver 4b.1). Baixa prioridade.
-- Tabela `glpi_plugin_projectplus_tasktimers` está órfã desde a Etapa 1 (o cronômetro por tarefa foi substituído pela barra de prazo). Continua sendo criada. Decidir antes da beta: parar de criá-la (bases novas ficam com 6 tabelas) ou mantê-la como está.
+- Tabela `glpi_plugin_projectplus_tasktimers` está órfã desde a Etapa 1 (o cronômetro por tarefa foi substituído pela barra de prazo). Continua sendo criada. **Decidir na Etapa 9**, que já mexe no schema: parar de criá-la (bases novas ficam com 6 tabelas + a nova de fases = 7) ou mantê-la.
+
+---
+
+## 🔜 Etapa 9 — Fases por tipo de projeto `PLANEJADA` (depois da v1.0.0-beta)
+
+**O problema.** `glpi_projectstates` é uma lista **global e única** da instância — o schema do core 11.0.6 **não tem `entities_id`**, então nem separando por entidade dá para ter vocabulários de fase diferentes. Hoje o `Dashboard::getStatesMap()` lê a tabela inteira e alimenta Kanban de tarefas, Kanban de projetos, Timeline, os donuts da Visão geral e o filtro de Relatórios.
+
+Com Infra, RH, Sistemas e Compras rodando projetos ao mesmo tempo (*Contratação*, *Desenvolvimento*, *Contratos*…), a lista chega a 25–30 fases: cada setor vê dezenas de colunas vazias no seu Kanban e o donut "Projetos por fase" mistura todos os vocabulários.
+
+**A solução — uma tabela de mapeamento.**
+
+`glpi_plugin_projectplus_typephases`
+
+| campo | papel |
+|---|---|
+| `projecttypes_id` | o tipo de projeto (**0 = conjunto padrão**) |
+| `projectstates_id` | a fase que pertence a esse tipo |
+| `ordem` | posição da coluna |
+
+Chave única em (`projecttypes_id`, `projectstates_id`). O `glpi_projectstates` **continua sendo a fonte única** da definição de cada fase (nome, cor, `is_finished`) — a tabela nova só diz *quais* fases pertencem a *qual* tipo e em que ordem.
+
+**Regra de leitura:** tipo **sem nenhuma linha** cai no conjunto padrão (`projecttypes_id = 0`). Só se configura a exceção — Infra continua com as 5 fases de hoje sem ninguém tocar em nada.
+
+**Escopo do trabalho**
+
+- `Dashboard::getStatesMap()` passa a receber o tipo. É o **gargalo único** por onde as 6 telas passam — a mudança se propaga sozinha.
+- **Seletor de tipo obrigatório** nos dois Kanbans, **sem modo "união"**: com 25 colunas o board deixa de ser legível. Visão que cruza departamentos é **Visão geral / Timeline / Relatórios**, que não dependem de vocabulário de coluna. A aba "Kanban (ProjectPlus)" da ficha nativa não precisa de seletor — já tem um projeto único em contexto.
+- Tela de administração dos mapeamentos, com botão **"copiar fases de outro tipo"** (resolve o caso de dois tipos com o mesmo fluxo sem estrutura extra).
+- Filtro por conjunto nos seletores de fase que **são do plugin**: modal "Novo Projeto" (`dashboard.html.twig`) e editor de Modelos (`Templates::getEditorRefData`).
+- **Donut adaptativo** na Visão geral: sem tipo selecionado, vira "Projetos por tipo".
+- **Verificação no diagnóstico da Configuração:** todo tipo configurado precisa de ao menos uma fase com `is_finished`, senão a trava "projeto com filhos abertos não vai para fase finalizada" nunca dispara — e falha em silêncio.
+- **Migração:** insere as 5 fases atuais como `projecttypes_id = 0`. No dia seguinte ninguém vê diferença.
+
+**Limite conhecido, sem solução pelo plugin:** o campo "Estado" da **ficha nativa** do projeto é do core e continua listando todas as fases da instância. Mitigação é convenção de nomenclatura por área (`INFRA · 1. Iniciação`, `RH · Triagem`, `DEV · Backlog`), que deixa o dropdown nativo legível e agrupado. Como a coluna `ordem` passa a ordenar de verdade, o prefixo numérico "1. ", "2. " deixa de ser obrigatório — vira só leitura humana.
+
+**Não se sobrepõe à Etapa 8:** quem vê o quê já é resolvido por `Access`/`Scope` (equipe do projeto). O seletor de tipo é sobre **vocabulário**, não sobre permissão.
+
 
 ---
 
 ## Decisões de publicação
 
-- PT-BR primeiro; inglês entra na Etapa 6
+- PT-BR primeiro; inglês entra na Etapa 6 (Bloco 3a: catálogos `en_GB` e `pt_BR` em `locales/`)
 - Releases formais só a partir da Etapa 6 (provável v1.0.0-beta)
 - Catálogo oficial do GLPI após a beta

@@ -1,0 +1,1911 @@
+# ProjectPlus — catalogo de strings traduziveis (modelo).
+# Copyright (C) Teckcomp I.T. Services
+# Distribuido sob a mesma licenca do plugin ProjectPlus (GPL-2.0-or-later).
+#
+# ATENCAO: o msgid esta em PORTUGUES DO BRASIL de proposito. As traducoes
+# levam de pt_BR para o outro idioma. Ver ROADMAP, Etapa 6 / Bloco 3.
+#
+# Gerado por tools/update-locales.sh — NAO EDITAR A MAO.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: ProjectPlus 0.5.0-alpha\n"
+"Report-Msgid-Bugs-To: https://github.com/teckcomp/glpi-plugin-projectplus/issues\n"
+"POT-Creation-Date: 2026-07-25 20:44+0000\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+#: src/Reports.php:219 src/Reports.php:359
+#, php-format
+msgid "% concluído"
+msgstr ""
+
+#: src/Reports.php:222
+#, php-format
+msgid "% orçamento consumido"
+msgstr ""
+
+#: src/TaskComment.php:232
+#, php-format
+msgid "%1$s comentou na tarefa \"%2$s\": %3$s"
+msgstr ""
+
+#: src/Config.php:221
+#, php-format
+msgid "%d ponto(s) de atenção — ver as linhas marcadas abaixo."
+msgstr ""
+
+#: ajax/task.php:234
+#, php-format
+msgid "%d subtarefa aberta"
+msgid_plural "%d subtarefas abertas"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/Notification.php:406
+#, php-format
+msgid "%s ESTOUROU o prazo planejado (excedente: %s)"
+msgstr ""
+
+#: src/Notification.php:412
+#, php-format
+msgid "%s atingiu %d%% do prazo planejado"
+msgstr ""
+
+#: src/Notification.php:322
+#, php-format
+msgid "%s está sem datas planejadas — corrija o planejamento"
+msgstr ""
+
+#: src/ProjectTracking.php:97
+msgid "(0 = sem controle de orçamento)"
+msgstr ""
+
+#: ajax/project.php:90
+msgid "A fase não pôde ser alterada."
+msgstr ""
+
+#: templates/projecttemplates.html.twig:171
+msgid ""
+"A árvore completa do projeto (tarefas e TODOS os subprojetos, com prazos "
+"relativos ao início do projeto) é copiada para o modelo. O projeto de origem "
+"não é alterado."
+msgstr ""
+
+#: src/Config.php:296
+msgid "APAGA tabelas, dados e direitos"
+msgstr ""
+
+#: src/Config.php:241
+msgid "AUSENTE"
+msgstr ""
+
+#: src/Notification.php:733
+msgid "Abrir no GLPI:"
+msgstr ""
+
+#: src/TaskDep.php:698
+msgid "Adicionar"
+msgstr ""
+
+#: src/ProjectCost.php:114
+msgid "Adicionar custo ao projeto"
+msgstr ""
+
+#: src/TaskCost.php:146
+msgid "Adicionar custo à tarefa"
+msgstr ""
+
+#: templates/projecttemplate_edit.html.twig:116
+msgid "Adicionar subprojeto"
+msgstr ""
+
+#: templates/projecttemplate_edit.html.twig:110
+msgid "Adicionar tarefa"
+msgstr ""
+
+#: src/Templates.php:518
+msgid "Adicione ao menos uma tarefa ou subprojeto"
+msgstr ""
+
+#: src/KanbanTab.php:73 templates/kanban.html.twig:71
+msgid "Agrupar por"
+msgstr ""
+
+#: src/Config.php:136
+#, php-format
+msgid "Alerta de orçamento ao atingir (% do teto)"
+msgstr ""
+
+#: templates/dashboard.html.twig:100 templates/dashboard.html.twig:105
+#: templates/mytasks.html.twig:83 templates/mytasks.html.twig:88
+msgid "Alertas"
+msgstr ""
+
+#: src/Profile.php:113
+msgid "Alertas (sino)"
+msgstr ""
+
+#: src/Config.php:306
+msgid "Alertas por e-mail (opção do plugin)"
+msgstr ""
+
+#: templates/dashboard.html.twig:457
+msgid "Alta"
+msgstr ""
+
+#: src/Config.php:109
+msgid "Antecedência (dias) para alertar prazo se aproximando"
+msgstr ""
+
+#: src/Config.php:293
+msgid "Ao desinstalar"
+msgstr ""
+
+#: src/Config.php:163
+msgid "Apagar tabelas, dados e direitos do plugin ao desinstalar"
+msgstr ""
+
+#: templates/costs.html.twig:76 templates/dashboard.html.twig:82
+#: templates/reports.html.twig:129
+msgid "Aplicar"
+msgstr ""
+
+#: templates/reports.html.twig:236
+msgid ""
+"Aproximação: conclusão de cada tarefa estimada pela data da última "
+"atualização (percent_done = 100%) — não há histórico diário de progresso."
+msgstr ""
+
+#: templates/kanban.html.twig:110
+msgid "Arraste um cartão entre as colunas para mudar a fase da tarefa."
+msgstr ""
+
+#: templates/projectkanban.html.twig:107
+msgid ""
+"Arraste um cartão entre as colunas para mudar a fase do projeto. Projeto com "
+"tarefa ou subprojeto aberto não vai para fase finalizada."
+msgstr ""
+
+#: src/TaskDep.php:389
+msgid "As tarefas precisam ser do mesmo projeto"
+msgstr ""
+
+#: src/ProjectTracking.php:74
+msgid "Ativo"
+msgstr ""
+
+#: templates/dashboard.html.twig:130
+msgid "Ativos"
+msgstr ""
+
+#: src/Reports.php:361
+msgid "Atrasada"
+msgstr ""
+
+#: templates/mytasks.html.twig:115
+msgid "Atrasadas"
+msgstr ""
+
+#: src/Reports.php:220 templates/dashboard.html.twig:265
+msgid "Atrasado"
+msgstr ""
+
+#: templates/mytasks.html.twig:108
+msgid "Atribuídas a você"
+msgstr ""
+
+#: templates/projecttemplates.html.twig:89
+msgid "Atualizado em"
+msgstr ""
+
+#: src/Reports.php:550 src/TaskComment.php:318
+msgid "Autor"
+msgstr ""
+
+#: src/Config.php:316
+msgid "BLOQUEADO:"
+msgstr ""
+
+#: templates/dashboard.html.twig:455
+msgid "Baixa"
+msgstr ""
+
+#: templates/reports.html.twig:160 templates/reports.html.twig:189
+#: templates/reports.html.twig:246
+msgid "Baixar CSV"
+msgstr ""
+
+#: src/Reports.php:361
+msgid "Bloqueada"
+msgstr ""
+
+#: src/TaskDep.php:706
+msgid "Bloqueada por (precisam terminar antes)"
+msgstr ""
+
+#: templates/dashboard.html.twig:348
+msgid "Bloqueada por outra(s) tarefa(s) — veja 🔗"
+msgstr ""
+
+#: src/TaskDep.php:707
+msgid "Bloqueia (só concluem depois desta)"
+msgstr ""
+
+#: templates/kanban.html.twig:96
+msgid "Board com os PROJETOS nas colunas de fase"
+msgstr ""
+
+#: templates/reports.html.twig:216
+msgid "Burndown"
+msgstr ""
+
+#: templates/dashboard.html.twig:216 templates/projectkanban.html.twig:79
+msgid "Buscar projeto"
+msgstr ""
+
+#: templates/timeline.html.twig:84
+msgid "Buscar projeto ou tarefa"
+msgstr ""
+
+#: templates/timeline.html.twig:83
+msgid "Buscar projeto ou tarefa…"
+msgstr ""
+
+#: templates/dashboard.html.twig:215 templates/projectkanban.html.twig:78
+msgid "Buscar projeto…"
+msgstr ""
+
+#: templates/dashboard.html.twig:320
+msgid "Buscar tarefa"
+msgstr ""
+
+#: templates/kanban.html.twig:83
+msgid "Buscar tarefa ou projeto"
+msgstr ""
+
+#: src/KanbanTab.php:80 templates/kanban.html.twig:82
+msgid "Buscar tarefa ou projeto…"
+msgstr ""
+
+#: templates/dashboard.html.twig:319
+msgid "Buscar tarefa…"
+msgstr ""
+
+#: src/Config.php:313
+msgid "Canal de e-mail do GLPI"
+msgstr ""
+
+#: templates/dashboard.html.twig:496
+#: templates/projecttemplate_edit.html.twig:122
+#: templates/projecttemplates.html.twig:176
+#: templates/projecttemplates.html.twig:219
+msgid "Cancelar"
+msgstr ""
+
+#: templates/timeline.html.twig:115
+msgid "Carregando a timeline…"
+msgstr ""
+
+#: src/KanbanTab.php:83 templates/kanban.html.twig:116
+#: templates/projectkanban.html.twig:113
+msgid "Carregando o Kanban…"
+msgstr ""
+
+#: templates/mytasks.html.twig:139
+msgid "Carregando suas tarefas…"
+msgstr ""
+
+#: src/TemplateCloner.php:418
+msgid "Chave \"subprojects\" inválida"
+msgstr ""
+
+#: src/TemplateCloner.php:410
+msgid "Chave \"tasks\" inválida"
+msgstr ""
+
+#: src/Config.php:166
+msgid ""
+"Com \"Não\", desinstalar preserva os dados E a configuração de direitos por "
+"perfil — reinstalar devolve tudo como estava."
+msgstr ""
+
+#: src/TaskComment.php:304
+msgid "Comentar"
+msgstr ""
+
+#: src/ProjectCost.php:139 src/TaskComment.php:37 src/TaskComment.php:320
+#: src/TaskCost.php:171 templates/costs.html.twig:126
+#: templates/projecttemplate_edit.html.twig:94
+#: templates/projecttemplates.html.twig:87
+#: templates/projecttemplates.html.twig:166
+msgid "Comentário"
+msgid_plural "Comentários"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/ProjectCost.php:123 src/TaskCost.php:155
+msgid "Comentário (opcional)"
+msgstr ""
+
+#: front/taskcomment.form.php:50
+msgid "Comentário adicionado"
+msgstr ""
+
+#: front/taskcomment.form.php:62
+msgid "Comentário excluído"
+msgstr ""
+
+#: ajax/comment.php:77 ajax/comment.php:94
+msgid "Comentário não encontrado"
+msgstr ""
+
+#: ajax/comment.php:49 ajax/comment.php:72 front/taskcomment.form.php:42
+msgid "Comentário vazio ou longo demais"
+msgstr ""
+
+#: templates/dashboard.html.twig:398
+msgid "Comentários"
+msgstr ""
+
+#: src/TaskComment.php:64
+msgid "Comentários (ProjectPlus)"
+msgstr ""
+
+#: src/TaskComment.php:311
+msgid "Comentários da tarefa"
+msgstr ""
+
+#: ajax/task.php:159 ajax/task.php:204
+#, php-format
+msgid "Conclua antes as %d subtarefa(s) aberta(s) desta tarefa"
+msgstr ""
+
+#: templates/mytasks.html.twig:131
+msgid "Concluídas"
+msgstr ""
+
+#: src/Config.php:99
+msgid "Configuração do ProjectPlus"
+msgstr ""
+
+#: front/config.form.php:16
+msgid "Configuração salva"
+msgstr ""
+
+#: templates/costs.html.twig:56 templates/dashboard.html.twig:66
+#: templates/kanban.html.twig:56 templates/mytasks.html.twig:62
+#: templates/projectkanban.html.twig:56
+#: templates/projecttemplate_edit.html.twig:57
+#: templates/projecttemplates.html.twig:56 templates/reports.html.twig:56
+#: templates/timeline.html.twig:56
+msgid "Configurações"
+msgstr ""
+
+#: templates/costs.html.twig:105
+msgid "Consumido"
+msgstr ""
+
+#: src/ProjectTracking.php:117
+msgid "Consumo do teto"
+msgstr ""
+
+#: templates/projecttemplates.html.twig:214
+msgid ""
+"Cria o projeto, todas as tarefas e todos os subprojetos do modelo, com as "
+"datas deslocadas a partir da data escolhida."
+msgstr ""
+
+#: src/Profile.php:51
+msgid "Criar"
+msgstr ""
+
+#: templates/projecttemplate_edit.html.twig:125
+msgid "Criar modelo"
+msgstr ""
+
+#: templates/projecttemplates.html.twig:73
+msgid "Criar modelo do zero"
+msgstr ""
+
+#: templates/dashboard.html.twig:499 templates/projecttemplates.html.twig:110
+#: templates/projecttemplates.html.twig:222
+msgid "Criar projeto"
+msgstr ""
+
+#: templates/projecttemplates.html.twig:192
+msgid "Criar projeto a partir do modelo"
+msgstr ""
+
+#: templates/projecttemplates.html.twig:69
+msgid ""
+"Crie projetos prontos a partir de uma estrutura de tarefas e subprojetos "
+"salva"
+msgstr ""
+
+#: src/Config.php:283
+msgid "Cron projectplusalerts"
+msgstr ""
+
+#: templates/dashboard.html.twig:459
+msgid "Crítica"
+msgstr ""
+
+#: src/ProjectCost.php:31 src/ProjectCost.php:137 src/TaskCost.php:32
+#: src/TaskCost.php:169
+msgid "Custo"
+msgid_plural "Custos"
+msgstr[0] ""
+msgstr[1] ""
+
+#: front/projectcost.form.php:73 front/taskcost.form.php:75
+msgid "Custo excluído"
+msgstr ""
+
+#: front/projectcost.form.php:66 front/taskcost.form.php:68
+msgid "Custo lançado"
+msgstr ""
+
+#: templates/reports.html.twig:243
+msgid "Custos"
+msgstr ""
+
+#: src/ProjectCost.php:59 src/TaskCost.php:62
+msgid "Custos (ProjectPlus)"
+msgstr ""
+
+#: src/Profile.php:95
+msgid "Custos / Orçamento"
+msgstr ""
+
+#: front/costs.php:26
+msgid "Custos consolidados"
+msgstr ""
+
+#: templates/costs.html.twig:15
+msgid "Custos consolidados por projeto"
+msgstr ""
+
+#: src/TaskCost.php:165
+msgid "Custos da tarefa"
+msgstr ""
+
+#: src/ProjectCost.php:133
+msgid "Custos do projeto"
+msgstr ""
+
+#: src/ProjectCost.php:136 src/Reports.php:549 src/TaskComment.php:319
+#: src/TaskCost.php:168 templates/costs.html.twig:123
+msgid "Data"
+msgstr ""
+
+#: templates/projecttemplates.html.twig:209
+msgid "Data de início"
+msgstr ""
+
+#: src/TemplateCloner.php:85
+msgid "Data de início inválida"
+msgstr ""
+
+#: src/TaskDep.php:50
+msgid "Dependência"
+msgid_plural "Dependências"
+msgstr[0] ""
+msgstr[1] ""
+
+#: src/TaskDep.php:426
+msgid "Dependência criada"
+msgstr ""
+
+#: src/TaskDep.php:458
+msgid "Dependência removida"
+msgstr ""
+
+#: templates/dashboard.html.twig:394
+msgid "Dependências"
+msgstr ""
+
+#: src/TaskDep.php:85
+msgid "Dependências (ProjectPlus)"
+msgstr ""
+
+#: src/ProjectCost.php:135 src/Reports.php:549 src/TaskCost.php:167
+#: templates/costs.html.twig:122 templates/dashboard.html.twig:490
+msgid "Descrição"
+msgstr ""
+
+#: src/ProjectCost.php:117 src/TaskCost.php:149
+msgid "Descrição do custo"
+msgstr ""
+
+#: front/projectcost.form.php:48 front/taskcost.form.php:50
+msgid "Descrição e custo válido são obrigatórios"
+msgstr ""
+
+#: templates/reports.html.twig:226 templates/timeline.html.twig:69
+msgid "Dia"
+msgstr ""
+
+#: src/Config.php:210
+msgid "Diagnóstico da instalação"
+msgstr ""
+
+#: src/Config.php:102
+msgid "Dias sem atividade para marcar projeto como \"parado\""
+msgstr ""
+
+#: src/Config.php:261
+msgid "Direito"
+msgstr ""
+
+#: src/Config.php:303
+msgid "E-mail"
+msgstr ""
+
+#: src/Notification.php:916
+msgid "E-mail de teste"
+msgstr ""
+
+#: src/Notification.php:927
+#, php-format
+msgid "E-mail de teste enviado para %s (remetente: %s)."
+msgstr ""
+
+#: templates/projecttemplates.html.twig:115
+msgid "Editar"
+msgstr ""
+
+#: templates/projecttemplate_edit.html.twig:16
+msgid "Editar modelo"
+msgstr ""
+
+#: templates/projecttemplate_edit.html.twig:70
+msgid "Editar modelo de projeto"
+msgstr ""
+
+#: templates/dashboard.html.twig:147
+msgid "Em andamento"
+msgstr ""
+
+#: templates/timeline.html.twig:112
+msgid "Em atraso"
+msgstr ""
+
+#: templates/dashboard.html.twig:138
+msgid "Em risco"
+msgstr ""
+
+#: src/Notification.php:920
+#, php-format
+msgid "Enviado em %s"
+msgstr ""
+
+#: src/Config.php:116
+msgid "Enviar e-mails (além do sino)"
+msgstr ""
+
+#: src/Profile.php:62
+msgid "Escopo: ver projetos que gerencia"
+msgstr ""
+
+#: src/Profile.php:67
+msgid "Escopo: ver todos os projetos"
+msgstr ""
+
+#: src/TaskComment.php:300
+msgid "Escreva um comentário…"
+msgstr ""
+
+#: src/TaskDep.php:682
+msgid "Esta tarefa BLOQUEIA"
+msgstr ""
+
+#: src/TaskDep.php:681
+msgid "Esta tarefa é BLOQUEADA por"
+msgstr ""
+
+#: templates/dashboard.html.twig:330 templates/dashboard.html.twig:442
+msgid "Estado"
+msgstr ""
+
+#: templates/projecttemplate_edit.html.twig:102
+msgid ""
+"Estado, tipo, gestor e orçamento que o projeto raiz recebe ao ser criado a "
+"partir do modelo."
+msgstr ""
+
+#: templates/dashboard.html.twig:172
+msgid "Este mês"
+msgstr ""
+
+#: src/Templates.php:210
+msgid "Este projeto não tem tarefas nem subprojetos para capturar"
+msgstr ""
+
+#: src/TaskDep.php:403
+msgid "Este vínculo já existe"
+msgstr ""
+
+#: src/Notification.php:918
+msgid "Este é um e-mail de teste do plugin ProjectPlus."
+msgstr ""
+
+#: src/TaskComment.php:345
+msgid ""
+"Estes comentários também aparecem no Gestor de Projetos (árvore de tarefas e "
+"Minhas tarefas)."
+msgstr ""
+
+#: src/TaskCost.php:237
+msgid ""
+"Estes custos consomem o orçamento do projeto (junto com a aba Custos nativa "
+"do projeto)."
+msgstr ""
+
+#: templates/projecttemplates.html.twig:88
+msgid "Estrutura"
+msgstr ""
+
+#: src/Templates.php:505
+msgid "Estrutura do modelo inválida"
+msgstr ""
+
+#: src/Profile.php:52 templates/projecttemplates.html.twig:122
+msgid "Excluir"
+msgstr ""
+
+#: templates/projecttemplates.html.twig:118
+msgid "Excluir este modelo?"
+msgstr ""
+
+#: templates/timeline.html.twig:105
+msgid "Exibindo somente as suas tarefas."
+msgstr ""
+
+#: templates/reports.html.twig:15
+msgid "Exportação em CSV dos dados do painel"
+msgstr ""
+
+#: src/TaskDep.php:428
+msgid "Falha ao criar a dependência"
+msgstr ""
+
+#: ajax/task.php:112
+msgid "Falha ao criar a tarefa"
+msgstr ""
+
+#: front/project_create.form.php:45 front/projecttemplate.form.php:81
+#: src/TemplateCloner.php:135
+msgid "Falha ao criar o projeto"
+msgstr ""
+
+#: ajax/comment.php:59 front/taskcomment.form.php:52
+msgid "Falha ao salvar o comentário"
+msgstr ""
+
+#: src/Notification.php:939 src/Notification.php:945
+#, php-format
+msgid "Falha no envio: %s"
+msgstr ""
+
+#: src/Config.php:346
+msgid ""
+"Falhas de envio ficam registradas em files/_log/projectplus.log; o cron "
+"projectplusalerts anota quantos e-mails saíram no próprio log da tarefa."
+msgstr ""
+
+#: src/Reports.php:218 src/Reports.php:358 templates/dashboard.html.twig:223
+#: templates/reports.html.twig:92
+msgid "Fase"
+msgstr ""
+
+#: src/TaskDep.php:654
+#, php-format
+msgid "Fase não alterada: o projeto tem %d item(ns) aberto(s) — %s"
+msgstr ""
+
+#: templates/reports.html.twig:149
+msgid ""
+"Fase/Tipo/Gestor/Período filtram só Projetos e Tarefas — Custos usa apenas o "
+"filtro de Projeto"
+msgstr ""
+
+#: templates/dashboard.html.twig:81
+msgid "Fim do período"
+msgstr ""
+
+#: src/Reports.php:220 src/Reports.php:360 templates/dashboard.html.twig:478
+msgid "Fim planejado"
+msgstr ""
+
+#: src/ProjectCost.php:205
+msgid ""
+"Fonte única de custos do projeto (a aba Custos nativa foi desativada pelo "
+"ProjectPlus)."
+msgstr ""
+
+#: src/ProjectTracking.php:111
+msgid "Gasto consolidado"
+msgstr ""
+
+#: src/ProjectTracking.php:103
+msgid "Gasto neste projeto"
+msgstr ""
+
+#: src/ProjectTracking.php:107
+msgid "Gasto nos subprojetos"
+msgstr ""
+
+#: templates/costs.html.twig:97 templates/reports.html.twig:148
+msgid "Gerado em"
+msgstr ""
+
+#: src/Reports.php:218 templates/dashboard.html.twig:464
+msgid "Gestor"
+msgstr ""
+
+#: templates/reports.html.twig:83
+msgid "Gestor / Responsável"
+msgstr ""
+
+#: src/Dashboard.php:29
+msgid "Gestor de Projetos"
+msgstr ""
+
+#: src/Config.php:126
+msgid "Gestor de Projetos como primeiro item do menu Ferramentas"
+msgstr ""
+
+#: templates/reports.html.twig:224
+msgid "Granularidade do gráfico"
+msgstr ""
+
+#: templates/timeline.html.twig:74 templates/timeline.html.twig:111
+msgid "Hoje"
+msgstr ""
+
+#: src/Reports.php:217 src/Reports.php:357
+msgid "ID"
+msgstr ""
+
+#: src/Config.php:286
+msgid "Importação dos custos nativos"
+msgstr ""
+
+#: templates/costs.html.twig:90
+msgid "Imprimir"
+msgstr ""
+
+#: templates/costs.html.twig:81 templates/dashboard.html.twig:90
+#: templates/kanban.html.twig:86 templates/projectkanban.html.twig:82
+#: templates/reports.html.twig:133 templates/timeline.html.twig:87
+msgid "Incluir todos os projetos que você pode ver"
+msgstr ""
+
+#: src/ProjectTracking.php:28
+msgid "Indicadores (ProjectPlus)"
+msgstr ""
+
+#: src/Templates.php:178 src/Templates.php:498
+msgid "Informe o nome do modelo"
+msgstr ""
+
+#: front/project_create.form.php:19
+msgid "Informe o nome do projeto"
+msgstr ""
+
+#: front/projecttemplate.form.php:61
+msgid "Informe o nome do projeto e a data de início"
+msgstr ""
+
+#: src/Profile.php:50 src/Profile.php:86 src/Profile.php:99
+msgid "Interagir"
+msgstr ""
+
+#: templates/dashboard.html.twig:79
+msgid "Início do período"
+msgstr ""
+
+#: src/Reports.php:219 src/Reports.php:360 templates/dashboard.html.twig:473
+msgid "Início planejado"
+msgstr ""
+
+#: src/TemplateCloner.php:71 src/TemplateCloner.php:80
+msgid "JSON do modelo inválido"
+msgstr ""
+
+#: src/TemplateCloner.php:398
+msgid "JSON malformado"
+msgstr ""
+
+#: front/kanban.php:49 templates/costs.html.twig:31
+#: templates/dashboard.html.twig:41 templates/kanban.html.twig:31
+#: templates/mytasks.html.twig:37 templates/projectkanban.html.twig:31
+#: templates/projecttemplate_edit.html.twig:32
+#: templates/projecttemplates.html.twig:31 templates/reports.html.twig:31
+#: templates/timeline.html.twig:31
+msgid "Kanban"
+msgstr ""
+
+#: src/KanbanTab.php:30 src/KanbanTab.php:37
+msgid "Kanban (ProjectPlus)"
+msgstr ""
+
+#: src/Profile.php:82
+msgid "Kanban (tarefas)"
+msgstr ""
+
+#: front/projectkanban.php:39 templates/kanban.html.twig:97
+msgid "Kanban de projetos"
+msgstr ""
+
+#: src/Profile.php:90
+msgid "Kanban de projetos (Cliente)"
+msgstr ""
+
+#: templates/projectkanban.html.twig:15
+msgid "Kanban de projetos por fase"
+msgstr ""
+
+#: templates/projectkanban.html.twig:92
+msgid "Kanban de tarefas"
+msgstr ""
+
+#: templates/kanban.html.twig:15
+msgid "Kanban por fase, com swimlanes"
+msgstr ""
+
+#: src/ProjectCost.php:138 src/TaskCost.php:170 templates/costs.html.twig:125
+msgid "Lançado por"
+msgstr ""
+
+#: templates/reports.html.twig:130
+msgid "Limpar"
+msgstr ""
+
+#: templates/dashboard.html.twig:84
+msgid "Limpar filtro"
+msgstr ""
+
+#: templates/timeline.html.twig:15
+msgid "Linha do tempo de projetos e tarefas"
+msgstr ""
+
+#: src/Config.php:338
+msgid "Link nos e-mails (URL da base)"
+msgstr ""
+
+#: templates/dashboard.html.twig:118
+msgid "Lista nativa"
+msgstr ""
+
+#: templates/dashboard.html.twig:106 templates/mytasks.html.twig:89
+msgid "Marcar todas como lidas"
+msgstr ""
+
+#: templates/timeline.html.twig:110
+msgid "Marco (só uma data planejada)"
+msgstr ""
+
+#: front/mytasks.php:23 templates/costs.html.twig:26
+#: templates/dashboard.html.twig:36 templates/kanban.html.twig:26
+#: templates/mytasks.html.twig:32 templates/projectkanban.html.twig:26
+#: templates/projecttemplate_edit.html.twig:27
+#: templates/projecttemplates.html.twig:26 templates/reports.html.twig:26
+#: templates/timeline.html.twig:26
+msgid "Minhas tarefas"
+msgstr ""
+
+#: templates/projecttemplates.html.twig:86
+#: templates/projecttemplates.html.twig:200
+msgid "Modelo"
+msgstr ""
+
+#: src/Templates.php:244
+#, php-format
+msgid "Modelo \"%1$s\" criado com %2$d tarefa(s) e %3$d subprojeto(s)"
+msgstr ""
+
+#: src/Templates.php:541
+msgid "Modelo atualizado"
+msgstr ""
+
+#: src/Templates.php:554
+msgid "Modelo criado"
+msgstr ""
+
+#: front/projecttemplate.form.php:53
+msgid "Modelo excluído"
+msgstr ""
+
+#: front/projecttemplate_edit.php:33 src/TemplateCloner.php:66
+#: src/Templates.php:531
+msgid "Modelo não encontrado"
+msgstr ""
+
+#: front/projecttemplate_edit.php:38 front/projecttemplates.php:28
+#: src/Profile.php:108 templates/costs.html.twig:41
+#: templates/dashboard.html.twig:51 templates/kanban.html.twig:41
+#: templates/mytasks.html.twig:47 templates/projectkanban.html.twig:41
+#: templates/projecttemplate_edit.html.twig:42
+#: templates/projecttemplates.html.twig:41 templates/reports.html.twig:41
+#: templates/timeline.html.twig:41
+msgid "Modelos"
+msgstr ""
+
+#: templates/projecttemplates.html.twig:15
+#: templates/projecttemplates.html.twig:68
+msgid "Modelos de projeto"
+msgstr ""
+
+#: templates/projecttemplate_edit.html.twig:72
+msgid ""
+"Monte a árvore de tarefas e subprojetos. Os prazos são em dias a partir do "
+"início do projeto."
+msgstr ""
+
+#: templates/projectkanban.html.twig:73
+msgid "Mostrar projetos concluídos"
+msgstr ""
+
+#: src/KanbanTab.php:78 templates/kanban.html.twig:77
+#: templates/mytasks.html.twig:75 templates/timeline.html.twig:78
+msgid "Mostrar tarefas concluídas"
+msgstr ""
+
+#: templates/dashboard.html.twig:458
+msgid "Muito alta"
+msgstr ""
+
+#: templates/dashboard.html.twig:454
+msgid "Muito baixa"
+msgstr ""
+
+#: templates/dashboard.html.twig:456
+msgid "Média"
+msgstr ""
+
+#: templates/reports.html.twig:227 templates/timeline.html.twig:71
+msgid "Mês"
+msgstr ""
+
+#: src/Config.php:324
+msgid ""
+"NENHUM — preencha \"E-mail do remetente\" em Configurar > Notificações ou "
+"\"E-mail do administrador\" em Configurar > Geral"
+msgstr ""
+
+#: src/TaskComment.php:315
+msgid "Nenhum comentário nesta tarefa"
+msgstr ""
+
+#: src/TaskCost.php:228
+msgid "Nenhum custo lançado nesta tarefa"
+msgstr ""
+
+#: src/ProjectCost.php:196
+msgid "Nenhum custo lançado neste projeto"
+msgstr ""
+
+#: templates/reports.html.twig:265
+msgid "Nenhum lançamento de custo encontrado"
+msgstr ""
+
+#: templates/costs.html.twig:150
+msgid "Nenhum lançamento de custo neste projeto"
+msgstr ""
+
+#: templates/projecttemplates.html.twig:131
+msgid "Nenhum modelo cadastrado ainda."
+msgstr ""
+
+#: templates/costs.html.twig:154 templates/reports.html.twig:179
+msgid "Nenhum projeto encontrado"
+msgstr ""
+
+#: templates/dashboard.html.twig:303
+msgid "Nenhum projeto no período"
+msgstr ""
+
+#: src/Notification.php:903
+msgid ""
+"Nenhum remetente configurado: preencha \"E-mail do remetente\" em Configurar "
+"> Notificações ou \"E-mail do administrador\" em Configurar > Geral."
+msgstr ""
+
+#: src/TaskDep.php:713
+msgid "Nenhuma"
+msgstr ""
+
+#: templates/reports.html.twig:208
+msgid "Nenhuma tarefa encontrada"
+msgstr ""
+
+#: templates/dashboard.html.twig:402
+msgid "Nenhuma tarefa no período"
+msgstr ""
+
+#: templates/dashboard.html.twig:269
+msgid "No prazo"
+msgstr ""
+
+#: templates/projecttemplate_edit.html.twig:90
+#: templates/projecttemplates.html.twig:161
+msgid "Nome do modelo"
+msgstr ""
+
+#: templates/projecttemplates.html.twig:204
+msgid "Nome do novo projeto"
+msgstr ""
+
+#: templates/dashboard.html.twig:427
+msgid "Nome do projeto"
+msgstr ""
+
+#: ajax/task.php:92
+msgid "Nome e projeto são obrigatórios"
+msgstr ""
+
+#: src/TaskDep.php:678
+msgid "Nova dependência"
+msgstr ""
+
+#: src/TaskComment.php:297
+msgid "Novo comentário"
+msgstr ""
+
+#: templates/projecttemplate_edit.html.twig:16
+msgid "Novo modelo"
+msgstr ""
+
+#: templates/projecttemplate_edit.html.twig:70
+msgid "Novo modelo de projeto"
+msgstr ""
+
+#: templates/dashboard.html.twig:114 templates/dashboard.html.twig:419
+msgid "Novo projeto"
+msgstr ""
+
+#: src/Config.php:280
+msgid "NÃO registrado"
+msgstr ""
+
+#: src/Reports.php:333 src/Reports.php:530 src/Reports.php:531
+msgid "Não"
+msgstr ""
+
+#: src/Config.php:173
+msgid "Não (manter dados e direitos)"
+msgstr ""
+
+#: src/Notification.php:876
+#, php-format
+msgid "Não enviado: %s."
+msgstr ""
+
+#: ajax/project.php:67
+#, php-format
+msgid ""
+"Não é possível mover para uma fase finalizada — %d item(ns) aberto(s): %s"
+msgstr ""
+
+#: ajax/task.php:247
+#, php-format
+msgid "Não é possível mover para uma fase finalizada — %s"
+msgstr ""
+
+#: src/Config.php:186
+msgid ""
+"O e-mail de teste vai para o endereço do seu próprio usuário e não depende "
+"da opção \"Enviar e-mails\" acima — serve para testar o canal."
+msgstr ""
+
+#: src/TemplateCloner.php:405
+msgid "O modelo precisa de \"tasks\" e/ou \"subprojects\""
+msgstr ""
+
+#: ajax/task.php:154 ajax/task.php:200
+msgid ""
+"O percentual desta tarefa é calculado automaticamente a partir das subtarefas"
+msgstr ""
+
+#: src/Config.php:143
+msgid ""
+"Ocultar a aba \"Custos\" nativa do projeto (fonte única: abas do ProjectPlus)"
+msgstr ""
+
+#: src/Config.php:153
+msgid ""
+"Ocultar a aba \"Kanban\" nativa do projeto (fonte única: aba Kanban do "
+"ProjectPlus)"
+msgstr ""
+
+#: src/Reports.php:548 templates/costs.html.twig:121
+msgid "Origem"
+msgstr ""
+
+#: templates/costs.html.twig:46 templates/dashboard.html.twig:56
+#: templates/dashboard.html.twig:227 templates/kanban.html.twig:46
+#: templates/mytasks.html.twig:52 templates/projectkanban.html.twig:46
+#: templates/projecttemplate_edit.html.twig:47
+#: templates/projecttemplates.html.twig:46 templates/reports.html.twig:46
+#: templates/timeline.html.twig:46
+msgid "Orçamento"
+msgstr ""
+
+#: src/ProjectTracking.php:84
+msgid "Orçamento (ProjectPlus)"
+msgstr ""
+
+#: src/Budget.php:316
+#, php-format
+msgid "Orçamento ESTOURADO no projeto \"%s\": %d%% consumido"
+msgstr ""
+
+#: front/budget.form.php:34
+msgid "Orçamento atualizado"
+msgstr ""
+
+#: src/Budget.php:327
+#, php-format
+msgid "Orçamento do projeto \"%s\" atingiu %d%% do teto"
+msgstr ""
+
+#: src/Notification.php:108
+msgid "Orçamento estourado"
+msgstr ""
+
+#: src/Reports.php:221
+msgid "Orçamento gasto"
+msgstr ""
+
+#: src/Reports.php:221
+msgid "Orçamento previsto"
+msgstr ""
+
+#: src/Notification.php:109
+msgid "Orçamento próximo do teto"
+msgstr ""
+
+#: src/Config.php:274
+msgid "Outros"
+msgstr ""
+
+#: src/Notification.php:451
+msgid "PRAZO ESTOURADO"
+msgstr ""
+
+#: src/Profile.php:57
+msgid "Painel (Visão geral)"
+msgstr ""
+
+#: src/ProjectTracking.php:72 templates/dashboard.html.twig:267
+msgid "Parado"
+msgstr ""
+
+#: templates/dashboard.html.twig:164
+msgid "Percentual finalizado"
+msgstr ""
+
+#: src/Config.php:262
+msgid "Perfis com a linha"
+msgstr ""
+
+#: src/Config.php:263
+msgid "Perfis com acesso"
+msgstr ""
+
+#: templates/reports.html.twig:117
+msgid "Período"
+msgstr ""
+
+#: templates/timeline.html.twig:109
+msgid "Período planejado (preenchimento = progresso)"
+msgstr ""
+
+#: templates/mytasks.html.twig:124
+msgid "Planejamento a corrigir"
+msgstr ""
+
+#: src/Notification.php:448
+msgid "Prazo consumido: 50%"
+msgstr ""
+
+#: src/Notification.php:449
+msgid "Prazo consumido: 75%"
+msgstr ""
+
+#: src/Notification.php:450
+msgid "Prazo consumido: 90%"
+msgstr ""
+
+#: templates/dashboard.html.twig:228 templates/dashboard.html.twig:331
+msgid "Prazo decorrido"
+msgstr ""
+
+#: templates/dashboard.html.twig:229 templates/dashboard.html.twig:332
+msgid "Prazo final"
+msgstr ""
+
+#: templates/mytasks.html.twig:116
+msgid "Prazo final vencido"
+msgstr ""
+
+#: src/Notification.php:589
+msgid "Prazo se aproximando"
+msgstr ""
+
+#: templates/dashboard.html.twig:155
+msgid "Prazo vencido"
+msgstr ""
+
+#: templates/dashboard.html.twig:452
+msgid "Prioridade"
+msgstr ""
+
+#: templates/dashboard.html.twig:224 templates/dashboard.html.twig:329
+msgid "Progresso"
+msgstr ""
+
+#: templates/dashboard.html.twig:163
+msgid "Progresso médio"
+msgstr ""
+
+#: front/config.form.php:35 src/Dashboard.php:24 src/Notification.php:453
+#: src/Notification.php:591 src/Profile.php:36
+msgid "ProjectPlus"
+msgstr ""
+
+#: src/Notification.php:736
+msgid "ProjectPlus (GLPI)"
+msgstr ""
+
+#: src/Profile.php:160
+msgid "ProjectPlus — acessos por módulo"
+msgstr ""
+
+#: src/Notification.php:46
+msgid "ProjectPlus: atrasos, pendências e projetos parados"
+msgstr ""
+
+#: front/costs.php:104 src/KanbanTab.php:74 src/Reports.php:217
+#: src/Reports.php:357 src/Reports.php:581 templates/dashboard.html.twig:222
+#: templates/dashboard.html.twig:327 templates/kanban.html.twig:72
+#: templates/reports.html.twig:69
+msgid "Projeto"
+msgstr ""
+
+#: src/Notification.php:380
+#, php-format
+msgid "Projeto \"%s\""
+msgstr ""
+
+#: front/project_create.form.php:61
+#, php-format
+msgid "Projeto \"%s\" criado"
+msgstr ""
+
+#: src/Notification.php:223
+#, php-format
+msgid "Projeto \"%s\" está sem atividade (parado)"
+msgstr ""
+
+#: templates/projecttemplate_edit.html.twig:101
+msgid "Projeto (aplicado ao criar)"
+msgstr ""
+
+#: templates/dashboard.html.twig:243
+msgid ""
+"Projeto com tarefas/subprojetos abertos — não pode ir para fase concluída"
+msgstr ""
+
+#: src/TemplateCloner.php:179
+#, php-format
+msgid "Projeto criado com %1$d tarefa(s) e %2$d subprojeto(s)"
+msgstr ""
+
+#: templates/projecttemplates.html.twig:151
+msgid "Projeto de origem"
+msgstr ""
+
+#: ajax/project.php:45 front/budget.form.php:22 front/projectcost.form.php:34
+#: src/Templates.php:191
+msgid "Projeto não encontrado"
+msgstr ""
+
+#: src/Reports.php:217 templates/dashboard.html.twig:432
+msgid "Projeto pai"
+msgstr ""
+
+#: src/Notification.php:229
+msgid "Projeto parado"
+msgstr ""
+
+#: src/Reports.php:548
+msgid "Projeto raiz"
+msgstr ""
+
+#: src/Profile.php:72 templates/costs.html.twig:13
+#: templates/dashboard.html.twig:23 templates/dashboard.html.twig:129
+#: templates/kanban.html.twig:13 templates/mytasks.html.twig:19
+#: templates/projectkanban.html.twig:13
+#: templates/projecttemplate_edit.html.twig:14
+#: templates/projecttemplates.html.twig:13 templates/reports.html.twig:157
+#: templates/timeline.html.twig:13
+msgid "Projetos"
+msgstr ""
+
+#: templates/dashboard.html.twig:171
+msgid "Projetos concluídos"
+msgstr ""
+
+#: templates/dashboard.html.twig:213
+msgid "Projetos em andamento"
+msgstr ""
+
+#: templates/dashboard.html.twig:137
+msgid "Projetos em atraso"
+msgstr ""
+
+#: templates/dashboard.html.twig:180
+msgid "Projetos por Status"
+msgstr ""
+
+#: templates/dashboard.html.twig:188
+msgid "Projetos por fase"
+msgstr ""
+
+#: src/Config.php:226
+msgid ""
+"Reexecutar a instalação costuma resolver: php bin/console plugin:install --"
+"force projectplus e depois plugin:activate projectplus."
+msgstr ""
+
+#: src/Config.php:236
+msgid "Registros"
+msgstr ""
+
+#: src/TaskDep.php:743
+msgid ""
+"Regra geral: subtarefas abertas bloqueiam a tarefa mãe automaticamente "
+"(itens \"subtarefa\" acima). Uma tarefa bloqueada não pode ser concluída "
+"enquanto as bloqueadoras estiverem abertas. As dependências também aparecem "
+"no Gestor de Projetos (🔗)."
+msgstr ""
+
+#: templates/costs.html.twig:96
+msgid "Relatório de custos consolidados"
+msgstr ""
+
+#: front/reports.php:32 src/Profile.php:103 templates/costs.html.twig:51
+#: templates/dashboard.html.twig:61 templates/kanban.html.twig:51
+#: templates/mytasks.html.twig:57 templates/projectkanban.html.twig:51
+#: templates/projecttemplate_edit.html.twig:52
+#: templates/projecttemplates.html.twig:51 templates/reports.html.twig:13
+#: templates/reports.html.twig:51 templates/reports.html.twig:147
+#: templates/timeline.html.twig:51
+msgid "Relatórios"
+msgstr ""
+
+#: src/Config.php:321
+msgid "Remetente que será usado"
+msgstr ""
+
+#: src/TaskDep.php:733
+msgid "Remover vínculo"
+msgstr ""
+
+#: templates/dashboard.html.twig:328
+msgid "Responsáveis"
+msgstr ""
+
+#: src/KanbanTab.php:75 templates/kanban.html.twig:73
+msgid "Responsável"
+msgstr ""
+
+#: src/Reports.php:359
+msgid "Responsável(is)"
+msgstr ""
+
+#: src/ProjectTracking.php:123 src/Reports.php:222
+#: templates/costs.html.twig:108
+msgid "Saldo"
+msgstr ""
+
+#: templates/projecttemplate_edit.html.twig:125
+msgid "Salvar alterações"
+msgstr ""
+
+#: src/Config.php:182
+msgid "Salvar e enviar e-mail de teste"
+msgstr ""
+
+#: templates/projecttemplates.html.twig:179
+msgid "Salvar modelo"
+msgstr ""
+
+#: templates/projecttemplates.html.twig:76
+#: templates/projecttemplates.html.twig:144
+msgid "Salvar projeto como modelo"
+msgstr ""
+
+#: src/Notification.php:919
+msgid "Se você recebeu esta mensagem, os alertas por e-mail estão funcionando."
+msgstr ""
+
+#: src/Templates.php:181
+msgid "Selecione o projeto de origem"
+msgstr ""
+
+#: templates/reports.html.twig:233
+msgid "Selecione um projeto para ver o burndown."
+msgstr ""
+
+#: templates/mytasks.html.twig:123
+msgid "Sem datas"
+msgstr ""
+
+#: templates/dashboard.html.twig:290 templates/dashboard.html.twig:375
+msgid "Sem datas planejadas — corrija o planejamento"
+msgstr ""
+
+#: src/Dashboard.php:346
+msgid "Sem estado"
+msgstr ""
+
+#: src/Dashboard.php:326 src/Kanban.php:390 src/ProjectKanban.php:195
+msgid "Sem fase"
+msgstr ""
+
+#: src/ProjectKanban.php:165
+msgid "Sem gestor"
+msgstr ""
+
+#: src/TaskDep.php:685
+msgid "Sem outras tarefas neste projeto"
+msgstr ""
+
+#: ajax/project.php:40 ajax/task.php:132 ajax/task.php:147 ajax/task.php:172
+#: ajax/task.php:193 ajax/task.php:222
+msgid "Sem permissão"
+msgstr ""
+
+#: front/projectcost.form.php:24 front/taskcost.form.php:25
+msgid "Sem permissão para alterar custos"
+msgstr ""
+
+#: ajax/project.php:48
+msgid "Sem permissão para alterar este projeto"
+msgstr ""
+
+#: ajax/comment.php:40 front/taskcomment.form.php:24
+msgid "Sem permissão para comentar"
+msgstr ""
+
+#: ajax/task.php:86
+msgid "Sem permissão para criar tarefas"
+msgstr ""
+
+#: ajax/taskdep.php:38 front/taskdep.form.php:21
+msgid "Sem permissão para gerenciar dependências"
+msgstr ""
+
+#: src/ProjectTracking.php:66
+msgid "Sem registro"
+msgstr ""
+
+#: src/Kanban.php:252
+msgid "Sem responsável"
+msgstr ""
+
+#: templates/costs.html.twig:112
+msgid "Sem teto de orçamento definido"
+msgstr ""
+
+#: templates/reports.html.twig:225 templates/timeline.html.twig:70
+msgid "Semana"
+msgstr ""
+
+#: src/Notification.php:892
+msgid "Seu usuário não tem e-mail cadastrado — informe um em Meus ajustes."
+msgstr ""
+
+#: src/Reports.php:333 src/Reports.php:530 src/Reports.php:531
+msgid "Sim"
+msgstr ""
+
+#: src/Config.php:175
+msgid "Sim (expurgo completo)"
+msgstr ""
+
+#: src/Config.php:237 src/ProjectTracking.php:69
+#: templates/dashboard.html.twig:226
+msgid "Situação"
+msgstr ""
+
+#: templates/projectkanban.html.twig:109
+msgid ""
+"Somente leitura — cada cartão é um projeto ou subprojeto na coluna da fase "
+"atual."
+msgstr ""
+
+#: templates/kanban.html.twig:112
+msgid "Somente leitura — você não tem permissão para alterar tarefas."
+msgstr ""
+
+#: templates/mytasks.html.twig:21
+msgid "Suas tarefas em todos os projetos"
+msgstr ""
+
+#: front/costs.php:114 src/Reports.php:591
+#, php-format
+msgid "Subprojeto \"%s\""
+msgstr ""
+
+#: templates/projecttemplate_edit.html.twig:113
+msgid "Subprojetos"
+msgstr ""
+
+#: ajax/comment.php:80
+msgid "Só o autor pode editar este comentário"
+msgstr ""
+
+#: ajax/comment.php:97 front/taskcomment.form.php:65
+msgid "Só o autor pode excluir este comentário"
+msgstr ""
+
+#: src/Config.php:235
+msgid "Tabela"
+msgstr ""
+
+#: src/Reports.php:357 templates/dashboard.html.twig:326
+#: templates/reports.html.twig:78
+msgid "Tarefa"
+msgstr ""
+
+#: src/Budget.php:217
+#, php-format
+msgid "Tarefa \"%s\""
+msgstr ""
+
+#: src/Notification.php:310
+#, php-format
+msgid "Tarefa \"%s\" (projeto \"%s\")"
+msgstr ""
+
+#: src/Notification.php:144
+#, php-format
+msgid "Tarefa \"%s\" está atrasada (prazo: %s)"
+msgstr ""
+
+#: src/Notification.php:516
+#, php-format
+msgid "Tarefa \"%s\" foi concluída"
+msgstr ""
+
+#: src/Notification.php:178
+#, php-format
+msgid "Tarefa \"%s\" vence em breve (%s)"
+msgstr ""
+
+#: src/Notification.php:588
+msgid "Tarefa atrasada"
+msgstr ""
+
+#: ajax/task.php:70
+#, php-format
+msgid "Tarefa bloqueada — conclua antes: %s"
+msgstr ""
+
+#: src/Notification.php:590
+msgid "Tarefa concluída"
+msgstr ""
+
+#: ajax/task.php:127
+msgid "Tarefa criada"
+msgstr ""
+
+#: src/Reports.php:358
+msgid "Tarefa mãe"
+msgstr ""
+
+#: ajax/comment.php:54 ajax/task.php:136 ajax/task.php:151 ajax/task.php:176
+#: ajax/task.php:197 ajax/task.php:226 front/taskcomment.form.php:34
+#: front/taskcost.form.php:35 front/taskdep.form.php:31 src/TaskDep.php:386
+msgid "Tarefa não encontrada"
+msgstr ""
+
+#: src/Notification.php:452
+msgid "Tarefa sem datas planejadas"
+msgstr ""
+
+#: src/Profile.php:77 templates/dashboard.html.twig:146
+#: templates/dashboard.html.twig:246 templates/reports.html.twig:186
+msgid "Tarefas"
+msgstr ""
+
+#: templates/mytasks.html.twig:107
+msgid "Tarefas abertas"
+msgstr ""
+
+#: templates/projecttemplate_edit.html.twig:107
+msgid "Tarefas do projeto"
+msgstr ""
+
+#: templates/dashboard.html.twig:317
+msgid "Tarefas em andamento"
+msgstr ""
+
+#: templates/dashboard.html.twig:154
+msgid "Tarefas em atraso"
+msgstr ""
+
+#: src/TaskDep.php:380
+msgid "Tarefas inválidas para o vínculo"
+msgstr ""
+
+#: templates/dashboard.html.twig:202
+msgid "Tarefas por Estado"
+msgstr ""
+
+#: templates/dashboard.html.twig:194
+msgid "Tarefas por status"
+msgstr ""
+
+#: templates/costs.html.twig:107
+msgid "Teto"
+msgstr ""
+
+#: templates/dashboard.html.twig:484
+msgid "Teto de orçamento"
+msgstr ""
+
+#: src/ProjectTracking.php:86
+msgid "Teto planejado"
+msgstr ""
+
+#: front/timeline.php:38 templates/costs.html.twig:36
+#: templates/dashboard.html.twig:46 templates/kanban.html.twig:36
+#: templates/mytasks.html.twig:42 templates/projectkanban.html.twig:36
+#: templates/projecttemplate_edit.html.twig:37
+#: templates/projecttemplates.html.twig:36 templates/reports.html.twig:36
+#: templates/timeline.html.twig:36
+msgid "Timeline"
+msgstr ""
+
+#: src/Reports.php:218 src/Reports.php:358 templates/reports.html.twig:101
+msgid "Tipo"
+msgstr ""
+
+#: templates/reports.html.twig:104
+msgid "Tipo de projeto"
+msgstr ""
+
+#: front/reports_export.php:44
+msgid "Tipo de relatório inválido"
+msgstr ""
+
+#: templates/reports.html.twig:109
+msgid "Tipo de tarefa"
+msgstr ""
+
+#: src/ProjectCost.php:198 src/TaskCost.php:230
+msgid "Total"
+msgstr ""
+
+#: templates/costs.html.twig:143
+msgid "Total consumido"
+msgstr ""
+
+#: templates/mytasks.html.twig:132
+msgid "Total histórico"
+msgstr ""
+
+#: src/Config.php:334
+msgid "Transporte (DSN, senha oculta)"
+msgstr ""
+
+#: src/Config.php:216
+msgid "Tudo certo: tabelas, direitos e cron no lugar."
+msgstr ""
+
+#: templates/projecttemplates.html.twig:132
+msgid ""
+"Use \"Criar modelo do zero\" ou \"Salvar projeto como modelo\" para criar o "
+"primeiro."
+msgstr ""
+
+#: src/Notification.php:884
+msgid "Usuário não encontrado."
+msgstr ""
+
+#: src/Reports.php:550 templates/costs.html.twig:124
+msgid "Valor"
+msgstr ""
+
+#: src/Profile.php:49 src/Profile.php:59 src/Profile.php:64 src/Profile.php:69
+#: src/Profile.php:85 src/Profile.php:92 src/Profile.php:98 src/Profile.php:105
+#: src/Profile.php:115
+msgid "Ver"
+msgstr ""
+
+#: templates/costs.html.twig:83 templates/dashboard.html.twig:92
+#: templates/kanban.html.twig:88 templates/projectkanban.html.twig:84
+#: templates/reports.html.twig:135 templates/timeline.html.twig:89
+msgid "Ver só os meus"
+msgstr ""
+
+#: templates/costs.html.twig:85 templates/dashboard.html.twig:94
+#: templates/kanban.html.twig:90 templates/projectkanban.html.twig:86
+#: templates/reports.html.twig:137 templates/timeline.html.twig:91
+msgid "Ver tudo"
+msgstr ""
+
+#: templates/costs.html.twig:21 templates/dashboard.html.twig:31
+#: templates/kanban.html.twig:21 templates/kanban.html.twig:101
+#: templates/mytasks.html.twig:27 templates/mytasks.html.twig:96
+#: templates/projectkanban.html.twig:21 templates/projectkanban.html.twig:97
+#: templates/projecttemplate_edit.html.twig:22
+#: templates/projecttemplates.html.twig:21 templates/reports.html.twig:21
+#: templates/timeline.html.twig:21 templates/timeline.html.twig:96
+msgid "Visão geral"
+msgstr ""
+
+#: templates/dashboard.html.twig:25
+msgid "Visão geral dos projetos e seu andamento"
+msgstr ""
+
+#: templates/projecttemplate_edit.html.twig:76
+msgid "Voltar"
+msgstr ""
+
+#: templates/costs.html.twig:81 templates/dashboard.html.twig:90
+#: templates/kanban.html.twig:86 templates/projectkanban.html.twig:82
+#: templates/reports.html.twig:133 templates/timeline.html.twig:87
+msgid "Voltar ao escopo pessoal"
+msgstr ""
+
+#: src/TaskDep.php:449
+msgid "Vínculo não encontrado"
+msgstr ""
+
+#: src/TaskDep.php:409
+msgid "Vínculo recusado: criaria um ciclo de bloqueio entre as tarefas"
+msgstr ""
+
+#: templates/timeline.html.twig:68
+msgid "Zoom"
+msgstr ""
+
+#: src/TaskDep.php:725
+#, php-format
+msgid "aberta (%d%%)"
+msgstr ""
+
+#: src/Notification.php:809
+msgid "as notificações estão desativadas no GLPI"
+msgstr ""
+
+#: templates/reports.html.twig:120
+msgid "até"
+msgstr ""
+
+#: ajax/task.php:241
+#, php-format
+msgid "bloqueada por: %s"
+msgstr ""
+
+#: templates/reports.html.twig:80
+msgid "buscar por nome…"
+msgstr ""
+
+#: src/TemplateCloner.php:436 src/TemplateCloner.php:457
+msgid "campo \"name\" obrigatório"
+msgstr ""
+
+#: src/TaskDep.php:726
+msgid "concluída"
+msgstr ""
+
+#: src/Config.php:309
+msgid "desligados (só o sino)"
+msgstr ""
+
+#: src/TemplateCloner.php:432 src/TemplateCloner.php:453
+msgid "deve ser um objeto"
+msgstr ""
+
+#: src/TemplateCloner.php:440 src/TemplateCloner.php:461
+#: src/TemplateCloner.php:468
+msgid "deve ser uma lista"
+msgstr ""
+
+#: src/TaskComment.php:327
+msgid "editado"
+msgstr ""
+
+#: src/Config.php:245
+msgid "faltando:"
+msgstr ""
+
+#: src/Config.php:288
+msgid "já realizada (não repete)"
+msgstr ""
+
+#: src/Config.php:315
+msgid "liberado"
+msgstr ""
+
+#: src/Config.php:308
+msgid "ligados"
+msgstr ""
+
+#: src/Notification.php:934
+msgid "motivo não informado"
+msgstr ""
+
+#: src/Config.php:279
+msgid "nunca"
+msgstr ""
+
+#: src/Config.php:341
+msgid "não configurada — os e-mails saem sem link"
+msgstr ""
+
+#: src/Notification.php:849
+msgid "não foi possível montar o DSN:"
+msgstr ""
+
+#: src/Notification.php:813
+msgid "o canal de e-mail está desativado no GLPI"
+msgstr ""
+
+#: src/Config.php:289
+msgid "pendente (roda na próxima instalação)"
+msgstr ""
+
+#: src/Config.php:297
+msgid "preserva dados e direitos"
+msgstr ""
+
+#: src/Config.php:277
+msgid "registrado"
+msgstr ""
+
+#: src/TaskDep.php:721
+msgid "subtarefa"
+msgstr ""
+
+#: src/ProjectTracking.php:63 templates/dashboard.html.twig:225
+msgid "Última atividade"
+msgstr ""
+
+#: src/Config.php:278
+msgid "última execução:"
+msgstr ""
+
+#: templates/dashboard.html.twig:434
+msgid "— Nenhum (projeto raiz) —"
+msgstr ""
+
+#: templates/reports.html.twig:219
+msgid "— Selecione um projeto —"
+msgstr ""
+
+#: templates/projecttemplates.html.twig:153
+msgid "— Selecione —"
+msgstr ""
+
+#: templates/reports.html.twig:94
+msgid "— Todas —"
+msgstr ""
+
+#: templates/costs.html.twig:69
+msgid "— Todos os projetos —"
+msgstr ""
+
+#: templates/reports.html.twig:71 templates/reports.html.twig:85
+#: templates/reports.html.twig:103
+msgid "— Todos —"
+msgstr ""

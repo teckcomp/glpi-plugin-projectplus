@@ -134,9 +134,9 @@ class ProjectCost extends CommonDBTM
         echo '<tr>'
             . '<th>' . __('Descrição', 'projectplus') . '</th>'
             . '<th>' . __('Data', 'projectplus') . '</th>'
-            . '<th>' . __('Custo', 'projectplus') . '</th>'
+            . '<th>' . _n('Custo', 'Custos', 1, 'projectplus') . '</th>'
             . '<th>' . __('Lançado por', 'projectplus') . '</th>'
-            . '<th>' . __('Comentário', 'projectplus') . '</th>'
+            . '<th>' . _n('Comentário', 'Comentários', 1, 'projectplus') . '</th>'
             . '<th></th></tr>';
 
         $total = 0.0;
