@@ -706,8 +706,10 @@ class Dashboard extends CommonGLPI
                 ],
             ]) as $row
         ) {
-            $label = trim(($row['realname'] ?? '') . ' ' . ($row['firstname'] ?? ''));
-            $byTid[(int) $row['projecttasks_id']][] = $label !== '' ? $label : ($row['login'] ?? '?');
+            // Respeita a ordem de nome configurada no GLPI (config ou
+            // preferência da sessão), em vez de fixar "Sobrenome Nome".
+            $label = \formatUserName(0, $row['login'] ?? '', $row['realname'] ?? '', $row['firstname'] ?? '');
+            $byTid[(int) $row['projecttasks_id']][] = $label !== '' ? $label : '?';
         }
 
         // Contagem em PHP: o iterator do GLPI 11 descarta os campos do
@@ -923,8 +925,10 @@ class Dashboard extends CommonGLPI
                     ],
                 ]) as $row
             ) {
-                $label = trim(($row['realname'] ?? '') . ' ' . ($row['firstname'] ?? ''));
-                $byTid[(int) $row['projecttasks_id']][] = $label !== '' ? $label : ($row['login'] ?? '?');
+                // Respeita a ordem de nome configurada no GLPI (config ou
+                // preferência da sessão), em vez de fixar "Sobrenome Nome".
+                $label = \formatUserName(0, $row['login'] ?? '', $row['realname'] ?? '', $row['firstname'] ?? '');
+                $byTid[(int) $row['projecttasks_id']][] = $label !== '' ? $label : '?';
             }
             // Contador de comentários (Etapa 3, Bloco 2) — consulta única
             $comments = TaskComment::countForTasks($taskIds);
@@ -1141,8 +1145,10 @@ class Dashboard extends CommonGLPI
                 'WHERE' => ['glpi_projecttaskteams.itemtype' => 'User'],
             ]) as $row
         ) {
-            $label = trim(($row['realname'] ?? '') . ' ' . ($row['firstname'] ?? ''));
-            $teams[(int) $row['projecttasks_id']][] = $label !== '' ? $label : ($row['login'] ?? '?');
+            // Respeita a ordem de nome configurada no GLPI (config ou
+            // preferência da sessão), em vez de fixar "Sobrenome Nome".
+            $label = \formatUserName(0, $row['login'] ?? '', $row['realname'] ?? '', $row['firstname'] ?? '');
+            $teams[(int) $row['projecttasks_id']][] = $label !== '' ? $label : '?';
         }
 
         $out  = [];

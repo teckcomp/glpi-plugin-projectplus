@@ -245,10 +245,17 @@ class Kanban
             if (isset($teamFirst[$tid])) {
                 continue; // já temos o primeiro (ordenado por id da equipe)
             }
-            $label           = trim(($row['realname'] ?? '') . ' ' . ($row['firstname'] ?? ''));
+            // Respeita a ordem de nome configurada no GLPI (config ou
+            // preferência da sessão), em vez de fixar "Sobrenome Nome".
+            $label           = \formatUserName(
+                (int) $row['items_id'],
+                $row['login'] ?? '',
+                $row['realname'] ?? '',
+                $row['firstname'] ?? ''
+            );
             $teamFirst[$tid] = [
                 'id'   => (int) $row['items_id'],
-                'name' => $label !== '' ? $label : ($row['login'] ?? '?'),
+                'name' => $label !== '' ? $label : '?',
             ];
         }
 

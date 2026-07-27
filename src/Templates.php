@@ -590,7 +590,9 @@ class Templates
                 'LIMIT'  => 500,
             ]) as $r
         ) {
-            $label   = trim(($r['realname'] ?? '') . ' ' . ($r['firstname'] ?? ''));
+            // Respeita a ordem de nome configurada no GLPI (config ou
+            // preferência da sessão), em vez de fixar "Sobrenome Nome".
+            $label   = \formatUserName((int) $r['id'], (string) $r['name'], $r['realname'] ?? '', $r['firstname'] ?? '');
             $users[] = ['id' => (int) $r['id'], 'name' => $label !== '' ? $label : (string) $r['name']];
         }
 

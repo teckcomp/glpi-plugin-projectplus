@@ -112,11 +112,10 @@ class Reports
 
     private static function userLabel(?string $realname, ?string $firstname, ?string $login): ?string
     {
-        $label = trim((string) $realname . ' ' . (string) $firstname);
-        if ($label !== '') {
-            return $label;
-        }
-        return $login !== '' ? $login : null;
+        // Respeita a ordem de nome configurada no GLPI (config ou
+        // preferência da sessão), em vez de fixar "Sobrenome Nome".
+        $label = \formatUserName(0, (string) $login, (string) $realname, (string) $firstname);
+        return $label !== '' ? $label : null;
     }
 
     // ------------------------------------------------------------------

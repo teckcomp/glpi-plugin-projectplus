@@ -166,10 +166,14 @@ class ProjectKanban
                 $stateId       = self::UNSET_ID;
             }
             $parentId = (int) $row['projects_id'];
-            $manager  = trim((string) ($row['mgr_realname'] ?? '') . ' ' . (string) ($row['mgr_firstname'] ?? ''));
-            if ($manager === '') {
-                $manager = (string) ($row['mgr_login'] ?? '');
-            }
+            // Respeita a ordem de nome configurada no GLPI (config ou
+            // preferência da sessão), em vez de fixar "Sobrenome Nome".
+            $manager = \formatUserName(
+                0,
+                (string) ($row['mgr_login'] ?? ''),
+                (string) ($row['mgr_realname'] ?? ''),
+                (string) ($row['mgr_firstname'] ?? '')
+            );
 
             $cards[] = [
                 'id'          => $id,
