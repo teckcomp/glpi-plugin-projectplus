@@ -2,7 +2,7 @@
 
 **Plugin de gestão avançada de projetos para GLPI 11**
 Repositório: [github.com/teckcomp/glpi-plugin-projectplus](https://github.com/teckcomp/glpi-plugin-projectplus) · Licença GPL-2.0
-Versão atual: **v1.1.0-beta** · Atualizado em 26/07/2026 (**Etapa 9 CONCLUÍDA** — fases por tipo de projeto). Com ela fecham as etapas 0 a 9. Próximo: rodar a beta em produção e, depois, o Bloco 5 (catálogo oficial do GLPI).
+Versão atual: **v1.1.0-beta** · Atualizado em 26/07/2026 (**Etapa 9 CONCLUÍDA** — fases por tipo de projeto). Com ela fecham as etapas 0 a 9. **Publicada no GitHub em 26/07/2026: commit `827be81`, tag `v1.1.0-beta`.** Próximo: rodar a beta em produção e, depois, o Bloco 5 (catálogo oficial do GLPI).
 
 > **Ordem de execução confirmada em 19/07/2026:** Etapa 7 → Etapa 8 → Etapa 6 (por último). A Etapa 6 (refinamento/pré-produção e release v1.0.0-beta) só começa depois que 7 e 8 estiverem validadas em homologação.
 
@@ -186,6 +186,8 @@ Papéis: **Gestor / Cliente / Técnico / Colaborador (Terceiro)** + Admin. Entid
 ---
 
 ## ✅ Etapa 9 — Fases por tipo de projeto `concluída e VALIDADA em homologação em 26/07/2026` (v1.1.0-beta)
+
+> **FECHADA NO GITHUB em 26/07/2026** — commit `827be81` (`044376f..827be81`, 37 arquivos, +3787/−705), tag `v1.1.0-beta`. Inclui a auditoria de pré-publicação (charset/collation do core, escopo com entidade em `Scope::managedProjects()`, consulta da Timeline com `WHERE`, remoção da ação `data`) e as notas de limitação em `README.md` e `SECURITY.md`.
 
 **O problema.** `glpi_projectstates` é uma lista **global e única** da instância — o schema do core 11.0.6 **não tem `entities_id`**, então nem separando por entidade dá para ter vocabulários de fase diferentes. Hoje o `Dashboard::getStatesMap()` lê a tabela inteira e alimenta Kanban de tarefas, Kanban de projetos, Timeline, os donuts da Visão geral e o filtro de Relatórios.
 
