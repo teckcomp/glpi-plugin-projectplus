@@ -2,7 +2,7 @@
 
 **Plugin de gestão avançada de projetos para GLPI 11**
 Repositório: [github.com/teckcomp/glpi-plugin-projectplus](https://github.com/teckcomp/glpi-plugin-projectplus) · Licença GPL-2.0
-Versão atual: **v1.1.0-beta** · Atualizado em 26/07/2026 (**Etapa 9 CONCLUÍDA** — fases por tipo de projeto). Com ela fecham as etapas 0 a 9. **Publicada no GitHub em 26/07/2026: commit `827be81`, tag `v1.1.0-beta`.** Próximo: rodar a beta em produção e, depois, o Bloco 5 (catálogo oficial do GLPI).
+Versão atual: **v1.1.0-beta** · Atualizado em 26/07/2026 — **instalada em produção** (entidade única), com correção pós-instalação de ordem de nome já commitada (`35dd900`). Com ela fecham as etapas 0 a 9. **Pausa deliberada:** rodar em produção por algumas semanas antes de iniciar a Etapa 10 (guard de escopo, planejada abaixo). Bloco 5 (catálogo oficial do GLPI) pode ser feito em paralelo, sem mexer em código.
 
 > **Ordem de execução confirmada em 19/07/2026:** Etapa 7 → Etapa 8 → Etapa 6 (por último). A Etapa 6 (refinamento/pré-produção e release v1.0.0-beta) só começa depois que 7 e 8 estiverem validadas em homologação.
 
@@ -176,18 +176,29 @@ Papéis: **Gestor / Cliente / Técnico / Colaborador (Terceiro)** + Admin. Entid
 - ~~Perfil Super-Admin com direitos só de leitura~~ — **resolvido no Bloco 4b** (`Install::ensureAdminRights()`, reconciliação que só eleva).
 - ~~Formato de data fixo `dd/mm/aaaa`~~ — **resolvido no Bloco 4c** (e o levantamento estava incompleto: faltavam 2 rótulos de eixo, e havia um erro de um dia por fuso horário). Levantamento original do Bloco 4a: além de `fmtBr` (`timeline.js`) e `formatDate`/`formatDateTime` (`projectplus.js`), há **~25 ocorrências de `date('d/m/Y')` / `|date('d/m/Y')`** em `src/Dashboard.php`, `src/Reports.php`, `src/Notification.php`, `src/TaskCost.php`, `src/ProjectCost.php`, `src/TaskComment.php`, `front/costs.php`, `front/reports.php` e 2 templates Twig. Só `src/ProjectTracking.php` usa `Html::convDateTime()`.
 
+### ✅ v1.1.0-beta INSTALADA EM PRODUÇÃO em 26/07/2026
+
+Servidor `177.87.230.179:2022`, usuário `resolutto` — entidade única. Backup do banco tirado antes (`mysqldump`, 329M). Instalação nova (`plugin:install` + `plugin:activate`), diagnóstico conferido, e-mail testado.
+
+**Correção pós-instalação (commit `35dd900`, `f03626f..35dd900`, 5 arquivos, +36/−18):** a coluna "Responsáveis"/"Gestor" em `Dashboard.php`, `Kanban.php`, `ProjectKanban.php`, `Reports.php` e `Templates.php` montava o nome fixando a ordem `Sobrenome Nome`, ignorando `names_format` (config/preferência de sessão) que o resto do GLPI já respeita. Trocado por `formatUserName()` nativo do core. Validado em produção pelo usuário.
+
+**Decisão de 26/07/2026: pausa deliberada.** Rodar a v1.1.0-beta em produção por algumas semanas antes de tocar em código de novo — validar em uso real antes da Etapa 10. Nenhum item abaixo é urgente; nenhum bloqueia o uso atual (é entidade única, ver `SECURITY.md`).
+
 ### Decisões em aberto
 
 - Board de projetos restrito a quem tem `projectkanban` marcado? Hoje aparece para todos que têm o Kanban de tarefas (ver 4b.1). Baixa prioridade.
-- **PRÓXIMO ITEM DE TRABALHO — `Scope` é filtro de tela, não fronteira de acesso (achado em 26/07/2026, vem da Etapa 8).** Documentado publicamente em `README.md` e `SECURITY.md`: a v1.1.0-beta sai declarando suporte a **entidade única** apenas. **Mitigado em parte na v1.1.0-beta:** a ação `data` do `ajax/dashboard_data.php` — que devolvia o painel inteiro sem escopo e era também o `default` do `switch`, respondendo a qualquer nome de ação inválido — foi REMOVIDA (era código morto, nenhum JS a chamava). Sobram os endpoints que recebem id. A correção prevista é um guard de escopo + entidade nos pontos de entrada restantes, espalhados por `ajax/` e `front/` — é bloco próprio, não ajuste.
-- **Corrigir a lição registrada sobre endpoints AJAX.** A base afirmava que endpoint `ajax/` não é alcançável por URL direta. **É.** Comprovado no GLPI 11.0.6 com a sessão do navegador: o `checkRight` no topo do arquivo é a única porta, e ele não conhece escopo. `Dashboard::getChildren()` e `Dashboard::getTasks()` filtram só por entidade — quem enxerga um projeto pai expande o `+` e vê TODOS os subprojetos e tarefas dele, inclusive os que o escopo excluiria. E `ajax/dashboard_data.php` exige apenas `plugin_projectplus_dashboard READ`: nenhum dos seis endpoints cruza com `Scope`, e o `action=data` (que nenhum JS chama, mas está exposto) devolve `Dashboard::getData()` sem escopo algum. Não é vazamento entre entidades e todos esses usuários já têm `dashboard READ`, mas **precisa fechar antes de um Cliente externo entrar em produção**.
+- **PRÓXIMO ITEM DE TRABALHO QUANDO RETOMAR (Etapa 10 planejada, não iniciada) — Guard de escopo nos endpoints.** `Scope` é filtro de TELA, não fronteira de acesso (achado na Etapa 8): os endpoints checam **direito nativo** do GLPI (ex.: `projecttask UPDATE`), não o escopo do plugin. Levantamento feito em 26/07/2026 no `ajax/task.php`: toda ação (`state`, `percent`, `complete`, `kanban_move`, `dates`) faz `getFromDB($_POST['task_id'])` e só valida direito nativo — nunca se aquela tarefa está no escopo do usuário. Endpoints a proteger: `ajax/task.php`, `ajax/comment.php`, `ajax/taskdep.php`, `ajax/project.php`; e `front/*.form.php` de `taskcost`, `projectcost`, `taskcomment`, `taskdep`, `budget`, `project_create`, `projecttemplate` (menor risco: `typephase.form.php` e `config.form.php` já usam o direito nativo `config`, hoje só do Admin). **Desenho:** guard central novo em `src/Scope.php` (ex.: `Scope::canSeeTask(int $id)`, `Scope::canSeeProject(int $id)`), reaproveitando a lógica que já existe pras telas, chamado logo após o `getFromDB()` em cada endpoint, antes de ler ou gravar. **Validação:** o método que já funcionou (tela + endpoint na mesma sessão, comparar números) repetido por endpoint, mais harness de stub. **Tamanho sugerido:** Bloco 1 = `ajax/` (4 arquivos), Bloco 2 = `front/*.form.php` (7 arquivos). Documentado publicamente em `README.md` e `SECURITY.md`: a v1.1.0-beta declara suporte a **entidade única** apenas; a ação `data` do `ajax/dashboard_data.php` (que devolvia o painel inteiro sem escopo) já foi REMOVIDA.
 - ~~Tabela `glpi_plugin_projectplus_tasktimers` órfã desde a Etapa 1~~ — **resolvido na Etapa 9**: saiu de `Install::TABLES` e entrou em `Install::LEGACY_TABLES`. Instalação nova não a cria (7 tabelas: as 6 em uso + `typephases`); base existente não é alterada, mas a purga continua removendo-a e o diagnóstico a reporta como órfã.
+- **Descendentes no escopo de PROJETOS do Gestor** — `Scope::taskProjectIds('managed')` soma a árvore para tarefas, mas `Scope::projectIds('managed')` não; baixa prioridade.
+- **Seletor de tipo da Visão geral** exige "Aplicar"; Kanban/Timeline recarregam sozinhos — decidir se iguala; baixa prioridade.
+- **Etapa 6, Bloco 5 (catálogo oficial do GLPI)** — estava adiada até a beta rodar em produção; **isso já aconteceu em 26/07/2026**. Pede screenshots (logo já existe) e preenchimento do formulário de submissão. Pode ser feito em paralelo à pausa, já que não mexe em código de produção.
 
 ---
 
 ## ✅ Etapa 9 — Fases por tipo de projeto `concluída e VALIDADA em homologação em 26/07/2026` (v1.1.0-beta)
 
 > **FECHADA NO GITHUB em 26/07/2026** — commit `827be81` (`044376f..827be81`, 37 arquivos, +3787/−705), tag `v1.1.0-beta`. Inclui a auditoria de pré-publicação (charset/collation do core, escopo com entidade em `Scope::managedProjects()`, consulta da Timeline com `WHERE`, remoção da ação `data`) e as notas de limitação em `README.md` e `SECURITY.md`.
+
 
 **O problema.** `glpi_projectstates` é uma lista **global e única** da instância — o schema do core 11.0.6 **não tem `entities_id`**, então nem separando por entidade dá para ter vocabulários de fase diferentes. Hoje o `Dashboard::getStatesMap()` lê a tabela inteira e alimenta Kanban de tarefas, Kanban de projetos, Timeline, os donuts da Visão geral e o filtro de Relatórios.
 
