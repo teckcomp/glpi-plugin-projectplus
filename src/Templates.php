@@ -594,7 +594,19 @@ class Templates
             $users[] = ['id' => (int) $r['id'], 'name' => $label !== '' ? $label : (string) $r['name']];
         }
 
-        return ['states' => $states, 'ptypes' => $ptypes, 'ttypes' => $ttypes, 'users' => $users];
+        return [
+            'states' => $states,
+            'ptypes' => $ptypes,
+            'ttypes' => $ttypes,
+            'users'  => $users,
+            // Etapa 9: conjunto de fases por tipo de projeto. O editor usa
+            // isto para que os campos "Estado" listem só as fases do
+            // conjunto do TIPO escolhido para o projeto do modelo — a chave
+            // 0 é o conjunto padrão. `states` continua completo porque é o
+            // fallback (tipo sem conjunto) e o que resolve um estado antigo
+            // já gravado na estrutura JSON do modelo.
+            'phases_by_type' => TypePhase::phasesByType(),
+        ];
     }
 
     public static function delete(int $id): bool

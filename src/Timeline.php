@@ -29,12 +29,20 @@ class Timeline
      *                             que o usuário está na equipe (itemtype
      *                             User) e aos projetos dessas tarefas —
      *                             usado para perfis sem Projetos "ver todos"
+     * @param ?int     $typeId     Etapa 9 — SEGUNDA divisão, aplicada DENTRO
+     *                             do que o escopo já liberou: mostra só os
+     *                             projetos daquele tipo. null = todos os
+     *                             tipos. Não é permissão — quem vê o quê
+     *                             continua sendo `Scope`.
      *
      * @return array{range: array{min: string, max: string, today: string},
      *               groups: array}
      */
-    public static function getData(?int $onlyUserId = null, ?array $taskProjectIds = null): array
-    {
+    public static function getData(
+        ?int $onlyUserId = null,
+        ?array $taskProjectIds = null,
+        ?int $typeId = null
+    ): array {
         /** @var \DBmysql $DB */
         global $DB;
 
@@ -56,6 +64,7 @@ class Timeline
                 'SELECT' => [
                     'id', 'name', 'projects_id', 'percent_done',
                     'plan_start_date', 'plan_end_date', 'projectstates_id',
+                    'projecttypes_id',
                 ],
                 'FROM'   => 'glpi_projects',
                 'WHERE'  => [
@@ -94,7 +103,27 @@ class Timeline
             }
         }
 
-        // ---------- Tarefas de todos os projetos, agrupadas ----------
+        // ---------- Tarefas dos projetos visíveis, agrupadas ----------
+        //
+        // ACHADO DA AUDITORIA (26/07/2026): esta consulta não tinha WHERE
+        // nenhum — carregava a tabela `glpi_projecttasks` INTEIRA para a
+        // memória do PHP e só depois filtrava em laço. Não era vazamento (as
+        // tarefas de projeto fora da entidade eram descartadas na montagem da
+        // árvore, porque a consulta de projetos ACIMA é restrita), mas numa
+        // instalação com dezenas de milhares de tarefas é consumo de memória
+        // proporcional ao banco inteiro — e o `IN (...)` do TaskDep logo
+        // abaixo herdava o mesmo tamanho. Aqui só é possível ver o efeito com
+        // volume, que uma homologação não tem.
+        //
+        // Restringir aos projetos já carregados é seguro e não muda resultado:
+        // tarefa de projeto que não está em $projByParent nunca era exibida.
+        $visibleProjectIds = [];
+        foreach ($projByParent as $siblings) {
+            foreach ($siblings as $p) {
+                $visibleProjectIds[] = (int) $p['id'];
+            }
+        }
+
         $tasksByProject = [];
         $allTaskIds     = [];
         foreach (
@@ -105,6 +134,7 @@ class Timeline
                     'projectstates_id',
                 ],
                 'FROM'  => 'glpi_projecttasks',
+                'WHERE' => ['projects_id' => Scope::inList($visibleProjectIds)],
                 'ORDER' => ['projecttasks_id', 'id'],
             ]) as $row
         ) {
@@ -134,10 +164,18 @@ class Timeline
             $states,
             $deps,
             $now,
-            $showEmpty
+            $showEmpty,
+            $typeId
         ): void {
             foreach ($projByParent[$parentId] ?? [] as $p) {
                 $pid     = (int) $p['id'];
+
+                // Etapa 9 — filtro por TIPO. O projeto fora do tipo não vira
+                // linha, mas a recursão continua: um subprojeto do tipo certo
+                // pendurado num pai de outro tipo tem de continuar aparecendo.
+                $matchesType = ($typeId === null)
+                    || ((int) ($p['projecttypes_id'] ?? 0) === $typeId);
+
                 $stateId = (int) $p['projectstates_id'];
                 $pct     = (int) $p['percent_done'];
                 $start   = $p['plan_start_date'] ? substr($p['plan_start_date'], 0, 10) : null;
@@ -216,7 +254,8 @@ class Timeline
                 // Nos escopos pessoal/gerência, projeto sem tarefas do
                 // escopo sai da lista (subprojetos ainda são percorridos);
                 // só o "Ver tudo" total mostra projetos vazios.
-                if ($showEmpty || !empty($group['tasks'])) {
+                $included = $matchesType && ($showEmpty || !empty($group['tasks']));
+                if ($included) {
                     if ($start) {
                         $dates[] = $start;
                     }
@@ -225,7 +264,13 @@ class Timeline
                     }
                     $groups[] = $group;
                 }
-                $walkProjects($pid, $depth + 1);
+
+                // A profundidade só avança quando o pai virou linha de fato.
+                // Sem isso, filtrar por tipo deixaria o filho indentado
+                // debaixo de um pai invisível. É a MESMA regra que as tarefas
+                // já seguem aqui em cima ("a filha cuja mãe ficou fora do
+                // escopo sobe para a raiz").
+                $walkProjects($pid, $included ? $depth + 1 : $depth);
             }
         };
         $walkProjects(0, 0);

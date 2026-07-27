@@ -26,13 +26,14 @@ class Config
         'hide_native_kanban'  => 1,   // 1 = oculta a aba Kanban nativa do projeto (Etapa 7)
         'purge_on_uninstall'  => 0,   // 1 = apaga tabelas/dados/direitos ao desinstalar
         'costs_migrated'      => 0,   // 1 = custos nativos já importados (marca interna)
+        'phases_seeded'       => 0,   // 1 = conjunto padrão de fases já semeado (marca interna, Etapa 9)
     ];
 
     /**
      * Chaves internas: existem em DEFAULTS (para serem apagadas na purga),
      * mas não aparecem no formulário de configuração.
      */
-    public const INTERNAL_KEYS = ['costs_migrated'];
+    public const INTERNAL_KEYS = ['costs_migrated', 'phases_seeded'];
 
     /**
      * Lê a configuração mesclada com os padrões.
@@ -188,7 +189,51 @@ class Config
         echo '</table>';
         Html::closeForm();
 
+        self::showPhaseAdminLink();
         self::showDiagnostics();
+    }
+
+    /**
+     * Caminho de IDA para a tela "Fases por tipo de projeto" (Etapa 9).
+     *
+     * Lição 37: tela nova sem caminho de ida fica invisível. A tela vive
+     * debaixo do direito NATIVO `config` (é vocabulário da instância, não
+     * dado de projeto), então o lugar natural do atalho é aqui — e os dois
+     * Kanbans também ganharam um botão, porque é lá que a falta de
+     * configuração aparece.
+     */
+    public static function showPhaseAdminLink(): void
+    {
+        $report = TypePhase::adminData();
+        $custom = 0;
+        foreach ($report['sets'] as $set) {
+            if (!$set['is_default'] && $set['mapped']) {
+                $custom++;
+            }
+        }
+
+        echo '<table class="tab_cadre_fixe" style="margin-top:20px">';
+        echo '<tr><th colspan="2">'
+            . __('Fases por tipo de projeto', 'projectplus')
+            . '</th></tr>';
+        echo '<tr class="tab_bg_1"><td>'
+            . __(
+                'Cada tipo de projeto pode ter seu próprio conjunto de fases e sua '
+                . 'própria ordem de colunas no Kanban. Tipo sem configuração usa o '
+                . 'conjunto padrão.',
+                'projectplus'
+            )
+            . '<br><small>'
+            . sprintf(
+                __('Fases cadastradas na instância: %1$d · tipos com conjunto próprio: %2$d', 'projectplus'),
+                count($report['states']),
+                $custom
+            )
+            . '</small></td><td class="center">'
+            . '<a class="btn btn-primary" href="' . htmlspecialchars(Url::to('front/typephases.php')) . '">'
+            . __('Configurar fases por tipo', 'projectplus')
+            . '</a></td></tr>';
+        echo '</table>';
     }
 
     /**
@@ -251,6 +296,72 @@ class Config
                 . htmlspecialchars($t['name']) . '</code></td>'
                 . '<td>' . $rows . '</td>'
                 . '<td>' . $status . '</td></tr>';
+        }
+
+        foreach ($report['legacy_tables'] as $t) {
+            echo '<tr class="tab_bg_1"><td><code>'
+                . htmlspecialchars($t['name']) . '</code></td>'
+                . '<td>' . (int) $t['rows'] . '</td>'
+                . '<td><span style="color:#7a7a7a">'
+                . __('órfã de versão antiga — não é mais usada; a purga remove', 'projectplus')
+                . '</span></td></tr>';
+        }
+
+        // --- Fases por tipo (Etapa 9) --------------------------------------
+        $ph = $report['phases'];
+
+        echo '<tr class="tab_bg_2"><th colspan="3">'
+            . __('Fases por tipo de projeto', 'projectplus') . '</th></tr>';
+
+        if (!$ph['table']) {
+            echo '<tr class="tab_bg_1"><td colspan="3" style="color:#c62828">'
+                . __('Tabela de mapeamento AUSENTE — reexecute a instalação.', 'projectplus')
+                . '</td></tr>';
+        } else {
+            echo '<tr class="tab_bg_1"><td colspan="2">'
+                . __('Conjuntos configurados', 'projectplus') . '</td><td>'
+                . sprintf(
+                    __('%1$d conjunto(s) para %2$d fase(s) cadastrada(s)', 'projectplus'),
+                    (int) $ph['sets'],
+                    (int) $ph['total_states']
+                )
+                . ($ph['custom']
+                    ? ''
+                    : ' — <span style="color:#7a7a7a">'
+                      . __('nenhum tipo com conjunto próprio: todos usam o padrão', 'projectplus')
+                      . '</span>')
+                . '</td></tr>';
+
+            echo '<tr class="tab_bg_1"><td colspan="2">'
+                . __('Conjunto padrão semeado na instalação', 'projectplus') . '</td><td>'
+                . ($ph['seeded']
+                    ? __('já realizada (não repete)', 'projectplus')
+                    : __('pendente (roda na próxima instalação)', 'projectplus'))
+                . '</td></tr>';
+
+            if (empty($ph['no_finished'])) {
+                echo '<tr class="tab_bg_1"><td colspan="2">'
+                    . __('Fase finalizadora em cada conjunto', 'projectplus') . '</td><td>'
+                    . '<span style="color:#2e7d32">'
+                    . __('todos os conjuntos têm ao menos uma fase marcada como finalizada', 'projectplus')
+                    . '</span></td></tr>';
+            } else {
+                foreach ($ph['no_finished'] as $set) {
+                    echo '<tr class="tab_bg_1"><td colspan="2">'
+                        . __('Conjunto sem fase finalizadora', 'projectplus') . '</td><td>'
+                        . '<span style="color:#c62828">'
+                        . htmlspecialchars((string) $set['name'])
+                        . '</span> — <small>'
+                        . __(
+                            'sem uma fase marcada como "finalizada" em Configurar > '
+                            . 'Listas suspensas > Estados de projeto, a trava "projeto com '
+                            . 'tarefa ou subprojeto aberto não vai para fase finalizada" '
+                            . 'nunca dispara nesse conjunto.',
+                            'projectplus'
+                        )
+                        . '</small></td></tr>';
+                }
+            }
         }
 
         // --- Direitos ------------------------------------------------------

@@ -56,7 +56,25 @@ switch ($action) {
         break;
 
     case 'data':
+        // REMOVIDO em 26/07/2026 após teste em homologação.
+        //
+        // Esta ação chamava `Dashboard::getData()` SEM NENHUM argumento de
+        // escopo, enquanto `front/dashboard.php` chama a mesma função
+        // passando Scope::projectIds(), Scope::myTaskIds() e
+        // Scope::taskProjectIds(). Resultado comprovado com um perfil
+        // Technician (escopo pessoal): a tela mostrava 1 projeto e 4
+        // tarefas; este endpoint devolvia 3 projetos e 12 tarefas, com
+        // orçamento e nomes de responsáveis de projetos que o perfil não
+        // enxerga.
+        //
+        // Nenhum JavaScript do plugin chamava esta ação — era código morto
+        // que vazava. E, por ser também o `default`, QUALQUER `?action=`
+        // desconhecido caía aqui, então bastava errar o nome da ação.
+        //
+        // Não vale "consertar" passando o escopo: a tela já faz isso, e um
+        // endpoint que só duplica a tela é superfície de ataque sem uso.
     default:
-        echo json_encode(Dashboard::getData());
+        http_response_code(400);
+        echo json_encode(['error' => 'unknown action']);
         break;
 }

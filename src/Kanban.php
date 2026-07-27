@@ -90,6 +90,12 @@ class Kanban
      *                        vira o "teto" da árvore de projetos (não
      *                        expõe ancestrais de fora do escopo); null =
      *                        visão global (árvore sobe até a raiz real)
+     * @param ?int $typeId    Etapa 9 — tipo de projeto do board: as COLUNAS
+     *                        passam a ser o conjunto de fases do tipo e os
+     *                        cartões, as tarefas dos projetos daquele tipo.
+     *                        null = todas as fases (comportamento anterior).
+     *                        Ignorado quando $projectId é informado: na aba
+     *                        da ficha nativa o tipo vem do próprio projeto.
      *
      * @return array{
      *   columns: array<int, array{id:int, name:string, color:string}>,
@@ -101,12 +107,24 @@ class Kanban
     public static function getBoardData(
         ?int $projectId = null,
         ?array $myTaskIds = null,
-        ?array $taskProjectIds = null
+        ?array $taskProjectIds = null,
+        ?int $typeId = null
     ): array {
         /** @var \DBmysql $DB */
         global $DB;
 
-        $states = Dashboard::getStatesMap();
+        // Etapa 9 — a aba "Kanban (ProjectPlus)" da ficha nativa não tem (nem
+        // precisa de) seletor: já existe um projeto único em contexto, então o
+        // vocabulário de colunas é o do TIPO DESSE PROJETO.
+        if ($projectId !== null) {
+            $typeId = TypePhase::typeOfProject($projectId);
+        }
+
+        // Colunas: conjunto de fases do TIPO — é ele que define QUAIS colunas
+        // existem e em que ordem (null = todas as fases, como antes da Etapa
+        // 9). O cartão do Kanban não exibe o nome da fase (a COLUNA já é a
+        // fase), então aqui não é preciso o mapa completo de estados.
+        $columnStates = Dashboard::getStatesMap($typeId);
 
         // ---------- Mapa de TODOS os projetos: pai + nome — usado para
         // montar a árvore de swimlanes (Projeto raiz -> subprojetos) ----------
@@ -148,6 +166,16 @@ class Kanban
             $where['glpi_projecttasks.projects_id'] = Scope::inList($taskProjectIds);
         }
 
+        // Etapa 9 — board cheio com tipo selecionado: só as tarefas de
+        // projetos daquele tipo. O JOIN com glpi_projects já está aqui, então
+        // basta restringir a coluna do tipo (qualificada — lição 16). Não é
+        // interseção de listas: a restrição é por coluna, e conviver com o
+        // filtro de ids do escopo na MESMA consulta é seguro porque as chaves
+        // do WHERE são diferentes.
+        if ($projectId === null && $typeId !== null) {
+            $where['glpi_projects.projecttypes_id'] = $typeId;
+        }
+
         $rows       = [];
         $allTaskIds = [];
         foreach (
@@ -180,7 +208,7 @@ class Kanban
 
         if (empty($rows)) {
             return [
-                'columns'  => self::columnsFrom($states),
+                'columns'  => self::columnsFrom($columnStates),
                 'cards'    => [],
                 'projects' => [],
                 'lanes'    => ['responsible' => []],
@@ -240,9 +268,11 @@ class Kanban
             $stateId = (int) $row['projectstates_id'];
             $pid     = (int) $row['projects_id'];
 
-            if (!isset($states[$stateId])) {
-                // Sem fase (0) ou referência de estado excluído: agrupa
-                // na coluna "Sem fase" (id sintético UNSET_ID).
+            if (!isset($columnStates[$stateId])) {
+                // Sem fase (0), estado excluído — ou (Etapa 9) fase que NÃO
+                // pertence ao conjunto do tipo deste board: agrupa na coluna
+                // "Sem fase" (id sintético UNSET_ID). Sem isto o cartão
+                // apontaria para uma coluna inexistente e sumiria da tela.
                 $sawExtraState = true;
                 $stateId       = self::UNSET_ID;
             }
@@ -279,8 +309,9 @@ class Kanban
             ];
         }
 
-        // ---------- Colunas: fases (ordem de nome, "1. "…"5. ") + "Sem fase" ----------
-        $columns = self::columnsFrom($states, $sawExtraState);
+        // ---------- Colunas: conjunto de fases do TIPO, na ordem gravada
+        // (Etapa 9; sem tipo = todas as fases em ordem de nome) + "Sem fase" ----------
+        $columns = self::columnsFrom($columnStates, $sawExtraState);
 
         // ---------- Árvore de projetos (Bloco 1.2 + 1.3): monta a árvore de
         // swimlanes por projeto. Bloco 1.3 (ponto 1 do usuário): agora

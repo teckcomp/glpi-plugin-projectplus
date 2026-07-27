@@ -68,6 +68,24 @@
 
         <div class="projectplus-header">
             <div class="pp-kb-controls">
+                <form method="get" class="pp-type-pick" action="{{ plugin_web_dir }}/front/kanban.php">
+                    {% if type_scope %}<input type="hidden" name="scope" value="{{ type_scope }}">{% endif %}
+                    <label>
+                        <i class="ti ti-category"></i>{{ __('Tipo', 'projectplus') }}
+                        <select name="type" onchange="this.form.submit()"
+                                title="{{ __('As colunas são as fases do tipo de projeto escolhido', 'projectplus') }}">
+                            {% if type_union %}
+                            <option value="all" {{ type_selected is null ? 'selected' : '' }}>{{ __('Todos os tipos', 'projectplus') }}</option>
+                            {% endif %}
+                            {% for t in type_options %}
+                            <option value="{{ t.id }}" {{ (type_selected is not null and type_selected == t.id) ? 'selected' : '' }}>{{ t.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                    <noscript>
+                        <button type="submit" class="projectplus-btn projectplus-btn--ghost">{{ __('Abrir', 'projectplus') }}</button>
+                    </noscript>
+                </form>
                 <div class="pp-seg pp-kb-seg" role="group" aria-label="{{ __('Agrupar por', 'projectplus') }}">
                     <button type="button" class="pp-seg__btn pp-seg__btn--active" data-pp-lane="project">{{ __('Projeto', 'projectplus') }}</button>
                     <button type="button" class="pp-seg__btn" data-pp-lane="responsible">{{ __('Responsável', 'projectplus') }}</button>
@@ -95,6 +113,12 @@
                 <a class="projectplus-btn projectplus-btn--ghost" href="{{ plugin_web_dir }}/front/projectkanban.php"
                    title="{{ __('Board com os PROJETOS nas colunas de fase', 'projectplus') }}">
                     <i class="ti ti-layout-columns"></i>{{ __('Kanban de projetos', 'projectplus') }}
+                </a>
+                {% endif %}
+                {% if type_can_config %}
+                <a class="projectplus-btn projectplus-btn--ghost" href="{{ plugin_web_dir }}/front/typephases.php"
+                   title="{{ __('Definir quais fases cada tipo de projeto usa, e em que ordem', 'projectplus') }}">
+                    <i class="ti ti-columns-3"></i>{{ __('Fases por tipo', 'projectplus') }}
                 </a>
                 {% endif %}
                 <a class="projectplus-btn projectplus-btn--ghost" href="{{ plugin_web_dir }}/front/dashboard.php">

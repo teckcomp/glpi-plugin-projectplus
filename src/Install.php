@@ -26,15 +26,34 @@ class Install
 {
     /**
      * Tabelas próprias do plugin. Ordem estável (diagnóstico e purga).
+     *
+     * Etapa 9: `tasktimers` SAIU daqui (ver LEGACY_TABLES) e entrou
+     * `typephases`, o mapeamento tipo de projeto -> fases.
      */
     public const TABLES = [
         'glpi_plugin_projectplus_projecttrackings',
-        'glpi_plugin_projectplus_tasktimers',
         'glpi_plugin_projectplus_templates',
         'glpi_plugin_projectplus_alerts',
         'glpi_plugin_projectplus_taskcosts',
         'glpi_plugin_projectplus_projectcosts',
         'glpi_plugin_projectplus_taskcomments',
+        'glpi_plugin_projectplus_typephases',
+    ];
+
+    /**
+     * Tabelas que o plugin JÁ NÃO CRIA, mas que continuam existindo em bases
+     * antigas (Etapa 9, decisão tomada com o Claudio).
+     *
+     * `tasktimers` ficou órfã desde a Etapa 1 — o cronômetro por tarefa foi
+     * substituído pela barra de prazo e nada mais lê nem escreve nessa
+     * tabela. Instalação nova não a cria mais; base existente NÃO é alterada
+     * (apagar dado de quem talvez tenha registro histórico não é papel de uma
+     * atualização de plugin). Ela continua:
+     *   - sendo removida pela purga (`purge_on_uninstall`), e
+     *   - reportada pelo diagnóstico como "órfã (pode ser removida)".
+     */
+    public const LEGACY_TABLES = [
+        'glpi_plugin_projectplus_tasktimers',
     ];
 
     /**
@@ -67,9 +86,14 @@ class Install
      * criar UNIQUE em base com duplicata falha. Ausência de UNIQUE é
      * apenas REPORTADA no diagnóstico (ver healthReport()).
      */
+    /**
+     * `%SIGN%` é resolvido em tempo de execução por `ensureSchema()` com
+     * `DBConnection::getDefaultPrimaryKeySignOption()`. Não dá para
+     * interpolar aqui: constante de classe não aceita variável.
+     */
     private const COLUMNS = [
         'glpi_plugin_projectplus_projecttrackings' => [
-            'projects_id'    => 'INT UNSIGNED NOT NULL DEFAULT 0',
+            'projects_id'    => 'INT %SIGN% NOT NULL DEFAULT 0',
             'last_activity'  => 'TIMESTAMP NULL DEFAULT NULL',
             'is_stalled'     => 'TINYINT NOT NULL DEFAULT 0',
             'stalled_since'  => 'TIMESTAMP NULL DEFAULT NULL',
@@ -78,58 +102,57 @@ class Install
             'date_creation'  => 'TIMESTAMP NULL DEFAULT NULL',
             'date_mod'       => 'TIMESTAMP NULL DEFAULT NULL',
         ],
-        'glpi_plugin_projectplus_tasktimers' => [
-            'projecttasks_id' => 'INT UNSIGNED NOT NULL DEFAULT 0',
-            'users_id'        => 'INT UNSIGNED NOT NULL DEFAULT 0',
-            'start'           => 'TIMESTAMP NULL DEFAULT NULL',
-            'end'             => 'TIMESTAMP NULL DEFAULT NULL',
-            'duration'        => 'INT UNSIGNED NOT NULL DEFAULT 0',
-            'date_creation'   => 'TIMESTAMP NULL DEFAULT NULL',
-        ],
         'glpi_plugin_projectplus_templates' => [
             'name'          => "VARCHAR(255) NOT NULL DEFAULT ''",
             'comment'       => 'TEXT',
-            'entities_id'   => 'INT UNSIGNED NOT NULL DEFAULT 0',
+            'entities_id'   => 'INT %SIGN% NOT NULL DEFAULT 0',
             'is_recursive'  => 'TINYINT NOT NULL DEFAULT 0',
             'structure'     => 'LONGTEXT',
             'date_creation' => 'TIMESTAMP NULL DEFAULT NULL',
             'date_mod'      => 'TIMESTAMP NULL DEFAULT NULL',
         ],
         'glpi_plugin_projectplus_alerts' => [
-            'users_id'      => 'INT UNSIGNED NOT NULL DEFAULT 0',
+            'users_id'      => 'INT %SIGN% NOT NULL DEFAULT 0',
             'itemtype'      => "VARCHAR(100) NOT NULL DEFAULT ''",
-            'items_id'      => 'INT UNSIGNED NOT NULL DEFAULT 0',
+            'items_id'      => 'INT %SIGN% NOT NULL DEFAULT 0',
             'kind'          => "VARCHAR(30) NOT NULL DEFAULT ''",
             'message'       => 'TEXT',
             'is_read'       => 'TINYINT NOT NULL DEFAULT 0',
             'date_creation' => 'TIMESTAMP NULL DEFAULT NULL',
         ],
         'glpi_plugin_projectplus_taskcosts' => [
-            'projecttasks_id' => 'INT UNSIGNED NOT NULL DEFAULT 0',
+            'projecttasks_id' => 'INT %SIGN% NOT NULL DEFAULT 0',
             'name'            => "VARCHAR(255) NOT NULL DEFAULT ''",
             'date'            => 'DATE NULL DEFAULT NULL',
             'cost'            => 'DECIMAL(20,4) NOT NULL DEFAULT 0',
             'comment'         => 'TEXT',
-            'users_id'        => 'INT UNSIGNED NOT NULL DEFAULT 0',
+            'users_id'        => 'INT %SIGN% NOT NULL DEFAULT 0',
             'date_creation'   => 'TIMESTAMP NULL DEFAULT NULL',
             'date_mod'        => 'TIMESTAMP NULL DEFAULT NULL',
         ],
         'glpi_plugin_projectplus_projectcosts' => [
-            'projects_id'   => 'INT UNSIGNED NOT NULL DEFAULT 0',
+            'projects_id'   => 'INT %SIGN% NOT NULL DEFAULT 0',
             'name'          => "VARCHAR(255) NOT NULL DEFAULT ''",
             'date'          => 'DATE NULL DEFAULT NULL',
             'cost'          => 'DECIMAL(20,4) NOT NULL DEFAULT 0',
             'comment'       => 'TEXT',
-            'users_id'      => 'INT UNSIGNED NOT NULL DEFAULT 0',
+            'users_id'      => 'INT %SIGN% NOT NULL DEFAULT 0',
             'date_creation' => 'TIMESTAMP NULL DEFAULT NULL',
             'date_mod'      => 'TIMESTAMP NULL DEFAULT NULL',
         ],
         'glpi_plugin_projectplus_taskcomments' => [
-            'projecttasks_id' => 'INT UNSIGNED NOT NULL DEFAULT 0',
-            'users_id'        => 'INT UNSIGNED NOT NULL DEFAULT 0',
+            'projecttasks_id' => 'INT %SIGN% NOT NULL DEFAULT 0',
+            'users_id'        => 'INT %SIGN% NOT NULL DEFAULT 0',
             'content'         => 'TEXT',
             'date_creation'   => 'TIMESTAMP NULL DEFAULT NULL',
             'date_mod'        => 'TIMESTAMP NULL DEFAULT NULL',
+        ],
+        'glpi_plugin_projectplus_typephases' => [
+            'projecttypes_id'  => 'INT %SIGN% NOT NULL DEFAULT 0',
+            'projectstates_id' => 'INT %SIGN% NOT NULL DEFAULT 0',
+            'ordem'            => 'INT %SIGN% NOT NULL DEFAULT 0',
+            'date_creation'    => 'TIMESTAMP NULL DEFAULT NULL',
+            'date_mod'         => 'TIMESTAMP NULL DEFAULT NULL',
         ],
     ];
 
@@ -141,6 +164,7 @@ class Install
     private const UNIQUE_KEYS = [
         'glpi_plugin_projectplus_projecttrackings' => ['projects_id'],
         'glpi_plugin_projectplus_alerts'           => ['dedup'],
+        'glpi_plugin_projectplus_typephases'       => ['type_state'],
     ];
 
     public static function install(): bool
@@ -150,8 +174,22 @@ class Install
 
         $migration = new Migration(PLUGIN_PROJECTPLUS_VERSION);
 
-        $charset   = 'utf8mb4';
-        $collation = 'utf8mb4_unicode_ci';
+        // ACHADO DA AUDITORIA DE PUBLICAÇÃO (26/07/2026).
+        //
+        // Isto era `utf8mb4` / `utf8mb4_unicode_ci` FIXO. Funcionava aqui
+        // porque esta base nasceu no GLPI 11, mas uma instalação atualizada
+        // de versões antigas roda com `$DB->use_utf8mb4 = false` — as tabelas
+        // do core ficam em `utf8` / `utf8_unicode_ci`. Criar as tabelas do
+        // plugin em utf8mb4 nessa base produz erro 1267 ("Illegal mix of
+        // collations") em qualquer comparação de texto entre tabela do plugin
+        // e tabela do core, e não haveria como o desenvolvedor reproduzir num
+        // ambiente moderno.
+        //
+        // O core expõe exatamente estes três resolvedores; usá-los é o que a
+        // própria Migration do GLPI faz.
+        $charset   = \DBConnection::getDefaultCharset();
+        $collation = \DBConnection::getDefaultCollation();
+        $sign      = \DBConnection::getDefaultPrimaryKeySignOption();
 
         // ------------------------------------------------------------------
         // 1) Indicadores extras por projeto (última atividade, parado, orçamento)
@@ -159,8 +197,8 @@ class Install
         if (!$DB->tableExists('glpi_plugin_projectplus_projecttrackings')) {
             $DB->doQuery("
                 CREATE TABLE `glpi_plugin_projectplus_projecttrackings` (
-                    `id`                INT UNSIGNED NOT NULL AUTO_INCREMENT,
-                    `projects_id`       INT UNSIGNED NOT NULL DEFAULT 0,
+                    `id`                INT {$sign} NOT NULL AUTO_INCREMENT,
+                    `projects_id`       INT {$sign} NOT NULL DEFAULT 0,
                     `last_activity`     TIMESTAMP NULL DEFAULT NULL,
                     `is_stalled`        TINYINT NOT NULL DEFAULT 0,
                     `stalled_since`     TIMESTAMP NULL DEFAULT NULL,
@@ -176,22 +214,30 @@ class Install
         }
 
         // ------------------------------------------------------------------
-        // 2) Cronômetro por tarefa/usuário
+        // 2) Fases por TIPO de projeto (Etapa 9).
+        //
+        //    Tabela de MAPEAMENTO, não de definição: `glpi_projectstates`
+        //    continua sendo a fonte única do nome, da cor e do `is_finished`
+        //    de cada fase. Aqui só se diz QUAIS fases pertencem a QUAL tipo e
+        //    em que ordem as colunas aparecem.
+        //
+        //    `projecttypes_id = 0` é o CONJUNTO PADRÃO: vale para todo tipo
+        //    que não tenha linha própria (só a exceção precisa ser
+        //    configurada). A chave única impede a mesma fase duas vezes no
+        //    mesmo tipo.
         // ------------------------------------------------------------------
-        if (!$DB->tableExists('glpi_plugin_projectplus_tasktimers')) {
+        if (!$DB->tableExists('glpi_plugin_projectplus_typephases')) {
             $DB->doQuery("
-                CREATE TABLE `glpi_plugin_projectplus_tasktimers` (
-                    `id`               INT UNSIGNED NOT NULL AUTO_INCREMENT,
-                    `projecttasks_id`  INT UNSIGNED NOT NULL DEFAULT 0,
-                    `users_id`         INT UNSIGNED NOT NULL DEFAULT 0,
-                    `start`            TIMESTAMP NULL DEFAULT NULL,
-                    `end`              TIMESTAMP NULL DEFAULT NULL,
-                    `duration`         INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'segundos',
-                    `date_creation`    TIMESTAMP NULL DEFAULT NULL,
+                CREATE TABLE `glpi_plugin_projectplus_typephases` (
+                    `id`                INT {$sign} NOT NULL AUTO_INCREMENT,
+                    `projecttypes_id`   INT {$sign} NOT NULL DEFAULT 0 COMMENT '0 = conjunto padrao',
+                    `projectstates_id`  INT {$sign} NOT NULL DEFAULT 0,
+                    `ordem`             INT {$sign} NOT NULL DEFAULT 0 COMMENT 'posicao da coluna',
+                    `date_creation`     TIMESTAMP NULL DEFAULT NULL,
+                    `date_mod`          TIMESTAMP NULL DEFAULT NULL,
                     PRIMARY KEY (`id`),
-                    KEY `projecttasks_id` (`projecttasks_id`),
-                    KEY `users_id` (`users_id`),
-                    KEY `running` (`users_id`, `end`)
+                    UNIQUE KEY `type_state` (`projecttypes_id`, `projectstates_id`),
+                    KEY `ordem` (`projecttypes_id`, `ordem`)
                 ) ENGINE=InnoDB DEFAULT CHARSET={$charset} COLLATE={$collation}
             ");
         }
@@ -203,10 +249,10 @@ class Install
         if (!$DB->tableExists('glpi_plugin_projectplus_templates')) {
             $DB->doQuery("
                 CREATE TABLE `glpi_plugin_projectplus_templates` (
-                    `id`             INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    `id`             INT {$sign} NOT NULL AUTO_INCREMENT,
                     `name`           VARCHAR(255) NOT NULL DEFAULT '',
                     `comment`        TEXT,
-                    `entities_id`    INT UNSIGNED NOT NULL DEFAULT 0,
+                    `entities_id`    INT {$sign} NOT NULL DEFAULT 0,
                     `is_recursive`   TINYINT NOT NULL DEFAULT 0,
                     `structure`      LONGTEXT COMMENT 'JSON da arvore de tarefas',
                     `date_creation`  TIMESTAMP NULL DEFAULT NULL,
@@ -224,10 +270,10 @@ class Install
         if (!$DB->tableExists('glpi_plugin_projectplus_alerts')) {
             $DB->doQuery("
                 CREATE TABLE `glpi_plugin_projectplus_alerts` (
-                    `id`             INT UNSIGNED NOT NULL AUTO_INCREMENT,
-                    `users_id`       INT UNSIGNED NOT NULL DEFAULT 0,
+                    `id`             INT {$sign} NOT NULL AUTO_INCREMENT,
+                    `users_id`       INT {$sign} NOT NULL DEFAULT 0,
                     `itemtype`       VARCHAR(100) NOT NULL DEFAULT '',
-                    `items_id`       INT UNSIGNED NOT NULL DEFAULT 0,
+                    `items_id`       INT {$sign} NOT NULL DEFAULT 0,
                     `kind`           VARCHAR(30) NOT NULL DEFAULT '' COMMENT 'overdue|pending|completed|stalled',
                     `message`        TEXT,
                     `is_read`        TINYINT NOT NULL DEFAULT 0,
@@ -246,13 +292,13 @@ class Install
         if (!$DB->tableExists('glpi_plugin_projectplus_taskcosts')) {
             $DB->doQuery("
                 CREATE TABLE `glpi_plugin_projectplus_taskcosts` (
-                    `id`               INT UNSIGNED NOT NULL AUTO_INCREMENT,
-                    `projecttasks_id`  INT UNSIGNED NOT NULL DEFAULT 0,
+                    `id`               INT {$sign} NOT NULL AUTO_INCREMENT,
+                    `projecttasks_id`  INT {$sign} NOT NULL DEFAULT 0,
                     `name`             VARCHAR(255) NOT NULL DEFAULT '',
                     `date`             DATE NULL DEFAULT NULL,
                     `cost`             DECIMAL(20,4) NOT NULL DEFAULT 0,
                     `comment`          TEXT,
-                    `users_id`         INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'quem lançou',
+                    `users_id`         INT {$sign} NOT NULL DEFAULT 0 COMMENT 'quem lançou',
                     `date_creation`    TIMESTAMP NULL DEFAULT NULL,
                     `date_mod`         TIMESTAMP NULL DEFAULT NULL,
                     PRIMARY KEY (`id`),
@@ -268,13 +314,13 @@ class Install
         if (!$DB->tableExists('glpi_plugin_projectplus_projectcosts')) {
             $DB->doQuery("
                 CREATE TABLE `glpi_plugin_projectplus_projectcosts` (
-                    `id`             INT UNSIGNED NOT NULL AUTO_INCREMENT,
-                    `projects_id`    INT UNSIGNED NOT NULL DEFAULT 0,
+                    `id`             INT {$sign} NOT NULL AUTO_INCREMENT,
+                    `projects_id`    INT {$sign} NOT NULL DEFAULT 0,
                     `name`           VARCHAR(255) NOT NULL DEFAULT '',
                     `date`           DATE NULL DEFAULT NULL,
                     `cost`           DECIMAL(20,4) NOT NULL DEFAULT 0,
                     `comment`        TEXT,
-                    `users_id`       INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'quem lançou',
+                    `users_id`       INT {$sign} NOT NULL DEFAULT 0 COMMENT 'quem lançou',
                     `date_creation`  TIMESTAMP NULL DEFAULT NULL,
                     `date_mod`       TIMESTAMP NULL DEFAULT NULL,
                     PRIMARY KEY (`id`),
@@ -292,9 +338,9 @@ class Install
         if (!$DB->tableExists('glpi_plugin_projectplus_taskcomments')) {
             $DB->doQuery("
                 CREATE TABLE `glpi_plugin_projectplus_taskcomments` (
-                    `id`               INT UNSIGNED NOT NULL AUTO_INCREMENT,
-                    `projecttasks_id`  INT UNSIGNED NOT NULL DEFAULT 0,
-                    `users_id`         INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'autor',
+                    `id`               INT {$sign} NOT NULL AUTO_INCREMENT,
+                    `projecttasks_id`  INT {$sign} NOT NULL DEFAULT 0,
+                    `users_id`         INT {$sign} NOT NULL DEFAULT 0 COMMENT 'autor',
                     `content`          TEXT,
                     `date_creation`    TIMESTAMP NULL DEFAULT NULL,
                     `date_mod`         TIMESTAMP NULL DEFAULT NULL,
@@ -318,6 +364,14 @@ class Install
         //      ficam intactos no banco.
         // ------------------------------------------------------------------
         self::migrateNativeCosts();
+
+        // ------------------------------------------------------------------
+        // 7.3) Semeadura ÚNICA do conjunto PADRÃO de fases (Etapa 9).
+        //      Copia as fases que a instância já usa para
+        //      `projecttypes_id = 0`, de modo que no dia seguinte à
+        //      atualização ninguém veja diferença nenhuma.
+        // ------------------------------------------------------------------
+        self::seedDefaultPhases();
 
         // ------------------------------------------------------------------
         // Direitos.
@@ -435,6 +489,15 @@ class Install
             }
             foreach ($columns as $field => $sqlType) {
                 if (!$DB->fieldExists($table, $field)) {
+                    // `%SIGN%` vem da constante COLUMNS (constante de classe
+                    // não interpola variável) e é resolvido aqui com o mesmo
+                    // critério do CREATE TABLE — numa base com chaves
+                    // assinadas, a coluna nova nasce assinada como as do core.
+                    $sqlType = str_replace(
+                        '%SIGN%',
+                        \DBConnection::getDefaultPrimaryKeySignOption(),
+                        $sqlType
+                    );
                     // fieldFormat do core devolve o tipo cru quando não
                     // reconhece o nome — é assim que se passa SQL literal.
                     $migration->addField($table, $field, $sqlType);
@@ -492,6 +555,63 @@ class Install
         CoreConfig::setConfigurationValues(Config::CONTEXT, ['costs_migrated' => 1]);
     }
 
+    /**
+     * Semeadura única do CONJUNTO PADRÃO de fases (Etapa 9).
+     *
+     * Copia as fases que a instância já tem em `glpi_projectstates` para
+     * `projecttypes_id = 0`, na ordem alfabética — que é exatamente a ordem em
+     * que o plugin as mostrava antes da Etapa 9 (o prefixo "1. ", "2. " do
+     * modelo de 5 fases da Etapa 2.5 garante a sequência correta).
+     *
+     * É essa semeadura que sustenta a promessa "no dia seguinte ninguém vê
+     * diferença": todo tipo, por não ter linha própria, herda esse conjunto.
+     *
+     * Roda no máximo uma vez: a marca `phases_seeded` é gravada mesmo quando
+     * não há nada a copiar (instância sem fase nenhuma cadastrada). E nunca
+     * mexe numa tabela que já tenha conteúdo — reinstalar não desfaz a
+     * configuração feita à mão na tela de administração.
+     */
+    private static function seedDefaultPhases(): void
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        $config = Config::get();
+        if (!empty($config['phases_seeded'])) {
+            return;
+        }
+
+        if (
+            $DB->tableExists(TypePhase::TABLE)
+            && $DB->tableExists('glpi_projectstates')
+        ) {
+            $cpt = $DB->request(['COUNT' => 'cpt', 'FROM' => TypePhase::TABLE])->current();
+
+            // Cinto e suspensório: tabela já povoada não é tocada.
+            if ((int) ($cpt['cpt'] ?? 0) === 0) {
+                $now   = date('Y-m-d H:i:s');
+                $ordem = 0;
+                foreach (
+                    $DB->request([
+                        'SELECT' => ['id'],
+                        'FROM'   => 'glpi_projectstates',
+                        'ORDER'  => 'name',
+                    ]) as $row
+                ) {
+                    $DB->insert(TypePhase::TABLE, [
+                        'projecttypes_id'  => TypePhase::DEFAULT_TYPE,
+                        'projectstates_id' => (int) $row['id'],
+                        'ordem'            => ++$ordem,
+                        'date_creation'    => $now,
+                        'date_mod'         => $now,
+                    ]);
+                }
+            }
+        }
+
+        CoreConfig::setConfigurationValues(Config::CONTEXT, ['phases_seeded' => 1]);
+    }
+
     public static function uninstall(): bool
     {
         /** @var \DBmysql $DB */
@@ -511,7 +631,10 @@ class Install
         // existente, preservar as linhas devolve a configuração intacta.
         $config = Config::get();
         if (!empty($config['purge_on_uninstall'])) {
-            foreach (self::TABLES as $table) {
+            // Etapa 9: LEGACY_TABLES entra na purga — o plugin já não cria a
+            // `tasktimers`, mas quem pediu expurgo completo quer o banco
+            // limpo, inclusive do que versões antigas deixaram para trás.
+            foreach (array_merge(self::TABLES, self::LEGACY_TABLES) as $table) {
                 if ($DB->tableExists($table)) {
                     $DB->doQuery("DROP TABLE `{$table}`");
                 }
@@ -637,8 +760,9 @@ class Install
      * com quantas linhas, colunas/índices faltando, os 11 direitos e em
      * quantos perfis estão concedidos, e o cron.
      *
-     * @return array{version:string,tables:array,rights:array,cron:array,
-     *               costs_migrated:bool,purge_on_uninstall:bool,issues:int}
+     * @return array{version:string,tables:array,legacy_tables:array,rights:array,
+     *               cron:array,phases:array,costs_migrated:bool,
+     *               purge_on_uninstall:bool,issues:int}
      */
     public static function healthReport(): array
     {
@@ -681,6 +805,20 @@ class Install
                 'rows'    => $rows,
                 'missing' => $missing,
             ];
+        }
+
+        // --- Tabelas legadas (Etapa 9) -------------------------------------
+        // Não são erro: só informam que sobrou lixo de versão antiga, que a
+        // purga remove. NÃO incrementam `issues`.
+        $legacy = [];
+        foreach (self::LEGACY_TABLES as $table) {
+            if ($DB->tableExists($table)) {
+                $cpt      = $DB->request(['COUNT' => 'cpt', 'FROM' => $table])->current();
+                $legacy[] = [
+                    'name' => $table,
+                    'rows' => (int) ($cpt['cpt'] ?? 0),
+                ];
+            }
         }
 
         // --- Direitos ------------------------------------------------------
@@ -771,13 +909,38 @@ class Install
             ];
         }
 
+        // --- Fases por tipo (Etapa 9) --------------------------------------
+        // Um conjunto SEM nenhuma fase `is_finished` é um problema de
+        // verdade: a trava "projeto com tarefa/subprojeto aberto não vai para
+        // fase finalizada" (hook PRE_ITEM_UPDATE) nunca dispara nele — falha
+        // em silêncio, que é o pior tipo de falha.
+        $phases = [
+            'table'         => $DB->tableExists(TypePhase::TABLE),
+            'seeded'        => !empty($config['phases_seeded']),
+            'sets'          => 0,
+            'custom'        => false,
+            'no_finished'   => [],
+            'total_states'  => 0,
+        ];
+        if ($phases['table']) {
+            $phases['sets']         = count(TypePhase::configuredTypeIds());
+            $phases['custom']       = TypePhase::hasCustomSets();
+            $phases['total_states'] = count(TypePhase::allStates());
+            $phases['no_finished']  = TypePhase::setsWithoutFinished();
+            $issues += count($phases['no_finished']);
+        } else {
+            $issues++;
+        }
+
         return [
             'version'            => defined('PLUGIN_PROJECTPLUS_VERSION')
                 ? PLUGIN_PROJECTPLUS_VERSION : '?',
             'tables'             => $tables,
+            'legacy_tables'      => $legacy,
             'rights'             => $rights,
             'admins'             => $admins,
             'cron'               => $cron,
+            'phases'             => $phases,
             'costs_migrated'     => !empty($config['costs_migrated']),
             'purge_on_uninstall' => !empty($config['purge_on_uninstall']),
             'issues'             => $issues,

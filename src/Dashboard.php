@@ -80,40 +80,44 @@ class Dashboard extends CommonGLPI
     public const PHASE_DEFAULT_COLOR = '#8a97a5';
 
     /**
-     * Mapa id => ['name' => ..., 'color' => ...] de glpi_projectstates.
-     * Cor sempre preenchida (fallback cinza) para uso direto nos chips.
+     * Mapa id => ['name' => ..., 'color' => ..., 'is_finished' => ...] das
+     * fases. Cor sempre preenchida (fallback cinza) para uso direto nos chips.
+     *
+     * GARGALO ÚNICO DE FASES (lição 60): Kanban de tarefas, Kanban de
+     * projetos, Timeline, donuts da Visão geral, filtro de Relatórios e 3
+     * `front/` passam por aqui. A Etapa 9 acrescentou o parâmetro `$typeId`
+     * — e é por isso que "fases por tipo" se propaga sozinha.
+     *
+     * @param ?int $typeId null = TODAS as fases da instância (é o que se usa
+     *                     para RESOLVER nome/cor de um chip: a fase de um
+     *                     item tem de aparecer mesmo que não pertença ao
+     *                     conjunto do tipo dele). Um id de tipo devolve o
+     *                     CONJUNTO ORDENADO daquele tipo — é o que monta
+     *                     COLUNAS e listas de opção.
+     *
+     * @return array<int, array{name:string,color:string,is_finished:bool}>
      */
-    public static function getStatesMap(): array
+    public static function getStatesMap(?int $typeId = null): array
     {
-        /** @var \DBmysql $DB */
-        global $DB;
-
-        static $map = null;
-        if ($map !== null) {
-            return $map;
-        }
-
-        $map = [];
-        foreach ($DB->request(['FROM' => 'glpi_projectstates', 'ORDER' => 'name']) as $s) {
-            $color = trim((string) ($s['color'] ?? ''));
-            $map[(int) $s['id']] = [
-                'name'  => $s['name'],
-                'color' => preg_match('/^#[0-9a-fA-F]{6}$/', $color) ? $color : self::PHASE_DEFAULT_COLOR,
-            ];
-        }
-        return $map;
+        return TypePhase::statesFor($typeId);
     }
 
     // ------------------------------------------------------------------
     // Dados do painel
     // ------------------------------------------------------------------
 
+    /**
+     * @param ?int $typeId Etapa 9 — tipo de projeto selecionado no filtro.
+     *                     null = todos os tipos (o donut de fase vira
+     *                     "Projetos por tipo").
+     */
     public static function getData(
         ?string $from = null,
         ?string $until = null,
         ?array $projectIds = null,
         ?array $myTaskIds = null,
-        ?array $taskProjectIds = null
+        ?array $taskProjectIds = null,
+        ?int $typeId = null
     ): array {
         /** @var \DBmysql $DB */
         global $DB;
@@ -140,13 +144,22 @@ class Dashboard extends CommonGLPI
             $where['glpi_projects.id'] = Scope::inList($projectIds);
         }
 
+        // Etapa 9 — filtro por TIPO de projeto. Com tipo selecionado o painel
+        // fala de um vocabulário só: os projetos são do tipo, as tarefas são
+        // dos projetos do tipo e o donut de fase usa o conjunto do tipo.
+        $typeProjectIds = null;
+        if ($typeId !== null) {
+            $where['glpi_projects.projecttypes_id'] = $typeId;
+            $typeProjectIds = self::projectIdsOfType($typeId);
+        }
+
         $iterator = $DB->request([
             'SELECT' => [
                 'glpi_projects.id', 'glpi_projects.name',
                 'glpi_projects.percent_done', 'glpi_projects.plan_end_date',
                 'glpi_projects.plan_start_date', 'glpi_projects.real_start_date',
                 'glpi_projects.date_mod', 'glpi_projects.priority',
-                'glpi_projects.projectstates_id',
+                'glpi_projects.projectstates_id', 'glpi_projects.projecttypes_id',
             ],
             'FROM'  => 'glpi_projects',
             'WHERE' => $where,
@@ -162,8 +175,12 @@ class Dashboard extends CommonGLPI
         $prioChart = ['high' => 0, 'medium' => 0, 'low' => 0];
         $pctSum    = 0;
 
+        // Mapa COMPLETO de fases: resolve nome/cor do chip de cada projeto,
+        // inclusive de fase que não pertence ao conjunto do tipo (Etapa 9 —
+        // o chip nunca deve ficar sem nome).
         $states     = self::getStatesMap();
         $phaseCount = []; // states_id => quantidade (0 = sem fase)
+        $typeCount  = []; // projecttypes_id => quantidade (0 = sem tipo)
 
         foreach ($iterator as $row) {
             $pct       = (int) $row['percent_done'];
@@ -188,6 +205,9 @@ class Dashboard extends CommonGLPI
 
             $stateId = (int) $row['projectstates_id'];
             $phaseCount[$stateId] = ($phaseCount[$stateId] ?? 0) + 1;
+
+            $ptypeId = (int) ($row['projecttypes_id'] ?? 0);
+            $typeCount[$ptypeId] = ($typeCount[$ptypeId] ?? 0) + 1;
 
             $projects[] = [
                 'id'            => (int) $row['id'],
@@ -263,6 +283,16 @@ class Dashboard extends CommonGLPI
         } elseif ($taskProjectIds !== null) {
             $taskWhere['projects_id'] = Scope::inList($taskProjectIds);
         }
+        // Etapa 9: com tipo selecionado as tarefas vêm só dos projetos daquele
+        // tipo. Lição 35 — duas restrições sobre a MESMA chave do WHERE se
+        // sobrescrevem, então aqui é INTERSEÇÃO (o tipo nunca amplia o escopo).
+        if ($typeProjectIds !== null) {
+            $taskWhere['projects_id'] = Scope::inList(
+                ($myTaskIds !== null)
+                    ? $typeProjectIds
+                    : self::intersectIds($taskProjectIds, $typeProjectIds)
+            );
+        }
 
         $tasksChart     = ['done' => 0, 'in_progress' => 0, 'pending' => 0, 'overdue' => 0];
         $taskStateCount = []; // projectstates_id => quantidade (donut "Tarefas por Estado")
@@ -300,6 +330,12 @@ class Dashboard extends CommonGLPI
         if ($projectIds !== null) {
             $doneMonthWhere['id'] = Scope::inList($projectIds);
         }
+        if ($typeProjectIds !== null) {
+            // Interseção, mesma razão do bloco de tarefas acima (lição 35).
+            $doneMonthWhere['id'] = Scope::inList(
+                self::intersectIds($projectIds, $typeProjectIds)
+            );
+        }
         $doneMonth = $DB->request([
             'COUNT' => 'cpt',
             'FROM'  => 'glpi_projects',
@@ -308,11 +344,25 @@ class Dashboard extends CommonGLPI
         $kpis['done_month'] = (int) ($doneMonth['cpt'] ?? 0);
 
         // --- Donut "Projetos por fase" (Etapa 2.5, Bloco 3) ---
-        // Segue a ordem alfabética dos estados (prefixo numérico garante a
-        // sequência 1..5); "Sem fase" entra por último, em cinza.
+        // Etapa 9: com tipo selecionado a ORDEM é a do conjunto do tipo
+        // (coluna `ordem`), não mais a alfabética. Fase que tem projeto mas
+        // está FORA do conjunto entra depois, para nada desaparecer do donut.
+        $phaseOrder = ($typeId !== null) ? self::getStatesMap($typeId) : $states;
+
         $phaseChart = [];
-        foreach ($states as $sid => $s) {
+        $inOrder    = [];
+        foreach ($phaseOrder as $sid => $s) {
+            $inOrder[$sid] = true;
             if (!empty($phaseCount[$sid])) {
+                $phaseChart[] = [
+                    'name'  => $s['name'],
+                    'color' => $s['color'],
+                    'count' => $phaseCount[$sid],
+                ];
+            }
+        }
+        foreach ($states as $sid => $s) {
+            if (!isset($inOrder[$sid]) && !empty($phaseCount[$sid])) {
                 $phaseChart[] = [
                     'name'  => $s['name'],
                     'color' => $s['color'],
@@ -329,10 +379,29 @@ class Dashboard extends CommonGLPI
         }
 
         // --- Donut "Tarefas por Estado" (Etapa 3, Bloco 4) — mesmo formato
-        // do phase_chart, agrupando as tarefas por glpi_projectstates ---
+        // do phase_chart, agrupando as tarefas por glpi_projectstates.
+        //
+        // Etapa 9 (correção): segue o MESMO critério do donut de projetos —
+        // com tipo selecionado, a ordem é a do conjunto do tipo, e não a
+        // alfabética. Sem isto as CONTAGENS respeitavam o filtro (as tarefas
+        // já vêm só dos projetos daquele tipo), mas a lista continuava vindo
+        // do vocabulário inteiro da instância: filtrando por Infraestrutura
+        // ainda aparecia fatia de fase de outro setor, que é exatamente a
+        // mistura que esta etapa existe para acabar. ---
         $taskStateChart = [];
-        foreach ($states as $sid => $s) {
+        foreach ($phaseOrder as $sid => $s) {
             if (!empty($taskStateCount[$sid])) {
+                $taskStateChart[] = [
+                    'name'  => $s['name'],
+                    'color' => $s['color'],
+                    'count' => $taskStateCount[$sid],
+                ];
+            }
+        }
+        // Fase com tarefa mas FORA do conjunto entra depois — some da ordem,
+        // não do gráfico (mesma regra da coluna "Sem fase" no Kanban).
+        foreach ($states as $sid => $s) {
+            if (!isset($inOrder[$sid]) && !empty($taskStateCount[$sid])) {
                 $taskStateChart[] = [
                     'name'  => $s['name'],
                     'color' => $s['color'],
@@ -348,16 +417,92 @@ class Dashboard extends CommonGLPI
             ];
         }
 
+        // --- Donut ADAPTATIVO (Etapa 9): sem tipo selecionado, "Projetos por
+        // fase" daria um gráfico com os vocabulários de todos os setores
+        // misturados. Nesse caso a Visão geral mostra "Projetos por tipo",
+        // que é a leitura que faz sentido cruzando departamentos. ---
+        $typeChart = [];
+        foreach (TypePhase::projectTypes() as $tid => $tname) {
+            if (!empty($typeCount[$tid])) {
+                $typeChart[] = [
+                    'name'  => $tname,
+                    'color' => TypePhase::typeColor((int) $tid),
+                    'count' => $typeCount[$tid],
+                ];
+            }
+        }
+        if (!empty($typeCount[0])) {
+            $typeChart[] = [
+                'name'  => __('Sem tipo', 'projectplus'),
+                'color' => self::PHASE_DEFAULT_COLOR,
+                'count' => $typeCount[0],
+            ];
+        }
+
         return [
             'kpis'             => $kpis,
             'status_chart'     => $chart,
             'priority_chart'   => $prioChart,
             'tasks_chart'      => $tasksChart,
             'phase_chart'      => $phaseChart,
+            'type_chart'       => $typeChart,
             'task_state_chart' => $taskStateChart,
             'projects'         => $projects,
-            'open_tasks'       => self::getOpenTasks($from, $until, 15, $myTaskIds, $taskProjectIds),
+            'open_tasks'       => self::getOpenTasks(
+                $from,
+                $until,
+                15,
+                $myTaskIds,
+                $taskProjectIds,
+                $typeProjectIds
+            ),
         ];
+    }
+
+    /**
+     * Ids dos projetos de um tipo (não excluídos, não modelo, na entidade).
+     * Etapa 9 — usado para levar o filtro de tipo às consultas que partem de
+     * `glpi_projecttasks`, que não tem a coluna do tipo.
+     *
+     * @return array<int, int>
+     */
+    private static function projectIdsOfType(int $typeId): array
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        $ids = [];
+        foreach (
+            $DB->request([
+                'SELECT' => ['id'],
+                'FROM'   => 'glpi_projects',
+                'WHERE'  => [
+                    'projecttypes_id' => $typeId,
+                    'is_deleted'      => 0,
+                    'is_template'     => 0,
+                ] + getEntitiesRestrictCriteria('glpi_projects'),
+            ]) as $row
+        ) {
+            $ids[] = (int) $row['id'];
+        }
+
+        return $ids;
+    }
+
+    /**
+     * Interseção de duas listas de ids, com null = "sem restrição".
+     * Mesma semântica de Reports::combineIds (lição 35): o segundo filtro
+     * nunca AMPLIA o primeiro.
+     */
+    private static function intersectIds(?array $a, ?array $b): ?array
+    {
+        if ($a === null) {
+            return $b;
+        }
+        if ($b === null) {
+            return $a;
+        }
+        return array_values(array_intersect(array_map('intval', $a), array_map('intval', $b)));
     }
 
     /**

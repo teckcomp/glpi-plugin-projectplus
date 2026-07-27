@@ -978,3 +978,29 @@
 .pp-kb-widget--tab .pp-kb-scroll {
     max-height: 55vh; border: 1px solid #e3e7eb; border-radius: 6px;
 }
+
+/* ===== Etapa 9 — fases por tipo de projeto ===== */
+.pp-tp-pick { display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; }
+.pp-tp-pick select { max-width: 320px; }
+.pp-tp-table td { vertical-align: middle; }
+.pp-tp-row--off td { opacity: .55; }
+.pp-tp-move { white-space: nowrap; }
+.pp-tp-mini {
+    padding: 2px 8px; font-size: 0.9rem; line-height: 1.2;
+    min-width: 30px;
+}
+.pp-tp-warn {
+    border-left: 4px solid #ef6c00;
+    margin-bottom: 12px;
+}
+.pp-tp-warn p { margin: 0; padding: 10px 14px; font-size: 0.85rem; color: #16323f; }
+.pp-tp-warn .ti { color: #ef6c00; margin-right: 6px; }
+.pp-phase-tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    margin: 0 8px 4px 0; font-size: 0.8rem; white-space: nowrap;
+}
+.pp-phase-tag .pp-phase-dot { margin-right: 0; }
+
+/* Seletor de tipo dos boards (Kanban de tarefas e de projetos) */
+.pp-type-pick { display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; }
+.pp-type-pick select { max-width: 260px; }

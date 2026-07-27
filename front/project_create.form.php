@@ -26,6 +26,9 @@ $input = [
     'entities_id'      => Session::getActiveEntity(),
     'projects_id'      => (int) ($_POST['projects_id'] ?? 0),      // pai (0 = raiz)
     'projectstates_id' => (int) ($_POST['projectstates_id'] ?? 0),
+    // Etapa 9: o tipo passou a ser escolhido no modal — é ele que define o
+    // conjunto de fases do projeto (colunas do Kanban, filtro da Visão geral).
+    'projecttypes_id'  => (int) ($_POST['projecttypes_id'] ?? 0),
     'priority'         => min(6, max(1, (int) ($_POST['priority'] ?? 3))),
     'users_id'         => (int) ($_POST['users_id'] ?? Session::getLoginUserID()),
     'content'          => $_POST['content'] ?? '',

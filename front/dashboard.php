@@ -9,6 +9,7 @@ use GlpiPlugin\Projectplus\Access;
 use GlpiPlugin\Projectplus\Dashboard;
 use GlpiPlugin\Projectplus\I18nJs;
 use GlpiPlugin\Projectplus\Scope;
+use GlpiPlugin\Projectplus\TypePhase;
 use GlpiPlugin\Projectplus\Url;
 
 include('../../../inc/includes.php');
@@ -31,7 +32,7 @@ Html::header(
 // dos <script> das telas.
 I18nJs::render();
 
-// PONTO A VALIDAR em homologação: o caminho do template base
+// Caminho do template base do GLPI 11, validado em homologação.
 // (layout/base.html.twig) pode variar conforme a versão do GLPI.
 // Este Twig é autocontido (não estende layout) para reduzir o risco.
 // Filtro de período (Bloco 3.2)
@@ -45,7 +46,21 @@ $scopeProjectIds     = Scope::projectIds($scopeMode);      // projetos exatos (e
 $scopeMyTaskIds      = Scope::myTaskIds($scopeMode);       // personal: minhas tarefas
 $scopeTaskProjectIds = Scope::taskProjectIds($scopeMode);  // managed: tarefas por projeto
 
-$data = Dashboard::getData($from, $until, $scopeProjectIds, $scopeMyTaskIds, $scopeTaskProjectIds);
+// Tipo de projeto (Etapa 9). Aqui o tipo é OPCIONAL — ao contrário dos
+// Kanbans, a Visão geral é justamente a tela que cruza departamentos: sem
+// tipo escolhido ela mostra tudo e o donut de fase (que misturaria os
+// vocabulários de todos os setores) vira "Projetos por tipo".
+$typeId      = TypePhase::requestedTypeOrNull();
+$typeOptions = TypePhase::selectorTypes();
+
+$data = Dashboard::getData(
+    $from,
+    $until,
+    $scopeProjectIds,
+    $scopeMyTaskIds,
+    $scopeTaskProjectIds,
+    $typeId
+);
 
 // Botão "Ver tudo" / "Ver só os meus" — preserva o filtro de período na URL.
 $scopeCanExpand  = Scope::canExpand();
@@ -56,6 +71,9 @@ if ($from) {
 }
 if ($until) {
     $scopeToggle['until'] = $until;
+}
+if ($typeId !== null) {
+    $scopeToggle['type'] = $typeId;
 }
 if ($scopeIsExpanded) {
     // Do escopo amplo (padrão), o botão oferece REDUZIR ao pessoal.
@@ -95,6 +113,13 @@ foreach (
     ];
 }
 
+// Tipos de projeto para o modal "Novo projeto" (Etapa 9): escolher o tipo é
+// o que faz o campo Estado listar só as fases DAQUELE conjunto.
+$ptypes = [];
+foreach (TypePhase::projectTypes() as $tid => $tname) {
+    $ptypes[] = ['id' => (int) $tid, 'name' => $tname];
+}
+
 $parents = [];
 foreach (
     $DB->request([
@@ -127,6 +152,15 @@ TemplateRenderer::getInstance()->display(
         'states'          => $states,
         'users'           => $users,
         'parents'         => $parents,
+        // Etapa 9 — filtro de tipo e donut adaptativo
+        'ptypes'          => $ptypes,
+        'type_options'    => $typeOptions,
+        'filter_type'     => $typeId,
+        'type_chart'      => $data['type_chart'],
+        'filter_scope'    => $scopeIsExpanded ? '' : 'mine',
+        // Conjunto de fases por tipo, para o campo Estado do modal seguir o
+        // tipo escolhido sem recarregar a página.
+        'phases_by_type'  => TypePhase::phasesByType(),
         'current_user_id' => (int) Session::getLoginUserID(),
         'csrf_token'      => Session::getNewCSRFToken(),
         'can_create'      => Session::haveRight('plugin_projectplus_projects', CREATE),

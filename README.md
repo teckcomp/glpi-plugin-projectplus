@@ -2,7 +2,9 @@
 
 Camada extra de **gestão de projetos** para o GLPI 11: painel executivo com KPIs, orçamento com teto e alertas, barra de contagem de prazo com escalonamento de cores, custos por projeto e por tarefa com autor, sino de alertas e relatório de custos consolidados — tudo **sem alterar nenhuma tabela nativa** do GLPI.
 
-> **Status:** `v1.0.0-beta` — funcionalidade completa e validada em homologação, interface em português e inglês. Candidata a produção; feedbacks e issues são muito bem-vindos!
+> **Status:** `v1.1.0-beta` — funcionalidade completa e validada em homologação, interface em português e inglês. Feedbacks e issues são muito bem-vindos!
+>
+> ⚠️ **Antes de instalar, leia [Limitações conhecidas](#️-limitações-conhecidas--leia-antes-de-instalar):** o plugin foi desenvolvido para instalação de **entidade única** e o controle de escopo ainda não é aplicado nos endpoints AJAX.
 
 ## ✨ Funcionalidades
 
@@ -35,6 +37,36 @@ Camada extra de **gestão de projetos** para o GLPI 11: painel executivo com KPI
 - **Sino** no painel com contador de não lidos e histórico de lidas recentes;
 - Cron horário: tarefas atrasadas, prazos se aproximando, projetos parados, limiares de prazo e de orçamento;
 - E-mail opcional (mailer nativo do GLPI) além do sino.
+
+## ⚠️ Limitações conhecidas — leia antes de instalar
+
+**Este plugin foi desenvolvido e validado numa instalação de ENTIDADE ÚNICA (entidade raiz).**
+
+### O controle de escopo é uma conveniência organizacional, não uma fronteira de segurança
+
+O ProjectPlus tem uma camada de escopo (`src/Scope.php`) que define quais projetos e tarefas cada usuário enxerga: pessoal (equipe do projeto), gerência (o que ele gerencia) ou tudo, conforme os direitos do perfil.
+
+Esse escopo é aplicado nas **telas** (`front/`), mas **não** nos endpoints AJAX e nos manipuladores de formulário. Na prática, isso significa que:
+
+- um usuário autenticado que tenha o direito `plugin_projectplus_dashboard` (READ) consegue, chamando um endpoint diretamente com um id arbitrário, **ler dados de projetos e tarefas fora do escopo dele** — subprojetos, tarefas, comentários e dependências;
+- em instalação **multi-entidade** três desses endpoints (`tasks`, `taskcomments`, `taskdeps`) também não verificam `entities_id`, então a leitura atravessa a fronteira de entidade. Os demais (`children`, `taskchildren`) aplicam a restrição de entidade e ficam limitados ao escopo dentro dela.
+
+Isto **foi verificado em execução**, não deduzido do código: com um perfil de escopo pessoal, o painel mostrava 1 projeto e 4 tarefas enquanto o endpoint devolvia 3 projetos e 12 tarefas. A ação mais grave (`action=data`, que devolvia o painel inteiro sem escopo algum e ainda respondia a qualquer nome de ação inválido) **foi removida na v1.1.0-beta**; o restante depende do guard descrito abaixo.
+
+Não é acessível sem login e não escala privilégio para fora do GLPI — mas **é** exposição de dados entre usuários autenticados, e você deve considerá-la ao decidir quem recebe o direito do painel.
+
+### Recomendação
+
+- Use em instalação de **entidade única** enquanto isso não estiver fechado.
+- Em multi-entidade, trate o plugin como **não suportado** por ora.
+- Conceda o direito `plugin_projectplus_dashboard` apenas a quem já poderia ver todos os projetos da instância.
+
+### Situação
+
+Está mapeado no [ROADMAP](ROADMAP.md) como o próximo item de trabalho, à frente de qualquer funcionalidade nova. A correção prevista é um guard de escopo e entidade aplicado nos 24 pontos de entrada que recebem id do cliente, espalhados por 12 arquivos de `ajax/` e `front/`.
+
+Se você depende de multi-entidade e quer ajudar, abra uma issue — é o tipo de contribuição mais útil neste momento.
+
 
 ## 📋 Requisitos
 

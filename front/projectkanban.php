@@ -15,6 +15,7 @@ use GlpiPlugin\Projectplus\Dashboard;
 use GlpiPlugin\Projectplus\I18nJs;
 use GlpiPlugin\Projectplus\ProjectKanban;
 use GlpiPlugin\Projectplus\Scope;
+use GlpiPlugin\Projectplus\TypePhase;
 use GlpiPlugin\Projectplus\Url;
 
 include('../../../inc/includes.php');
@@ -34,8 +35,25 @@ $scopeMode       = Scope::mode();
 $scopeProjectIds = Scope::projectIds($scopeMode);
 $scopeCanExpand  = Scope::canExpand();
 $scopeIsExpanded = Scope::isExpanded();
-$scopeToggleUrl  = Url::to('front/projectkanban.php')
-    . ($scopeIsExpanded ? '?scope=mine' : '');
+
+// Tipo de projeto (Etapa 9): mesmo seletor do board de tarefas — as colunas
+// são o conjunto de fases do tipo e os cartões, só os projetos daquele tipo.
+$typeOptions = TypePhase::selectorTypes();
+$typeId      = TypePhase::resolveRequestedType($scopeProjectIds);
+$typeUnion   = !TypePhase::hasCustomSets();
+
+// O botão de escopo preserva o tipo escolhido (e vice-versa).
+$scopeQuery = [];
+if ($typeId !== null) {
+    $scopeQuery['type'] = $typeId;
+} elseif ($typeUnion && ($_GET['type'] ?? '') === 'all') {
+    $scopeQuery['type'] = 'all';
+}
+if ($scopeIsExpanded) {
+    $scopeQuery['scope'] = 'mine';
+}
+$scopeToggleUrl = Url::to('front/projectkanban.php')
+    . ($scopeQuery === [] ? '' : ('?' . http_build_query($scopeQuery)));
 
 Html::header(
     __('Kanban de projetos', 'projectplus'),
@@ -58,7 +76,7 @@ TemplateRenderer::getInstance()->display(
         // Lição 12: JSON embutido em <script> com texto do usuário precisa
         // dos flags HEX (um "</script>" no nome do projeto quebraria a tela).
         'board_json'        => json_encode(
-            ProjectKanban::getBoardData($scopeProjectIds),
+            ProjectKanban::getBoardData($scopeProjectIds, $typeId),
             JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
         ),
         'can_templates'     => Session::haveRight('config', UPDATE),
@@ -73,6 +91,13 @@ TemplateRenderer::getInstance()->display(
         'scope_can_expand'  => $scopeCanExpand,
         'scope_is_expanded' => $scopeIsExpanded,
         'scope_toggle_url'  => $scopeToggleUrl,
+        // Etapa 9 — seletor de tipo (vocabulário das colunas)
+        'type_options'      => $typeOptions,
+        'type_selected'     => $typeId,
+        'type_union'        => $typeUnion,
+        'type_can_config'   => Session::haveRight('config', UPDATE),
+        // Preserva o ?scope=mine ao trocar de tipo (o seletor é um form GET).
+        'type_scope'        => (($_GET['scope'] ?? '') === 'mine') ? 'mine' : '',
     ]
 );
 

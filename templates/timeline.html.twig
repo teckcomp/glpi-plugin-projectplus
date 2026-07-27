@@ -65,6 +65,22 @@
 
         <div class="projectplus-header">
             <div class="pp-tl-controls">
+                <form method="get" class="pp-type-pick" action="{{ plugin_web_dir }}/front/timeline.php">
+                    {% if type_scope %}<input type="hidden" name="scope" value="{{ type_scope }}">{% endif %}
+                    <label>
+                        <i class="ti ti-category"></i>{{ __('Tipo', 'projectplus') }}
+                        <select name="type" onchange="this.form.submit()"
+                                title="{{ __('Mostrar apenas os projetos deste tipo', 'projectplus') }}">
+                            <option value="">{{ __('Todos os tipos', 'projectplus') }}</option>
+                            {% for t in type_options %}
+                            <option value="{{ t.id }}" {{ (type_selected is not null and type_selected == t.id) ? 'selected' : '' }}>{{ t.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                    <noscript>
+                        <button type="submit" class="projectplus-btn projectplus-btn--ghost">{{ __('Abrir', 'projectplus') }}</button>
+                    </noscript>
+                </form>
                 <div class="pp-tl-zoom" role="group" aria-label="{{ __('Zoom', 'projectplus') }}">
                     <button type="button" class="pp-tl-zoom__btn" data-pp-zoom="day">{{ __('Dia', 'projectplus') }}</button>
                     <button type="button" class="pp-tl-zoom__btn pp-tl-zoom__btn--active" data-pp-zoom="week">{{ __('Semana', 'projectplus') }}</button>

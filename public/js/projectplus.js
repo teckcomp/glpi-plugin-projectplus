@@ -36,6 +36,67 @@
     // Dashboard
     // ------------------------------------------------------------------
 
+    // ------------------------------------------------------------------
+    // Fases do conjunto de um TIPO de projeto (Etapa 9).
+    //
+    // O mapa vem do servidor em #pp-data (chave phases_by_type). Cascata
+    // igual a do PHP (TypePhase::statesFor): conjunto do tipo -> conjunto
+    // padrao (chave 0) -> todas as fases. Sem o mapa na pagina devolve a
+    // lista completa, ou seja, o comportamento anterior a Etapa 9.
+    // ------------------------------------------------------------------
+
+    function phasesForType(typeId) {
+        const map = (ppData && ppData.phases_by_type) ? ppData.phases_by_type : null;
+        if (!map) {
+            return Array.isArray(ppData.states) ? ppData.states : [];
+        }
+        const own = map[String(parseInt(typeId, 10) || 0)];
+        if (Array.isArray(own) && own.length) {
+            return own;
+        }
+        const def = map['0'];
+        if (Array.isArray(def) && def.length) {
+            return def;
+        }
+        return Array.isArray(ppData.states) ? ppData.states : [];
+    }
+
+    /**
+     * Reescreve as opcoes de um <select> de fase, preservando o valor atual
+     * quando ele ainda existe na lista nova. O valor 0 ("--") e sempre a
+     * primeira opcao, para o campo continuar podendo ficar vazio.
+     */
+    function fillStateSelect(select, list, selectedId) {
+        const keep = (selectedId != null) ? String(selectedId) : String(select.value || '0');
+        let html = '<option value="0">\u2014</option>';
+        let found = false;
+        (Array.isArray(list) ? list : []).forEach(function (o) {
+            const sel = (String(o.id) === keep);
+            if (sel) { found = true; }
+            html += '<option value="' + o.id + '"' + (sel ? ' selected' : '') + '>' +
+                escapeHtml(o.name) + '</option>';
+        });
+        select.innerHTML = html;
+        select.value = found ? keep : '0';
+    }
+
+    /**
+     * Modal "Novo projeto": trocar o Tipo refaz a lista do campo Estado com
+     * as fases do conjunto daquele tipo (Etapa 9).
+     */
+    function initNewProjectPhases(root) {
+        const typeSel  = root.querySelector('[data-pp-role="np-type"]');
+        const stateSel = root.querySelector('[data-pp-role="np-state"]');
+        if (!typeSel || !stateSel) {
+            return;
+        }
+        const apply = function () {
+            fillStateSelect(stateSel, phasesForType(typeSel.value), null);
+        };
+        typeSel.addEventListener('change', apply);
+        apply(); // ja abre coerente com o tipo pre-selecionado
+    }
+
     ProjectPlus.initDashboard = function () {
         const root = document.getElementById('projectplus-dashboard');
         if (!root) {
@@ -51,6 +112,7 @@
         initTaskExpand(root, ajaxUrl);
         initModals();
         initTaskPanels(root);
+        initNewProjectPhases(root); // Etapa 9: Estado segue o Tipo no modal
         initOpenTaskPanels(root);  // 💬/🔗 em "Tarefas em andamento" (Bloco 4)
         initTableSearch(root);     // busca nas tabelas (Bloco 4)
         initBell(root); // depois de initTaskPanels (que inicializa o ppCsrf)
@@ -332,7 +394,7 @@
 
     // Listas dos dropdowns (estados, tipos de projeto/tarefa, usuários),
     // carregadas de #pp-tpl-refdata no init.
-    let ppTplRef = { states: [], ptypes: [], ttypes: [], users: [] };
+    let ppTplRef = { states: [], ptypes: [], ttypes: [], users: [], phases_by_type: {} };
 
     function tplOptions(list, selectedId) {
         let html = '<option value="0">—</option>';
@@ -341,6 +403,78 @@
                 '>' + escapeHtml(o.name) + '</option>';
         });
         return html;
+    }
+
+    /**
+     * Editor de Modelos, Etapa 9 — de que TIPO de projeto e este campo
+     * "Estado"?
+     *
+     * O tipo e o do projeto que ENVOLVE o campo: para um no de subprojeto (e
+     * para as tarefas dentro dele) vale o Tipo do proprio subprojeto; fora de
+     * qualquer subprojeto vale o Tipo do projeto raiz. `closest` resolve o
+     * aninhamento sozinho, inclusive subprojeto dentro de subprojeto.
+     */
+    function tplTypeForStateSelect(sel) {
+        const sub = sel.closest('.pp-tpl-node--project');
+        if (sub) {
+            const own = sub.querySelector(':scope > .pp-tpl-meta .pp-tpl-ptype');
+            if (own) {
+                return own.value;
+            }
+        }
+        const meta = document.getElementById('pp-tpl-projectmeta');
+        const rootType = meta ? meta.querySelector('.pp-pm-ptype') : null;
+        return rootType ? rootType.value : 0;
+    }
+
+    /** Fases do conjunto de um tipo, no formato dos dropdowns do editor. */
+    function tplPhasesForType(typeId) {
+        const map = ppTplRef.phases_by_type || {};
+        const own = map[String(parseInt(typeId, 10) || 0)];
+        if (Array.isArray(own) && own.length) {
+            return own;
+        }
+        const def = map['0'];
+        if (Array.isArray(def) && def.length) {
+            return def;
+        }
+        return Array.isArray(ppTplRef.states) ? ppTplRef.states : [];
+    }
+
+    function tplRefreshStateSelect(sel) {
+        fillStateSelect(sel, tplPhasesForType(tplTypeForStateSelect(sel)), null);
+    }
+
+    function tplRefreshAllStateSelects(root) {
+        root.querySelectorAll('.pp-pm-state, .pp-tpl-state').forEach(tplRefreshStateSelect);
+    }
+
+    /**
+     * Liga o filtro "Estado segue o Tipo" no editor de Modelos.
+     *
+     * Os dois listeners sao DELEGADOS no elemento raiz de proposito: os nos
+     * do editor (tarefa, subtarefa, subprojeto) sao criados dinamicamente em
+     * varios pontos, e delegar dispensa lembrar de chamar o filtro em cada um
+     * deles — que e exatamente o tipo de ponto que se esquece.
+     *  - `change` num select de Tipo: refaz TODOS os selects de Estado;
+     *  - `focusin` num select de Estado: refaz aquele select, garantindo que
+     *    um no recem-criado tambem abra ja filtrado.
+     */
+    function initTplPhaseFilter(root) {
+        root.addEventListener('change', function (ev) {
+            const t = ev.target;
+            if (t && t.classList &&
+                (t.classList.contains('pp-pm-ptype') || t.classList.contains('pp-tpl-ptype'))) {
+                tplRefreshAllStateSelects(root);
+            }
+        });
+        root.addEventListener('focusin', function (ev) {
+            const t = ev.target;
+            if (t && t.classList &&
+                (t.classList.contains('pp-pm-state') || t.classList.contains('pp-tpl-state'))) {
+                tplRefreshStateSelect(t);
+            }
+        });
     }
 
     ProjectPlus.initTemplateEditor = function () {
@@ -367,7 +501,10 @@
                         states: Array.isArray(rd.states) ? rd.states : [],
                         ptypes: Array.isArray(rd.ptypes) ? rd.ptypes : [],
                         ttypes: Array.isArray(rd.ttypes) ? rd.ttypes : [],
-                        users:  Array.isArray(rd.users)  ? rd.users  : []
+                        users:  Array.isArray(rd.users)  ? rd.users  : [],
+                        // Etapa 9: conjunto de fases por tipo de projeto
+                        phases_by_type: (rd.phases_by_type && typeof rd.phases_by_type === 'object')
+                            ? rd.phases_by_type : {}
                     };
                 }
             } catch (e) { /* mantém vazio */ }
@@ -390,6 +527,11 @@
         buildProjectMeta(projMetaEl, structure.project);
         structure.tasks.forEach(function (t) { rootTasksEl.appendChild(buildTplTask(t)); });
         structure.subprojects.forEach(function (p) { rootSubsEl.appendChild(buildTplProject(p)); });
+
+        // Etapa 9: "Estado" passa a listar só as fases do conjunto do Tipo.
+        // Liga os listeners delegados e já filtra o que acabou de ser montado.
+        initTplPhaseFilter(root);
+        tplRefreshAllStateSelects(root);
 
         // Botões de topo (raiz)
         const addRootTask = root.querySelector('[data-add-roottask]');
@@ -728,7 +870,7 @@
     // ------------------------------------------------------------------
 
     let ppCsrf = null;
-    let ppData = { states: [], users: [], current_user_id: 0 };
+    let ppData = { states: [], users: [], current_user_id: 0, phases_by_type: {} };
     let ppDataUrl = null;      // ajax/dashboard_data.php (leituras)
     let ppCommentUrl = null;   // ajax/comment.php (Etapa 3, Bloco 2)
     let ppDepUrl = null;       // ajax/taskdep.php (Etapa 3, Bloco 3)

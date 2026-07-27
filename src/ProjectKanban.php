@@ -40,18 +40,26 @@ class ProjectKanban
      *
      * @param ?array $projectIds ids exatos a exibir (escopo do usuário);
      *                           null = todos os projetos da entidade
+     * @param ?int   $typeId     Etapa 9 — tipo de projeto do board: as
+     *                           COLUNAS passam a ser o conjunto de fases do
+     *                           tipo e os cartões, só os projetos daquele
+     *                           tipo. null = todas as fases (comportamento
+     *                           anterior à Etapa 9).
      *
      * @return array{
      *   columns: array<int, array{id:int, name:string, color:string}>,
      *   cards: array<int, array<string, mixed>>
      * }
      */
-    public static function getBoardData(?array $projectIds = null): array
+    public static function getBoardData(?array $projectIds = null, ?int $typeId = null): array
     {
         /** @var \DBmysql $DB */
         global $DB;
 
-        $states = Dashboard::getStatesMap();
+        // Etapa 9: o conjunto de fases do TIPO define as colunas e a ordem
+        // delas. O cartão não mostra o nome da fase (a coluna já é a fase),
+        // então não é preciso o mapa completo de estados aqui.
+        $states = Dashboard::getStatesMap($typeId);
 
         // Lição 16: com LEFT JOIN, TODA chave do WHERE precisa vir
         // qualificada com a tabela (glpi_users também tem id/is_deleted).
@@ -62,6 +70,13 @@ class ProjectKanban
 
         if ($projectIds !== null) {
             $where['glpi_projects.id'] = Scope::inList($projectIds);
+        }
+
+        // Etapa 9 — só os projetos do tipo selecionado. Restrição por COLUNA
+        // (não por lista de ids), então conviver com o filtro de escopo na
+        // mesma consulta é seguro: são chaves diferentes do WHERE.
+        if ($typeId !== null) {
+            $where['glpi_projects.projecttypes_id'] = $typeId;
         }
 
         $rows      = [];
@@ -144,6 +159,9 @@ class ProjectKanban
             $id      = (int) $row['id'];
             $stateId = (int) $row['projectstates_id'];
             if (!isset($states[$stateId])) {
+                // Sem fase, fase excluída — ou (Etapa 9) fase fora do conjunto
+                // do tipo: vai para a coluna sintética "Sem fase", senão o
+                // cartão apontaria para uma coluna que não existe.
                 $sawExtraState = true;
                 $stateId       = self::UNSET_ID;
             }

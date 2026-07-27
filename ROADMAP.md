@@ -2,7 +2,7 @@
 
 **Plugin de gestão avançada de projetos para GLPI 11**
 Repositório: [github.com/teckcomp/glpi-plugin-projectplus](https://github.com/teckcomp/glpi-plugin-projectplus) · Licença GPL-2.0
-Versão atual: **v1.0.0-beta** · Atualizado em 26/07/2026 (**Etapa 6 CONCLUÍDA** — com ela fecham as etapas 0 a 8 e sai a release `v1.0.0-beta`). Próximo: **Etapa 9** — fases por tipo de projeto. O Bloco 5 (catálogo oficial do GLPI) fica para depois de a beta rodar em produção.
+Versão atual: **v1.1.0-beta** · Atualizado em 26/07/2026 (**Etapa 9 CONCLUÍDA** — fases por tipo de projeto). Com ela fecham as etapas 0 a 9. Próximo: rodar a beta em produção e, depois, o Bloco 5 (catálogo oficial do GLPI).
 
 > **Ordem de execução confirmada em 19/07/2026:** Etapa 7 → Etapa 8 → Etapa 6 (por último). A Etapa 6 (refinamento/pré-produção e release v1.0.0-beta) só começa depois que 7 e 8 estiverem validadas em homologação.
 
@@ -179,11 +179,13 @@ Papéis: **Gestor / Cliente / Técnico / Colaborador (Terceiro)** + Admin. Entid
 ### Decisões em aberto
 
 - Board de projetos restrito a quem tem `projectkanban` marcado? Hoje aparece para todos que têm o Kanban de tarefas (ver 4b.1). Baixa prioridade.
-- Tabela `glpi_plugin_projectplus_tasktimers` está órfã desde a Etapa 1 (o cronômetro por tarefa foi substituído pela barra de prazo). Continua sendo criada. **Decidir na Etapa 9**, que já mexe no schema: parar de criá-la (bases novas ficam com 6 tabelas + a nova de fases = 7) ou mantê-la.
+- **PRÓXIMO ITEM DE TRABALHO — `Scope` é filtro de tela, não fronteira de acesso (achado em 26/07/2026, vem da Etapa 8).** Documentado publicamente em `README.md` e `SECURITY.md`: a v1.1.0-beta sai declarando suporte a **entidade única** apenas. **Mitigado em parte na v1.1.0-beta:** a ação `data` do `ajax/dashboard_data.php` — que devolvia o painel inteiro sem escopo e era também o `default` do `switch`, respondendo a qualquer nome de ação inválido — foi REMOVIDA (era código morto, nenhum JS a chamava). Sobram os endpoints que recebem id. A correção prevista é um guard de escopo + entidade nos pontos de entrada restantes, espalhados por `ajax/` e `front/` — é bloco próprio, não ajuste.
+- **Corrigir a lição registrada sobre endpoints AJAX.** A base afirmava que endpoint `ajax/` não é alcançável por URL direta. **É.** Comprovado no GLPI 11.0.6 com a sessão do navegador: o `checkRight` no topo do arquivo é a única porta, e ele não conhece escopo. `Dashboard::getChildren()` e `Dashboard::getTasks()` filtram só por entidade — quem enxerga um projeto pai expande o `+` e vê TODOS os subprojetos e tarefas dele, inclusive os que o escopo excluiria. E `ajax/dashboard_data.php` exige apenas `plugin_projectplus_dashboard READ`: nenhum dos seis endpoints cruza com `Scope`, e o `action=data` (que nenhum JS chama, mas está exposto) devolve `Dashboard::getData()` sem escopo algum. Não é vazamento entre entidades e todos esses usuários já têm `dashboard READ`, mas **precisa fechar antes de um Cliente externo entrar em produção**.
+- ~~Tabela `glpi_plugin_projectplus_tasktimers` órfã desde a Etapa 1~~ — **resolvido na Etapa 9**: saiu de `Install::TABLES` e entrou em `Install::LEGACY_TABLES`. Instalação nova não a cria (7 tabelas: as 6 em uso + `typephases`); base existente não é alterada, mas a purga continua removendo-a e o diagnóstico a reporta como órfã.
 
 ---
 
-## 📍 Etapa 9 — Fases por tipo de projeto `PRÓXIMA` (a v1.0.0-beta saiu em 26/07/2026)
+## ✅ Etapa 9 — Fases por tipo de projeto `concluída e VALIDADA em homologação em 26/07/2026` (v1.1.0-beta)
 
 **O problema.** `glpi_projectstates` é uma lista **global e única** da instância — o schema do core 11.0.6 **não tem `entities_id`**, então nem separando por entidade dá para ter vocabulários de fase diferentes. Hoje o `Dashboard::getStatesMap()` lê a tabela inteira e alimenta Kanban de tarefas, Kanban de projetos, Timeline, os donuts da Visão geral e o filtro de Relatórios.
 
@@ -217,6 +219,30 @@ Chave única em (`projecttypes_id`, `projectstates_id`). O `glpi_projectstates` 
 
 **Não se sobrepõe à Etapa 8:** quem vê o quê já é resolvido por `Access`/`Scope` (equipe do projeto). O seletor de tipo é sobre **vocabulário**, não sobre permissão.
 
+### O que foi entregue (bloco único, 26/07/2026)
+
+- [x] `src/TypePhase.php` — leitura em **cascata**: conjunto do tipo → conjunto padrão (`0`) → todas as fases da instância. O terceiro degrau é o que garante que base sem configuração nenhuma continue idêntica ao que era antes.
+- [x] `Dashboard::getStatesMap(?int $typeId)` — **sem tipo** devolve todas as fases (é o que resolve nome/cor de um chip: a fase de um item tem de aparecer mesmo fora do conjunto do tipo dele); **com tipo**, o conjunto ordenado, que é o que monta colunas e listas de opção.
+- [x] Seletor de tipo nos dois Kanbans, com a opção "Todos os tipos" oferecida **apenas enquanto nenhum tipo tem conjunto próprio** (aí união = padrão = comportamento antigo). Preserva o `?scope=mine` e vice-versa.
+- [x] Aba "Kanban (ProjectPlus)" da ficha nativa: tipo derivado do próprio projeto, sem seletor.
+- [x] Cartão cuja fase está **fora** do conjunto do board vai para a coluna "Sem fase" — sem isso ele apontaria para uma coluna inexistente e sumiria da tela.
+- [x] Tela `front/typephases.php` (direito nativo `config`, sem 12º direito próprio): marcar/desmarcar fases, ordenar com ↑/↓, "copiar fases de outro tipo", "voltar a herdar o padrão", visão geral dos conjuntos. **A ordem das colunas é a ordem das linhas na tela** — o navegador envia os checkboxes na ordem do DOM, então não há campo numérico de posição e a tela degrada sem JavaScript.
+- [x] Modal "Novo projeto" ganhou o campo **Tipo** (e `project_create.form.php` passou a gravar `projecttypes_id`); o campo Estado lista só as fases daquele conjunto.
+- [x] Editor de Modelos: "Estado" segue o "Tipo" por listeners **delegados** (`change` no Tipo, `focusin` no Estado) — os nós do editor nascem em 6 pontos diferentes e delegar dispensa lembrar de cada um. `closest()` resolve o aninhamento, inclusive subprojeto dentro de subprojeto.
+- [x] Donut adaptativo na Visão geral + filtro de tipo no formulário de período (que passou a preservar o `?scope=mine` — bug pré-existente).
+- [x] `Install`: tabela `typephases` com chave única (`projecttypes_id`, `projectstates_id`), semeadura **única** do conjunto padrão (marca `phases_seeded`, nunca toca em tabela já povoada) e `LEGACY_TABLES`.
+- [x] Diagnóstico da Configuração: conjuntos configurados, semeadura, tabelas órfãs e **conjunto sem fase finalizadora** (a trava do `PRE_ITEM_UPDATE` nunca dispararia nele — falha em silêncio).
+- [x] i18n: 53 strings novas, `en_GB` e `pt_BR` em 569/569, **zero fuzzy** nos dois (fuzzy é ignorado pelo `msgfmt` — lição 55). `typephases.js` não tem string própria e o dicionário JS segue em 123/123.
+- [x] Validação: 77 asserções de stub (cascata, escrita, `?type=`, diagnóstico, degradação sem a tabela, constantes do `Install`), 20 asserções jsdom (reordenação e "Estado segue o Tipo") e 105 variáveis de Twig conferidas contra os `front/`.
+
+### Ajustes feitos durante a validação (blocos 2 e 3)
+
+- [x] **Donut "Tarefas por Estado"** seguia a ordem alfabética do vocabulário inteiro enquanto as contagens já respeitavam o tipo. Passou a usar o mesmo critério do donut de projetos: conjunto do tipo primeiro, na ordem gravada, e o que estiver fora entra depois. *Lição de método: ao introduzir um eixo novo, varrer TODOS os consumidores do dado, não só o que motivou a mudança.*
+- [x] **Filtro por tipo na Timeline.** O roadmap a excluíra por um motivo correto (as colunas são datas, não fases — 30 fases não geram 30 colunas vazias), mas isso deixou uma assimetria: a Visão geral ganhou filtro de tipo e a Timeline não, sendo que o parágrafo acima trata as duas como "visão que cruza departamentos". O problema da Timeline não é vocabulário, é **volume de linhas** — Infra, RH e Sistemas empilhados no mesmo Gantt. Agora ela tem o mesmo seletor, com duas diferenças deliberadas em relação ao Kanban:
+  - **"Todos os tipos" continua sempre disponível** — no Kanban a união some porque 25 fases viram 25 colunas ilegíveis; aqui é só uma lista mais longa, o que é legítimo.
+  - **A profundidade se reajusta.** A Timeline devolve uma lista PLANA de grupos com `depth`, e o Twig indenta por ele. Escondendo um projeto pelo filtro, o filho ficaria indentado debaixo de um pai invisível. A profundidade só avança quando o pai virou linha de fato — a mesma regra que as tarefas já seguiam ali.
+
+**Limite aceito:** o filtro por conjunto vale para os seletores **do plugin**. O dropdown de fase da ficha nativa e o filtro de Relatórios continuam listando tudo — no Relatório isso é proposital (é uma tela de consulta que cruza departamentos).
 
 ---
 

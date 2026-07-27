@@ -1,0 +1,264 @@
+{# ProjectPlus — "Fases por tipo de projeto" (Etapa 9): administra o mapeamento tipo -> fases -> ordem das colunas #}
+
+<link rel="stylesheet" href="{{ plugin_web_dir }}/css/projectplus.css">
+
+<div class="projectplus-app" id="projectplus-typephases">
+
+    {# ================= COLUNA ESQUERDA: título + sidebar ================= #}
+    <div class="projectplus-left">
+        <div class="projectplus-pagetitle">
+            <div class="projectplus-brand">
+                <img class="projectplus-brand__mark" alt=""
+                     src="{{ plugin_web_dir }}/img/projectplus-mark.svg">
+                <h2>{{ __('Fases', 'projectplus') }}</h2>
+            </div>
+            <span>{{ __('Conjunto de fases por tipo de projeto', 'projectplus') }}</span>
+        </div>
+        <nav class="projectplus-sidebar">
+            <ul>
+                {% if nav.dashboard %}
+                <li class="projectplus-sidebar__item">
+                    <a href="{{ plugin_web_dir }}/front/dashboard.php"><i class="ti ti-layout-dashboard"></i>{{ __('Visão geral', 'projectplus') }}</a>
+                </li>
+                {% endif %}
+                {% if nav.tasks %}
+                <li class="projectplus-sidebar__item">
+                    <a href="{{ plugin_web_dir }}/front/mytasks.php"><i class="ti ti-user-check"></i>{{ __('Minhas tarefas', 'projectplus') }}</a>
+                </li>
+                {% endif %}
+                {% if nav.kanban %}
+                <li class="projectplus-sidebar__item">
+                    <a href="{{ plugin_web_dir }}/front/kanban.php"><i class="ti ti-layout-kanban"></i>{{ __('Kanban', 'projectplus') }}</a>
+                </li>
+                {% endif %}
+                {% if nav.timeline %}
+                <li class="projectplus-sidebar__item">
+                    <a href="{{ plugin_web_dir }}/front/timeline.php"><i class="ti ti-stopwatch"></i>{{ __('Timeline', 'projectplus') }}</a>
+                </li>
+                {% endif %}
+                {% if nav.templates %}
+                <li class="projectplus-sidebar__item">
+                    <a href="{{ plugin_web_dir }}/front/projecttemplates.php"><i class="ti ti-clipboard-list"></i>{{ __('Modelos', 'projectplus') }}</a>
+                </li>
+                {% endif %}
+                {% if nav.costs %}
+                <li class="projectplus-sidebar__item">
+                    <a href="{{ plugin_web_dir }}/front/costs.php"><i class="ti ti-coin"></i>{{ __('Orçamento', 'projectplus') }}</a>
+                </li>
+                {% endif %}
+                {% if nav.reports %}
+                <li class="projectplus-sidebar__item">
+                    <a href="{{ plugin_web_dir }}/front/reports.php"><i class="ti ti-report-analytics"></i>{{ __('Relatórios', 'projectplus') }}</a>
+                </li>
+                {% endif %}
+                {% if nav.config %}
+                <li class="projectplus-sidebar__item">
+                    <a href="{{ plugin_web_dir }}/front/config.form.php"><i class="ti ti-settings"></i>{{ __('Configurações', 'projectplus') }}</a>
+                </li>
+                <li class="projectplus-sidebar__item projectplus-sidebar__item--active">
+                    <a href="{{ plugin_web_dir }}/front/typephases.php"><i class="ti ti-columns-3"></i>{{ __('Fases por tipo', 'projectplus') }}</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+
+    {# ================= ÁREA PRINCIPAL ================= #}
+    <div class="projectplus-main">
+
+        <div class="projectplus-header">
+            <form method="get" class="projectplus-period" action="{{ self_url }}">
+                <label class="pp-tp-pick">
+                    {{ __('Conjunto', 'projectplus') }}
+                    <select name="type" onchange="this.form.submit()">
+                        {% for s in sets %}
+                            <option value="{{ s.id }}" {{ s.id == edit_id ? 'selected' : '' }}>
+                                {{ s.name }}{% if s.mapped %} ✔{% endif %} ({{ s.phases|length }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <noscript>
+                    <button type="submit" class="projectplus-btn projectplus-btn--ghost">{{ __('Abrir', 'projectplus') }}</button>
+                </noscript>
+            </form>
+            <div class="projectplus-actions">
+                <a class="projectplus-btn projectplus-btn--ghost" href="{{ plugin_web_dir }}/front/config.form.php">
+                    <i class="ti ti-settings"></i>{{ __('Configurações', 'projectplus') }}
+                </a>
+                {% if nav.kanban %}
+                <a class="projectplus-btn projectplus-btn--ghost" href="{{ plugin_web_dir }}/front/kanban.php">
+                    <i class="ti ti-layout-kanban"></i>{{ __('Kanban', 'projectplus') }}
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if no_finished is not empty %}
+        <div class="projectplus-card projectplus-card--full pp-tp-warn">
+            <p>
+                <i class="ti ti-alert-triangle"></i>
+                <strong>{{ __('Conjunto sem fase finalizadora:', 'projectplus') }}</strong>
+                {{ no_finished|join(', ') }}.
+                {{ __('Sem uma fase marcada como "finalizada", a trava que impede fechar projeto com tarefa ou subprojeto aberto nunca dispara nesse conjunto.', 'projectplus') }}
+            </p>
+        </div>
+        {% endif %}
+
+        <div class="projectplus-row">
+            <div class="projectplus-card projectplus-card--full">
+                <h3>
+                    {{ __('Fases de', 'projectplus') }} <strong>{{ edit_name }}</strong>
+                    {% if edit_is_default %}
+                        <span class="projectplus-muted">— {{ __('vale para todo tipo sem conjunto próprio, e para projeto sem tipo', 'projectplus') }}</span>
+                    {% elseif not edit_is_mapped %}
+                        <span class="projectplus-muted">— {{ __('hoje herda o conjunto padrão; salvar cria um conjunto próprio', 'projectplus') }}</span>
+                    {% endif %}
+                </h3>
+
+                {% if not has_states %}
+                <p class="projectplus-muted">
+                    {{ __('Nenhuma fase cadastrada na instância. Cadastre em Configurar > Listas suspensas > Estados de projeto.', 'projectplus') }}
+                </p>
+                {% else %}
+                <p class="projectplus-muted">
+                    <i class="ti ti-info-circle"></i>
+                    {{ __('Marque as fases que pertencem a este conjunto e use as setas para definir a ordem das colunas no Kanban. A ordem é a de cima para baixo.', 'projectplus') }}
+                </p>
+
+                <form method="post" action="{{ form_action }}" id="pp-tp-form">
+                    <input type="hidden" name="_glpi_csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="projecttypes_id" value="{{ edit_id }}">
+
+                    <table class="projectplus-table pp-tp-table">
+                        <thead>
+                            <tr>
+                                <th style="width:70px">{{ __('Usar', 'projectplus') }}</th>
+                                <th>{{ __('Fase', 'projectplus') }}</th>
+                                <th style="width:120px">{{ __('Finalizadora', 'projectplus') }}</th>
+                                <th style="width:110px">{{ __('Ordem', 'projectplus') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody data-pp-role="tp-rows">
+                            {% for r in rows %}
+                            <tr data-pp-state="{{ r.id }}">
+                                <td class="center">
+                                    <input type="checkbox" name="states[]" value="{{ r.id }}"
+                                           {{ r.selected ? 'checked' : '' }}
+                                           aria-label="{{ r.name }}">
+                                </td>
+                                <td>
+                                    <span class="pp-phase-dot" style="background:{{ r.color }}"></span>
+                                    {{ r.name }}
+                                </td>
+                                <td class="center">
+                                    {% if r.is_finished %}
+                                        <i class="ti ti-flag-check" title="{{ __('Fase finalizadora', 'projectplus') }}"></i>
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </td>
+                                <td class="center pp-tp-move">
+                                    <button type="button" class="projectplus-btn projectplus-btn--ghost pp-tp-mini"
+                                            data-pp-move="up" title="{{ __('Subir', 'projectplus') }}">&uarr;</button>
+                                    <button type="button" class="projectplus-btn projectplus-btn--ghost pp-tp-mini"
+                                            data-pp-move="down" title="{{ __('Descer', 'projectplus') }}">&darr;</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+
+                    <div class="projectplus-form__footer">
+                        {% if edit_is_mapped and not edit_is_default %}
+                        <button type="submit" name="clear" value="1" class="projectplus-btn projectplus-btn--ghost">
+                            {{ __('Voltar a herdar o padrão', 'projectplus') }}
+                        </button>
+                        {% endif %}
+                        <button type="submit" class="projectplus-btn">
+                            {{ __('Salvar conjunto', 'projectplus') }}
+                        </button>
+                    </div>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if copy_sources is not empty and has_states %}
+        <div class="projectplus-row">
+            <div class="projectplus-card projectplus-card--full">
+                <h3>{{ __('Copiar fases de outro tipo', 'projectplus') }}</h3>
+                <p class="projectplus-muted">
+                    {{ __('Substitui o conjunto atual pelo do tipo escolhido, na mesma ordem. Útil quando dois tipos seguem o mesmo fluxo.', 'projectplus') }}
+                </p>
+                <form method="post" action="{{ form_action }}" class="projectplus-form">
+                    <input type="hidden" name="_glpi_csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="projecttypes_id" value="{{ edit_id }}">
+                    <label>
+                        {{ __('Copiar de', 'projectplus') }}
+                        <select name="source_type">
+                            {% for c in copy_sources %}
+                                <option value="{{ c.id }}">{{ c.name }} ({{ c.phases }})</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                    <div class="projectplus-form__footer">
+                        <button type="submit" name="copy" value="1" class="projectplus-btn projectplus-btn--ghost">
+                            {{ __('Copiar fases', 'projectplus') }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="projectplus-row">
+            <div class="projectplus-card projectplus-card--full">
+                <h3>{{ __('Visão geral dos conjuntos', 'projectplus') }}</h3>
+                <table class="projectplus-table">
+                    <thead>
+                        <tr>
+                            <th>{{ __('Tipo de projeto', 'projectplus') }}</th>
+                            <th style="width:130px">{{ __('Projetos', 'projectplus') }}</th>
+                            <th style="width:150px">{{ __('Conjunto', 'projectplus') }}</th>
+                            <th>{{ __('Fases, na ordem das colunas', 'projectplus') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in sets %}
+                        <tr>
+                            <td>
+                                <a href="{{ self_url }}?type={{ s.id }}">{{ s.name }}</a>
+                            </td>
+                            <td>{{ s.projects }}</td>
+                            <td>
+                                {% if s.mapped %}
+                                    {{ __('próprio', 'projectplus') }}
+                                {% else %}
+                                    <span class="projectplus-muted">{{ __('herda o padrão', 'projectplus') }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% for p in s.phases %}
+                                    <span class="pp-phase-tag">
+                                        <span class="pp-phase-dot" style="background:{{ p.color }}"></span>{{ p.name }}
+                                    </span>
+                                {% else %}
+                                    <span class="projectplus-muted">—</span>
+                                {% endfor %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ plugin_web_dir }}/js/typephases.js"></script>
+<script>
+    if (window.ProjectPlusTypePhases && typeof window.ProjectPlusTypePhases.init === 'function') {
+        window.ProjectPlusTypePhases.init();
+    }
+</script>

@@ -14,8 +14,9 @@ namespace GlpiPlugin\Projectplus;
  * Fonte dos gastos: aba nativa "Custos" do projeto (glpi_projectcosts).
  * O plugin NÃO cria lançamento de custo próprio — só lê e consolida.
  *
- * PONTO A VALIDAR em homologação: campos de glpi_projectcosts assumidos
- * por convenção ('projects_id', 'cost'). Conferir: DESCRIBE glpi_projectcosts;
+ * Campos usados de `glpi_projectcosts`: `projects_id` e `cost`. CONFERIDO
+ * contra o schema do core 11 (`install/mysql/glpi-empty.sql`), onde a coluna
+ * é `cost decimal(20,4)` — não é suposição por convenção.
  */
 class Budget
 {

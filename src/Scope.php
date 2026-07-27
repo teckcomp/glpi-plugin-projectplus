@@ -169,7 +169,17 @@ class Scope
             $DB->request([
                 'SELECT' => 'id',
                 'FROM'   => 'glpi_projects',
-                'WHERE'  => ['users_id' => $uid, 'is_deleted' => 0],
+                // ACHADO DA AUDITORIA (26/07/2026): faltavam a restrição de
+                // ENTIDADE e o filtro de MODELO. Numa instalação de entidade
+                // única — como a de homologação — isso nunca aparece; numa
+                // multi-entidade, o gestor que administra projeto em outra
+                // entidade trazia esse id para o escopo, e um projeto-MODELO
+                // dele entrava como se fosse projeto real.
+                'WHERE'  => [
+                    'users_id'    => $uid,
+                    'is_deleted'  => 0,
+                    'is_template' => 0,
+                ] + getEntitiesRestrictCriteria('glpi_projects'),
             ]) as $r
         ) {
             $ids[(int) $r['id']] = true;

@@ -18,7 +18,7 @@ use GlpiPlugin\Projectplus\TaskComment;
 use GlpiPlugin\Projectplus\TaskCost;
 use GlpiPlugin\Projectplus\TaskDep;
 
-define('PLUGIN_PROJECTPLUS_VERSION', '1.0.0-beta');
+define('PLUGIN_PROJECTPLUS_VERSION', '1.1.0-beta');
 
 // Versões mínima/máxima do GLPI suportadas
 define('PLUGIN_PROJECTPLUS_MIN_GLPI', '11.0.0');
@@ -169,8 +169,10 @@ function plugin_projectplus_check_config($verbose = false): bool
  * Reordena o menu Ferramentas: Painel de Projetos primeiro,
  * Projetos nativo por último. Nada é removido.
  *
- * PONTO A VALIDAR em homologação: as chaves internas do array de menu
- * podem variar conforme a versão/tema do GLPI.
+ * As chaves internas do array de menu podem variar conforme a versão e o
+ * tema do GLPI, então NADA aqui pressupõe uma chave fixa: a entrada do
+ * plugin é localizada por busca de substring, cada acesso é protegido por
+ * isset/is_array e, em qualquer caso inesperado, o menu volta intacto.
  */
 function plugin_projectplus_redefine_menus(array $menus): array
 {

@@ -14,6 +14,7 @@ use GlpiPlugin\Projectplus\Dashboard;
 use GlpiPlugin\Projectplus\I18nJs;
 use GlpiPlugin\Projectplus\Scope;
 use GlpiPlugin\Projectplus\Timeline;
+use GlpiPlugin\Projectplus\TypePhase;
 use GlpiPlugin\Projectplus\Url;
 
 include('../../../inc/includes.php');
@@ -33,8 +34,25 @@ $scopeTaskProjectIds = Scope::taskProjectIds($scopeMode); // managed: por projet
 // Botão "Ver tudo" / "Ver só os meus".
 $scopeCanExpand  = Scope::canExpand();
 $scopeIsExpanded = Scope::isExpanded();
-$scopeToggleUrl  = Url::to('front/timeline.php')
-    . ($scopeIsExpanded ? '?scope=mine' : '');
+
+// Tipo de projeto (Etapa 9) — SEGUNDA divisão, aplicada dentro do que o
+// escopo já liberou. Aqui a opção "Todos os tipos" fica SEMPRE disponível,
+// ao contrário do Kanban: lá a união some porque 25 fases viram 25 colunas
+// ilegíveis; aqui as colunas são DATAS, então ver vários tipos juntos é só
+// uma lista mais longa — legítimo, e é como a tela sempre funcionou.
+$typeOptions = TypePhase::selectorTypes();
+$typeId      = TypePhase::requestedTypeOrNull();
+
+// O botão de escopo preserva o tipo escolhido (e vice-versa).
+$scopeQuery = [];
+if ($typeId !== null) {
+    $scopeQuery['type'] = $typeId;
+}
+if ($scopeIsExpanded) {
+    $scopeQuery['scope'] = 'mine';
+}
+$scopeToggleUrl = Url::to('front/timeline.php')
+    . ($scopeQuery === [] ? '' : ('?' . http_build_query($scopeQuery)));
 
 Html::header(
     __('Timeline', 'projectplus'),
@@ -54,13 +72,17 @@ TemplateRenderer::getInstance()->display(
     [
         'plugin_web_dir' => Url::base(),
         'glpi_root'      => $CFG_GLPI['root_doc'] ?? '',
-        'timeline'       => Timeline::getData($onlyUser, $scopeTaskProjectIds),
+        'timeline'       => Timeline::getData($onlyUser, $scopeTaskProjectIds, $typeId),
         'only_mine'      => $scopeMode === 'personal',
         'can_templates'  => Session::haveRight('config', UPDATE),
         'nav'             => Access::sidebar(),
         'scope_can_expand'  => $scopeCanExpand,
         'scope_is_expanded' => $scopeIsExpanded,
         'scope_toggle_url'  => $scopeToggleUrl,
+        // Etapa 9 — seletor de tipo (mesmo componente do Kanban)
+        'type_options'      => $typeOptions,
+        'type_selected'     => $typeId,
+        'type_scope'        => (($_GET['scope'] ?? '') === 'mine') ? 'mine' : '',
     ]
 );
 

@@ -76,11 +76,20 @@
         {# Cabeçalho: filtro de período + ações #}
         <div class="projectplus-header" id="overview">
             <form method="get" class="projectplus-period" action="">
+                {% if filter_scope %}<input type="hidden" name="scope" value="{{ filter_scope }}">{% endif %}
                 <input type="date" name="from" value="{{ filter_from }}" title="{{ __('Início do período', 'projectplus') }}">
                 <span>—</span>
                 <input type="date" name="until" value="{{ filter_until }}" title="{{ __('Fim do período', 'projectplus') }}">
+                {% if type_options is not empty %}
+                <select name="type" class="pp-type-pick" title="{{ __('Tipo de projeto', 'projectplus') }}">
+                    <option value="">{{ __('Todos os tipos', 'projectplus') }}</option>
+                    {% for t in type_options %}
+                    <option value="{{ t.id }}" {{ (filter_type is not null and filter_type == t.id) ? 'selected' : '' }}>{{ t.name }}</option>
+                    {% endfor %}
+                </select>
+                {% endif %}
                 <button type="submit" class="projectplus-btn projectplus-btn--ghost">{{ __('Aplicar', 'projectplus') }}</button>
-                {% if filter_from or filter_until %}
+                {% if filter_from or filter_until or filter_type is not null %}
                     <a href="?" class="projectplus-period__clear" title="{{ __('Limpar filtro', 'projectplus') }}">&times;</a>
                 {% endif %}
             </form>
@@ -184,10 +193,19 @@
                      data-planned="{{ status_chart.planned }}"
                      data-overdue="{{ status_chart.overdue }}"></div>
             </div>
+            {# Etapa 9 — donut ADAPTATIVO: sem tipo escolhido, "Projetos por fase"
+               misturaria os vocabulários de todos os setores; a leitura que faz
+               sentido cruzando departamentos é "Projetos por tipo". #}
             <div class="projectplus-card projectplus-card--chart">
+                {% if filter_type is null %}
+                <h3>{{ __('Projetos por tipo', 'projectplus') }}</h3>
+                <div id="projectplus-phase-chart" class="projectplus-donut"
+                     data-phases="{{ type_chart|json_encode }}"></div>
+                {% else %}
                 <h3>{{ __('Projetos por fase', 'projectplus') }}</h3>
                 <div id="projectplus-phase-chart" class="projectplus-donut"
                      data-phases="{{ phase_chart|json_encode }}"></div>
+                {% endif %}
             </div>
             {% if can_tasks %}
             <div class="projectplus-card projectplus-card--chart">
@@ -439,8 +457,20 @@
             </label>
 
             <label>
+                {{ __('Tipo', 'projectplus') }}
+                <select name="projecttypes_id" data-pp-role="np-type">
+                    <option value="0">—</option>
+                    {% for t in ptypes %}
+                        <option value="{{ t.id }}">{{ t.name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+
+            {# O campo Estado lista só as fases do conjunto do TIPO escolhido
+               (Etapa 9). Sem tipo, mostra o conjunto padrão. #}
+            <label>
                 {{ __('Estado', 'projectplus') }}
-                <select name="projectstates_id">
+                <select name="projectstates_id" data-pp-role="np-state">
                     <option value="0">—</option>
                     {% for s in states %}
                         <option value="{{ s.id }}">{{ s.name }}</option>
@@ -507,7 +537,8 @@
 <script id="pp-data" type="application/json">{{ {
     'states': states,
     'users': users,
-    'current_user_id': current_user_id
+    'current_user_id': current_user_id,
+    'phases_by_type': phases_by_type
 }|json_encode|raw }}</script>
 
 <script src="{{ plugin_web_dir }}/js/projectplus.js"></script>

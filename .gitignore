@@ -1,0 +1,9 @@
+# ProjectPlus — artefatos que não entram no repositório
+*.log
+*.bak
+*.orig
+*~
+.DS_Store
+Thumbs.db
+/vendor/
+/node_modules/
