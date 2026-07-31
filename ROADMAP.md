@@ -2,7 +2,7 @@
 
 **Plugin de gestão avançada de projetos para GLPI 11**
 Repositório: [github.com/teckcomp/glpi-plugin-projectplus](https://github.com/teckcomp/glpi-plugin-projectplus) · Licença GPL-2.0
-Versão atual: **v1.1.0-beta** · Atualizado em 26/07/2026 — **instalada em produção** (entidade única), com correção pós-instalação de ordem de nome já commitada (`35dd900`). Com ela fecham as etapas 0 a 9. **Pausa deliberada:** rodar em produção por algumas semanas antes de iniciar a Etapa 10 (guard de escopo, planejada abaixo). Bloco 5 (catálogo oficial do GLPI) pode ser feito em paralelo, sem mexer em código.
+Versão atual: **v1.1.0-beta** · Atualizado em 31/07/2026 — **instalada em produção** (entidade única). Com ela fecham as etapas 0 a 9. Em 31/07/2026 entrou a **rodada de correções de uso da beta**, em três commits (`73a4e61` correções de visão, `28c8ffd` selo Concluída, `d7e56e9` busca nos dropdowns), validada em homologação e **aplicada em produção no mesmo dia**. **Pausa deliberada segue:** Etapa 10 (guard de escopo, planejada abaixo) só quando for retomada de fato. Bloco 5 (catálogo oficial do GLPI) pode ser feito em paralelo, sem mexer em código.
 
 > **Ordem de execução confirmada em 19/07/2026:** Etapa 7 → Etapa 8 → Etapa 6 (por último). A Etapa 6 (refinamento/pré-produção e release v1.0.0-beta) só começa depois que 7 e 8 estiverem validadas em homologação.
 
@@ -183,6 +183,30 @@ Servidor `177.87.230.179:2022`, usuário `resolutto` — entidade única. Backup
 **Correção pós-instalação (commit `35dd900`, `f03626f..35dd900`, 5 arquivos, +36/−18):** a coluna "Responsáveis"/"Gestor" em `Dashboard.php`, `Kanban.php`, `ProjectKanban.php`, `Reports.php` e `Templates.php` montava o nome fixando a ordem `Sobrenome Nome`, ignorando `names_format` (config/preferência de sessão) que o resto do GLPI já respeita. Trocado por `formatUserName()` nativo do core. Validado em produção pelo usuário.
 
 **Decisão de 26/07/2026: pausa deliberada.** Rodar a v1.1.0-beta em produção por algumas semanas antes de tocar em código de novo — validar em uso real antes da Etapa 10. Nenhum item abaixo é urgente; nenhum bloqueia o uso atual (é entidade única, ver `SECURITY.md`).
+
+### ✅ Rodada de correções de uso da beta — 31/07/2026 (commits `73a4e61` + `28c8ffd` + `d7e56e9`)
+
+Ajustes pedidos pelo uso real, validados em homologação. Não iniciam a Etapa 10; a pausa segue valendo.
+
+**Commit `73a4e61`** (`d85353a..73a4e61`, 15 arquivos, +592/−553) — três correções:
+1. **Modal "Novo projeto" sem overflow** — item de grid não encolhia abaixo do conteúdo (`min-width: auto`) e opção longa no select Gestor alargava a caixa além dos 640px, escondendo campos atrás de barra horizontal. `min-width: 0` nos rótulos/campos, `width: 100%` nos inputs, caixa limitada à viewport (`fix-modal-overflow-1` no CSS).
+2. **Nomes de usuário nos dropdowns** — `front/dashboard.php` era o último resquício do bug do `35dd900`: montava `Sobrenome Nome` fixo e ordenava por sobrenome. Agora usa `formatUserName()` (respeita `names_format`) e ordena pelo rótulo exibido com `Collator` (fallback `strnatcasecmp`). A varredura fechou também os autores de lançamentos em `TaskCost`, `Budget` (2 pontos), `ProjectCost` e `TaskComment`.
+3. **Rótulo "Estado" → "Fase"** em todo lugar do plugin onde significa fase: coluna da tabela de tarefas (Twig + JS), donut "Tarefas por Estado"→"Tarefas por fase", campo do modal Novo projeto, editor de Modelos. A ficha nativa continua "Estado" (core) e a referência ao menu "Estados de projeto" ficou intacta (caminho do core). Catálogos regenerados: 569/569, zero fuzzy; chave `Estado` saiu do dicionário JS.
+
+**Commit `28c8ffd`** (`73a4e61..28c8ffd`, 9 arquivos, +158/−119) — selo "Concluída":
+- Linha da tarefa (painel do projeto e Minhas tarefas): com `percent = 100`, o botão ✓ dá lugar ao selo verde "✓ Concluída" — inclusive para percentual automático que chegou a 100.
+- Subtarefas concluídas expandidas na tabela "Tarefas em andamento" da Visão geral: selo ao lado do nome (o selo é `inline-flex` e não herda o risco da linha).
+- Cartão do Kanban (e da aba da ficha): concluído deixa de só apagar (opacidade .55) e ganha a identidade verde `#4caf7d` — borda esquerda, fundo claro, opacidade .85 — mais o selo na linha de badges. Visível com "Mostrar tarefas concluídas" marcado, como sempre.
+- Comportamento do ✓ intacto por baixo: grava só `percent=100` (fase não muda) com as três travas (percentual automático, subtarefa aberta, dependência bloqueando). Catálogos em 570/570, zero fuzzy; dicionário JS em 123 chaves.
+
+**Commit `d7e56e9`** (`28c8ffd..d7e56e9`, 9 arquivos, +289/−118) — busca nos dropdowns:
+- Componente `enhanceSearchSelects` em `projectplus.js`: `<select class="pp-search">` vira combobox com campo de filtro — sem acento ("abreu" acha "Ábreu"), setas/Enter/Esc, "Nenhum resultado". **Progressivo**: o select nativo segue no DOM (escondido), carrega o valor do form e dispara `change` — nenhum consumidor muda; a lista é lida ao vivo das `<option>` a cada abertura, então selects com opções refeitas dinamicamente continuam funcionando (12 asserções jsdom).
+- Aplicado aos quatro dropdowns sem limite de crescimento: **Gestor** e **Projeto pai** (modal), **Responsável** e **Tarefa pai** (linha de criação de tarefa). Tipo/Fase/Prioridade ficam nativos por decisão (listas curtas; a Fase é refeita pelo Tipo). Estender é uma linha por select.
+- Duas chaves novas de i18n ("Digite para buscar…", "Nenhum resultado"); dicionário JS em 125 chaves; catálogos em 572/572, zero fuzzy.
+
+**Aprendizados operacionais da rodada:** hard refresh (Ctrl+F5) só vale para a página onde é dado — JS de outra tela continua em cache (o selo do Kanban "não aparecia" com o arquivo certo no servidor); e zip esquecido no meio de uma sequência é diagnosticado em segundos pelo `grep -c` de conferência (o `concluida-2` tinha ficado sem aplicar).
+
+**Itens opcionais anotados, sem prioridade (pedir se quiser):** caixa "Mostrar concluídas" na tabela "Tarefas em andamento"; ✓ também mover a tarefa para uma fase finalizada do conjunto do tipo; estender a busca de dropdown a outros selects (Modelos, filtros).
 
 ### Decisões em aberto
 
