@@ -245,7 +245,10 @@
                         ? '<span class="pp-dep-lock" title="' +
                           escapeHtml(__('Bloqueada por outra(s) tarefa(s) — veja 🔗')) + '">🔒</span> '
                         : '') +
-                    '<a href="' + escapeHtml(t.url) + '" target="_blank">' + escapeHtml(t.name) + '</a></td>' +
+                    '<a href="' + escapeHtml(t.url) + '" target="_blank">' + escapeHtml(t.name) + '</a>' +
+                    (pct >= 100
+                        ? ' <span class="pp-task-donemark" title="' + escapeHtml(__('Concluída')) + '">✓ ' + escapeHtml(__('Concluída')) + '</span>'
+                        : '') + '</td>' +
                 '<td>' + escapeHtml(t.project || '—') + '</td>' +
                 '<td>' + (t.team && t.team.length
                     ? escapeHtml(t.team.join(', '))
@@ -1003,9 +1006,11 @@
                 '<td class="pp-deadline-cell">' + deadlineCell(t.deadline) + '</td>' +
                 '<td class="pp-dep-cell">' + depBtnHtml(t) + '</td>' +
                 '<td class="pp-cmt-cell">' + commentBtnHtml(t) + '</td>' +
-                '<td>' + (t.percent < 100 && !t.auto_percent
-                    ? '<button type="button" class="pp-task-complete" title="' + escapeHtml(__('Concluir')) + '">✓</button>'
-                    : '') + '</td>' +
+                '<td>' + (t.percent >= 100
+                    ? '<span class="pp-task-donemark" title="' + escapeHtml(__('Concluída')) + '">✓ ' + escapeHtml(__('Concluída')) + '</span>'
+                    : (!t.auto_percent
+                        ? '<button type="button" class="pp-task-complete" title="' + escapeHtml(__('Concluir')) + '">✓</button>'
+                        : '')) + '</td>' +
                 '</tr>';
         });
 

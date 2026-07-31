@@ -152,6 +152,7 @@ class I18nJs
                 '+ subprojeto'             => __('+ subprojeto', 'projectplus'),
 
                 // ---- donuts da Visão geral ----
+                'Concluída'                => __('Concluída', 'projectplus'),
                 'Concluído'                => __('Concluído', 'projectplus'),
                 'Concluídas'               => __('Concluídas', 'projectplus'),
                 'Em andamento'             => __('Em andamento', 'projectplus'),

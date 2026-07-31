@@ -428,6 +428,11 @@
         const badges = document.createElement('span');
         badges.className = 'pp-kb-card-item__badges';
         let html = c.percent + '%';
+        if (c.is_done) {
+            // Selo de conclusão (pedido de 31/07/2026): além da cor do cartão,
+            // um check textual explícito. Só texto TRADUZIDO passa por aqui.
+            html += ' <span class="pp-kb-donebadge">✓ ' + escapeText(__('Concluída')) + '</span>';
+        }
         if (c.comments > 0) {
             html += ' &nbsp;💬' + c.comments;
         }

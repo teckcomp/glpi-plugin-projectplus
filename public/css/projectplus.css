@@ -952,7 +952,23 @@
 .pp-kb-card-item--dragging { opacity: .45; }
 .pp-kb-col--drop { background: #eaf4fb; outline: 2px dashed #4a9fd4; outline-offset: -4px; }
 .pp-kb-card-item--blocked { border-color: #d9534f; }
-.pp-kb-card-item--done { opacity: .55; }
+/* Concluída (pedido de 31/07/2026): cartão pronto ganha a cor VERDE da
+   identidade do plugin (#4caf7d) em vez de só apagar, e um selo textual. */
+.pp-kb-card-item--done {
+    opacity: .85; border-left: 3px solid #4caf7d; background: #f2faf6;
+}
+.pp-kb-donebadge {
+    display: inline-block; background: #4caf7d; color: #fff;
+    border-radius: 8px; padding: 1px 7px; font-size: .68rem; font-weight: 700;
+    vertical-align: 1px;
+}
+/* Selo na linha da tarefa (no lugar do botão ✓, depois de concluída) */
+.pp-task-donemark {
+    display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;
+    background: #e6f6ee; color: #1e7a4f; border: 1px solid #4caf7d;
+    border-radius: 10px; padding: 2px 8px; font-size: .72rem; font-weight: 700;
+    text-decoration: none;
+}
 .pp-kb-card-item__link { display: block; text-decoration: none; color: inherit; }
 .pp-kb-card-item__name {
     display: block; font-weight: 600; color: #16323f; margin-bottom: 6px;
