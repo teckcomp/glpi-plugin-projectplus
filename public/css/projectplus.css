@@ -130,9 +130,12 @@
     position: absolute; inset: 0; background: rgba(22,50,63,.45);
 }
 .projectplus-modal__box {
-    position: relative; max-width: 640px; margin: 6vh auto; background: #fff;
+    /* fix-modal-overflow-1: largura limitada à viewport e sem scroll
+       horizontal — opção longa num select não pode alargar a caixa. */
+    position: relative; width: min(640px, calc(100vw - 24px));
+    margin: 6vh auto; background: #fff;
     border-radius: 10px; box-shadow: 0 12px 40px rgba(0,0,0,.25);
-    max-height: 86vh; overflow-y: auto;
+    max-height: 86vh; overflow-y: auto; overflow-x: hidden;
 }
 .projectplus-modal__head {
     display: flex; align-items: center; justify-content: space-between;
@@ -152,12 +155,15 @@
 .projectplus-form label {
     display: flex; flex-direction: column; gap: 4px;
     font-size: 0.82rem; color: #5a7684; font-weight: 600;
+    min-width: 0; /* fix-modal-overflow-1: item de grid encolhe abaixo do conteúdo */
 }
 .projectplus-form input,
 .projectplus-form select,
 .projectplus-form textarea {
     border: 1px solid #c6d0d9; border-radius: 6px; padding: 7px 10px;
     font-size: 0.9rem; color: #2c3e50; font-weight: 400;
+    width: 100%; max-width: 100%; box-sizing: border-box;
+    min-width: 0; /* fix-modal-overflow-1 */
 }
 .projectplus-form input:focus,
 .projectplus-form select:focus,

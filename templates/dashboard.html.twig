@@ -217,7 +217,7 @@
                      data-overdue="{{ tasks_chart.overdue }}"></div>
             </div>
             <div class="projectplus-card projectplus-card--chart">
-                <h3>{{ __('Tarefas por Estado', 'projectplus') }}</h3>
+                <h3>{{ __('Tarefas por fase', 'projectplus') }}</h3>
                 <div id="projectplus-taskstate-chart" class="projectplus-donut"
                      data-phases="{{ task_state_chart|json_encode }}"></div>
             </div>
@@ -345,7 +345,7 @@
                             <th>{{ __('Projeto', 'projectplus') }}</th>
                             <th>{{ __('Responsáveis', 'projectplus') }}</th>
                             <th>{{ __('Progresso', 'projectplus') }}</th>
-                            <th>{{ __('Estado', 'projectplus') }}</th>
+                            <th>{{ __('Fase', 'projectplus') }}</th>
                             <th>{{ __('Prazo decorrido', 'projectplus') }}</th>
                             <th>{{ __('Prazo final', 'projectplus') }}</th>
                             <th></th>
@@ -466,10 +466,10 @@
                 </select>
             </label>
 
-            {# O campo Estado lista só as fases do conjunto do TIPO escolhido
+            {# O campo Fase lista só as fases do conjunto do TIPO escolhido
                (Etapa 9). Sem tipo, mostra o conjunto padrão. #}
             <label>
-                {{ __('Estado', 'projectplus') }}
+                {{ __('Fase', 'projectplus') }}
                 <select name="projectstates_id" data-pp-role="np-state">
                     <option value="0">—</option>
                     {% for s in states %}

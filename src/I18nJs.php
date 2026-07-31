@@ -53,7 +53,6 @@ class I18nJs
         return [
             's' => [
                 // ---- geral / rótulos compartilhados ----
-                'Estado'                   => __('Estado', 'projectplus'),
                 'Tipo'                     => __('Tipo', 'projectplus'),
                 'Gestor'                   => __('Gestor', 'projectplus'),
                 'Responsável'              => __('Responsável', 'projectplus'),

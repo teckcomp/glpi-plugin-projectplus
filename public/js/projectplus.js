@@ -605,7 +605,7 @@
             '<div class="pp-tpl-meta">' +
                 '<label class="pp-tpl-num" title="' + escapeHtml(__('Dias após a data de início escolhida ao criar')) + '">' + escapeHtml(__('início (d)')) + '<input type="number" class="pp-pm-offset" min="0" step="1" value="' + offset + '"></label>' +
                 '<label class="pp-tpl-num" title="' + escapeHtml(__('Duração do projeto em dias (define a data de fim)')) + '">' + escapeHtml(__('duração (d)')) + '<input type="number" class="pp-pm-dur" min="1" step="1" value="' + dur + '"></label>' +
-                '<label class="pp-tpl-field">' + escapeHtml(__('Estado')) + '<select class="pp-pm-state">' + tplOptions(ppTplRef.states, stateId) + '</select></label>' +
+                '<label class="pp-tpl-field">' + escapeHtml(__('Fase')) + '<select class="pp-pm-state">' + tplOptions(ppTplRef.states, stateId) + '</select></label>' +
                 '<label class="pp-tpl-field">' + escapeHtml(__('Tipo')) + '<select class="pp-pm-ptype">' + tplOptions(ppTplRef.ptypes, ptypeId) + '</select></label>' +
                 '<label class="pp-tpl-field">' + escapeHtml(__('Gestor')) + '<select class="pp-pm-user">' + tplOptions(ppTplRef.users, userId) + '</select></label>' +
                 '<label class="pp-tpl-field">' + escapeHtml(__('Orçamento (R$)')) + '<input type="number" class="pp-pm-budget" min="0" step="0.01" value="' + budget + '"></label>' +
@@ -648,7 +648,7 @@
                 '<button type="button" class="pp-tpl-mini pp-tpl-mini--danger" data-act="remove" title="' + escapeHtml(__('Remover')) + '">&times;</button>' +
             '</div>' +
             '<div class="pp-tpl-meta">' +
-                '<label class="pp-tpl-field">' + escapeHtml(__('Estado')) + '<select class="pp-tpl-state">' + tplOptions(ppTplRef.states, stateId) + '</select></label>' +
+                '<label class="pp-tpl-field">' + escapeHtml(__('Fase')) + '<select class="pp-tpl-state">' + tplOptions(ppTplRef.states, stateId) + '</select></label>' +
                 '<label class="pp-tpl-field">' + escapeHtml(__('Tipo')) + '<select class="pp-tpl-ttype">' + tplOptions(ppTplRef.ttypes, ttypeId) + '</select></label>' +
                 '<label class="pp-tpl-field">' + escapeHtml(__('Responsável')) + '<select class="pp-tpl-user">' + tplOptions(ppTplRef.users, userId) + '</select></label>' +
                 '<label class="pp-tpl-check"><input type="checkbox" class="pp-tpl-auto"' + (auto ? ' checked' : '') + '> ' + escapeHtml(__('calcular automaticamente o %')) + '</label>' +
@@ -694,7 +694,7 @@
                 '<button type="button" class="pp-tpl-mini pp-tpl-mini--danger" data-act="remove" title="' + escapeHtml(__('Remover')) + '">&times;</button>' +
             '</div>' +
             '<div class="pp-tpl-meta">' +
-                '<label class="pp-tpl-field">' + escapeHtml(__('Estado')) + '<select class="pp-tpl-state">' + tplOptions(ppTplRef.states, stateId) + '</select></label>' +
+                '<label class="pp-tpl-field">' + escapeHtml(__('Fase')) + '<select class="pp-tpl-state">' + tplOptions(ppTplRef.states, stateId) + '</select></label>' +
                 '<label class="pp-tpl-field">' + escapeHtml(__('Tipo')) + '<select class="pp-tpl-ptype">' + tplOptions(ppTplRef.ptypes, ptypeId) + '</select></label>' +
                 '<label class="pp-tpl-field">' + escapeHtml(__('Gestor')) + '<select class="pp-tpl-user">' + tplOptions(ppTplRef.users, userId) + '</select></label>' +
                 '<label class="pp-tpl-field">' + escapeHtml(__('Orçamento (R$)')) + '<input type="number" class="pp-tpl-budget" min="0" step="0.01" value="' + budget + '"></label>' +
@@ -971,7 +971,7 @@
             '<th>' + escapeHtml(__('Início')) + '</th>' +
             '<th>' + escapeHtml(__('Fim')) + '</th>' +
             '<th>%</th>' +
-            '<th>' + escapeHtml(__('Estado')) + '</th>' +
+            '<th>' + escapeHtml(__('Fase')) + '</th>' +
             '<th>' + escapeHtml(__('Prazo')) + '</th><th></th><th></th><th></th>' +
             '</tr></thead><tbody>';
 
@@ -1580,7 +1580,7 @@
         }));
     }
 
-    // Donut "Tarefas por Estado" (Etapa 3, Bloco 4) — mesmas fatias
+    // Donut "Tarefas por fase" (Etapa 3, Bloco 4) — mesmas fatias
     // dinâmicas do donut de fases, agrupando as tarefas por estado.
     function initTaskStateChart() {
         const el = document.getElementById('projectplus-taskstate-chart');

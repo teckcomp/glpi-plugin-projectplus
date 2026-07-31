@@ -152,12 +152,16 @@ class TaskComment extends CommonDBTM
                 ],
             ]) as $row
         ) {
-            $author = trim(
-                (string) ($row['author_realname'] ?? '') . ' '
-                . (string) ($row['author_firstname'] ?? '')
+            // Nome do autor segue formatUserName (names_format), como o resto
+            // do plugin desde o commit 35dd900 — antes era "Sobrenome Nome" fixo.
+            $author = \formatUserName(
+                0,
+                (string) ($row['author_login'] ?? ''),
+                (string) ($row['author_realname'] ?? ''),
+                (string) ($row['author_firstname'] ?? '')
             );
             if ($author === '') {
-                $author = (string) ($row['author_login'] ?? '—');
+                $author = '—';
             }
 
             $out[] = [
