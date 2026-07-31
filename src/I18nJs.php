@@ -153,6 +153,8 @@ class I18nJs
 
                 // ---- donuts da Visão geral ----
                 'Concluída'                => __('Concluída', 'projectplus'),
+                'Digite para buscar…'      => __('Digite para buscar…', 'projectplus'),
+                'Nenhum resultado'         => __('Nenhum resultado', 'projectplus'),
                 'Concluído'                => __('Concluído', 'projectplus'),
                 'Concluídas'               => __('Concluídas', 'projectplus'),
                 'Em andamento'             => __('Em andamento', 'projectplus'),

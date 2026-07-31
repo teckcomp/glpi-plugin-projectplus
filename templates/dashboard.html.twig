@@ -448,7 +448,7 @@
 
             <label>
                 {{ __('Projeto pai', 'projectplus') }}
-                <select name="projects_id">
+                <select name="projects_id" class="pp-search">
                     <option value="0">{{ __('— Nenhum (projeto raiz) —', 'projectplus') }}</option>
                     {% for p in parents %}
                         <option value="{{ p.id }}">{{ p.name }}</option>
@@ -492,7 +492,7 @@
 
             <label>
                 {{ __('Gestor', 'projectplus') }}
-                <select name="users_id">
+                <select name="users_id" class="pp-search">
                     {% for u in users %}
                         <option value="{{ u.id }}" {{ u.id == current_user_id ? 'selected' : '' }}>{{ u.name }}</option>
                     {% endfor %}

@@ -1026,3 +1026,28 @@
 /* Seletor de tipo dos boards (Kanban de tarefas e de projetos) */
 .pp-type-pick { display: inline-flex; align-items: center; gap: 6px; font-size: 0.82rem; }
 .pp-type-pick select { max-width: 260px; }
+
+/* ===== Busca em dropdowns (rodada 31/07/2026) ===== */
+.pp-ss { position: relative; min-width: 0; }
+.projectplus-form .pp-ss { width: 100%; }
+.projectplus-newtask .pp-ss { flex: 1 1 200px; min-width: 150px; }
+.pp-ss select { display: none; }
+.pp-ss__input { width: 100%; box-sizing: border-box; }
+.projectplus-newtask .pp-ss__input {
+    border: 1px solid #c6d0d9; border-radius: 6px; padding: 6px 9px;
+    font-size: 0.85rem;
+}
+.pp-ss__list {
+    position: absolute; top: calc(100% + 2px); left: 0; right: 0; z-index: 2100;
+    background: #fff; border: 1px solid #c6d0d9; border-radius: 6px;
+    max-height: 240px; overflow-y: auto;
+    box-shadow: 0 6px 18px rgba(15, 32, 45, .15);
+}
+.pp-ss__item {
+    padding: 6px 10px; font-size: 0.85rem; cursor: pointer;
+    color: #2c3e50; font-weight: 400;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.pp-ss__item:hover, .pp-ss__item--act { background: #eaf4fb; }
+.pp-ss__item--sel { font-weight: 700; color: #065a82; }
+.pp-ss__empty { padding: 8px 10px; font-size: 0.8rem; color: #8a97a5; }

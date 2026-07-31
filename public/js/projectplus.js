@@ -97,6 +97,124 @@
         apply(); // ja abre coerente com o tipo pre-selecionado
     }
 
+
+    // ------------------------------------------------------------------
+    // Busca em dropdowns (rodada 31/07/2026).
+    //
+    // Transforma um <select class="pp-search"> num combobox com campo de
+    // filtro. PROGRESSIVO: o select nativo continua no DOM (escondido),
+    // e o valor do formulario, e dispara 'change' normal -- nenhum
+    // consumidor muda. A lista e lida AO VIVO das <option> a cada
+    // abertura, entao um select cujas opcoes sao refeitas por outro
+    // codigo continua funcionando. Filtro ignora acentos.
+    function enhanceSearchSelects(root) {
+        (root || document).querySelectorAll('select.pp-search').forEach(function (sel) {
+            if (sel.dataset.ppSearch) { return; }
+            sel.dataset.ppSearch = '1';
+
+            const wrap = document.createElement('div');
+            wrap.className = 'pp-ss';
+            sel.parentNode.insertBefore(wrap, sel);
+            wrap.appendChild(sel);
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'pp-ss__input';
+            input.autocomplete = 'off';
+            input.setAttribute('role', 'combobox');
+            input.placeholder = __('Digite para buscar…');
+            const list = document.createElement('div');
+            list.className = 'pp-ss__list';
+            list.hidden = true;
+            wrap.appendChild(input);
+            wrap.appendChild(list);
+
+            function norm(t) {
+                return String(t).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            }
+            function labelOf(opt) {
+                return opt ? opt.textContent.replace(/\u00a0/g, ' ').trim() : '';
+            }
+            function currentLabel() {
+                return labelOf(sel.options[sel.selectedIndex]);
+            }
+            function closeList() {
+                list.hidden = true;
+                input.value = currentLabel();
+            }
+            function pick(value, label) {
+                sel.value = value;
+                sel.dispatchEvent(new Event('change', { bubbles: true }));
+                input.value = label;
+                list.hidden = true;
+            }
+            function rebuild(filter) {
+                list.innerHTML = '';
+                const f = norm(filter || '');
+                let shown = 0;
+                Array.prototype.forEach.call(sel.options, function (o) {
+                    const label = labelOf(o);
+                    if (f && norm(label).indexOf(f) === -1) { return; }
+                    const item = document.createElement('div');
+                    item.className = 'pp-ss__item' + (o.value === sel.value ? ' pp-ss__item--sel' : '');
+                    item.textContent = label || '—';
+                    item.dataset.value = o.value;
+                    // mousedown: dispara ANTES do blur do input (click nao dispararia)
+                    item.addEventListener('mousedown', function (ev) {
+                        ev.preventDefault();
+                        pick(o.value, label);
+                    });
+                    list.appendChild(item);
+                    shown++;
+                });
+                if (shown === 0) {
+                    const empty = document.createElement('div');
+                    empty.className = 'pp-ss__empty';
+                    empty.textContent = __('Nenhum resultado');
+                    list.appendChild(empty);
+                }
+                list.hidden = false;
+            }
+
+            input.value = currentLabel();
+            input.addEventListener('focus', function () { input.select(); rebuild(''); });
+            input.addEventListener('input', function () { rebuild(input.value); });
+            input.addEventListener('blur', function () { closeList(); });
+            input.addEventListener('keydown', function (ev) {
+                const items = list.querySelectorAll('.pp-ss__item');
+                let idx = -1;
+                items.forEach(function (it, i) { if (it.classList.contains('pp-ss__item--act')) { idx = i; } });
+                if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
+                    ev.preventDefault();
+                    if (list.hidden) { rebuild(input.value); return; }
+                    const next = ev.key === 'ArrowDown'
+                        ? Math.min(idx + 1, items.length - 1) : Math.max(idx - 1, 0);
+                    items.forEach(function (it) { it.classList.remove('pp-ss__item--act'); });
+                    if (items[next]) {
+                        items[next].classList.add('pp-ss__item--act');
+                        items[next].scrollIntoView({ block: 'nearest' });
+                    }
+                } else if (ev.key === 'Enter') {
+                    if (!list.hidden) {
+                        const alvo = (idx >= 0 && items[idx]) ? items[idx]
+                            : (items.length === 1 ? items[0] : null);
+                        if (alvo) {
+                            ev.preventDefault();
+                            pick(alvo.dataset.value, alvo.textContent);
+                        }
+                    }
+                } else if (ev.key === 'Escape') {
+                    closeList();
+                }
+            });
+            // mudanca programatica do select (reset de form etc.) atualiza o rotulo
+            sel.addEventListener('change', function () {
+                if (list.hidden) { input.value = currentLabel(); }
+            });
+        });
+    }
+    ProjectPlus.enhanceSearchSelects = enhanceSearchSelects;
+
     ProjectPlus.initDashboard = function () {
         const root = document.getElementById('projectplus-dashboard');
         if (!root) {
@@ -111,6 +229,7 @@
         initExpandButtons(root, ajaxUrl);
         initTaskExpand(root, ajaxUrl);
         initModals();
+        enhanceSearchSelects(document); // busca nos dropdowns do modal
         initTaskPanels(root);
         initNewProjectPhases(root); // Etapa 9: Estado segue o Tipo no modal
         initOpenTaskPanels(root);  // 💬/🔗 em "Tarefas em andamento" (Bloco 4)
@@ -926,6 +1045,7 @@
             .then(function (tasks) {
                 container.innerHTML = renderTaskPanel(projectId, tasks);
                 bindTaskPanel(container, projectId, ajaxUrl, taskUrl, tasks);
+                enhanceSearchSelects(container); // busca nos dropdowns da linha de criacao
             })
             .catch(function () {
                 container.innerHTML = '<div class="projectplus-taskspanel">' +
@@ -939,12 +1059,12 @@
         // Formulário de nova tarefa
         html += '<div class="projectplus-newtask">' +
             '<input type="text" class="pp-nt-name" placeholder="' + escapeHtml(__('Nova tarefa…')) + '" maxlength="255">' +
-            '<select class="pp-nt-parent"><option value="0">' + escapeHtml(__('Sem tarefa pai')) + '</option>' +
+            '<select class="pp-nt-parent pp-search"><option value="0">' + escapeHtml(__('Sem tarefa pai')) + '</option>' +
             tasks.map(function (t) {
                 return '<option value="' + t.id + '">' + '&nbsp;'.repeat(t.depth * 2) + escapeHtml(t.name) + '</option>';
             }).join('') +
             '</select>' +
-            '<select class="pp-nt-user"><option value="0">' + escapeHtml(__('Sem responsável')) + '</option>' +
+            '<select class="pp-nt-user pp-search"><option value="0">' + escapeHtml(__('Sem responsável')) + '</option>' +
             ppData.users.map(function (u) {
                 const sel = (u.id === ppData.current_user_id) ? ' selected' : '';
                 return '<option value="' + u.id + '"' + sel + '>' + escapeHtml(u.name) + '</option>';
