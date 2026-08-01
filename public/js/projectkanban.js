@@ -31,14 +31,32 @@
     // continua em portugues.
     // ------------------------------------------------------------------
 
-    function __() {
+    // Interpola %s/%d na ordem dos argumentos — usada só no FALLBACK, quando
+    // window.ProjectPlusI18n ainda não carregou. O i18n.js entra pelo hook
+    // ADD_JAVASCRIPT do GLPI e executa DEPOIS do <script> inline do template;
+    // sem esta interpolação, msgid com %s aparecia literal no primeiro
+    // desenho (ex.: "Subtarefa da tarefa: %s" no Kanban — corrigido 31/07/2026).
+    function ppFmt(text, args) {
+        if (!args.length) { return String(text); }
+        var i = 0;
+        return String(text).replace(/%[sd%]/g, function (m) {
+            if (m === '%%') { return '%'; }
+            var v = args[i++];
+            return (v === undefined || v === null) ? '' : String(v);
+        });
+    }
+
+    function __(msgid) {
         var i = window.ProjectPlusI18n;
-        return i ? i.t.apply(i, arguments) : arguments[0];
+        if (i) { return i.t.apply(i, arguments); }
+        return ppFmt(msgid, Array.prototype.slice.call(arguments, 1));
     }
 
     function _n(singular, plural, n) {
         var i = window.ProjectPlusI18n;
-        return i ? i.tn.apply(i, arguments) : (Number(n) === 1 ? singular : plural);
+        if (i) { return i.tn.apply(i, arguments); }
+        return ppFmt(Number(n) === 1 ? singular : plural,
+                     Array.prototype.slice.call(arguments, 3));
     }
 
     const ProjectPlusProjectKanban = {};

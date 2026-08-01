@@ -138,7 +138,19 @@
 
 <script src="{{ plugin_web_dir }}/js/timeline.js"></script>
 <script>
-    if (window.ProjectPlusTimeline && typeof window.ProjectPlusTimeline.init === 'function') {
-        window.ProjectPlusTimeline.init();
-    }
+    // Espera o DOMContentLoaded: os JS do hook do GLPI (i18n.js à frente)
+    // executam ANTES desse evento, então o primeiro desenho já sai com o
+    // dicionário de tradução carregado (correção de 31/07/2026).
+    (function () {
+        function ppBoot() {
+            if (window.ProjectPlusTimeline && typeof window.ProjectPlusTimeline.init === 'function') {
+                window.ProjectPlusTimeline.init();
+            }
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', ppBoot);
+        } else {
+            ppBoot();
+        }
+    })();
 </script>

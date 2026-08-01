@@ -543,7 +543,19 @@
 
 <script src="{{ plugin_web_dir }}/js/projectplus.js"></script>
 <script>
-    if (window.ProjectPlus && typeof window.ProjectPlus.initDashboard === 'function') {
-        window.ProjectPlus.initDashboard();
-    }
+    // Espera o DOMContentLoaded: os JS do hook do GLPI (i18n.js à frente)
+    // executam ANTES desse evento, então o primeiro desenho já sai com o
+    // dicionário de tradução carregado (correção de 31/07/2026).
+    (function () {
+        function ppBoot() {
+            if (window.ProjectPlus && typeof window.ProjectPlus.initDashboard === 'function') {
+                window.ProjectPlus.initDashboard();
+            }
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', ppBoot);
+        } else {
+            ppBoot();
+        }
+    })();
 </script>
