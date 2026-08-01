@@ -2,7 +2,7 @@
 
 **Plugin de gestão avançada de projetos para GLPI 11**
 Repositório: [github.com/teckcomp/glpi-plugin-projectplus](https://github.com/teckcomp/glpi-plugin-projectplus) · Licença GPL-2.0
-Versão atual: **v1.1.0-beta** · Atualizado em 31/07/2026 — **instalada em produção** (entidade única). Com ela fecham as etapas 0 a 9. Em 31/07/2026 entrou a **rodada de correções de uso da beta**, em três commits (`73a4e61` correções de visão, `28c8ffd` selo Concluída, `d7e56e9` busca nos dropdowns), validada em homologação e **aplicada em produção no mesmo dia**. **Pausa deliberada segue:** Etapa 10 (guard de escopo, planejada abaixo) só quando for retomada de fato. Bloco 5 (catálogo oficial do GLPI) pode ser feito em paralelo, sem mexer em código.
+Versão atual: **v1.1.0-beta** · Atualizado em 31/07/2026 — **instalada em produção** (entidade única). Com ela fecham as etapas 0 a 9. Em 31/07/2026 entrou a **rodada de correções de uso da beta**, em três commits (`73a4e61` correções de visão, `28c8ffd` selo Concluída, `d7e56e9` busca nos dropdowns), validada em homologação e **aplicada em produção no mesmo dia**. Ainda em 31/07/2026, uma **segunda rodada** em dois commits (`bbd836a` fim do "%s" literal no primeiro desenho, `e9e5397` subtarefas recolhidas no painel do projeto), validada em homologação — **aplicação em produção pendente**. **Pausa deliberada segue:** Etapa 10 (guard de escopo, planejada abaixo) só quando for retomada de fato. Bloco 5 (catálogo oficial do GLPI) pode ser feito em paralelo, sem mexer em código.
 
 > **Ordem de execução confirmada em 19/07/2026:** Etapa 7 → Etapa 8 → Etapa 6 (por último). A Etapa 6 (refinamento/pré-produção e release v1.0.0-beta) só começa depois que 7 e 8 estiverem validadas em homologação.
 
@@ -207,6 +207,23 @@ Ajustes pedidos pelo uso real, validados em homologação. Não iniciam a Etapa 
 **Aprendizados operacionais da rodada:** hard refresh (Ctrl+F5) só vale para a página onde é dado — JS de outra tela continua em cache (o selo do Kanban "não aparecia" com o arquivo certo no servidor); e zip esquecido no meio de uma sequência é diagnosticado em segundos pelo `grep -c` de conferência (o `concluida-2` tinha ficado sem aplicar).
 
 **Itens opcionais anotados, sem prioridade (pedir se quiser):** caixa "Mostrar concluídas" na tabela "Tarefas em andamento"; ✓ também mover a tarefa para uma fase finalizada do conjunto do tipo; estender a busca de dropdown a outros selects (Modelos, filtros).
+
+### ✅ Rodada 2 de correções de uso — 31/07/2026 (commits `bbd836a` + `e9e5397`)
+
+Dois ajustes reportados por prints do uso real, validados em homologação. Não iniciam a Etapa 10; a pausa segue valendo. **Produção ainda não recebeu esta rodada** (roda até `d7e56e9`) — aplicar os dois zips lá é o próximo passo operacional.
+
+**Commit `bbd836a`** (`eeed73e..bbd836a`, 13 arquivos, +219/−39) — fim do "`Subtarefa da tarefa: %s`" no primeiro desenho do Kanban:
+- **Causa raiz:** o `init()` inline dos templates roda **durante o parse da página**, antes de o GLPI executar os JS registrados por hook — inclusive o `i18n.js`, que é quem cria `window.ProjectPlusI18n`. Sem ele, o fallback de `__()` devolvia o msgid cru **sem interpolar `%s`/`%d`**; o texto só se resolvia num redesenho posterior (trocar raia, buscar), daí a sensação de "demora". O mesmo furo alcançava `Subprojeto de: %s` (Kanban de projetos) e o `%d tarefas` de Minhas tarefas.
+- Correção em duas pontas: fallback de `__()`/`_n()` ganhou `ppFmt()` (interpola mesmo sem dicionário) nos 4 JS (`kanban`, `projectkanban`, `projectplus`, `timeline`); e o `init()` dos **9 templates** foi adiado para `DOMContentLoaded` (os scripts de hook executam antes desse evento), então o primeiro desenho já sai traduzido — bônus para usuários en_GB.
+
+**Commit `e9e5397`** (`bbd836a..e9e5397`, 1 arquivo, +109/−6) — subtarefas recolhidas no painel do projeto (Visão geral):
+- Tarefa com subtarefas ganha o botão `+`/`−` (mesma classe `projectplus-expand__btn` da tabela "Tarefas em andamento") e **nasce recolhida**. Recolher a mãe esconde toda a subárvore; os painéis 💬/🔗 acompanham a visibilidade da tarefa dona; o estado de expansão vive no elemento do painel (`container._ppOpenSubs`) e sobrevive aos reloads da edição inline — fechar e reabrir o painel volta ao padrão recolhido; criar subtarefa pela linha "Nova tarefa" expande a mãe automaticamente.
+- "Minhas tarefas" segue com a árvore sempre aberta (chama `taskTableHtml` sem o flag `collapsible`). **Sem string nova**: o título do botão reusa `%d subtarefa(s)`; dicionário JS em 125 chaves e catálogos em 572/572 intactos.
+- `ProjectPlus._test` passou a expor `taskTableHtml`/`bindSubtaskCollapse`/`openSubtasksSet` para o harness jsdom — mesmo padrão do `ProjectPlusKanban._test`.
+
+**Validação da rodada:** 33 asserções jsdom (tag da subtarefa com o nome da mãe no primeiro desenho SEM i18n na página; `%d` interpolado no fallback; recolhimento com aninhamento de netas, painéis 💬/🔗, persistência no reload, modo Minhas tarefas intacto); `node --check` nos 4 JS; `tools/check-js-strings.php` em 125/125; os 9 templates conferidos com corpo idêntico fora do bloco `<script>` final e balanceamento de `{% if/for/block %}` preservado.
+
+**Aprendizado da rodada:** o clique do botão de recolher virou **listener delegado na tabela com guarda** (`table.dataset.ppSubBound`) porque o harness pegou que um segundo `bind` sobre a mesma tabela duplicava o listener e o toggle duplo virava no-op silencioso.
 
 ### Decisões em aberto
 
