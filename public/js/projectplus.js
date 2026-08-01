@@ -1099,13 +1099,30 @@
             return html;
         }
 
-        html += taskTableHtml(tasks) + '</div>';
+        html += taskTableHtml(tasks, true) + '</div>';
         return html;
     }
 
     // Tabela de tarefas com edição inline — compartilhada entre o painel
     // por projeto e a tela "Minhas tarefas" (Etapa 3, Bloco 1).
-    function taskTableHtml(tasks) {
+    // Conta as subtarefas DIRETAS da tarefa na posição idx. A lista chega
+    // achatada em ordem de árvore (depth-first), então os filhos diretos são
+    // as linhas seguintes com depth == atual+1, até voltar a depth <= atual.
+    function directChildren(tasks, idx) {
+        const base = tasks[idx].depth;
+        let n = 0;
+        for (let i = idx + 1; i < tasks.length; i++) {
+            if (tasks[i].depth <= base) { break; }
+            if (tasks[i].depth === base + 1) { n++; }
+        }
+        return n;
+    }
+
+    // collapsible=true (painel do projeto na Visão geral): tarefa com
+    // subtarefas ganha o botão +/− e nasce RECOLHIDA — mesmo padrão da
+    // tabela "Tarefas em andamento" (pedido de 31/07/2026). "Minhas
+    // tarefas" chama sem o flag e segue com a árvore sempre aberta.
+    function taskTableHtml(tasks, collapsible) {
         let html = '<table class="projectplus-tasktable"><thead><tr>' +
             '<th>' + escapeHtml(__('Tarefa')) + '</th>' +
             '<th>' + escapeHtml(__('Responsáveis')) + '</th>' +
@@ -1116,13 +1133,18 @@
             '<th>' + escapeHtml(__('Prazo')) + '</th><th></th><th></th><th></th>' +
             '</tr></thead><tbody>';
 
-        tasks.forEach(function (t) {
+        tasks.forEach(function (t, idx) {
             const stateOpts = ppData.states.map(function (s) {
                 return '<option value="' + s.id + '"' + (s.id === t.state_id ? ' selected' : '') + '>' +
                     escapeHtml(s.name) + '</option>';
             }).join('');
-            html += '<tr data-task-id="' + t.id + '" class="' + (t.percent >= 100 ? 'pp-task-done' : '') + '">' +
+            const kids = collapsible ? directChildren(tasks, idx) : 0;
+            html += '<tr data-task-id="' + t.id + '" data-depth="' + t.depth + '" class="' + (t.percent >= 100 ? 'pp-task-done' : '') + '">' +
                 '<td style="padding-left:' + (10 + t.depth * 22) + 'px">' +
+                    (kids > 0
+                        ? '<button type="button" class="projectplus-expand__btn pp-subexp" title="' +
+                          escapeHtml(_n('%d subtarefa', '%d subtarefas', kids, kids)) + '">+</button> '
+                        : '') +
                     (t.depth > 0 ? '<span class="pp-task-branch">└</span> ' : '') +
                     (t.depth === 0 && t.parent_name
                         ? '<span class="pp-task-parent" title="' + escapeHtml(__('Tarefa mãe')) + '">' + escapeHtml(t.parent_name) + ' › </span>'
@@ -1165,21 +1187,94 @@
             createBtn.addEventListener('click', function () {
                 const name = container.querySelector('.pp-nt-name').value.trim();
                 if (!name) { return; }
+                const parentId = container.querySelector('.pp-nt-parent').value;
                 createBtn.disabled = true;
                 taskPost(taskUrl, {
                     action: 'create',
                     name: name,
                     projects_id: projectId,
-                    projecttasks_id: container.querySelector('.pp-nt-parent').value,
+                    projecttasks_id: parentId,
                     users_id: container.querySelector('.pp-nt-user').value,
                     plan_start_date: container.querySelector('.pp-nt-start').value,
                     plan_end_date: container.querySelector('.pp-nt-end').value
-                }, function () { reload(); });
+                }, function () {
+                    // Subtarefa recém-criada tem que aparecer: expande a mãe
+                    // antes do reload (o conjunto vive no container e o
+                    // redesenho o reaplica).
+                    if (parentId !== '0') {
+                        openSubtasksSet(container).add(String(parentId));
+                    }
+                    reload();
+                });
             });
         }
 
         // Edição inline
         bindTaskRows(container, taskUrl, reload);
+
+        // Subtarefas recolhidas por padrão (+/− na tarefa mãe)
+        bindSubtaskCollapse(container);
+    }
+
+    // Conjunto de tarefas com subtárvore ABERTA neste painel. Vive no
+    // elemento do painel (sobrevive aos reloads da edição inline); fechar
+    // e reabrir o painel volta ao padrão recolhido.
+    function openSubtasksSet(container) {
+        if (!container._ppOpenSubs) { container._ppOpenSubs = new Set(); }
+        return container._ppOpenSubs;
+    }
+
+    // Recolher/expandir subtarefas no painel do projeto (31/07/2026).
+    // A visibilidade é recalculada do topo: uma pilha guarda a profundidade
+    // de cada ancestral recolhido; linha com depth maior que o topo da pilha
+    // fica oculta. Linhas-painel (💬 pp-cmt-row / 🔗 pp-dep-row) não têm
+    // data-task-id e acompanham a visibilidade da tarefa dona (a linha
+    // imediatamente acima).
+    function bindSubtaskCollapse(container) {
+        const table = container.querySelector('.projectplus-tasktable');
+        if (!table) { return; }
+        const open = openSubtasksSet(container);
+
+        function apply() {
+            const stack = [];
+            let prevTaskHidden = false;
+            table.querySelectorAll('tbody > tr').forEach(function (row) {
+                const id = row.dataset.taskId;
+                if (!id) {
+                    row.style.display = prevTaskHidden ? 'none' : '';
+                    return;
+                }
+                const d = parseInt(row.dataset.depth, 10) || 0;
+                while (stack.length && d <= stack[stack.length - 1]) { stack.pop(); }
+                const hidden = stack.length > 0;
+                row.style.display = hidden ? 'none' : '';
+                prevTaskHidden = hidden;
+                const btn = row.querySelector('.pp-subexp');
+                if (btn) {
+                    const isOpen = open.has(String(id));
+                    btn.textContent = isOpen ? '−' : '+';
+                    if (!isOpen) { stack.push(d); }
+                }
+            });
+        }
+
+        // Listener DELEGADO na tabela, com guarda: chamar bindSubtaskCollapse
+        // de novo sobre a mesma tabela não duplica o clique (toggle duplo
+        // seria um no-op silencioso — pego pelo harness jsdom).
+        if (!table.dataset.ppSubBound) {
+            table.dataset.ppSubBound = '1';
+            table.addEventListener('click', function (ev) {
+                const btn = ev.target && ev.target.closest ? ev.target.closest('.pp-subexp') : null;
+                if (!btn || !table.contains(btn)) { return; }
+                const row = btn.closest('tr[data-task-id]');
+                if (!row) { return; }
+                const id = String(row.dataset.taskId);
+                if (open.has(id)) { open.delete(id); } else { open.add(id); }
+                apply();
+            });
+        }
+
+        apply();
     }
 
     // Liga a edição inline das linhas de tarefa (percent, datas, estado,
@@ -2236,6 +2331,14 @@
             select.addEventListener('change', function () { loadProject(select.value); });
             loadProject(select.value);
         }
+    };
+
+    // Exposto só para os testes isolados (jsdom) — mesmo padrão de
+    // ProjectPlusKanban._test (Etapa 7, Bloco 2a).
+    ProjectPlus._test = {
+        taskTableHtml: function (tasks, collapsible) { return taskTableHtml(tasks, collapsible); },
+        bindSubtaskCollapse: bindSubtaskCollapse,
+        openSubtasksSet: openSubtasksSet,
     };
 
     window.ProjectPlus = ProjectPlus;
