@@ -55,6 +55,9 @@
                 <li class="projectplus-sidebar__item">
                     <a href="{{ plugin_web_dir }}/front/config.form.php"><i class="ti ti-settings"></i>{{ __('Configurações', 'projectplus') }}</a>
                 </li>
+                <li class="projectplus-sidebar__item">
+                    <a href="{{ plugin_web_dir }}/front/typephases.php"><i class="ti ti-columns-3"></i>{{ __('Fases por tipo', 'projectplus') }}</a>
+                </li>
                 {% endif %}
             </ul>
         </nav>
@@ -113,12 +116,6 @@
                 <a class="projectplus-btn projectplus-btn--ghost" href="{{ plugin_web_dir }}/front/projectkanban.php"
                    title="{{ __('Board com os PROJETOS nas colunas de fase', 'projectplus') }}">
                     <i class="ti ti-layout-columns"></i>{{ __('Kanban de projetos', 'projectplus') }}
-                </a>
-                {% endif %}
-                {% if type_can_config %}
-                <a class="projectplus-btn projectplus-btn--ghost" href="{{ plugin_web_dir }}/front/typephases.php"
-                   title="{{ __('Definir quais fases cada tipo de projeto usa, e em que ordem', 'projectplus') }}">
-                    <i class="ti ti-columns-3"></i>{{ __('Fases por tipo', 'projectplus') }}
                 </a>
                 {% endif %}
                 <a class="projectplus-btn projectplus-btn--ghost" href="{{ plugin_web_dir }}/front/dashboard.php">
