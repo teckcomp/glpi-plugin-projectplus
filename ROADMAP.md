@@ -2,7 +2,7 @@
 
 **Plugin de gestão avançada de projetos para GLPI 11**
 Repositório: [github.com/teckcomp/glpi-plugin-projectplus](https://github.com/teckcomp/glpi-plugin-projectplus) · Licença GPL-2.0
-Versão atual: **v1.1.0-beta** · Atualizado em 31/07/2026 — **instalada em produção** (entidade única). Com ela fecham as etapas 0 a 9. Em 31/07/2026 entrou a **rodada de correções de uso da beta**, em três commits (`73a4e61` correções de visão, `28c8ffd` selo Concluída, `d7e56e9` busca nos dropdowns), validada em homologação e **aplicada em produção no mesmo dia**. Ainda em 31/07/2026, uma **segunda rodada** em dois commits (`bbd836a` fim do "%s" literal no primeiro desenho, `e9e5397` subtarefas recolhidas no painel do projeto), validada em homologação — **aplicação em produção pendente**. **Pausa deliberada segue:** Etapa 10 (guard de escopo, planejada abaixo) só quando for retomada de fato. Bloco 5 (catálogo oficial do GLPI) pode ser feito em paralelo, sem mexer em código.
+Versão atual: **v1.1.0-beta** · Atualizado em 31/07/2026 — **instalada em produção** (entidade única). Com ela fecham as etapas 0 a 9. Em 31/07/2026 entrou a **rodada de correções de uso da beta**, em três commits (`73a4e61` correções de visão, `28c8ffd` selo Concluída, `d7e56e9` busca nos dropdowns), validada em homologação e **aplicada em produção no mesmo dia**. Ainda em 31/07/2026, uma **segunda rodada** em dois commits (`bbd836a` fim do "%s" literal no primeiro desenho, `e9e5397` subtarefas recolhidas no painel do projeto), validada em homologação — **aplicação em produção pendente**. Em 17/08/2026 entrou a **rodada 3 de correções de uso**, em três blocos validados em homologação: filtro de tipo em "Tarefas em andamento", "Fases por tipo" fixo na sidebar (fora das toolbars dos Kanbans) e criação de tipos/fases direto na tela de Fases; o **Bloco 4 (anexos nos comentários)** foi entregue para validação na mesma data. **Pausa deliberada segue:** Etapa 10 (guard de escopo, planejada abaixo) só quando for retomada de fato. Bloco 5 (catálogo oficial do GLPI) pode ser feito em paralelo, sem mexer em código.
 
 > **Ordem de execução confirmada em 19/07/2026:** Etapa 7 → Etapa 8 → Etapa 6 (por último). A Etapa 6 (refinamento/pré-produção e release v1.0.0-beta) só começa depois que 7 e 8 estiverem validadas em homologação.
 
@@ -224,6 +224,18 @@ Dois ajustes reportados por prints do uso real, validados em homologação. Não
 **Validação da rodada:** 33 asserções jsdom (tag da subtarefa com o nome da mãe no primeiro desenho SEM i18n na página; `%d` interpolado no fallback; recolhimento com aninhamento de netas, painéis 💬/🔗, persistência no reload, modo Minhas tarefas intacto); `node --check` nos 4 JS; `tools/check-js-strings.php` em 125/125; os 9 templates conferidos com corpo idêntico fora do bloco `<script>` final e balanceamento de `{% if/for/block %}` preservado.
 
 **Aprendizado da rodada:** o clique do botão de recolher virou **listener delegado na tabela com guarda** (`table.dataset.ppSubBound`) porque o harness pegou que um segundo `bind` sobre a mesma tabela duplicava o listener e o toggle duplo virava no-op silencioso.
+
+### ✅ Rodada 3 de correções de uso — 17/08/2026 (blocos 1–3 validados em homologação; Bloco 4 em validação)
+
+Pedidos por prints do uso real. Commits desta rodada registrados após o push (o roadmap fica uma atualização atrás quanto a hashes — método de 26/07/2026).
+
+- [x] **Bloco 1 — "Tarefas em andamento" respeita o tipo.** Causa raiz: `Dashboard::getData()` já passava `$typeProjectIds` como 6º argumento de `getOpenTasks()`, mas a assinatura tinha 5 parâmetros — o PHP **descarta argumento extra em silêncio**, e a tabela era a única da Visão geral sem o corte por tipo. Correção: 6º parâmetro com interseção escopo × tipo (lição 35), inclusive no modo pessoal. Harness 8/8.
+- [x] **Bloco 2 — "Fases por tipo" fixo na sidebar.** Item na sidebar dos 9 templates (abaixo de Configurações, gate `nav.config`); os botões das toolbars dos dois Kanbans saíram.
+- [x] **Bloco 3 — criar tipo e fase na própria tela.** Formulários "Novo tipo" e "Nova fase" (nome + cor + finalizadora) no cabeçalho de `typephases.php`, gravando nas tabelas nativas (`glpi_projecttypes` / `glpi_projectstates` — lição 59), com validação de vazio/duplicata. Tipo novo abre direto no conjunto dele; fase nova entra desmarcada. i18n 584/584.
+- [ ] **Bloco 4 — anexos nos comentários** (formatos decididos em 17/08/2026: imagens, PDF, DOC/DOCX, XLS/XLSX; 10 MB/arquivo). Tabela nova `glpi_plugin_projectplus_commentfiles` (metadados) + binários com nome aleatório em `files/_plugins/projectplus/comments`; download só por `front/commentfile.php` (login + direito do painel; o guard fino por tarefa entra com a Etapa 10). Upload no painel (📎, multipart com rotação de CSRF) e na aba nativa; comentário só de anexo é válido; delete faz cascata disco+banco; purga da desinstalação remove os arquivos. Validação: e o mime real (finfo) tem de bater com a extensão — harness 15/15. **Aguardando validação em homologação.**
+
+**Lição da rodada (nº 118):** chamada com argumento a mais que a assinatura NÃO é erro em PHP — o argumento é descartado em silêncio. Filtro "que não funciona" sem erro no log pede conferência de assinatura × chamada.
+
 
 ### Decisões em aberto
 
