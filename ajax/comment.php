@@ -15,6 +15,7 @@
  * próxima chamada (tokens são de uso único).
  */
 
+use GlpiPlugin\Projectplus\CommentFile;
 use GlpiPlugin\Projectplus\TaskComment;
 
 include('../../../inc/includes.php');
@@ -45,7 +46,9 @@ $action = $_POST['action'] ?? '';
 switch ($action) {
     case 'add':
         $content = trim((string) ($_POST['content'] ?? ''));
-        if ($content === '' || mb_strlen($content) > 4000) {
+        $files   = CommentFile::normalizeUploads($_FILES['files'] ?? null);
+        // Rodada 3, Bloco 4: comentário só de anexo é válido; vazio de tudo, não.
+        if (($content === '' && $files === []) || mb_strlen($content) > 4000) {
             pp_reply(['ok' => false, 'message' => __('Comentário vazio ou longo demais', 'projectplus')]);
         }
 
@@ -59,10 +62,27 @@ switch ($action) {
             pp_reply(['ok' => false, 'message' => __('Falha ao salvar o comentário', 'projectplus')]);
         }
 
+        $upload = ['saved' => 0, 'errors' => []];
+        if ($files !== []) {
+            $upload = CommentFile::saveUploads($id, (int) $task->getID(), $files);
+        }
+
+        // Sem texto e nenhum anexo aceito: o comentário ficaria vazio — desfaz.
+        if ($content === '' && $upload['saved'] === 0) {
+            $DB->delete(TaskComment::getTable(), ['id' => $id]);
+            pp_reply([
+                'ok'      => false,
+                'message' => implode("\n", $upload['errors'])
+                    ?: __('Comentário vazio ou longo demais', 'projectplus'),
+            ]);
+        }
+
         pp_reply([
-            'ok'    => true,
-            'id'    => $id,
-            'count' => TaskComment::countForTask((int) $task->getID()),
+            'ok'           => true,
+            'id'           => $id,
+            'count'        => TaskComment::countForTask((int) $task->getID()),
+            'files_saved'  => $upload['saved'],
+            'files_errors' => $upload['errors'],
         ]);
         break;
 
@@ -98,6 +118,7 @@ switch ($action) {
         }
 
         $taskId = (int) $comment->fields['projecttasks_id'];
+        CommentFile::deleteForComment((int) $comment->getID()); // cascata dos anexos
         $DB->delete(TaskComment::getTable(), ['id' => (int) $comment->getID()]);
 
         pp_reply([

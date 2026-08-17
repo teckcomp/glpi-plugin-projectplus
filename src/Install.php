@@ -38,6 +38,7 @@ class Install
         'glpi_plugin_projectplus_projectcosts',
         'glpi_plugin_projectplus_taskcomments',
         'glpi_plugin_projectplus_typephases',
+        'glpi_plugin_projectplus_commentfiles',
     ];
 
     /**
@@ -153,6 +154,16 @@ class Install
             'ordem'            => 'INT %SIGN% NOT NULL DEFAULT 0',
             'date_creation'    => 'TIMESTAMP NULL DEFAULT NULL',
             'date_mod'         => 'TIMESTAMP NULL DEFAULT NULL',
+        ],
+        'glpi_plugin_projectplus_commentfiles' => [
+            'comments_id'     => 'INT %SIGN% NOT NULL DEFAULT 0',
+            'projecttasks_id' => 'INT %SIGN% NOT NULL DEFAULT 0',
+            'users_id'        => 'INT %SIGN% NOT NULL DEFAULT 0',
+            'filename'        => "VARCHAR(255) NOT NULL DEFAULT ''",
+            'stored'          => "VARCHAR(80) NOT NULL DEFAULT ''",
+            'mime'            => "VARCHAR(100) NOT NULL DEFAULT ''",
+            'filesize'        => 'INT UNSIGNED NOT NULL DEFAULT 0',
+            'date_creation'   => 'TIMESTAMP NULL DEFAULT NULL',
         ],
     ];
 
@@ -347,6 +358,30 @@ class Install
                     PRIMARY KEY (`id`),
                     KEY `projecttasks_id` (`projecttasks_id`),
                     KEY `users_id` (`users_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET={$charset} COLLATE={$collation}
+            ");
+        }
+
+        // ------------------------------------------------------------------
+        // 7.2) Anexos de comentários (Rodada 3, Bloco 4)
+        //      Metadados dos arquivos; o binário fica em
+        //      GLPI_PLUGIN_DOC_DIR/projectplus/comments com nome aleatório.
+        // ------------------------------------------------------------------
+        if (!$DB->tableExists('glpi_plugin_projectplus_commentfiles')) {
+            $DB->doQuery("
+                CREATE TABLE `glpi_plugin_projectplus_commentfiles` (
+                    `id`               INT {$sign} NOT NULL AUTO_INCREMENT,
+                    `comments_id`      INT {$sign} NOT NULL DEFAULT 0,
+                    `projecttasks_id`  INT {$sign} NOT NULL DEFAULT 0,
+                    `users_id`         INT {$sign} NOT NULL DEFAULT 0 COMMENT 'quem enviou',
+                    `filename`         VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'nome original',
+                    `stored`           VARCHAR(80) NOT NULL DEFAULT '' COMMENT 'nome no disco',
+                    `mime`             VARCHAR(100) NOT NULL DEFAULT '',
+                    `filesize`         INT UNSIGNED NOT NULL DEFAULT 0,
+                    `date_creation`    TIMESTAMP NULL DEFAULT NULL,
+                    PRIMARY KEY (`id`),
+                    KEY `comments_id` (`comments_id`),
+                    KEY `projecttasks_id` (`projecttasks_id`)
                 ) ENGINE=InnoDB DEFAULT CHARSET={$charset} COLLATE={$collation}
             ");
         }
@@ -639,6 +674,10 @@ class Install
                     $DB->doQuery("DROP TABLE `{$table}`");
                 }
             }
+
+            // Anexos de comentários: o DROP acima levou os metadados;
+            // aqui vão embora também os arquivos físicos (Rodada 3, Bloco 4)
+            CommentFile::purgeAllFiles();
 
             // Remove os direitos de todos os perfis
             ProfileRight::deleteProfileRights(self::RIGHTS);

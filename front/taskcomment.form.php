@@ -10,6 +10,7 @@
  * inclui o token nos formulários da aba).
  */
 
+use GlpiPlugin\Projectplus\CommentFile;
 use GlpiPlugin\Projectplus\TaskComment;
 
 include('../../../inc/includes.php');
@@ -37,7 +38,9 @@ if ($taskId <= 0 || !$task->getFromDB($taskId)) {
 
 if (isset($_POST['add'])) {
     $content = trim((string) ($_POST['content'] ?? ''));
-    if ($content === '' || mb_strlen($content) > 4000) {
+    $files   = CommentFile::normalizeUploads($_FILES['files'] ?? null);
+    // Rodada 3, Bloco 4: comentário só de anexo é válido; vazio de tudo, não.
+    if (($content === '' && $files === []) || mb_strlen($content) > 4000) {
         Session::addMessageAfterRedirect(
             __('Comentário vazio ou longo demais', 'projectplus'),
             false,
@@ -46,8 +49,21 @@ if (isset($_POST['add'])) {
         Html::back();
     }
 
-    if (TaskComment::addForTask($task, $content) > 0) {
-        Session::addMessageAfterRedirect(__('Comentário adicionado', 'projectplus'), false, INFO);
+    $id = TaskComment::addForTask($task, $content);
+    if ($id > 0) {
+        $upload = ['saved' => 0, 'errors' => []];
+        if ($files !== []) {
+            $upload = CommentFile::saveUploads($id, $taskId, $files);
+        }
+        foreach ($upload['errors'] as $err) {
+            Session::addMessageAfterRedirect($err, false, ERROR);
+        }
+        if ($content === '' && $upload['saved'] === 0) {
+            // Sem texto e nenhum anexo aceito: o comentário ficaria vazio — desfaz.
+            $DB->delete(TaskComment::getTable(), ['id' => $id]);
+        } else {
+            Session::addMessageAfterRedirect(__('Comentário adicionado', 'projectplus'), false, INFO);
+        }
     } else {
         Session::addMessageAfterRedirect(__('Falha ao salvar o comentário', 'projectplus'), false, ERROR);
     }
@@ -58,6 +74,7 @@ if (isset($_POST['add'])) {
         && (int) $comment->fields['projecttasks_id'] === $taskId // trava: só desta tarefa
         && TaskComment::canManage((int) $comment->fields['users_id'])
     ) {
+        CommentFile::deleteForComment((int) $comment->getID()); // cascata dos anexos
         $DB->delete(TaskComment::getTable(), ['id' => (int) $comment->getID()]);
         Session::addMessageAfterRedirect(__('Comentário excluído', 'projectplus'), false, INFO);
     } else {

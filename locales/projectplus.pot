@@ -11,11 +11,16 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ProjectPlus 1.1.0-beta\n"
 "Report-Msgid-Bugs-To: https://github.com/teckcomp/glpi-plugin-projectplus/issues\n"
-"POT-Creation-Date: 2026-08-17 22:49+0000\n"
+"POT-Creation-Date: 2026-08-17 23:09+0000\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+#: src/CommentFile.php:103
+#, php-format
+msgid "\"%s\" excede o limite de 10 MB"
+msgstr ""
+
 #: src/Reports.php:218 src/Reports.php:358
 #, php-format
 msgid "% concluído"
@@ -41,24 +46,31 @@ msgstr ""
 msgid "%1$d fase(s) gravada(s) para \"%2$s\""
 msgstr ""
 
-#: src/TaskComment.php:235
+#: src/TaskComment.php:245
 #, php-format
 msgid "%1$s comentou na tarefa \"%2$s\": %3$s"
 msgstr ""
+
+#: src/I18nJs.php:232 src/I18nJs.php:233
+#, php-format
+msgid "%d arquivo selecionado"
+msgid_plural "%d arquivos selecionados"
+msgstr[0] ""
+msgstr[1] ""
 
 #: src/Config.php:262
 #, php-format
 msgid "%d ponto(s) de atenção — ver as linhas marcadas abaixo."
 msgstr ""
 
-#: src/I18nJs.php:224 src/I18nJs.php:225
+#: src/I18nJs.php:227 src/I18nJs.php:228
 #, php-format
 msgid "%d restante"
 msgid_plural "%d restantes"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/I18nJs.php:219 src/I18nJs.php:220
+#: src/I18nJs.php:222 src/I18nJs.php:223
 #, php-format
 msgid "%d subtarefa"
 msgid_plural "%d subtarefas"
@@ -72,7 +84,7 @@ msgid_plural "%d subtarefas abertas"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/I18nJs.php:214 src/I18nJs.php:215
+#: src/I18nJs.php:217 src/I18nJs.php:218
 #, php-format
 msgid "%d tarefa"
 msgid_plural "%d tarefas"
@@ -200,6 +212,14 @@ msgstr ""
 msgid "Alta"
 msgstr ""
 
+#: src/I18nJs.php:211
+msgid "Anexar arquivo"
+msgstr ""
+
+#: src/TaskComment.php:317
+msgid "Anexos: imagens, PDF, DOC/DOCX, XLS/XLSX — até 10 MB cada"
+msgstr ""
+
 #: src/Config.php:106
 msgid "Antecedência (dias) para alertar prazo se aproximando"
 msgstr ""
@@ -269,7 +289,7 @@ msgstr ""
 msgid "Atualizado em"
 msgstr ""
 
-#: src/Reports.php:549 src/TaskComment.php:321
+#: src/Reports.php:549 src/TaskComment.php:336
 msgid "Autor"
 msgstr ""
 
@@ -414,11 +434,11 @@ msgid ""
 "perfil — reinstalar devolve tudo como estava."
 msgstr ""
 
-#: src/I18nJs.php:118 src/TaskComment.php:307
+#: src/I18nJs.php:118 src/TaskComment.php:322
 msgid "Comentar"
 msgstr ""
 
-#: src/ProjectCost.php:138 src/TaskComment.php:36 src/TaskComment.php:323
+#: src/ProjectCost.php:138 src/TaskComment.php:36 src/TaskComment.php:338
 #: src/TaskCost.php:170 templates/costs.html.twig:129
 #: templates/projecttemplate_edit.html.twig:97
 #: templates/projecttemplates.html.twig:90
@@ -432,19 +452,20 @@ msgstr[1] ""
 msgid "Comentário (opcional)"
 msgstr ""
 
-#: front/taskcomment.form.php:50
+#: front/taskcomment.form.php:65
 msgid "Comentário adicionado"
 msgstr ""
 
-#: front/taskcomment.form.php:62
+#: front/taskcomment.form.php:79
 msgid "Comentário excluído"
 msgstr ""
 
-#: ajax/comment.php:77 ajax/comment.php:94
+#: ajax/comment.php:97 ajax/comment.php:114
 msgid "Comentário não encontrado"
 msgstr ""
 
-#: ajax/comment.php:49 ajax/comment.php:72 front/taskcomment.form.php:42
+#: ajax/comment.php:52 ajax/comment.php:76 ajax/comment.php:92
+#: front/taskcomment.form.php:45
 msgid "Comentário vazio ou longo demais"
 msgstr ""
 
@@ -456,7 +477,7 @@ msgstr ""
 msgid "Comentários (ProjectPlus)"
 msgstr ""
 
-#: src/TaskComment.php:314
+#: src/TaskComment.php:329
 msgid "Comentários da tarefa"
 msgstr ""
 
@@ -665,7 +686,7 @@ msgstr ""
 msgid "Cálculo automático a partir das subtarefas"
 msgstr ""
 
-#: src/ProjectCost.php:135 src/Reports.php:548 src/TaskComment.php:322
+#: src/ProjectCost.php:135 src/Reports.php:548 src/TaskComment.php:337
 #: src/TaskCost.php:167 templates/costs.html.twig:126
 msgid "Data"
 msgstr ""
@@ -835,7 +856,7 @@ msgstr ""
 msgid "Escopo: ver todos os projetos"
 msgstr ""
 
-#: src/TaskComment.php:303
+#: src/TaskComment.php:313
 msgid "Escreva um comentário…"
 msgstr ""
 
@@ -871,7 +892,7 @@ msgstr ""
 msgid "Este é um e-mail de teste do plugin ProjectPlus."
 msgstr ""
 
-#: src/TaskComment.php:348
+#: src/TaskComment.php:369
 msgid ""
 "Estes comentários também aparecem no Gestor de Projetos (árvore de tarefas e "
 "Minhas tarefas)."
@@ -933,8 +954,18 @@ msgstr ""
 msgid "Falha ao criar o tipo de projeto"
 msgstr ""
 
-#: ajax/comment.php:59 front/taskcomment.form.php:52
+#: src/CommentFile.php:159
+#, php-format
+msgid "Falha ao gravar o arquivo \"%s\""
+msgstr ""
+
+#: ajax/comment.php:62 front/taskcomment.form.php:68
 msgid "Falha ao salvar o comentário"
+msgstr ""
+
+#: src/CommentFile.php:100
+#, php-format
+msgid "Falha no envio de \"%s\""
 msgstr ""
 
 #: src/Notification.php:939 src/Notification.php:945
@@ -1359,7 +1390,7 @@ msgstr ""
 msgid "Nenhum comentário ainda."
 msgstr ""
 
-#: src/TaskComment.php:318
+#: src/TaskComment.php:333
 msgid "Nenhum comentário nesta tarefa"
 msgstr ""
 
@@ -1492,7 +1523,7 @@ msgstr ""
 msgid "Nova tarefa…"
 msgstr ""
 
-#: src/TaskComment.php:300
+#: src/TaskComment.php:310
 msgid "Novo comentário"
 msgstr ""
 
@@ -1554,6 +1585,11 @@ msgstr ""
 
 #: front/typephase.form.php:200
 msgid "O conjunto padrão precisa de ao menos uma fase"
+msgstr ""
+
+#: src/CommentFile.php:122
+#, php-format
+msgid "O conteúdo de \"%s\" não corresponde à extensão"
 msgstr ""
 
 #: src/Config.php:183
@@ -2010,7 +2046,7 @@ msgstr ""
 msgid "Sem permissão para alterar este projeto"
 msgstr ""
 
-#: ajax/comment.php:40 front/taskcomment.form.php:24
+#: ajax/comment.php:41 front/taskcomment.form.php:25
 msgid "Sem permissão para comentar"
 msgstr ""
 
@@ -2116,11 +2152,11 @@ msgstr ""
 msgid "Subtarefa da tarefa: %s"
 msgstr ""
 
-#: ajax/comment.php:80
+#: ajax/comment.php:100
 msgid "Só o autor pode editar este comentário"
 msgstr ""
 
-#: ajax/comment.php:97 front/taskcomment.form.php:65
+#: ajax/comment.php:117 front/taskcomment.form.php:82
 msgid "Só o autor pode excluir este comentário"
 msgstr ""
 
@@ -2183,8 +2219,8 @@ msgstr ""
 msgid "Tarefa mãe"
 msgstr ""
 
-#: ajax/comment.php:54 ajax/task.php:136 ajax/task.php:151 ajax/task.php:176
-#: ajax/task.php:197 ajax/task.php:226 front/taskcomment.form.php:34
+#: ajax/comment.php:57 ajax/task.php:136 ajax/task.php:151 ajax/task.php:176
+#: ajax/task.php:197 ajax/task.php:226 front/taskcomment.form.php:35
 #: front/taskcost.form.php:35 front/taskdep.form.php:31 src/TaskDep.php:385
 msgid "Tarefa não encontrada"
 msgstr ""
@@ -2259,6 +2295,13 @@ msgstr ""
 msgid ""
 "Tipo \"%s\" criado — ele herda o conjunto padrão até você salvar um conjunto "
 "próprio"
+msgstr ""
+
+#: src/CommentFile.php:109
+#, php-format
+msgid ""
+"Tipo de arquivo não permitido: \"%s\" (aceitos: imagens, PDF, DOC/DOCX, XLS/"
+"XLSX)"
 msgstr ""
 
 #: templates/dashboard.html.twig:87 templates/reports.html.twig:107
@@ -2452,7 +2495,7 @@ msgstr ""
 msgid "duração (d)"
 msgstr ""
 
-#: src/I18nJs.php:116 src/TaskComment.php:330
+#: src/I18nJs.php:116 src/TaskComment.php:345
 msgid "editado"
 msgstr ""
 

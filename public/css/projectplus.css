@@ -1034,6 +1034,30 @@
     display: inline-flex; align-items: center; gap: 5px;
     font-size: 0.8rem; color: #5a7684; white-space: nowrap; cursor: pointer;
 }
+
+/* Rodada 3, Bloco 4 — anexos nos comentários */
+.pp-cmt-attach {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 34px; height: 34px; border: 1px solid #c6d0d9; border-radius: 6px;
+    background: #fff; cursor: pointer; font-size: 1rem; flex: 0 0 auto;
+}
+.pp-cmt-attach:hover { background: #eaf4fb; border-color: #4a9fd4; }
+.pp-cmt-attach-count { font-size: 0.78rem; white-space: nowrap; }
+.pp-cmt-files-list {
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start;
+    margin-top: 6px;
+}
+.pp-cmt-thumbwrap { display: inline-block; line-height: 0; }
+.pp-cmt-thumb {
+    max-width: 140px; max-height: 100px;
+    border: 1px solid #dfe6ec; border-radius: 6px; background: #fff;
+}
+.pp-cmt-file {
+    display: inline-flex; align-items: center; gap: 4px;
+    border: 1px solid #dfe6ec; border-radius: 14px; padding: 3px 10px;
+    font-size: 0.8rem; text-decoration: none; color: #065a82; background: #fff;
+}
+.pp-cmt-file:hover { background: #eaf4fb; }
 .pp-phase-tag {
     display: inline-flex; align-items: center; gap: 4px;
     margin: 0 8px 4px 0; font-size: 0.8rem; white-space: nowrap;

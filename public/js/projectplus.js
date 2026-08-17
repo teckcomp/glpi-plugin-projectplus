@@ -1422,6 +1422,7 @@
                     '</div>' +
                     '<div class="pp-cmt-item__body">' +
                         escapeHtml(c.content).replace(/\n/g, '<br>') + '</div>' +
+                    cmtFilesHtml(c.files) +
                     '</div>';
             }).join('');
         }
@@ -1429,6 +1430,11 @@
         html += '<div class="pp-cmt-new">' +
             '<textarea class="pp-cmt-text" rows="2" maxlength="4000" ' +
                 'placeholder="' + escapeHtml(__('Escreva um comentário… (Ctrl+Enter envia)')) + '"></textarea>' +
+            '<label class="pp-cmt-attach" title="' + escapeHtml(__('Anexar arquivo')) + '">📎' +
+                '<input type="file" class="pp-cmt-files" multiple hidden ' +
+                    'accept=".png,.jpg,.jpeg,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx">' +
+            '</label>' +
+            '<span class="pp-cmt-attach-count projectplus-muted"></span>' +
             '<button type="button" class="projectplus-btn pp-cmt-send">' + escapeHtml(__('Comentar')) + '</button>' +
             '</div></div>';
 
@@ -1440,20 +1446,42 @@
         const reload = function () { loadComments(container, row, taskId); };
 
         // Novo comentário
-        const send = container.querySelector('.pp-cmt-send');
-        const text = container.querySelector('.pp-cmt-text');
+        const send  = container.querySelector('.pp-cmt-send');
+        const text  = container.querySelector('.pp-cmt-text');
+        const fpick = container.querySelector('.pp-cmt-files');
+        const fcnt  = container.querySelector('.pp-cmt-attach-count');
+        if (fpick && fcnt) {
+            fpick.addEventListener('change', function () {
+                const n = fpick.files.length;
+                fcnt.textContent = n
+                    ? _n('%d arquivo selecionado', '%d arquivos selecionados', n, n)
+                    : '';
+            });
+        }
         if (send && text) {
             const submit = function () {
-                const content = text.value.trim();
-                if (!content) { return; }
+                const content  = text.value.trim();
+                const hasFiles = fpick && fpick.files.length > 0;
+                if (!content && !hasFiles) { return; }
                 send.disabled = true;
-                taskPost(ppCommentUrl, { action: 'add', task_id: taskId, content: content }, function (resp) {
+                const done = function (resp) {
                     send.disabled = false;
                     if (resp.ok) {
+                        if (resp.files_errors && resp.files_errors.length) {
+                            alert(resp.files_errors.join('\n'));
+                        }
                         setCommentCount(row, resp.count);
                         reload();
                     }
-                });
+                };
+                if (hasFiles) {
+                    taskPostFiles(ppCommentUrl,
+                        { action: 'add', task_id: taskId, content: content },
+                        fpick.files, done);
+                } else {
+                    taskPost(ppCommentUrl,
+                        { action: 'add', task_id: taskId, content: content }, done);
+                }
             };
             send.addEventListener('click', submit);
             text.addEventListener('keydown', function (e) {
@@ -1758,6 +1786,38 @@
     }
 
     // POST com rotação de token CSRF (tokens do GLPI são de uso único)
+    // Anexos de um comentário (Rodada 3, Bloco 4)
+    function cmtFilesHtml(files) {
+        if (!files || !files.length) { return ''; }
+        return '<div class="pp-cmt-files-list">' + files.map(function (f) {
+            const url = escapeHtml(f.url);
+            if (f.is_image) {
+                return '<a class="pp-cmt-thumbwrap" href="' + url + '" target="_blank" rel="noopener">' +
+                    '<img class="pp-cmt-thumb" src="' + url + '" alt="' + escapeHtml(f.name) + '"></a>';
+            }
+            return '<a class="pp-cmt-file" href="' + url + '" target="_blank" rel="noopener">📄 ' +
+                escapeHtml(f.name) +
+                ' <span class="projectplus-muted">(' + escapeHtml(f.size_h) + ')</span></a>';
+        }).join('') + '</div>';
+    }
+
+    // POST multipart (comentário com anexos) — mesma rotação de CSRF do taskPost.
+    function taskPostFiles(url, data, files, onDone) {
+        const fd = new FormData();
+        Object.keys(data).forEach(function (k) { fd.append(k, data[k]); });
+        fd.append('_glpi_csrf_token', ppCsrf);
+        for (let i = 0; i < files.length; i++) { fd.append('files[]', files[i]); }
+        fetch(url, { method: 'POST', credentials: 'same-origin', body: fd })
+            .then(function (r) { return r.json(); })
+            .then(function (resp) {
+                resp = resp || {};
+                if (resp.csrf) { ppCsrf = resp.csrf; }
+                if (resp.ok === false && resp.message) { alert(resp.message); }
+                if (onDone) { onDone(resp); }
+            })
+            .catch(function () { if (onDone) { onDone({ ok: false }); } });
+    }
+
     function taskPost(url, data, onDone) {
         data._glpi_csrf_token = ppCsrf;
         postForm(url, data, function (resp) {

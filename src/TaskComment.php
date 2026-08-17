@@ -173,7 +173,17 @@ class TaskComment extends CommonDBTM
                 'edited'   => !empty($row['date_mod'])
                     && $row['date_mod'] !== $row['date_creation'],
                 'can_edit' => self::canManage((int) $row['users_id']),
+                'files'    => [],
             ];
+        }
+
+        // Anexos (Rodada 3, Bloco 4) — uma consulta para todos os comentários.
+        if ($out !== []) {
+            $filesBy = CommentFile::forComments(array_column($out, 'id'));
+            foreach ($out as &$c) {
+                $c['files'] = $filesBy[$c['id']] ?? [];
+            }
+            unset($c);
         }
         return $out;
     }
@@ -295,12 +305,17 @@ class TaskComment extends CommonDBTM
 
         // ---- Formulário de novo comentário ----
         if ($canComment) {
-            echo "<form method='post' action='" . htmlspecialchars($action) . "'>";
+            echo "<form method='post' enctype='multipart/form-data' action='" . htmlspecialchars($action) . "'>";
             echo "<table class='tab_cadre_fixe'>";
             echo '<tr><th colspan="2">' . __('Novo comentário', 'projectplus') . '</th></tr>';
             echo "<tr class='tab_bg_1'>";
-            echo "<td><textarea name='content' rows='2' maxlength='4000' required "
-                . "placeholder='" . __('Escreva um comentário…', 'projectplus') . "' class='form-control'></textarea></td>";
+            echo "<td><textarea name='content' rows='2' maxlength='4000' "
+                . "placeholder='" . __('Escreva um comentário…', 'projectplus') . "' class='form-control'></textarea>"
+                . "<input type='file' name='files[]' multiple class='form-control' style='margin-top:6px' "
+                . "accept='.png,.jpg,.jpeg,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx'>"
+                . "<span class='text-muted' style='font-size:.8em'>"
+                . __('Anexos: imagens, PDF, DOC/DOCX, XLS/XLSX — até 10 MB cada', 'projectplus')
+                . '</span></td>';
             echo '<td style="width:120px">';
             echo Html::hidden('projecttasks_id', ['value' => $taskId]);
             echo "<button type='submit' name='add' value='1' class='btn btn-primary'>"
@@ -329,7 +344,13 @@ class TaskComment extends CommonDBTM
                 echo '<td>' . htmlspecialchars($c['date'])
                     . ($c['edited'] ? ' <span class="text-muted">(' . __('editado', 'projectplus') . ')</span>' : '')
                     . '</td>';
-                echo '<td>' . nl2br(htmlspecialchars($c['content'])) . '</td>';
+                echo '<td>' . nl2br(htmlspecialchars($c['content']));
+                foreach ($c['files'] as $f) {
+                    echo '<div><a href="' . htmlspecialchars($f['url']) . '" target="_blank" rel="noopener">'
+                        . ($f['is_image'] ? '🖼️ ' : '📄 ') . htmlspecialchars($f['name'])
+                        . '</a> <span class="text-muted">(' . htmlspecialchars($f['size_h']) . ')</span></div>';
+                }
+                echo '</td>';
                 echo '<td>';
                 if ($c['can_edit']) {
                     echo "<form method='post' action='" . htmlspecialchars($action) . "' style='display:inline'>";

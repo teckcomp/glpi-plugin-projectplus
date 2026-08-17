@@ -206,6 +206,9 @@ class I18nJs
                 'Custos'                   => __('Custos', 'projectplus'),
                 // TRANSLATORS: rótulo da aba "Kanban" do NÚCLEO do GLPI.
                 'Kanban'                   => __('Kanban', 'projectplus'),
+
+                // ---- anexos de comentários (Rodada 3, Bloco 4) ----
+                'Anexar arquivo'           => __('Anexar arquivo', 'projectplus'),
             ],
 
             'p' => [
@@ -223,6 +226,11 @@ class I18nJs
                 self::pkey('%d restante', '%d restantes') => [
                     _n('%d restante', '%d restantes', 1, 'projectplus'),
                     _n('%d restante', '%d restantes', 2, 'projectplus'),
+                ],
+                // contador ao lado do 📎 no painel de comentários
+                self::pkey('%d arquivo selecionado', '%d arquivos selecionados') => [
+                    _n('%d arquivo selecionado', '%d arquivos selecionados', 1, 'projectplus'),
+                    _n('%d arquivo selecionado', '%d arquivos selecionados', 2, 'projectplus'),
                 ],
             ],
         ];
