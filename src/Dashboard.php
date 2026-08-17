@@ -515,7 +515,8 @@ class Dashboard extends CommonGLPI
         ?string $until,
         int $limit = 15,
         ?array $myTaskIds = null,
-        ?array $taskProjectIds = null
+        ?array $taskProjectIds = null,
+        ?array $typeProjectIds = null
     ): array {
         /** @var \DBmysql $DB */
         global $DB;
@@ -528,12 +529,24 @@ class Dashboard extends CommonGLPI
             // personal: só as MINHAS tarefas, planas (sem restrição de raiz,
             // para que uma subtarefa minha também apareça).
             $where['glpi_projecttasks.id'] = Scope::inList($myTaskIds);
+            // Rodada 3 — tipo selecionado restringe também o pessoal aos
+            // projetos DAQUELE tipo (o filtro nunca amplia, só corta).
+            if ($typeProjectIds !== null) {
+                $where['glpi_projecttasks.projects_id'] = Scope::inList($typeProjectIds);
+            }
         } else {
             // managed/todos: tarefas-raiz + expansão (comportamento original);
             // managed ainda restringe aos projetos do escopo.
             $where['glpi_projecttasks.projecttasks_id'] = 0;
-            if ($taskProjectIds !== null) {
-                $where['glpi_projecttasks.projects_id'] = Scope::inList($taskProjectIds);
+            // Rodada 3 — INTERSEÇÃO escopo × tipo (lição 35: duas restrições
+            // sobre a mesma chave do WHERE se sobrescrevem). Antes desta
+            // correção o getData() já passava $typeProjectIds como 6º
+            // argumento, mas a assinatura tinha só 5 parâmetros e o PHP
+            // DESCARTAVA o filtro em silêncio: "Tarefas em andamento"
+            // ignorava o tipo escolhido na Visão geral.
+            $effectiveIds = self::intersectIds($taskProjectIds, $typeProjectIds);
+            if ($effectiveIds !== null) {
+                $where['glpi_projecttasks.projects_id'] = Scope::inList($effectiveIds);
             }
         }
         foreach (self::periodCriteria($from, $until, 'glpi_projecttasks.') as $c) {
