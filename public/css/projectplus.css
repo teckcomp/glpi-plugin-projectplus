@@ -1017,6 +1017,23 @@
 }
 .pp-tp-warn p { margin: 0; padding: 10px 14px; font-size: 0.85rem; color: #16323f; }
 .pp-tp-warn .ti { color: #ef6c00; margin-right: 6px; }
+
+/* Rodada 3 — criação de tipo e de fase no cabeçalho da tela Fases por tipo */
+.pp-tp-new input[type="text"] {
+    border: 1px solid #c6d0d9; border-radius: 6px; padding: 6px 10px;
+    font-size: 0.85rem; color: #2c3e50; width: 170px; box-sizing: border-box;
+}
+.pp-tp-new input[type="text"]:focus {
+    outline: none; border-color: #4a9fd4; box-shadow: 0 0 0 2px rgba(74,159,212,.18);
+}
+.pp-tp-new input[type="color"] {
+    width: 34px; height: 32px; padding: 2px; border: 1px solid #c6d0d9;
+    border-radius: 6px; background: #fff; cursor: pointer;
+}
+.pp-tp-newfinal {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 0.8rem; color: #5a7684; white-space: nowrap; cursor: pointer;
+}
 .pp-phase-tag {
     display: inline-flex; align-items: center; gap: 4px;
     margin: 0 8px 4px 0; font-size: 0.8rem; white-space: nowrap;

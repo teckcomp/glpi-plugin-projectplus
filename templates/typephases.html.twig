@@ -82,6 +82,37 @@
                     <button type="submit" class="projectplus-btn projectplus-btn--ghost">{{ __('Abrir', 'projectplus') }}</button>
                 </noscript>
             </form>
+
+            {# Rodada 3 — criação de TIPO e de FASE direto nesta tela. O tipo é
+               vocabulário nativo (glpi_projecttypes); a fase idem
+               (glpi_projectstates, lista global e única da instância — lição 59). #}
+            <form method="post" action="{{ form_action }}" class="projectplus-period pp-tp-new">
+                <input type="hidden" name="_glpi_csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="projecttypes_id" value="{{ edit_id }}">
+                <input type="text" name="new_type_name" maxlength="255"
+                       placeholder="{{ __('Nome do novo tipo…', 'projectplus') }}"
+                       aria-label="{{ __('Nome do novo tipo…', 'projectplus') }}">
+                <button type="submit" name="create_type" value="1" class="projectplus-btn projectplus-btn--ghost">
+                    <i class="ti ti-plus"></i>{{ __('Criar tipo', 'projectplus') }}
+                </button>
+            </form>
+            <form method="post" action="{{ form_action }}" class="projectplus-period pp-tp-new">
+                <input type="hidden" name="_glpi_csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="projecttypes_id" value="{{ edit_id }}">
+                <input type="text" name="new_state_name" maxlength="255"
+                       placeholder="{{ __('Nome da nova fase…', 'projectplus') }}"
+                       aria-label="{{ __('Nome da nova fase…', 'projectplus') }}">
+                <input type="color" name="new_state_color" value="#065a82"
+                       title="{{ __('Cor da fase', 'projectplus') }}">
+                <label class="pp-tp-newfinal" title="{{ __('Fase finalizadora', 'projectplus') }}">
+                    <input type="checkbox" name="new_state_finished" value="1">
+                    {{ __('Finalizadora', 'projectplus') }}
+                </label>
+                <button type="submit" name="create_state" value="1" class="projectplus-btn projectplus-btn--ghost">
+                    <i class="ti ti-plus"></i>{{ __('Criar fase', 'projectplus') }}
+                </button>
+            </form>
+
             <div class="projectplus-actions">
                 <a class="projectplus-btn projectplus-btn--ghost" href="{{ plugin_web_dir }}/front/config.form.php">
                     <i class="ti ti-settings"></i>{{ __('Configurações', 'projectplus') }}

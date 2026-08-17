@@ -33,6 +33,119 @@ $typeName = $typeId === TypePhase::DEFAULT_TYPE
     ? __('Conjunto padrão', 'projectplus')
     : (TypePhase::projectTypes()[$typeId] ?? ('#' . $typeId));
 
+// --- create_type / create_state (Rodada 3) ---------------------------------
+// Criação direto na tela: tipo em `glpi_projecttypes`, fase em
+// `glpi_projectstates` — ambos vocabulário NATIVO da instância (a lista de
+// fases é global e única — lição 59). A porta de direito é a mesma da tela
+// (`config` UPDATE), então não há elevação de privilégio aqui.
+
+/** @var \DBmysql $DB */
+global $DB;
+
+if (isset($_POST['create_type'])) {
+    $name = trim((string) ($_POST['new_type_name'] ?? ''));
+    if ($name === '' || mb_strlen($name) > 255) {
+        Session::addMessageAfterRedirect(
+            __('Informe o nome do novo tipo', 'projectplus'),
+            true,
+            ERROR
+        );
+        Html::redirect($back);
+    }
+
+    $dup = $DB->request([
+        'COUNT' => 'cpt',
+        'FROM'  => 'glpi_projecttypes',
+        'WHERE' => ['name' => $name],
+    ])->current();
+    if ((int) ($dup['cpt'] ?? 0) > 0) {
+        Session::addMessageAfterRedirect(
+            sprintf(__('Já existe um tipo chamado "%s"', 'projectplus'), $name),
+            true,
+            ERROR
+        );
+        Html::redirect($back);
+    }
+
+    $type  = new ProjectType();
+    $newId = $type->add(['name' => $name]);
+    if (!$newId) {
+        Session::addMessageAfterRedirect(
+            __('Falha ao criar o tipo de projeto', 'projectplus'),
+            true,
+            ERROR
+        );
+        Html::redirect($back);
+    }
+
+    Session::addMessageAfterRedirect(
+        sprintf(
+            __('Tipo "%s" criado — ele herda o conjunto padrão até você salvar um conjunto próprio', 'projectplus'),
+            $name
+        ),
+        true,
+        INFO
+    );
+    // Abre direto no conjunto do tipo recém-criado.
+    Html::redirect(Url::to('front/typephases.php') . '?type=' . (int) $newId);
+}
+
+if (isset($_POST['create_state'])) {
+    $name = trim((string) ($_POST['new_state_name'] ?? ''));
+    if ($name === '' || mb_strlen($name) > 255) {
+        Session::addMessageAfterRedirect(
+            __('Informe o nome da nova fase', 'projectplus'),
+            true,
+            ERROR
+        );
+        Html::redirect($back);
+    }
+
+    $color = (string) ($_POST['new_state_color'] ?? '');
+    if (!preg_match('/^#[0-9a-fA-F]{6}$/', $color)) {
+        $color = '#065a82';
+    }
+
+    $dup = $DB->request([
+        'COUNT' => 'cpt',
+        'FROM'  => 'glpi_projectstates',
+        'WHERE' => ['name' => $name],
+    ])->current();
+    if ((int) ($dup['cpt'] ?? 0) > 0) {
+        Session::addMessageAfterRedirect(
+            sprintf(__('Já existe uma fase chamada "%s"', 'projectplus'), $name),
+            true,
+            ERROR
+        );
+        Html::redirect($back);
+    }
+
+    $state = new ProjectState();
+    $newId = $state->add([
+        'name'        => $name,
+        'color'       => $color,
+        'is_finished' => empty($_POST['new_state_finished']) ? 0 : 1,
+    ]);
+    if (!$newId) {
+        Session::addMessageAfterRedirect(
+            __('Falha ao criar a fase', 'projectplus'),
+            true,
+            ERROR
+        );
+        Html::redirect($back);
+    }
+
+    Session::addMessageAfterRedirect(
+        sprintf(
+            __('Fase "%s" criada — ela aparece desmarcada na lista; marque-a e salve o conjunto para usá-la', 'projectplus'),
+            $name
+        ),
+        true,
+        INFO
+    );
+    Html::redirect($back);
+}
+
 if (isset($_POST['clear'])) {
     TypePhase::clearType($typeId);
     Session::addMessageAfterRedirect(
