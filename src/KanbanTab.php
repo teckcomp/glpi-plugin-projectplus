@@ -63,7 +63,7 @@ class KanbanTab extends CommonDBTM
         // mesmas data-attributes que a tela cheia (endpoint AJAX, token
         // inicial e flag de edição). O token é rotacionado pelo JS.
         $ajaxUrl = Url::to('ajax/task.php');
-        $canEdit = \Session::haveRight('projecttask', UPDATE) || \Session::haveRight('project', UPDATE);
+        $canEdit = Access::canUpdateTasks('kanban');
 
         // Dicionario de traducao do JavaScript (Etapa 6, Bloco 3b). A aba e
         // carregada por AJAX dentro da ficha NATIVA do projeto, que nao passa

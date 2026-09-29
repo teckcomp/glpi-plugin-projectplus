@@ -115,7 +115,7 @@ TemplateRenderer::getInstance()->display(
         // arrasta o cartão entre colunas (muda a fase). Token inicial para
         // a 1ª chamada AJAX (ajax/task.php action=kanban_move); o JS
         // rotaciona a cada resposta.
-        'can_edit'       => Session::haveRight('projecttask', UPDATE) || Session::haveRight('project', UPDATE),
+        'can_edit'       => Access::canUpdateTasks('kanban'),
         'csrf_token'     => Session::getNewCSRFToken(),
     ]
 );

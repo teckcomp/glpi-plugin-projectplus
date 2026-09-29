@@ -89,6 +89,84 @@ class Access
     }
 
     /**
+     * Pode alterar tarefas NESTA TELA? (flag de página — liga os controles
+     * de edição; a decisão final é por tarefa, em canUpdateTask()).
+     *
+     * CORREÇÃO (22/09/2026): o código antigo testava
+     * `Session::haveRight('projecttask', UPDATE)`, mas o GLPI 11 REMOVE o
+     * bit UPDATE (2) do direito `projecttask` — só existem READMY (1) e
+     * UPDATEMY (1024). O teste era sempre falso, e só quem tinha `project`
+     * UPDATE (gestor) conseguia alterar tarefa; o "Interagir" do plugin
+     * nunca era consultado.
+     */
+    public static function canUpdateTasks(string $module = 'tasks'): bool
+    {
+        return (bool) Session::haveRight('project', UPDATE)
+            || self::can($module, UPDATE);
+    }
+
+    /**
+     * Pode alterar ESTA tarefa (fase, %, datas, concluir, mover no Kanban)?
+     *
+     *   1. `project` UPDATE nativo (gestor) → sim — comportamento anterior
+     *      preservado;
+     *   2. direito do módulo em UPDATE ("Interagir" de Tarefas ou de
+     *      Kanban) E o usuário é ATOR da tarefa: responsável (`users_id`)
+     *      ou está na equipe da tarefa (usuário, ou um grupo dele);
+     *   3. o nativo `projecttask` UPDATEMY + ator (mesma regra do core,
+     *      ProjectTask::canUpdateItem) → sim.
+     *
+     * Sempre exige acesso à entidade da tarefa.
+     *
+     * @param \ProjectTask $task tarefa já carregada (getFromDB)
+     */
+    public static function canUpdateTask($task, string $module = 'tasks'): bool
+    {
+        if (!Session::haveAccessToEntity((int) $task->getEntityID())) {
+            return false;
+        }
+        if (Session::haveRight('project', UPDATE)) {
+            return true;
+        }
+        $viaPlugin = self::can($module, UPDATE);
+        $viaCore   = (bool) Session::haveRight('projecttask', 1024); // ProjectTask::UPDATEMY
+        if (!$viaPlugin && !$viaCore) {
+            return false;
+        }
+        return self::isTaskActor($task);
+    }
+
+    /**
+     * O usuário logado é ator da tarefa? Responsável (`users_id`) ou membro
+     * da equipe (`glpi_projecttaskteams`) — direto ou por um de seus grupos.
+     *
+     * @param \ProjectTask $task
+     */
+    public static function isTaskActor($task): bool
+    {
+        $uid = (int) Session::getLoginUserID();
+        if ($uid <= 0) {
+            return false;
+        }
+        if ((int) ($task->fields['users_id'] ?? 0) === $uid) {
+            return true;
+        }
+        $team   = \ProjectTaskTeam::getTeamFor((int) $task->getID());
+        foreach ($team['User'] ?? [] as $m) {
+            if ((int) $m['items_id'] === $uid) {
+                return true;
+            }
+        }
+        $groups = array_map('intval', (array) ($_SESSION['glpigroups'] ?? []));
+        foreach ($team['Group'] ?? [] as $m) {
+            if (in_array((int) $m['items_id'], $groups, true)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Flags de visibilidade da sidebar, consumidas pelos templates como `nav.*`.
      * Retorna TODAS as chaves sempre (o Twig do GLPI é strict: acessar chave
      * inexistente em `nav` quebraria a tela — lição nº 9).

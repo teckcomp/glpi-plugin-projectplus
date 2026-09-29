@@ -14,6 +14,7 @@
  * próxima chamada (tokens são de uso único).
  */
 
+use GlpiPlugin\Projectplus\Access;
 use GlpiPlugin\Projectplus\ProjectTracking;
 use GlpiPlugin\Projectplus\TaskDep;
 
@@ -75,10 +76,28 @@ function pp_blocked_message(int $taskId): ?string
 
 $action = $_POST['action'] ?? '';
 
-// Direito nativo de tarefas de projeto
-// (nome do direito 'projecttask' — validar em homologação se negar acesso)
+// Criar: o GLPI 11 não tem CREATE em `projecttask` (ProjectTask::canCreate
+// é `project` UPDATE) — o 1º termo nunca é verdadeiro; mantido como estava.
 $canCreate = Session::haveRight('projecttask', CREATE) || Session::haveRight('project', UPDATE);
-$canUpdate = Session::haveRight('projecttask', UPDATE) || Session::haveRight('project', UPDATE);
+
+/**
+ * Carrega a tarefa do POST e aplica a regra POR TAREFA de Access::canUpdateTask
+ * (gestor, OU "Interagir" do módulo + ator da tarefa). Encerra a requisição
+ * com a mensagem adequada quando não encontra ou não pode.
+ * Correção de 22/09/2026: antes o teste era `projecttask` UPDATE, bit que o
+ * GLPI 11 não tem — técnico com "Interagir" recebia "Sem permissão".
+ */
+function pp_task_for_update(string $module = 'tasks'): ProjectTask
+{
+    $task = new ProjectTask();
+    if (!$task->getFromDB((int) ($_POST['task_id'] ?? 0))) {
+        pp_reply(['ok' => false, 'message' => __('Tarefa não encontrada', 'projectplus')]);
+    }
+    if (!Access::canUpdateTask($task, $module)) {
+        pp_reply(['ok' => false, 'message' => __('Sem permissão', 'projectplus')]);
+    }
+    return $task;
+}
 
 switch ($action) {
     case 'create':
@@ -128,13 +147,7 @@ switch ($action) {
         break;
 
     case 'state':
-        if (!$canUpdate) {
-            pp_reply(['ok' => false, 'message' => __('Sem permissão', 'projectplus')]);
-        }
-        $task = new ProjectTask();
-        if (!$task->getFromDB((int) ($_POST['task_id'] ?? 0))) {
-            pp_reply(['ok' => false, 'message' => __('Tarefa não encontrada', 'projectplus')]);
-        }
+        $task = pp_task_for_update('tasks');
         $ok = $task->update([
             'id'               => $task->getID(),
             'projectstates_id' => (int) ($_POST['projectstates_id'] ?? 0),
@@ -143,13 +156,7 @@ switch ($action) {
         break;
 
     case 'percent':
-        if (!$canUpdate) {
-            pp_reply(['ok' => false, 'message' => __('Sem permissão', 'projectplus')]);
-        }
-        $task = new ProjectTask();
-        if (!$task->getFromDB((int) ($_POST['task_id'] ?? 0))) {
-            pp_reply(['ok' => false, 'message' => __('Tarefa não encontrada', 'projectplus')]);
-        }
+        $task = pp_task_for_update('tasks');
         if (!empty($task->fields['auto_percent_done'])) {
             pp_reply(['ok' => false, 'message' => __('O percentual desta tarefa é calculado automaticamente a partir das subtarefas', 'projectplus')]);
         }
@@ -168,13 +175,7 @@ switch ($action) {
         break;
 
     case 'dates':
-        if (!$canUpdate) {
-            pp_reply(['ok' => false, 'message' => __('Sem permissão', 'projectplus')]);
-        }
-        $task = new ProjectTask();
-        if (!$task->getFromDB((int) ($_POST['task_id'] ?? 0))) {
-            pp_reply(['ok' => false, 'message' => __('Tarefa não encontrada', 'projectplus')]);
-        }
+        $task = pp_task_for_update('tasks');
         $input = ['id' => $task->getID()];
         if (isset($_POST['plan_start_date'])) {
             $input['plan_start_date'] = $_POST['plan_start_date'] !== ''
@@ -189,13 +190,7 @@ switch ($action) {
         break;
 
     case 'complete':
-        if (!$canUpdate) {
-            pp_reply(['ok' => false, 'message' => __('Sem permissão', 'projectplus')]);
-        }
-        $task = new ProjectTask();
-        if (!$task->getFromDB((int) ($_POST['task_id'] ?? 0))) {
-            pp_reply(['ok' => false, 'message' => __('Tarefa não encontrada', 'projectplus')]);
-        }
+        $task = pp_task_for_update('tasks');
         if (!empty($task->fields['auto_percent_done'])) {
             pp_reply(['ok' => false, 'message' => __('O percentual desta tarefa é calculado automaticamente a partir das subtarefas', 'projectplus')]);
         }
@@ -218,13 +213,7 @@ switch ($action) {
         // para uma fase FINALIZADA (is_finished=1) enquanto houver
         // subtarefa aberta ou bloqueadora aberta (mesma regra da guarda de
         // fase de projeto, onProjectPreUpdate).
-        if (!$canUpdate) {
-            pp_reply(['ok' => false, 'message' => __('Sem permissão', 'projectplus')]);
-        }
-        $task = new ProjectTask();
-        if (!$task->getFromDB((int) ($_POST['task_id'] ?? 0))) {
-            pp_reply(['ok' => false, 'message' => __('Tarefa não encontrada', 'projectplus')]);
-        }
+        $task = pp_task_for_update('kanban');
         $newState = (int) ($_POST['projectstates_id'] ?? 0);
 
         if ($newState > 0 && in_array($newState, TaskDep::finishedStateIds(), true)) {
