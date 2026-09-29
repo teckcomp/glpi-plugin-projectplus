@@ -12,7 +12,10 @@
      {# Bloco 4: o JS monta as linhas de subprojeto/tarefa no cliente e
         precisa saber quais colunas existem nesta tela. #}
      data-pp-costs="{{ can_costs ? '1' : '0' }}"
-     data-pp-tasks="{{ can_tasks ? '1' : '0' }}">
+     data-pp-tasks="{{ can_tasks ? '1' : '0' }}"
+     {# Bloco A: projeto focado (?project=ID) e tarefa a destacar #}
+     data-focus-project="{{ focus_project_id|default(0) }}"
+     data-focus-task="{{ focus_task_id|default(0) }}">
 
     {# ================= COLUNA ESQUERDA: título + sidebar ================= #}
     <div class="projectplus-left">
@@ -96,6 +99,19 @@
                     <a href="?" class="projectplus-period__clear" title="{{ __('Limpar filtro', 'projectplus') }}">&times;</a>
                 {% endif %}
             </form>
+            {% if focus_project_id %}
+            <div class="projectplus-focus">
+                <span class="projectplus-focus__label">{{ __('Projeto', 'projectplus') }}:</span>
+                <strong>{{ focus_project_name }}</strong>
+                <a href="{{ plugin_web_dir }}/front/dashboard.php"
+                   class="projectplus-period__clear"
+                   title="{{ __('Ver todos os projetos', 'projectplus') }}">&times;</a>
+            </div>
+            {% elseif focus_error %}
+            <div class="projectplus-focus projectplus-focus--error">
+                {{ __('Projeto não encontrado ou fora do seu escopo', 'projectplus') }}
+            </div>
+            {% endif %}
             <div class="projectplus-actions">
                 {% if scope_can_expand %}
                 <a class="projectplus-btn projectplus-btn--ghost pp-scope-toggle" href="{{ scope_toggle_url }}"

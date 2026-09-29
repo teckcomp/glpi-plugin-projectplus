@@ -250,8 +250,11 @@ class TaskDep extends CommonGLPI
             return ['blockers' => [], 'blocked' => [], 'candidates' => [], 'can_edit' => false];
         }
 
-        $taskUrl = static function (int $id): string {
-            return ProjectTask::getFormURLWithID($id);
+        // Bloco A: dependências são sempre do MESMO projeto, então o link
+        // vai para a tela do projeto no ProjectPlus, com a tarefa destacada.
+        $depProjectId = (int) $task->fields['projects_id'];
+        $taskUrl = static function (int $id) use ($depProjectId): string {
+            return Url::project($depProjectId, $id);
         };
 
         $blockers = []; // quem bloqueia ESTA tarefa (esta é a target)

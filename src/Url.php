@@ -66,4 +66,27 @@ final class Url
     {
         return self::base() . '/' . ltrim($path, '/');
     }
+
+    /**
+     * URL do PROJETO dentro do ProjectPlus (Bloco A, 28/09/2026).
+     *
+     * Antes o plugin apontava para a tela nativa
+     * (`Project::getFormURLWithID`), que exige o direito nativo de projeto
+     * "Ver todos" ou ser ator do projeto. Quem tem só "Ver (ator)" — caso
+     * do perfil Supervisor — levava "Você não tem permissão para executar
+     * essa ação" logo depois de CRIAR o projeto por um modelo.
+     *
+     * O destino agora é o painel focado no projeto: lista só ele, com o
+     * painel de tarefas já aberto. Com $taskId, o JS ainda destaca a linha
+     * da tarefa (usado pelos cartões do Kanban de tarefas).
+     */
+    public static function project(int $id, int $taskId = 0): string
+    {
+        $query = ['project' => $id];
+        if ($taskId > 0) {
+            $query['task'] = $taskId;
+        }
+
+        return self::to('front/dashboard.php') . '?' . http_build_query($query);
+    }
 }

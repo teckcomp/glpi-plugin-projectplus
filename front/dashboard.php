@@ -6,6 +6,7 @@
 
 use Glpi\Application\View\TemplateRenderer;
 use GlpiPlugin\Projectplus\Access;
+use GlpiPlugin\Projectplus\Budget;
 use GlpiPlugin\Projectplus\Dashboard;
 use GlpiPlugin\Projectplus\I18nJs;
 use GlpiPlugin\Projectplus\Scope;
@@ -53,13 +54,50 @@ $scopeTaskProjectIds = Scope::taskProjectIds($scopeMode);  // managed: tarefas p
 $typeId      = TypePhase::requestedTypeOrNull();
 $typeOptions = TypePhase::selectorTypes();
 
+// ---- Foco em um projeto (Bloco A, 28/09/2026) ----
+// `?project=ID` transforma a Visão geral na TELA DO PROJETO: a lista passa
+// a mostrar só ele, com o painel de tarefas aberto pelo JS. É para onde
+// apontam agora o nome do projeto no painel, os cartões dos dois Kanbans e
+// o redirect depois de criar a partir de um modelo — nada mais manda o
+// usuário para a tela NATIVA, que exige direito nativo de projeto.
+// Período e tipo são ignorados no foco: eles só serviriam para esconder o
+// projeto que o usuário acabou de pedir para ver.
+$focusId     = (int) ($_GET['project'] ?? 0);
+$focusTaskId = (int) ($_GET['task'] ?? 0);
+$focusName       = '';
+$focusError      = false;
+$focusProjectIds = null;
+if ($focusId > 0) {
+    $focusProject = new Project();
+    if (
+        $focusProject->getFromDB($focusId)
+        && !(int) $focusProject->fields['is_deleted']
+        && Session::haveAccessToEntity((int) $focusProject->fields['entities_id'])
+        && Scope::canSeeProject($focusId, $scopeMode)
+    ) {
+        $focusName       = (string) $focusProject->fields['name'];
+        $scopeProjectIds = [$focusId];
+        $from            = null;
+        $until           = null;
+        $typeId          = null;
+        // A-2: tarefas e indicadores do projeto E dos subprojetos dele.
+        $focusProjectIds = array_merge([$focusId], Budget::getDescendantIds($focusId));
+    } else {
+        // Sem redirect: o Html::header já saiu. A tela abre normal com um
+        // aviso, em vez de morrer numa página de erro.
+        $focusId    = 0;
+        $focusError = true;
+    }
+}
+
 $data = Dashboard::getData(
     $from,
     $until,
     $scopeProjectIds,
     $scopeMyTaskIds,
     $scopeTaskProjectIds,
-    $typeId
+    $typeId,
+    $focusProjectIds
 );
 
 // Botão "Ver tudo" / "Ver só os meus" — preserva o filtro de período na URL.
@@ -74,6 +112,10 @@ if ($until) {
 }
 if ($typeId !== null) {
     $scopeToggle['type'] = $typeId;
+}
+if ($focusId > 0) {
+    // Bloco A: alternar escopo não deve tirar o usuário da tela do projeto.
+    $scopeToggle['project'] = $focusId;
 }
 if ($scopeIsExpanded) {
     // Do escopo amplo (padrão), o botão oferece REDUZIR ao pessoal.
@@ -188,6 +230,11 @@ TemplateRenderer::getInstance()->display(
         'scope_can_expand'  => $scopeCanExpand,
         'scope_is_expanded' => $scopeIsExpanded,
         'scope_toggle_url'  => $scopeToggleUrl,
+        // Bloco A — foco em um projeto (?project=ID[&task=ID])
+        'focus_project_id'   => $focusId,
+        'focus_project_name' => $focusName,
+        'focus_task_id'      => $focusTaskId,
+        'focus_error'        => $focusError,
     ]
 );
 

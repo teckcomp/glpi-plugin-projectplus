@@ -253,7 +253,85 @@
         initOpenTaskPanels(root);  // 💬/🔗 em "Tarefas em andamento" (Bloco 4)
         initTableSearch(root);     // busca nas tabelas (Bloco 4)
         initBell(root); // depois de initTaskPanels (que inicializa o ppCsrf)
+        initFocusProject(root); // Bloco A: ?project=ID abre a tela do projeto
     };
+
+    // ------------------------------------------------------------------
+    // Foco em um projeto (Bloco A, 28/09/2026)
+    //
+    // Com ?project=ID o PHP já reduziu a lista a esse projeto. Aqui só
+    // abrimos o painel de tarefas e destacamos a linha; com &task=ID
+    // (cartao do Kanban de tarefas) destacamos também a tarefa, esperando
+    // o fetch do painel terminar.
+    // ------------------------------------------------------------------
+    function initFocusProject(root) {
+        const projectId = root.dataset.focusProject;
+        if (!projectId || projectId === '0') {
+            return;
+        }
+
+        const row = root.querySelector('tr.projectplus-row-item[data-project-id="' + projectId + '"]');
+        if (row) {
+            row.classList.add('pp-focus-row');
+        }
+
+        const btn = root.querySelector('[data-tasks-project="' + projectId + '"]');
+        if (!btn) {
+            return; // sem direito de Tarefas: fica só o destaque da linha
+        }
+        btn.click();
+
+        const taskId = root.dataset.focusTask;
+        if (!taskId || taskId === '0') {
+            return;
+        }
+
+        // O painel chega por fetch; tenta por ~6s e desiste em silêncio.
+        let tries = 0;
+        const timer = setInterval(function () {
+            const panel = root.querySelector('.projectplus-taskspanel');
+            const tr = panel
+                ? panel.querySelector('tr[data-task-id="' + taskId + '"]')
+                : null;
+            if (tr) {
+                clearInterval(timer);
+                // A-2 (29/09/2026): subtarefa nasce RECOLHIDA sob a mãe, então
+                // o cartão do Kanban abria o projeto com a tarefa escondida.
+                // Abre a cadeia de mães antes de destacar.
+                expandAncestors(panel, tr);
+                tr.classList.add('pp-focus-task');
+                tr.scrollIntoView({ block: 'center' });
+            } else if (++tries > 40) {
+                clearInterval(timer);
+            }
+        }, 150);
+    }
+
+    /**
+     * Expande as tarefas-mãe até a linha alvo ficar visível (Bloco A-2).
+     *
+     * As linhas estão em ordem de árvore com data-depth; a mãe é a primeira
+     * linha ACIMA com profundidade menor. Clicar no +/− (.pp-subexp) usa o
+     * mesmo caminho do usuário — o listener delegado registra a tarefa no
+     * conjunto de abertas e recalcula a visibilidade do topo.
+     */
+    function expandAncestors(panel, tr) {
+        let depth = parseInt(tr.dataset.depth, 10) || 0;
+        let node = tr.previousElementSibling;
+
+        while (node && depth > 0) {
+            const id = node.dataset.taskId;
+            const d = id ? (parseInt(node.dataset.depth, 10) || 0) : null;
+            if (id && d < depth) {
+                const btn = node.querySelector('.pp-subexp');
+                if (btn && btn.textContent.trim() === '+') {
+                    btn.click();
+                }
+                depth = d;
+            }
+            node = node.previousElementSibling;
+        }
+    }
 
     // ------------------------------------------------------------------
     // Busca nas tabelas "Projetos em andamento" e "Tarefas em andamento"
@@ -1304,7 +1382,14 @@
                         task_id: taskId,
                         plan_start_date: ds ? ds.value : '',
                         plan_end_date: de ? de.value : ''
-                    }, null);
+                    }, function (resp) {
+                        // A-3 (29/09/2026): a barra/rótulo de Prazo vem
+                        // calculada do servidor (Deadline::compute). Sem o
+                        // reload, mudar a data gravava no banco mas a coluna
+                        // Prazo continuava mostrando o cálculo antigo —
+                        // mesmo tratamento que o campo % já fazia.
+                        if (resp.ok) { reload(); }
+                    });
                 });
             });
 
@@ -2399,6 +2484,8 @@
         taskTableHtml: function (tasks, collapsible) { return taskTableHtml(tasks, collapsible); },
         bindSubtaskCollapse: bindSubtaskCollapse,
         openSubtasksSet: openSubtasksSet,
+        expandAncestors: expandAncestors,
+        bindTaskRows: bindTaskRows,
     };
 
     window.ProjectPlus = ProjectPlus;

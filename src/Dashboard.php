@@ -117,7 +117,8 @@ class Dashboard extends CommonGLPI
         ?array $projectIds = null,
         ?array $myTaskIds = null,
         ?array $taskProjectIds = null,
-        ?int $typeId = null
+        ?int $typeId = null,
+        ?array $focusProjectIds = null
     ): array {
         /** @var \DBmysql $DB */
         global $DB;
@@ -151,6 +152,17 @@ class Dashboard extends CommonGLPI
         if ($typeId !== null) {
             $where['glpi_projects.projecttypes_id'] = $typeId;
             $typeProjectIds = self::projectIdsOfType($typeId);
+        }
+
+        // Bloco A-2 (29/09/2026) — FOCO em um projeto (?project=ID). A lista
+        // de projetos já vinha restrita por $projectIds, mas "Tarefas em
+        // andamento", os KPIs e os donuts continuavam falando do escopo
+        // inteiro: era o que mostrava tarefa de outro projeto na tela de um.
+        // O foco entra pelo MESMO canal do filtro de tipo — a lista de
+        // projetos que restringe as consultas que partem de
+        // glpi_projecttasks — e por interseção, então nunca AMPLIA o escopo.
+        if ($focusProjectIds !== null) {
+            $typeProjectIds = self::intersectIds($typeProjectIds, $focusProjectIds);
         }
 
         $iterator = $DB->request([
@@ -229,7 +241,7 @@ class Dashboard extends CommonGLPI
                     $row['plan_end_date'],
                     $pct
                 ),
-                'url'           => Project::getFormURLWithID((int) $row['id']),
+                'url'           => Url::project((int) $row['id']),
             ];
 
             $kpis['active']++;
@@ -561,6 +573,7 @@ class Dashboard extends CommonGLPI
             $DB->request([
                 'SELECT'    => [
                     'glpi_projecttasks.id', 'glpi_projecttasks.name',
+                    'glpi_projecttasks.projects_id',
                     'glpi_projecttasks.percent_done', 'glpi_projecttasks.plan_end_date',
                     'glpi_projecttasks.plan_start_date', 'glpi_projecttasks.real_start_date',
                     'glpi_projecttasks.projectstates_id',
@@ -583,7 +596,7 @@ class Dashboard extends CommonGLPI
             $tasks[] = [
                 'id'         => (int) $row['id'],
                 'name'       => $row['name'],
-                'url'        => ProjectTask::getFormURLWithID((int) $row['id']),
+                'url'        => Url::project((int) $row['projects_id'], (int) $row['id']),
                 'project'    => $row['project_name'] ?? '—',
                 'team'       => [],
                 'children'   => 0,
@@ -634,6 +647,7 @@ class Dashboard extends CommonGLPI
             $DB->request([
                 'SELECT'    => [
                     'glpi_projecttasks.id', 'glpi_projecttasks.name',
+                    'glpi_projecttasks.projects_id',
                     'glpi_projecttasks.percent_done', 'glpi_projecttasks.plan_end_date',
                     'glpi_projecttasks.plan_start_date', 'glpi_projecttasks.real_start_date',
                     'glpi_projecttasks.projectstates_id',
@@ -657,7 +671,7 @@ class Dashboard extends CommonGLPI
             $tasks[] = [
                 'id'          => (int) $row['id'],
                 'name'        => $row['name'],
-                'url'         => ProjectTask::getFormURLWithID((int) $row['id']),
+                'url'         => Url::project((int) $row['projects_id'], (int) $row['id']),
                 'project'     => $row['project_name'] ?? '—',
                 'team'        => [],
                 'children'    => 0,
@@ -854,7 +868,7 @@ class Dashboard extends CommonGLPI
                 $groups[$pid] = [
                     'project_id'   => $pid,
                     'project_name' => $row['project_name'],
-                    'project_url'  => Project::getFormURLWithID($pid),
+                    'project_url'  => Url::project($pid),
                     'tasks'        => [],
                 ];
             }
@@ -866,7 +880,7 @@ class Dashboard extends CommonGLPI
             $groups[$pid]['tasks'][] = [
                 'id'           => $id,
                 'name'         => $row['name'],
-                'url'          => ProjectTask::getFormURLWithID($id),
+                'url'          => Url::project($pid, $id),
                 'depth'        => 0,
                 'parent_id'    => (int) $row['projecttasks_id'],
                 'parent_name'  => $row['parent_name'],
@@ -1077,7 +1091,7 @@ class Dashboard extends CommonGLPI
                     $row['plan_end_date'],
                     (int) $row['percent_done']
                 ),
-                'url'           => Project::getFormURLWithID($childId),
+                'url'           => Url::project($childId),
             ];
         }
 
@@ -1165,13 +1179,13 @@ class Dashboard extends CommonGLPI
         }
 
         $out  = [];
-        $walk = function (int $parentId, int $depth) use (&$walk, &$out, $byParent, $states, $teams) {
+        $walk = function (int $parentId, int $depth) use (&$walk, &$out, $byParent, $states, $teams, $projectId) {
             foreach ($byParent[$parentId] ?? [] as $t) {
                 $id    = (int) $t['id'];
                 $out[] = [
                     'id'           => $id,
                     'name'         => $t['name'],
-                    'url'          => ProjectTask::getFormURLWithID($id),
+                    'url'          => Url::project($projectId, $id),
                     'depth'        => $depth,
                     'auto_percent' => (bool) $t['auto_percent_done'],
                     'percent'      => (int) $t['percent_done'],

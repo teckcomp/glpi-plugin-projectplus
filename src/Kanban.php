@@ -294,10 +294,10 @@ class Kanban
             $cards[] = [
                 'id'                => $id,
                 'name'              => $row['name'],
-                'url'               => ProjectTask::getFormURLWithID($id),
+                'url'               => Url::project($pid, $id),
                 'project_id'        => $pid,
                 'project_name'      => $row['project_name'],
-                'project_url'       => Project::getFormURLWithID($pid),
+                'project_url'       => Url::project($pid),
                 'task_parent_id'    => (int) $row['projecttasks_id'],
                 'responsible_id'    => $respId,
                 'responsible_name'  => $respName,

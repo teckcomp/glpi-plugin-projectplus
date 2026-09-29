@@ -178,7 +178,7 @@ class ProjectKanban
             $cards[] = [
                 'id'          => $id,
                 'name'        => $row['name'],
-                'url'         => Project::getFormURLWithID($id),
+                'url'         => Url::project($id),
                 'parent_id'   => $parentId,
                 'parent_name' => $parentId > 0 ? ($parentNames[$parentId] ?? '—') : '',
                 'state_id'    => $stateId,

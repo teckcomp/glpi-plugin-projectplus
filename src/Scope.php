@@ -102,6 +102,45 @@ class Scope
     }
 
     /**
+     * O projeto está DENTRO do escopo atual do usuário? (Bloco A, 28/09/2026)
+     *
+     * Usada pelo foco do painel (`front/dashboard.php?project=ID`) e
+     * pensada para virar a base do guard de escopo da Etapa 10.
+     * `projectIds() === null` = modo "todos" (sem filtro). No modo
+     * "managed", os descendentes entram por taskProjectIds().
+     * NÃO checa entidade nem exclusão — quem chama faz isso.
+     */
+    public static function canSeeProject(int $projectId, ?string $mode = null): bool
+    {
+        $mode = $mode ?? self::mode();
+
+        return self::projectInLists(
+            $projectId,
+            self::projectIds($mode),
+            self::taskProjectIds($mode)
+        );
+    }
+
+    /**
+     * Parte pura da regra acima (recebe as listas prontas) — é o que o
+     * harness exercita, sem banco nem sessão.
+     */
+    public static function projectInLists(int $projectId, ?array $projectIds, ?array $taskProjectIds): bool
+    {
+        if ($projectId <= 0) {
+            return false;
+        }
+        if ($projectIds === null) {
+            return true; // modo "todos": sem filtro de projeto
+        }
+        if (in_array($projectId, array_map('intval', $projectIds), true)) {
+            return true;
+        }
+
+        return in_array($projectId, array_map('intval', (array) $taskProjectIds), true);
+    }
+
+    /**
      * IDs das MINHAS tarefas (equipe da tarefa) — usado só no modo personal
      * para filtrar a lista/indicadores de tarefas. `null` fora do personal.
      */

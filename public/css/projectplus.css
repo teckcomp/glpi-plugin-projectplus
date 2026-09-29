@@ -287,6 +287,27 @@
     font-size: 1.2rem; color: #d9534f; text-decoration: none; padding: 0 4px;
 }
 
+/* Bloco A — foco em um projeto (?project=ID): chip do filtro e destaque
+   da linha do projeto e da tarefa apontada pelo cartão do Kanban. */
+.projectplus-focus {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 999px;
+    background: color-mix(in srgb, #4a9fd4 12%, transparent);
+    border: 1px solid color-mix(in srgb, #4a9fd4 32%, transparent);
+    font-size: 0.92rem;
+}
+.projectplus-focus__label { color: #6b7785; }
+.projectplus-focus--error {
+    background: color-mix(in srgb, #d9534f 10%, transparent);
+    border-color: color-mix(in srgb, #d9534f 32%, transparent);
+}
+tr.pp-focus-row > td {
+    background: color-mix(in srgb, #4a9fd4 10%, transparent);
+}
+tr.pp-focus-task > td {
+    background: color-mix(in srgb, #f0ad4e 18%, transparent);
+}
+
 /* Gráfico de barras "Progresso dos projetos" */
 .projectplus-bars {
     display: flex; gap: 20px; align-items: flex-end; padding: 8px 4px 0;
