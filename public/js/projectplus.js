@@ -512,17 +512,74 @@
         const taskUrl    = root.dataset.taskUrl;
         const groupsEl   = document.getElementById('pp-mt-groups');
         const doneToggle = document.getElementById('pp-mt-done');
+        const projSel    = document.getElementById('pp-mt-project');
+        const typeSel    = document.getElementById('pp-mt-type');
+        let lastData     = null;
+
+        // Tipo escolhido: null = todos; 0 = "Sem tipo"
+        function typeFilter() {
+            if (!typeSel || typeSel.value === '') { return null; }
+            const n = parseInt(typeSel.value, 10);
+            return isNaN(n) ? null : n;
+        }
+        function projectsOfType(projects) {
+            const tf = typeFilter();
+            if (tf === null) { return projects; }
+            return projects.filter(function (p) { return Number(p.type_id) === tf; });
+        }
 
         function setKpi(id, value) {
             const el = document.getElementById(id);
             if (el) { el.textContent = String(value); }
         }
 
+        // Filtro de projeto (Bloco C): a lista de opções vem do payload e é
+        // refeita a cada carga; a escolha sobrevive ao "Mostrar concluídas".
+        // Opções = projetos que o usuário enxerga (project_options, C-3)
+        // UNIDOS aos projetos onde ele tem tarefa (projects) — assim nenhum
+        // projeto com tarefa dele fica de fora. Ordem alfabética.
+        function projectOptions(data) {
+            const seen = {};
+            const out = [];
+            const add = function (p) {
+                const id = Number(p.id);
+                if (!id || seen[id]) { return; }
+                seen[id] = true;
+                out.push({ id: id, name: p.name, type_id: Number(p.type_id) || 0 });
+            };
+            (Array.isArray(data.project_options) ? data.project_options : []).forEach(add);
+            (Array.isArray(data.projects) ? data.projects : []).forEach(add);
+            out.sort(function (a, b) { return String(a.name).localeCompare(String(b.name), undefined, { sensitivity: 'base' }); });
+            return out;
+        }
+
+        function fillProjectSelect(projects) {
+            if (!projSel) { return; }
+            projects = projectsOfType(projects); // projeto obedece ao tipo
+            const keep = projSel.value || '0';
+            const first = projSel.options[0]; // "Todos os projetos" (Twig)
+            projSel.innerHTML = '';
+            if (first) { projSel.appendChild(first); }
+            projects.forEach(function (p) {
+                const o = document.createElement('option');
+                o.value = String(p.id);
+                o.textContent = p.name || ('#' + p.id);
+                projSel.appendChild(o);
+            });
+            const exists = Array.prototype.some.call(projSel.options, function (o) { return o.value === keep; });
+            projSel.value = exists ? keep : '0';
+            const input = projSel.parentNode && projSel.parentNode.querySelector('.pp-ss__input');
+            if (input && document.activeElement !== input) {
+                const opt = projSel.options[projSel.selectedIndex];
+                input.value = opt ? opt.textContent.trim() : '';
+            }
+        }
+
         function refresh() {
             const done = (doneToggle && doneToggle.checked) ? '&done=1' : '';
             fetch(ajaxUrl + '?action=mytasks' + done, { credentials: 'same-origin' })
                 .then(function (r) { return r.json(); })
-                .then(render)
+                .then(load)
                 .catch(function () {
                     groupsEl.innerHTML = '<div class="projectplus-card">' +
                         '<p class="projectplus-muted">' +
@@ -530,14 +587,43 @@
                 });
         }
 
-        function render(data) {
-            const kpis = (data && data.kpis) || {};
+        function load(data) {
+            lastData = data || {};
+            fillProjectSelect(projectOptions(lastData));
+            render();
+        }
+
+        function render() {
+            const data = lastData || {};
+            const pid = projSel ? parseInt(projSel.value, 10) || 0 : 0;
+            const projects = Array.isArray(data.projects) ? data.projects : [];
+            const proj = pid ? projects.filter(function (p) { return Number(p.id) === pid; })[0] : null;
+            const tf = typeFilter();
+            const ofType = projectsOfType(projects);
+
+            // KPIs seguem o filtro (lição 129: todo consumidor do recorte):
+            // projeto > soma dos projetos do tipo > total
+            let kpis = data.kpis || {};
+            if (pid) {
+                // projeto sem tarefa minha (C-3): KPIs zerados
+                kpis = (proj && proj.kpis) || { open: 0, overdue: 0, nodates: 0, done: 0 };
+            } else if (tf !== null) {
+                kpis = { open: 0, overdue: 0, nodates: 0, done: 0 };
+                ofType.forEach(function (p) {
+                    Object.keys(kpis).forEach(function (k) { kpis[k] += Number((p.kpis || {})[k]) || 0; });
+                });
+            }
             setKpi('pp-mt-kpi-open',    kpis.open    || 0);
             setKpi('pp-mt-kpi-overdue', kpis.overdue || 0);
             setKpi('pp-mt-kpi-nodates', kpis.nodates || 0);
             setKpi('pp-mt-kpi-done',    kpis.done    || 0);
 
-            const groups = (data && Array.isArray(data.groups)) ? data.groups : [];
+            let groups = Array.isArray(data.groups) ? data.groups : [];
+            if (pid) {
+                groups = groups.filter(function (g) { return Number(g.project_id) === pid; });
+            } else if (tf !== null) {
+                groups = groups.filter(function (g) { return Number(g.project_type_id) === tf; });
+            }
             if (groups.length === 0) {
                 groupsEl.innerHTML = '<div class="projectplus-card">' +
                     '<p class="projectplus-muted">' + escapeHtml((doneToggle && doneToggle.checked)
@@ -565,6 +651,22 @@
 
         if (doneToggle) {
             doneToggle.addEventListener('change', refresh);
+        }
+        if (projSel) {
+            enhanceSearchSelects(projSel.parentNode);
+            // trocar de projeto só recorta o que já veio — sem nova requisição
+            projSel.addEventListener('change', function () {
+                if (lastData) { render(); }
+            });
+        }
+        if (typeSel) {
+            // trocar o tipo refaz a lista de projetos (projeto fora do tipo
+            // volta para "Todos os projetos") e recorta — sem requisição
+            typeSel.addEventListener('change', function () {
+                if (!lastData) { return; }
+                fillProjectSelect(projectOptions(lastData));
+                render();
+            });
         }
         refresh();
 

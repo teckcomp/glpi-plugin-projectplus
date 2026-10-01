@@ -520,6 +520,20 @@ tr.pp-focus-task > td {
 }
 .pp-mt-toggle input { accent-color: #4a9fd4; width: 15px; height: 15px; }
 
+/* Bloco C (30/09/2026) — filtro de projeto ao lado de "Mostrar concluídas" */
+.pp-mt-filters { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.pp-mt-project { display: flex; align-items: center; gap: 8px; }
+.pp-mt-project__label { font-size: 0.88rem; color: #5a7684; font-weight: 600; }
+.pp-mt-project .pp-ss { width: 280px; max-width: 70vw; }
+.pp-mt-type {
+    border: 1px solid #c6d0d9; border-radius: 6px; padding: 6px 9px;
+    font-size: 0.85rem; background: #fff; max-width: 260px;
+}
+.pp-mt-project .pp-ss__input {
+    border: 1px solid #c6d0d9; border-radius: 6px; padding: 6px 9px;
+    font-size: 0.85rem; background: #fff;
+}
+
 /* Fix 1 — hierarquia de tarefas e cálculo automático */
 .pp-task-parent { color: #8a97a5; font-size: 0.78rem; }
 .projectplus-tasktable .pp-task-percent:disabled {

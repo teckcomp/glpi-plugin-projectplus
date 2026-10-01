@@ -790,6 +790,12 @@ class Dashboard extends CommonGLPI
 
         $kpis = ['open' => 0, 'overdue' => 0, 'nodates' => 0, 'done' => 0];
 
+        // Bloco C (30/09/2026): os MESMOS KPIs recortados por projeto, para o
+        // filtro de projeto da tela. Inclui projeto que só tem tarefa
+        // concluída (some de `groups` com "Mostrar concluídas" desligado,
+        // mas segue no filtro e no KPI "Concluídas" dele).
+        $byProject = []; // project_id => ['id','name','kpis']
+
         $groups  = []; // project_id => ['project_id','project_name','project_url','tasks']
         $taskIds = [];
 
@@ -806,6 +812,7 @@ class Dashboard extends CommonGLPI
                     'parent_task.name AS parent_name',
                     'glpi_projects.id AS project_id',
                     'glpi_projects.name AS project_name',
+                    'glpi_projects.projecttypes_id AS project_type_id',
                 ],
                 'FROM'       => 'glpi_projecttaskteams',
                 'INNER JOIN' => [
@@ -847,28 +854,34 @@ class Dashboard extends CommonGLPI
                 $pct
             );
 
-            // KPIs pessoais (contados sobre TODAS as tarefas do usuário)
-            if ($pct >= 100) {
-                $kpis['done']++;
-                if (!$includeDone) {
-                    continue;
-                }
-            } else {
-                $kpis['open']++;
-                if (!empty($row['plan_end_date']) && strtotime($row['plan_end_date']) < $now) {
-                    $kpis['overdue']++;
-                }
-                if ($deadline['state'] === 'none') {
-                    $kpis['nodates']++;
-                }
+            $pid = (int) $row['project_id'];
+            if (!isset($byProject[$pid])) {
+                $byProject[$pid] = [
+                    'id'   => $pid,
+                    'name' => $row['project_name'],
+                    // tipo do projeto (0 = sem tipo) — filtro de tipo do Bloco C
+                    'type_id' => (int) ($row['project_type_id'] ?? 0),
+                    'kpis' => ['open' => 0, 'overdue' => 0, 'nodates' => 0, 'done' => 0],
+                ];
             }
 
-            $pid = (int) $row['project_id'];
+            // KPIs pessoais (contados sobre TODAS as tarefas do usuário) —
+            // no total e no recorte do projeto (filtro do Bloco C)
+            $hits = self::myTaskKpiHits($pct, $row['plan_end_date'], $deadline['state'], $now);
+            foreach ($hits as $k) {
+                $kpis[$k]++;
+                $byProject[$pid]['kpis'][$k]++;
+            }
+            if ($pct >= 100 && !$includeDone) {
+                continue;
+            }
+
             if (!isset($groups[$pid])) {
                 $groups[$pid] = [
                     'project_id'   => $pid,
                     'project_name' => $row['project_name'],
                     'project_url'  => Url::project($pid),
+                    'project_type_id' => (int) ($row['project_type_id'] ?? 0),
                     'tasks'        => [],
                 ];
             }
@@ -989,9 +1002,84 @@ class Dashboard extends CommonGLPI
         }
 
         return [
-            'kpis'   => $kpis,
-            'groups' => array_values($groups),
+            'kpis'     => $kpis,
+            'groups'   => array_values($groups),
+            // Ordem do SQL (nome do projeto) — mesma ordem dos grupos
+            'projects' => array_values($byProject),
         ];
+    }
+
+    /**
+     * Opções do filtro "Projeto" de "Minhas tarefas" (Bloco C-3, 30/09/2026).
+     *
+     * Decisão do Claudio: Tipo → Projeto lista os projetos DO TIPO que o
+     * usuário enxerga (mesmo sem tarefa dele); a lista de tarefas continua
+     * sendo só as dele. "Enxerga" = o mesmo escopo das outras telas
+     * (Scope::projectIds() + descendentes do managed via taskProjectIds()).
+     * `$projectIds === null` = modo "todos" (sem filtro de projeto).
+     * Lista vazia nunca vira "sem filtro" (Scope::inList → [0]).
+     *
+     * @return array<int, array{id:int, name:string, type_id:int}>
+     */
+    public static function myTasksProjectOptions(?array $projectIds, ?array $taskProjectIds): array
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        $where = [
+            'glpi_projects.is_deleted'  => 0,
+            'glpi_projects.is_template' => 0,
+        ] + getEntitiesRestrictCriteria('glpi_projects');
+
+        if ($projectIds !== null) {
+            $ids = [];
+            foreach (array_merge($projectIds, (array) $taskProjectIds) as $id) {
+                $ids[(int) $id] = true;
+            }
+            $where['glpi_projects.id'] = Scope::inList(array_keys($ids));
+        }
+
+        $out = [];
+        foreach (
+            $DB->request([
+                'SELECT' => ['glpi_projects.id', 'glpi_projects.name', 'glpi_projects.projecttypes_id'],
+                'FROM'   => 'glpi_projects',
+                'WHERE'  => $where,
+                'ORDER'  => 'glpi_projects.name',
+            ]) as $row
+        ) {
+            $out[] = [
+                'id'      => (int) $row['id'],
+                'name'    => (string) $row['name'],
+                'type_id' => (int) ($row['projecttypes_id'] ?? 0),
+            ];
+        }
+        return $out;
+    }
+
+    /**
+     * Quais KPIs de "Minhas tarefas" uma tarefa soma (Bloco C, 30/09/2026).
+     *
+     * Regra única para o total e para o recorte por projeto — extraída do
+     * laço de getMyTasks() sem mudar o critério: concluída = 100%; atrasada
+     * = aberta com prazo final vencido; sem datas = aberta com Deadline
+     * "none".
+     *
+     * @return string[] subconjunto de ['open','overdue','nodates','done']
+     */
+    public static function myTaskKpiHits(int $pct, ?string $planEnd, string $deadlineState, int $now): array
+    {
+        if ($pct >= 100) {
+            return ['done'];
+        }
+        $hits = ['open'];
+        if (!empty($planEnd) && strtotime($planEnd) < $now) {
+            $hits[] = 'overdue';
+        }
+        if ($deadlineState === 'none') {
+            $hits[] = 'nodates';
+        }
+        return $hits;
     }
 
     /**

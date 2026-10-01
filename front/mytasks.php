@@ -12,6 +12,7 @@ use Glpi\Application\View\TemplateRenderer;
 use GlpiPlugin\Projectplus\Access;
 use GlpiPlugin\Projectplus\Dashboard;
 use GlpiPlugin\Projectplus\I18nJs;
+use GlpiPlugin\Projectplus\TypePhase;
 use GlpiPlugin\Projectplus\Url;
 
 include('../../../inc/includes.php');
@@ -50,6 +51,8 @@ TemplateRenderer::getInstance()->display(
         'csrf_token'      => Session::getNewCSRFToken(),
         'can_templates'   => Session::haveRight('config', UPDATE),
         'nav'             => Access::sidebar(),
+        // Bloco C: mesmos tipos do seletor da Visão geral (filtro no cliente)
+        'type_options'    => TypePhase::selectorTypes(),
     ]
 );
 

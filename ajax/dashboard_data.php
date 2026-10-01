@@ -11,6 +11,7 @@
  */
 
 use GlpiPlugin\Projectplus\Dashboard;
+use GlpiPlugin\Projectplus\Scope;
 use GlpiPlugin\Projectplus\TaskComment;
 use GlpiPlugin\Projectplus\TaskDep;
 
@@ -49,10 +50,18 @@ switch ($action) {
         break;
 
     case 'mytasks':
-        echo json_encode(Dashboard::getMyTasks(
+        $out = Dashboard::getMyTasks(
             (int) Session::getLoginUserID(),
             !empty($_GET['done'])
-        ));
+        );
+        // Bloco C-3: opções do filtro Projeto = projetos que o usuário
+        // enxerga (escopo padrão = maior do perfil), mesmo sem tarefa dele
+        $scopeMode = Scope::mode();
+        $out['project_options'] = Dashboard::myTasksProjectOptions(
+            Scope::projectIds($scopeMode),
+            Scope::taskProjectIds($scopeMode)
+        );
+        echo json_encode($out);
         break;
 
     case 'data':
