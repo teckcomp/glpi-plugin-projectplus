@@ -6,7 +6,8 @@
  * mesmas classes CSS do Kanban de tarefas (pp-kb-*).
  *
  * Diferenças propositais em relação a kanban.js:
- *  - SEM swimlanes (o board é uma grade de uma linha só por coluna);
+ *  - SEM swimlanes (o board é uma grade de uma linha só por coluna) e,
+ *    desde o Bloco B (30/09/2026), sem coluna lateral de rótulo;
  *  - subprojeto é cartão comum, marcado com a tag "Subprojeto de: <pai>"
  *    (mesmo tratamento da subtarefa no Kanban de tarefas).
  *
@@ -150,11 +151,7 @@
 
         // Cabeçalho das colunas (fases) com a contagem de projetos.
         const headRow = document.createElement('div');
-        headRow.className = 'pp-kb-row';
-        const corner = document.createElement('div');
-        corner.className = 'pp-kb-corner';
-        corner.textContent = __('Fase');
-        headRow.appendChild(corner);
+        headRow.className = 'pp-kb-row pp-kb-row--head';
         columns.forEach(function (col) {
             const h = document.createElement('div');
             h.className = 'pp-kb-col-head';
@@ -164,16 +161,12 @@
         });
         board.appendChild(headRow);
 
-        // Uma única linha de células (sem swimlanes).
+        // Uma única linha de células (sem swimlanes). Bloco B (30/09/2026):
+        // sem a coluna lateral "Fase"/"Projetos" — ela não identificava
+        // nada (não há raias aqui) e o rótulo, centralizado na linha alta,
+        // ficava desencontrado dos cartões. A grade agora é só de fases.
         const row = document.createElement('div');
         row.className = 'pp-kb-row';
-        const label = document.createElement('div');
-        label.className = 'pp-kb-lane-label';
-        label.style.paddingLeft = '12px';
-        const labelText = document.createElement('span');
-        labelText.textContent = __('Projetos');
-        label.appendChild(labelText);
-        row.appendChild(label);
 
         columns.forEach(function (col) {
             const cell = document.createElement('div');

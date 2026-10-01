@@ -382,6 +382,9 @@ class Kanban
             $projects[$pid] = [
                 'name'      => $nameOf[$pid] ?? ('#' . $pid),
                 'parent_id' => $parentAt($pid),
+                // Bloco B: o nome na faixa da raia abre o projeto no painel
+                // do plugin (regra do Bloco A — nunca a ficha nativa).
+                'url'       => Url::project($pid),
             ];
             foreach ($childrenOf[$pid] ?? [] as $child) {
                 if (!isset($projects[$child])) {

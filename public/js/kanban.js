@@ -18,6 +18,12 @@
  * SUBTAREFA é um cartão comum, só marcada com a tag "Subtarefa da tarefa
  * …" (sem aninhar/esconder; decisão do usuário: menos regra = menos bug).
  *
+ * Bloco B (30/09/2026): sem coluna lateral de rótulo — cada raia abre com
+ * uma faixa de título (nome, contagem, +/−) na largura toda, e os blocos
+ * alternam cor (sem cor / azul claro). A coluna lateral desencontrava o
+ * nome do bloco dos cartões em raias altas (o rótulo ficava centralizado,
+ * fora da área visível).
+ *
  * Interações: alternar swimlane (Projeto / Responsável), expandir/recolher
  * subprojeto (lane), mostrar/ocultar concluídas, busca. Redesenha 100% no
  * cliente ao trocar qualquer controle.
@@ -153,7 +159,7 @@
             const p  = projects[idStr];
             const key = String(p.parent_id);
             byParent[key] = byParent[key] || [];
-            byParent[key].push({ id: id, name: p.name });
+            byParent[key].push({ id: id, name: p.name, url: p.url || null });
         });
         Object.keys(byParent).forEach(function (k) {
             byParent[k].sort(function (a, b) { return a.name.localeCompare(b.name); });
@@ -163,7 +169,7 @@
         function walk(parentId, depth) {
             (byParent[String(parentId)] || []).forEach(function (node) {
                 const hasChildren = !!byParent[String(node.id)];
-                rows.push({ id: node.id, name: node.name, depth: depth, hasChildren: hasChildren });
+                rows.push({ id: node.id, name: node.name, url: node.url || null, depth: depth, hasChildren: hasChildren });
                 if (hasChildren && expandedLanes.has(node.id)) {
                     walk(node.id, depth + 1);
                 }
@@ -234,13 +240,11 @@
         board.className = 'pp-kb-board';
         board.style.setProperty('--pp-kb-cols', String(columns.length));
 
-        // linha de cabeçalho
+        // Linha de cabeçalho: SÓ as colunas (fases). Bloco B (30/09/2026):
+        // a coluna lateral de rótulo saiu — o nome da raia agora é a faixa
+        // no início de cada bloco (laneHeadEl), na mesma grade das colunas.
         const headRow = document.createElement('div');
-        headRow.className = 'pp-kb-row';
-        const corner = document.createElement('div');
-        corner.className = 'pp-kb-corner';
-        corner.textContent = state.lane === 'responsible' ? __('Responsável') : __('Projeto');
-        headRow.appendChild(corner);
+        headRow.className = 'pp-kb-row pp-kb-row--head';
         columns.forEach(function (col) {
             const h = document.createElement('div');
             h.className = 'pp-kb-col-head';
@@ -257,36 +261,20 @@
             board.appendChild(empty);
         }
 
-        activeLanes.forEach(function (lane) {
+        // Cor alternada por BLOCO (pedido dos itens 7–9): no modo Projeto o
+        // bloco é o projeto RAIZ — subprojeto expandido herda a cor da raiz,
+        // para a árvore ler como uma coisa só; no modo Responsável, cada raia
+        // é um bloco. Bloco par = sem cor, ímpar = azul claro.
+        const zebra = laneZebra(activeLanes, state.lane);
+
+        activeLanes.forEach(function (lane, idx) {
             const row = document.createElement('div');
-            row.className = 'pp-kb-row';
+            row.className = 'pp-kb-row pp-kb-lane'
+                + (zebra[idx] ? ' pp-kb-lane--alt' : '')
+                + (lane.depth > 0 ? ' pp-kb-lane--nested' : '');
+            row.dataset.laneId = String(lane.id);
 
-            const label = document.createElement('div');
-            label.className = 'pp-kb-lane-label' + (lane.depth > 0 ? ' pp-kb-lane-label--nested' : '');
-            label.style.paddingLeft = (12 + lane.depth * 18) + 'px';
-
-            if (state.lane === 'project' && lane.hasChildren) {
-                const toggle = document.createElement('button');
-                toggle.type = 'button';
-                toggle.className = 'pp-kb-lane-toggle';
-                const isOpen = state.expandedLanes.has(lane.id);
-                toggle.textContent = isOpen ? '−' : '+';
-                toggle.title = isOpen ? __('Recolher subprojetos') : __('Mostrar subprojetos');
-                toggle.addEventListener('click', function () {
-                    if (state.expandedLanes.has(lane.id)) {
-                        state.expandedLanes.delete(lane.id);
-                    } else {
-                        state.expandedLanes.add(lane.id);
-                    }
-                    render(holder, state);
-                });
-                label.appendChild(toggle);
-            }
-            const labelText = document.createElement('span');
-            labelText.textContent = lane.name;
-            labelText.title = lane.name;
-            label.appendChild(labelText);
-            row.appendChild(label);
+            row.appendChild(laneHeadEl(lane, state, laneCount(grouped, lane.id), holder));
 
             columns.forEach(function (col) {
                 const cell = document.createElement('div');
@@ -325,6 +313,93 @@
 
         holder.innerHTML = '';
         holder.appendChild(board);
+    }
+
+    // ------------------------------------------------------------------
+    // Bloco B (30/09/2026) — faixa no início de cada bloco + cor alternada.
+    // ------------------------------------------------------------------
+
+    // Devolve um array de booleanos (true = bloco com cor) alinhado a
+    // `lanes`. Modo Projeto: alterna a cada lane de profundidade 0 e as
+    // lanes aninhadas herdam a cor da raiz. Modo Responsável: alterna por lane.
+    function laneZebra(lanes, mode) {
+        const out = [];
+        let block = -1;
+        lanes.forEach(function (l) {
+            if (mode !== 'project' || l.depth === 0) {
+                block++;
+            }
+            out.push(block % 2 === 1);
+        });
+        return out;
+    }
+
+    // Quantidade de cartões visíveis numa raia (todas as colunas).
+    function laneCount(grouped, laneId) {
+        const byCol = grouped[laneId];
+        if (!byCol) { return 0; }
+        let n = 0;
+        Object.keys(byCol).forEach(function (k) { n += byCol[k].length; });
+        return n;
+    }
+
+    // Faixa de título da raia: ocupa a largura toda da grade (grid-column
+    // 1 / -1), gruda no topo enquanto o bloco está visível (abaixo do
+    // cabeçalho das fases) e o texto gruda à esquerda na rolagem lateral.
+    // No modo Projeto o nome abre o projeto no painel do plugin (Url::project,
+    // regra do Bloco A — nunca a ficha nativa).
+    function laneHeadEl(lane, state, count, holder) {
+        const head = document.createElement('div');
+        head.className = 'pp-kb-lane-head';
+
+        const inner = document.createElement('div');
+        inner.className = 'pp-kb-lane-head__in';
+        inner.style.paddingLeft = (12 + lane.depth * 18) + 'px';
+
+        if (state.lane === 'project' && lane.hasChildren) {
+            const toggle = document.createElement('button');
+            toggle.type = 'button';
+            toggle.className = 'pp-kb-lane-toggle';
+            const isOpen = state.expandedLanes.has(lane.id);
+            toggle.textContent = isOpen ? '−' : '+';
+            toggle.title = isOpen ? __('Recolher subprojetos') : __('Mostrar subprojetos');
+            toggle.addEventListener('click', function () {
+                if (state.expandedLanes.has(lane.id)) {
+                    state.expandedLanes.delete(lane.id);
+                } else {
+                    state.expandedLanes.add(lane.id);
+                }
+                render(holder, state);
+            });
+            inner.appendChild(toggle);
+        } else if (lane.depth > 0) {
+            const mark = document.createElement('span');
+            mark.className = 'pp-kb-lane-head__mark';
+            mark.textContent = '↳';
+            inner.appendChild(mark);
+        }
+
+        let nameEl;
+        if (state.lane === 'project' && lane.url) {
+            nameEl = document.createElement('a');
+            nameEl.href = lane.url;
+            nameEl.target = '_blank';
+            nameEl.rel = 'noopener';
+        } else {
+            nameEl = document.createElement('span');
+        }
+        nameEl.className = 'pp-kb-lane-head__name';
+        nameEl.textContent = lane.name;
+        nameEl.title = lane.name;
+        inner.appendChild(nameEl);
+
+        const cnt = document.createElement('span');
+        cnt.className = 'pp-kb-lane-head__count';
+        cnt.textContent = _n('%d tarefa', '%d tarefas', count, count);
+        inner.appendChild(cnt);
+
+        head.appendChild(inner);
+        return head;
     }
 
     // ------------------------------------------------------------------
@@ -507,7 +582,7 @@
     }
 
     // Exposto só para os testes isolados (jsdom) do Bloco 2a.
-    ProjectPlusKanban._test = { applyCardState: applyCardState };
+    ProjectPlusKanban._test = { applyCardState: applyCardState, laneZebra: laneZebra, laneCount: laneCount };
 
     window.ProjectPlusKanban = ProjectPlusKanban;
 })();

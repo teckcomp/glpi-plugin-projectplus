@@ -57,8 +57,6 @@ class I18nJs
                 'Gestor'                   => __('Gestor', 'projectplus'),
                 'Responsável'              => __('Responsável', 'projectplus'),
                 'Responsáveis'             => __('Responsáveis', 'projectplus'),
-                'Projeto'                  => __('Projeto', 'projectplus'),
-                'Projetos'                 => __('Projetos', 'projectplus'),
                 'Subprojeto'               => __('Subprojeto', 'projectplus'),
                 'Subprojetos'              => __('Subprojetos', 'projectplus'),
                 'Tarefa'                   => __('Tarefa', 'projectplus'),

@@ -934,23 +934,50 @@ tr.pp-focus-task > td {
 .pp-kb-board { display: inline-block; min-width: 100%; }
 .pp-kb-row {
     display: grid;
-    grid-template-columns: 200px repeat(var(--pp-kb-cols, 1), minmax(230px, 1fr));
+    grid-template-columns: repeat(var(--pp-kb-cols, 1), minmax(230px, 1fr));
 }
-.pp-kb-corner, .pp-kb-col-head {
-    position: sticky; top: 0; z-index: 3;
-    background: #f7f9fb; padding: 10px 12px;
+/* Cabeçalho das fases: quem gruda no topo é a LINHA inteira (o pai dela é o
+   board, alto) — célula sticky dentro de uma linha de 40px não gruda nunca.
+   Altura FIXA: a faixa de cada raia gruda logo abaixo (top: --pp-kb-head-h),
+   sem medir nada em JS. */
+.pp-kb-row--head { position: sticky; top: 0; z-index: 3; }
+.pp-kb-col-head {
+    height: var(--pp-kb-head-h, 40px); box-sizing: border-box;
+    background: #f7f9fb; padding: 10px 12px; line-height: 17px;
     font-weight: 700; font-size: 0.8rem; color: #16323f;
     border-bottom: 3px solid var(--pp-kb-color, #8a97a5);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.pp-kb-corner { left: 0; z-index: 4; border-bottom-color: transparent; }
-.pp-kb-lane-label {
-    position: sticky; left: 0; z-index: 2;
-    background: #fff; border-right: 1px solid #e3e7eb;
-    font-weight: 700; font-size: 0.82rem; color: #16323f;
-    display: flex; align-items: center; gap: 6px; padding-top: 10px; padding-bottom: 10px; padding-right: 10px;
+/* ===== Bloco B (30/09/2026) — faixa no início de cada bloco + cor alternada.
+   Substitui a coluna lateral de rótulo, que em raia alta deixava o nome
+   centralizado longe dos cartões ("desencontrado"). ===== */
+.pp-kb-lane { --pp-kb-lane-bg: #fff; --pp-kb-lane-head-bg: #f3f5f7; }
+.pp-kb-lane--alt { --pp-kb-lane-bg: #eef6fc; --pp-kb-lane-head-bg: #d9ebf8; }
+.pp-kb-lane .pp-kb-col { background: var(--pp-kb-lane-bg); }
+.pp-kb-lane-head {
+    grid-column: 1 / -1;
+    position: sticky; top: var(--pp-kb-head-h, 40px); z-index: 2;
+    background: var(--pp-kb-lane-head-bg);
+    border-top: 2px solid #b9c6d1; border-bottom: 1px solid #dbe2e8;
 }
-.pp-kb-lane-label--nested { background: #f7fbfd; font-weight: 600; font-size: 0.78rem; color: #3d5a68; }
+.pp-kb-lane--nested .pp-kb-lane-head { border-top: 1px dashed #c6d0d9; }
+.pp-kb-lane-head__in {
+    position: sticky; left: 0;
+    display: inline-flex; align-items: center; gap: 8px; max-width: 100%;
+    padding-top: 7px; padding-bottom: 7px; padding-right: 12px; box-sizing: border-box;
+}
+.pp-kb-lane-head__name {
+    font-weight: 700; font-size: 0.85rem; color: #16323f; text-decoration: none;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 520px;
+}
+a.pp-kb-lane-head__name:hover { color: #065a82; text-decoration: underline; }
+.pp-kb-lane--nested .pp-kb-lane-head__name { font-weight: 600; font-size: 0.8rem; color: #3d5a68; }
+.pp-kb-lane-head__mark { color: #8a97a5; font-size: 0.8rem; }
+.pp-kb-lane-head__count {
+    font-size: 0.72rem; color: #5a7684; white-space: nowrap;
+    background: rgba(255, 255, 255, .7); border: 1px solid #dbe2e8;
+    border-radius: 10px; padding: 1px 8px;
+}
 .pp-kb-lane-toggle {
     flex: 0 0 auto; width: 20px; height: 20px; line-height: 18px; padding: 0;
     border: 1px solid #c6d0d9; border-radius: 4px; background: #fff; color: #4a9fd4;
@@ -972,6 +999,7 @@ tr.pp-focus-task > td {
 .pp-kb-card-item[draggable="true"]:active { cursor: grabbing; }
 .pp-kb-card-item--dragging { opacity: .45; }
 .pp-kb-col--drop { background: #eaf4fb; outline: 2px dashed #4a9fd4; outline-offset: -4px; }
+.pp-kb-lane .pp-kb-col--drop { background: #d6ebf9; }
 .pp-kb-card-item--blocked { border-color: #d9534f; }
 /* Concluída (pedido de 31/07/2026): cartão pronto ganha a cor VERDE da
    identidade do plugin (#4caf7d) em vez de só apagar, e um selo textual. */
