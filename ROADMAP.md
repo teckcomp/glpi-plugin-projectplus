@@ -2,7 +2,7 @@
 
 **Plugin de gestão avançada de projetos para GLPI 11**
 Repositório: [github.com/teckcomp/glpi-plugin-projectplus](https://github.com/teckcomp/glpi-plugin-projectplus) · Licença GPL-2.0
-Versão atual: **v1.1.0-beta** · Atualizado em 31/07/2026 — **instalada em produção** (entidade única). Com ela fecham as etapas 0 a 9. Em 31/07/2026 entrou a **rodada de correções de uso da beta**, em três commits (`73a4e61` correções de visão, `28c8ffd` selo Concluída, `d7e56e9` busca nos dropdowns), validada em homologação e **aplicada em produção no mesmo dia**. Ainda em 31/07/2026, uma **segunda rodada** em dois commits (`bbd836a` fim do "%s" literal no primeiro desenho, `e9e5397` subtarefas recolhidas no painel do projeto), validada em homologação — **aplicação em produção pendente**. Em 17/08/2026 entrou a **rodada 3 de correções de uso**, em três blocos validados em homologação: filtro de tipo em "Tarefas em andamento", "Fases por tipo" fixo na sidebar (fora das toolbars dos Kanbans) e criação de tipos/fases direto na tela de Fases; o **Bloco 4 (anexos nos comentários)** foi entregue para validação na mesma data. **Pausa deliberada segue:** Etapa 10 (guard de escopo, planejada abaixo) só quando for retomada de fato. Bloco 5 (catálogo oficial do GLPI) pode ser feito em paralelo, sem mexer em código. Em 22/09/2026 entrou a correção do **técnico com "Interagir"** (`8594861`) e em 29/09/2026 o **Bloco A** (`d0ca6eb`), primeiro bloco do ciclo de 13 pedidos aberto em 28/09/2026, **validado em homologação — aplicação em produção pendente** (produção roda `d7e56e9` mais a correção do Interagir).
+Versão atual: **v1.1.0-beta** · Atualizado em 31/07/2026 — **instalada em produção** (entidade única). Com ela fecham as etapas 0 a 9. Em 31/07/2026 entrou a **rodada de correções de uso da beta**, em três commits (`73a4e61` correções de visão, `28c8ffd` selo Concluída, `d7e56e9` busca nos dropdowns), validada em homologação e **aplicada em produção no mesmo dia**. Ainda em 31/07/2026, uma **segunda rodada** em dois commits (`bbd836a` fim do "%s" literal no primeiro desenho, `e9e5397` subtarefas recolhidas no painel do projeto), validada em homologação — **aplicação em produção pendente**. Em 17/08/2026 entrou a **rodada 3 de correções de uso**, em três blocos validados em homologação: filtro de tipo em "Tarefas em andamento", "Fases por tipo" fixo na sidebar (fora das toolbars dos Kanbans) e criação de tipos/fases direto na tela de Fases; o **Bloco 4 (anexos nos comentários)** foi entregue para validação na mesma data. **Pausa deliberada segue:** Etapa 10 (guard de escopo, planejada abaixo) só quando for retomada de fato. Bloco 5 (catálogo oficial do GLPI) pode ser feito em paralelo, sem mexer em código. Em 22/09/2026 entrou a correção do **técnico com "Interagir"** (`8594861`) e em 29/09/2026 o **Bloco A** (`d0ca6eb`), primeiro bloco do ciclo de 13 pedidos aberto em 28/09/2026, **validado em homologação — aplicação em produção pendente** (produção roda `d7e56e9` mais a correção do Interagir). Ainda em 29/09/2026 entrou o **interruptor "Calcular automaticamente" na árvore de tarefas** (`9a954cb`), validado em homologação — produção pendente.
 
 > **Ordem de execução confirmada em 19/07/2026:** Etapa 7 → Etapa 8 → Etapa 6 (por último). A Etapa 6 (refinamento/pré-produção e release v1.0.0-beta) só começa depois que 7 e 8 estiverem validadas em homologação.
 
@@ -255,6 +255,20 @@ Primeiro bloco do ciclo aberto em 28/09/2026 a partir de 13 pedidos por prints d
 
 **Lição da rodada (nº 128):** antes de testar direito nativo do GLPI, conferir o `getRights()` da classe no core — a constante genérica (`UPDATE`, `CREATE`) pode não existir para aquele item, e o teste falha em silêncio.
 
+
+### ✅ Interruptor "Calcular automaticamente" na árvore de tarefas — 29/09/2026 (commit `9a954cb`, zip `projectplus-auto-percent-1.zip`)
+
+Pedido por print: na linha da tarefa, entre a barra de Prazo e o 🔗, o mesmo interruptor da ficha nativa do GLPI.
+
+- [x] **Plugin expõe, o core calcula.** O campo é o nativo `auto_percent_done` de `glpi_projecttasks`. Ligando, o `ProjectTask::prepareInputForUpdate` do core descarta o `percent_done` enviado e o `post_updateItem` roda `recalculatePercentDone` — média das subtarefas diretas, propagando para as mães e para o projeto. Desligando, o % atual fica e volta a ser editável. Nenhuma regra de cálculo própria.
+- [x] Ação `auto_percent` em `ajax/task.php`, com a mesma permissão do campo % (`Access::canUpdateTask`). Ligar em tarefa **sem subtarefa** é recusado (o AVG nativo voltaria NULL); desligar é sempre aceito.
+- [x] O interruptor aparece só em tarefa com subtarefa — ou já ligada, para poder desligar. Vale no painel do projeto e em "Minhas tarefas" (`has_children` nos dois; `Dashboard::tasksWithChildren()` traz as linhas e marca em PHP, sem COUNT+GROUPBY).
+- [x] As travas antigas seguem valendo: % e ✓ recusados em tarefa automática; o campo % fica cinza e o ✓ some.
+- [x] i18n 596/596, zero fuzzy — inclusive 2 strings do Bloco A que tinham ficado fora do catálogo.
+- [x] Validação: harness do endpoint 12/12, do Dashboard 9/9, jsdom 17/17; roteiro de 7 passos aprovado em homologação.
+- Fora do bloco (só com pedido): o mesmo interruptor na linha do projeto e na tabela "Tarefas em andamento".
+
+**Lição da rodada (nº 132):** texto novo em Twig ou JS pede `tools/update-locales.sh` no mesmo bloco, conferindo que o pot cresceu exatamente pelas strings novas e que não há fuzzy.
 
 ### Decisões em aberto
 
