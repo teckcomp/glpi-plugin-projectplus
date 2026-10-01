@@ -55,7 +55,6 @@ class I18nJs
                 // ---- geral / rótulos compartilhados ----
                 'Tipo'                     => __('Tipo', 'projectplus'),
                 'Gestor'                   => __('Gestor', 'projectplus'),
-                'Responsável'              => __('Responsável', 'projectplus'),
                 'Responsáveis'             => __('Responsáveis', 'projectplus'),
                 'Subprojeto'               => __('Subprojeto', 'projectplus'),
                 'Subprojetos'              => __('Subprojetos', 'projectplus'),

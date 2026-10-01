@@ -355,9 +355,9 @@ class TemplateCloner
             return 0;
         }
 
-        // Responsável (equipe da tarefa) — mesmo mecanismo do painel
-        $responsavel = (int) ($def['users_id'] ?? 0);
-        if ($responsavel > 0) {
+        // Responsáveis (equipe da tarefa) — mesmo mecanismo do painel.
+        // Bloco D-2b: `users_ids` (vários); modelo antigo traz só `users_id`.
+        foreach (self::taskUserIds($def) as $responsavel) {
             $team = new ProjectTaskTeam();
             $team->add([
                 'projecttasks_id' => (int) $taskId,
@@ -471,5 +471,27 @@ class TemplateCloner
                 }
             }
         }
+    }
+
+    /**
+     * Bloco D-2b — responsáveis de uma tarefa do modelo: `users_ids` (lista)
+     * quando existe e não está vazia, senão `users_id` (formato antigo).
+     * Só ids positivos, sem repetição, na ordem do modelo.
+     *
+     * @return int[]
+     */
+    public static function taskUserIds(array $def): array
+    {
+        $raw = (isset($def['users_ids']) && is_array($def['users_ids']) && $def['users_ids'] !== [])
+            ? $def['users_ids']
+            : [$def['users_id'] ?? 0];
+        $out = [];
+        foreach ($raw as $v) {
+            $id = (int) $v;
+            if ($id > 0 && !in_array($id, $out, true)) {
+                $out[] = $id;
+            }
+        }
+        return $out;
     }
 }

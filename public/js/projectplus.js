@@ -738,6 +738,34 @@
     }
 
     /**
+     * Bloco D-2b (01/10/2026): responsáveis da TAREFA do modelo em chips
+     * (vários). Modelo antigo, com `users_id` único, abre como 1 chip. Id que
+     * não está na lista de usuários ativos (ppTplRef.users) não vira chip —
+     * mesmo comportamento do select de antes, que caía em "—".
+     */
+    function tplTaskUserIds(data) {
+        let ids = Array.isArray(data.users_ids) ? data.users_ids : [];
+        if (!ids.length && parseInt(data.users_id, 10) > 0) { ids = [data.users_id]; }
+        const seen = {};
+        return ids.map(function (x) { return parseInt(x, 10) || 0; }).filter(function (x) {
+            if (x <= 0 || seen[x]) { return false; }
+            seen[x] = true;
+            return true;
+        });
+    }
+
+    function tplTeamField(ids) {
+        const byId = {};
+        (ppTplRef.users || []).forEach(function (u) { byId[u.id] = u.name; });
+        return '<div class="pp-tpl-field pp-tpl-field--user"><span>' + escapeHtml(__('Responsáveis')) + '</span>' +
+            '<div class="pp-team pp-tpl-team">' +
+            ids.filter(function (id) { return byId[id] !== undefined; }).map(function (id) {
+                return teamChipHtml(id, byId[id]);
+            }).join('') +
+            teamAddBtnHtml() + '</div></div>';
+    }
+
+    /**
      * Editor de Modelos, Etapa 9 — de que TIPO de projeto e este campo
      * "Estado"?
      *
@@ -881,6 +909,22 @@
 
         // Delegação para os botões dinâmicos dentro da árvore
         treeEl.addEventListener('click', function (e) {
+            // Bloco D-2b: chips de responsáveis da tarefa (só no cliente;
+            // grava no submit, junto com o resto da estrutura)
+            const tx = e.target.closest('.pp-tpl-team .pp-team__x');
+            if (tx) {
+                const chip = tx.closest('.pp-team__chip');
+                if (chip) { chip.remove(); }
+                return;
+            }
+            const tadd = e.target.closest('.pp-tpl-team .pp-team__add');
+            if (tadd) {
+                const box = tadd.closest('.pp-tpl-team');
+                openTeamPicker(tadd, teamIds(box), function (uid, name) {
+                    tadd.insertAdjacentHTML('beforebegin', teamChipHtml(uid, name));
+                }, null, ppTplRef.users);
+                return;
+            }
             const btn = e.target.closest('button[data-act]');
             if (!btn) { return; }
             const act = btn.dataset.act;
@@ -965,7 +1009,6 @@
         data = data || {};
         const stateId     = parseInt(data.projectstates_id, 10) || 0;
         const ttypeId     = parseInt(data.projecttasktypes_id, 10) || 0;
-        const userId      = parseInt(data.users_id, 10) || 0;
         const hasChildren = Array.isArray(data.children) && data.children.length > 0;
         const auto        = (data.auto_percent_done != null) ? !!data.auto_percent_done : hasChildren;
 
@@ -983,7 +1026,7 @@
             '<div class="pp-tpl-meta">' +
                 '<label class="pp-tpl-field">' + escapeHtml(__('Fase')) + '<select class="pp-tpl-state">' + tplOptions(ppTplRef.states, stateId) + '</select></label>' +
                 '<label class="pp-tpl-field">' + escapeHtml(__('Tipo')) + '<select class="pp-tpl-ttype">' + tplOptions(ppTplRef.ttypes, ttypeId) + '</select></label>' +
-                tplUserField(__('Responsável'), 'pp-tpl-user', userId) +
+                tplTeamField(tplTaskUserIds(data)) +
                 '<label class="pp-tpl-check"><input type="checkbox" class="pp-tpl-auto"' + (auto ? ' checked' : '') + '> ' + escapeHtml(__('calcular automaticamente o %')) + '</label>' +
             '</div>' +
             '<textarea class="pp-tpl-content" rows="1" placeholder="' + escapeHtml(__('Descrição (opcional)')) + '"></textarea>' +
@@ -1072,7 +1115,10 @@
                 duration_days: Math.max(1, parseInt(row.querySelector('.pp-tpl-dur').value, 10) || 1),
                 projectstates_id: parseInt(meta.querySelector('.pp-tpl-state').value, 10) || 0,
                 projecttasktypes_id: parseInt(meta.querySelector('.pp-tpl-ttype').value, 10) || 0,
-                users_id: parseInt(meta.querySelector('.pp-tpl-user').value, 10) || 0,
+                // Bloco D-2b: vários responsáveis; users_id = o primeiro, para
+                // quem ainda lê o formato antigo
+                users_ids: teamIds(meta.querySelector('.pp-tpl-team')),
+                users_id: teamIds(meta.querySelector('.pp-tpl-team'))[0] || 0,
                 auto_percent_done: meta.querySelector('.pp-tpl-auto').checked ? 1 : 0
             };
             if (el.dataset.plannedDuration) {
@@ -1456,7 +1502,7 @@
     // Abre, no lugar do "+", um combobox de busca (pp-search) com os
     // usuários que ainda NÃO estão na equipe. Escolher chama onPick(id,
     // nome); sair sem escolher (blur/Esc) devolve o "+".
-    function openTeamPicker(addBtn, excludeIds, onPick, placeholder) {
+    function openTeamPicker(addBtn, excludeIds, onPick, placeholder, userList) {
         if (addBtn.hidden || addBtn.disabled) { return; }
         const skip = {};
         (excludeIds || []).forEach(function (id) { skip[id] = true; });
@@ -1464,7 +1510,7 @@
         const sel = document.createElement('select');
         sel.className = 'pp-search';
         sel.innerHTML = '<option value="">' + escapeHtml(placeholder || __('Adicionar responsável')) + '</option>' +
-            (Array.isArray(ppData.users) ? ppData.users : []).filter(function (u) {
+            (Array.isArray(userList) ? userList : (Array.isArray(ppData.users) ? ppData.users : [])).filter(function (u) {
                 return !skip[u.id];
             }).map(function (u) {
                 return '<option value="' + u.id + '">' + escapeHtml(u.name) + '</option>';

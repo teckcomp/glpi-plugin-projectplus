@@ -12,7 +12,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ProjectPlus\n"
 "Report-Msgid-Bugs-To: https://github.com/teckcomp/glpi-plugin-projectplus/issues\n"
-"POT-Creation-Date: 2026-10-01 19:19+0000\n"
+"POT-Creation-Date: 2026-10-01 19:30+0000\n"
 "PO-Revision-Date: 2026-07-25 00:00+0000\n"
 "Last-Translator: Teckcomp I.T. Services\n"
 "Language-Team: Portugues do Brasil\n"
@@ -62,7 +62,7 @@ msgstr "%1$s comentou na tarefa \"%2$s\": %3$s"
 msgid "%1$s comentou no projeto \"%2$s\": %3$s"
 msgstr "%1$s comentou no projeto \"%2$s\": %3$s"
 
-#: src/I18nJs.php:241 src/I18nJs.php:242
+#: src/I18nJs.php:240 src/I18nJs.php:241
 #, php-format
 msgid "%d arquivo selecionado"
 msgid_plural "%d arquivos selecionados"
@@ -74,14 +74,14 @@ msgstr[1] "%d arquivos selecionados"
 msgid "%d ponto(s) de atenção — ver as linhas marcadas abaixo."
 msgstr "%d ponto(s) de atenção — ver as linhas marcadas abaixo."
 
-#: src/I18nJs.php:236 src/I18nJs.php:237
+#: src/I18nJs.php:235 src/I18nJs.php:236
 #, php-format
 msgid "%d restante"
 msgid_plural "%d restantes"
 msgstr[0] "%d restante"
 msgstr[1] "%d restantes"
 
-#: src/I18nJs.php:231 src/I18nJs.php:232
+#: src/I18nJs.php:230 src/I18nJs.php:231
 #, php-format
 msgid "%d subtarefa"
 msgid_plural "%d subtarefas"
@@ -95,7 +95,7 @@ msgid_plural "%d subtarefas abertas"
 msgstr[0] "%d subtarefa aberta"
 msgstr[1] "%d subtarefas abertas"
 
-#: src/I18nJs.php:226 src/I18nJs.php:227
+#: src/I18nJs.php:225 src/I18nJs.php:226
 #, php-format
 msgid "%d tarefa"
 msgid_plural "%d tarefas"
@@ -121,23 +121,23 @@ msgstr "%s está sem datas planejadas — corrija o planejamento"
 msgid "(0 = sem controle de orçamento)"
 msgstr "(0 = sem controle de orçamento)"
 
-#: src/I18nJs.php:140
+#: src/I18nJs.php:139
 msgid "(precisam terminar antes)"
 msgstr "(precisam terminar antes)"
 
-#: src/I18nJs.php:142
+#: src/I18nJs.php:141
 msgid "(só concluem depois desta)"
 msgstr "(só concluem depois desta)"
 
-#: src/I18nJs.php:161
+#: src/I18nJs.php:160
 msgid "+ subprojeto"
 msgstr "+ subprojeto"
 
-#: src/I18nJs.php:160
+#: src/I18nJs.php:159
 msgid "+ subtarefa"
 msgstr "+ subtarefa"
 
-#: src/I18nJs.php:159
+#: src/I18nJs.php:158
 msgid "+ tarefa"
 msgstr "+ tarefa"
 
@@ -166,7 +166,7 @@ msgstr "Abrir"
 msgid "Abrir no GLPI:"
 msgstr "Abrir no GLPI:"
 
-#: src/I18nJs.php:70 src/TaskDep.php:700
+#: src/I18nJs.php:69 src/TaskDep.php:700
 msgid "Adicionar"
 msgstr "Adicionar"
 
@@ -178,7 +178,7 @@ msgstr "Adicionar custo ao projeto"
 msgid "Adicionar custo à tarefa"
 msgstr "Adicionar custo à tarefa"
 
-#: src/I18nJs.php:89
+#: src/I18nJs.php:88
 msgid "Adicionar responsável"
 msgstr "Adicionar responsável"
 
@@ -190,15 +190,15 @@ msgstr "Adicionar subprojeto"
 msgid "Adicionar tarefa"
 msgstr "Adicionar tarefa"
 
-#: src/I18nJs.php:95
+#: src/I18nJs.php:94
 msgid "Adicionar à equipe"
 msgstr "Adicionar à equipe"
 
-#: src/Templates.php:518
+#: src/Templates.php:522
 msgid "Adicione ao menos uma tarefa ou subprojeto"
 msgstr "Adicione ao menos uma tarefa ou subprojeto"
 
-#: src/I18nJs.php:149
+#: src/I18nJs.php:148
 msgid "Adicione ao menos uma tarefa ou subprojeto."
 msgstr "Adicione ao menos uma tarefa ou subprojeto."
 
@@ -228,7 +228,7 @@ msgstr "Alertas por e-mail (opção do plugin)"
 msgid "Alta"
 msgstr "Alta"
 
-#: src/I18nJs.php:220
+#: src/I18nJs.php:219
 msgid "Anexar arquivo"
 msgstr "Anexar arquivo"
 
@@ -285,11 +285,11 @@ msgstr "Ativos"
 msgid "Atrasada"
 msgstr "Atrasada"
 
-#: src/I18nJs.php:172 templates/mytasks.html.twig:143
+#: src/I18nJs.php:171 templates/mytasks.html.twig:143
 msgid "Atrasadas"
 msgstr "Atrasadas"
 
-#: src/I18nJs.php:111 src/Reports.php:219 templates/dashboard.html.twig:303
+#: src/I18nJs.php:110 src/Reports.php:219 templates/dashboard.html.twig:303
 msgid "Atrasado"
 msgstr "Atrasado"
 
@@ -322,7 +322,7 @@ msgstr "Baixar CSV"
 msgid "Bloqueada"
 msgstr "Bloqueada"
 
-#: src/I18nJs.php:139
+#: src/I18nJs.php:138
 msgid "Bloqueada por"
 msgstr "Bloqueada por"
 
@@ -330,15 +330,15 @@ msgstr "Bloqueada por"
 msgid "Bloqueada por (precisam terminar antes)"
 msgstr "Bloqueada por (precisam terminar antes)"
 
-#: src/I18nJs.php:105 templates/dashboard.html.twig:386
+#: src/I18nJs.php:104 templates/dashboard.html.twig:386
 msgid "Bloqueada por outra(s) tarefa(s) — veja 🔗"
 msgstr "Bloqueada por outra(s) tarefa(s) — veja 🔗"
 
-#: src/I18nJs.php:205
+#: src/I18nJs.php:204
 msgid "Bloqueada — veja as dependências"
 msgstr "Bloqueada — veja as dependências"
 
-#: src/I18nJs.php:141
+#: src/I18nJs.php:140
 msgid "Bloqueia"
 msgstr "Bloqueia"
 
@@ -390,11 +390,11 @@ msgstr "Buscar tarefa…"
 msgid "Cada tipo de projeto pode ter seu próprio conjunto de fases e sua própria ordem de colunas no Kanban. Tipo sem configuração usa o conjunto padrão."
 msgstr "Cada tipo de projeto pode ter seu próprio conjunto de fases e sua própria ordem de colunas no Kanban. Tipo sem configuração usa o conjunto padrão."
 
-#: src/I18nJs.php:104
+#: src/I18nJs.php:103
 msgid "Calcular automaticamente a partir das subtarefas"
 msgstr "Calcular automaticamente a partir das subtarefas"
 
-#: src/I18nJs.php:98
+#: src/I18nJs.php:97
 msgid "Calcular automaticamente a partir das tarefas e subprojetos"
 msgstr "Calcular automaticamente a partir das tarefas e subprojetos"
 
@@ -402,7 +402,7 @@ msgstr "Calcular automaticamente a partir das tarefas e subprojetos"
 msgid "Canal de e-mail do GLPI"
 msgstr "Canal de e-mail do GLPI"
 
-#: src/I18nJs.php:69 templates/dashboard.html.twig:546
+#: src/I18nJs.php:68 templates/dashboard.html.twig:546
 #: templates/projecttemplate_edit.html.twig:125
 #: templates/projecttemplates.html.twig:179
 #: templates/projecttemplates.html.twig:222
@@ -413,11 +413,11 @@ msgstr "Cancelar"
 msgid "Carregando a timeline…"
 msgstr "Carregando a timeline…"
 
-#: src/I18nJs.php:122
+#: src/I18nJs.php:121
 msgid "Carregando comentários…"
 msgstr "Carregando comentários…"
 
-#: src/I18nJs.php:132
+#: src/I18nJs.php:131
 msgid "Carregando dependências…"
 msgstr "Carregando dependências…"
 
@@ -430,11 +430,11 @@ msgstr "Carregando o Kanban…"
 msgid "Carregando suas tarefas…"
 msgstr "Carregando suas tarefas…"
 
-#: src/I18nJs.php:80
+#: src/I18nJs.php:79
 msgid "Carregando tarefas…"
 msgstr "Carregando tarefas…"
 
-#: src/I18nJs.php:76
+#: src/I18nJs.php:75
 msgid "Carregando…"
 msgstr "Carregando…"
 
@@ -450,7 +450,7 @@ msgstr "Chave \"tasks\" inválida"
 msgid "Com \"Não\", desinstalar preserva os dados E a configuração de direitos por perfil — reinstalar devolve tudo como estava."
 msgstr "Com \"Não\", desinstalar preserva os dados E a configuração de direitos por perfil — reinstalar devolve tudo como estava."
 
-#: src/I18nJs.php:127 src/TaskComment.php:486
+#: src/I18nJs.php:126 src/TaskComment.php:486
 msgid "Comentar"
 msgstr "Comentar"
 
@@ -485,7 +485,7 @@ msgstr "Comentário não encontrado"
 msgid "Comentário vazio ou longo demais"
 msgstr "Comentário vazio ou longo demais"
 
-#: src/I18nJs.php:121 templates/dashboard.html.twig:436
+#: src/I18nJs.php:120 templates/dashboard.html.twig:436
 msgid "Comentários"
 msgstr "Comentários"
 
@@ -506,19 +506,19 @@ msgstr "Comentários do projeto"
 msgid "Conclua antes as %d subtarefa(s) aberta(s) desta tarefa"
 msgstr "Conclua antes as %d subtarefa(s) aberta(s) desta tarefa"
 
-#: src/I18nJs.php:74
+#: src/I18nJs.php:73
 msgid "Concluir"
 msgstr "Concluir"
 
-#: src/I18nJs.php:164
+#: src/I18nJs.php:163
 msgid "Concluída"
 msgstr "Concluída"
 
-#: src/I18nJs.php:168 templates/mytasks.html.twig:159
+#: src/I18nJs.php:167 templates/mytasks.html.twig:159
 msgid "Concluídas"
 msgstr "Concluídas"
 
-#: src/I18nJs.php:167
+#: src/I18nJs.php:166
 msgid "Concluído"
 msgstr "Concluído"
 
@@ -631,7 +631,7 @@ msgstr "Criar projeto"
 msgid "Criar projeto a partir do modelo"
 msgstr "Criar projeto a partir do modelo"
 
-#: src/I18nJs.php:101
+#: src/I18nJs.php:100
 msgid "Criar tarefa"
 msgstr "Criar tarefa"
 
@@ -670,7 +670,7 @@ msgstr "Custo lançado"
 #. TRANSLATORS: rótulo da aba "Custos" do NÚCLEO do GLPI, no idioma
 #. do usuário. É comparado com o texto da aba para escondê-la; se a
 #. tradução não bater, a aba nativa reaparece.
-#: src/I18nJs.php:215 templates/reports.html.twig:246
+#: src/I18nJs.php:214 templates/reports.html.twig:246
 msgid "Custos"
 msgstr "Custos"
 
@@ -698,11 +698,11 @@ msgstr "Custos da tarefa"
 msgid "Custos do projeto"
 msgstr "Custos do projeto"
 
-#: src/I18nJs.php:103
+#: src/I18nJs.php:102
 msgid "Cálculo automático a partir das subtarefas"
 msgstr "Cálculo automático a partir das subtarefas"
 
-#: src/I18nJs.php:97
+#: src/I18nJs.php:96
 msgid "Cálculo automático a partir das tarefas e subprojetos"
 msgstr "Cálculo automático a partir das tarefas e subprojetos"
 
@@ -737,7 +737,7 @@ msgstr "Dependência criada"
 msgid "Dependência removida"
 msgstr "Dependência removida"
 
-#: src/I18nJs.php:131 templates/dashboard.html.twig:432
+#: src/I18nJs.php:130 templates/dashboard.html.twig:432
 msgid "Dependências"
 msgstr "Dependências"
 
@@ -754,7 +754,7 @@ msgstr "Descer"
 msgid "Descrição"
 msgstr "Descrição"
 
-#: src/I18nJs.php:156
+#: src/I18nJs.php:155
 msgid "Descrição (opcional)"
 msgstr "Descrição (opcional)"
 
@@ -762,7 +762,7 @@ msgstr "Descrição (opcional)"
 msgid "Descrição do custo"
 msgstr "Descrição do custo"
 
-#: src/I18nJs.php:155
+#: src/I18nJs.php:154
 msgid "Descrição do projeto (opcional)"
 msgstr "Descrição do projeto (opcional)"
 
@@ -778,7 +778,7 @@ msgstr "Dia"
 msgid "Diagnóstico da instalação"
 msgstr "Diagnóstico da instalação"
 
-#: src/I18nJs.php:150
+#: src/I18nJs.php:149
 msgid "Dias após a data de início escolhida ao criar"
 msgstr "Dias após a data de início escolhida ao criar"
 
@@ -786,7 +786,7 @@ msgstr "Dias após a data de início escolhida ao criar"
 msgid "Dias sem atividade para marcar projeto como \"parado\""
 msgstr "Dias sem atividade para marcar projeto como \"parado\""
 
-#: src/I18nJs.php:165
+#: src/I18nJs.php:164
 msgid "Digite para buscar…"
 msgstr "Digite para buscar…"
 
@@ -798,11 +798,11 @@ msgstr "Direito"
 msgid "Direitos do plugin no nível máximo"
 msgstr "Direitos do plugin no nível máximo"
 
-#: src/I18nJs.php:174
+#: src/I18nJs.php:173
 msgid "Distribuição por status"
 msgstr "Distribuição por status"
 
-#: src/I18nJs.php:151
+#: src/I18nJs.php:150
 msgid "Duração do projeto em dias (define a data de fim)"
 msgstr "Duração do projeto em dias (define a data de fim)"
 
@@ -819,7 +819,7 @@ msgstr "E-mail de teste"
 msgid "E-mail de teste enviado para %s (remetente: %s)."
 msgstr "E-mail de teste enviado para %s (remetente: %s)."
 
-#: src/I18nJs.php:72 templates/projecttemplates.html.twig:118
+#: src/I18nJs.php:71 templates/projecttemplates.html.twig:118
 msgid "Editar"
 msgstr "Editar"
 
@@ -831,7 +831,7 @@ msgstr "Editar modelo"
 msgid "Editar modelo de projeto"
 msgstr "Editar modelo de projeto"
 
-#: src/I18nJs.php:169 templates/dashboard.html.twig:176
+#: src/I18nJs.php:168 templates/dashboard.html.twig:176
 msgid "Em andamento"
 msgstr "Em andamento"
 
@@ -852,23 +852,23 @@ msgstr "Enviado em %s"
 msgid "Enviar e-mails (além do sino)"
 msgstr "Enviar e-mails (além do sino)"
 
-#: src/I18nJs.php:94
+#: src/I18nJs.php:93
 msgid "Equipe do projeto"
 msgstr "Equipe do projeto"
 
-#: src/I18nJs.php:133
+#: src/I18nJs.php:132
 msgid "Erro ao carregar as dependências."
 msgstr "Erro ao carregar as dependências."
 
-#: src/I18nJs.php:123
+#: src/I18nJs.php:122
 msgid "Erro ao carregar comentários."
 msgstr "Erro ao carregar comentários."
 
-#: src/I18nJs.php:82
+#: src/I18nJs.php:81
 msgid "Erro ao carregar suas tarefas."
 msgstr "Erro ao carregar suas tarefas."
 
-#: src/I18nJs.php:81
+#: src/I18nJs.php:80
 msgid "Erro ao carregar tarefas."
 msgstr "Erro ao carregar tarefas."
 
@@ -888,7 +888,7 @@ msgstr "Escopo: ver todos os projetos"
 msgid "Escreva um comentário…"
 msgstr "Escreva um comentário…"
 
-#: src/I18nJs.php:126
+#: src/I18nJs.php:125
 msgid "Escreva um comentário… (Ctrl+Enter envia)"
 msgstr "Escreva um comentário… (Ctrl+Enter envia)"
 
@@ -904,7 +904,7 @@ msgstr "Esta tarefa é BLOQUEADA por"
 msgid "Este mês"
 msgstr "Este mês"
 
-#: src/I18nJs.php:184
+#: src/I18nJs.php:183
 msgid "Este projeto (e seus subprojetos) não tem tarefas."
 msgstr "Este projeto (e seus subprojetos) não tem tarefas."
 
@@ -936,16 +936,16 @@ msgstr "Estes custos consomem o orçamento do projeto (junto com a aba Custos na
 msgid "Estrutura"
 msgstr "Estrutura"
 
-#: src/Templates.php:505
+#: src/Templates.php:509
 msgid "Estrutura do modelo inválida"
 msgstr "Estrutura do modelo inválida"
 
-#: src/I18nJs.php:73 src/Profile.php:52
+#: src/I18nJs.php:72 src/Profile.php:52
 #: templates/projecttemplates.html.twig:125
 msgid "Excluir"
 msgstr "Excluir"
 
-#: src/I18nJs.php:128
+#: src/I18nJs.php:127
 msgid "Excluir este comentário?"
 msgstr "Excluir este comentário?"
 
@@ -1005,7 +1005,7 @@ msgstr "Falha no envio: %s"
 msgid "Falhas de envio ficam registradas em files/_log/projectplus.log; o cron projectplusalerts anota quantos e-mails saíram no próprio log da tarefa."
 msgstr "Falhas de envio ficam registradas em files/_log/projectplus.log; o cron projectplusalerts anota quantos e-mails saíram no próprio log da tarefa."
 
-#: src/I18nJs.php:64 src/Reports.php:217 src/Reports.php:357
+#: src/I18nJs.php:63 src/Reports.php:217 src/Reports.php:357
 #: templates/dashboard.html.twig:261 templates/dashboard.html.twig:368
 #: templates/dashboard.html.twig:492 templates/reports.html.twig:95
 #: templates/typephases.html.twig:168
@@ -1068,7 +1068,7 @@ msgstr "Fases por tipo de projeto"
 msgid "Fases, na ordem das colunas"
 msgstr "Fases, na ordem das colunas"
 
-#: src/I18nJs.php:67
+#: src/I18nJs.php:66
 msgid "Fim"
 msgstr "Fim"
 
@@ -1076,7 +1076,7 @@ msgstr "Fim"
 msgid "Fim do período"
 msgstr "Fim do período"
 
-#: src/I18nJs.php:100 src/Reports.php:219 src/Reports.php:359
+#: src/I18nJs.php:99 src/Reports.php:219 src/Reports.php:359
 #: templates/dashboard.html.twig:528
 msgid "Fim planejado"
 msgstr "Fim planejado"
@@ -1125,7 +1125,7 @@ msgstr "Gestor de Projetos como primeiro item do menu Ferramentas"
 msgid "Granularidade do gráfico"
 msgstr "Granularidade do gráfico"
 
-#: src/I18nJs.php:177
+#: src/I18nJs.php:176
 msgid "Gráfico de burndown"
 msgstr "Gráfico de burndown"
 
@@ -1137,7 +1137,7 @@ msgstr "Hoje"
 msgid "ID"
 msgstr "ID"
 
-#: src/I18nJs.php:178
+#: src/I18nJs.php:177
 msgid "Ideal"
 msgstr "Ideal"
 
@@ -1163,11 +1163,11 @@ msgstr "Indicadores (ProjectPlus)"
 msgid "Informe o nome da nova fase"
 msgstr "Informe o nome da nova fase"
 
-#: src/Templates.php:178 src/Templates.php:498
+#: src/Templates.php:178 src/Templates.php:502
 msgid "Informe o nome do modelo"
 msgstr "Informe o nome do modelo"
 
-#: src/I18nJs.php:148
+#: src/I18nJs.php:147
 msgid "Informe o nome do modelo."
 msgstr "Informe o nome do modelo."
 
@@ -1187,7 +1187,7 @@ msgstr "Informe o nome do projeto e a data de início"
 msgid "Interagir"
 msgstr "Interagir"
 
-#: src/I18nJs.php:66
+#: src/I18nJs.php:65
 msgid "Início"
 msgstr "Início"
 
@@ -1195,7 +1195,7 @@ msgstr "Início"
 msgid "Início do período"
 msgstr "Início do período"
 
-#: src/I18nJs.php:99 src/Reports.php:218 src/Reports.php:359
+#: src/I18nJs.php:98 src/Reports.php:218 src/Reports.php:359
 #: templates/dashboard.html.twig:523
 msgid "Início planejado"
 msgstr "Início planejado"
@@ -1220,7 +1220,7 @@ msgstr "Já existe uma fase chamada \"%s\""
 
 #. #-#-#-#-#  php.pot (ProjectPlus 1.1.0-beta)  #-#-#-#-#
 #. TRANSLATORS: rótulo da aba "Kanban" do NÚCLEO do GLPI.
-#: front/kanban.php:80 src/I18nJs.php:217 templates/costs.html.twig:31
+#: front/kanban.php:80 src/I18nJs.php:216 templates/costs.html.twig:31
 #: templates/dashboard.html.twig:45 templates/kanban.html.twig:31
 #: templates/mytasks.html.twig:37 templates/projectkanban.html.twig:31
 #: templates/projecttemplate_edit.html.twig:32
@@ -1262,7 +1262,7 @@ msgstr "Kanban por fase, com swimlanes"
 msgid "Lançado por"
 msgstr "Lançado por"
 
-#: src/I18nJs.php:118
+#: src/I18nJs.php:117
 msgid "Lidas recentemente"
 msgstr "Lidas recentemente"
 
@@ -1286,7 +1286,7 @@ msgstr "Link nos e-mails (URL da base)"
 msgid "Lista nativa"
 msgstr "Lista nativa"
 
-#: src/I18nJs.php:116
+#: src/I18nJs.php:115
 msgid "Marcar como lida"
 msgstr "Marcar como lida"
 
@@ -1321,11 +1321,11 @@ msgstr "Modelo"
 msgid "Modelo \"%1$s\" criado com %2$d tarefa(s) e %3$d subprojeto(s)"
 msgstr "Modelo \"%1$s\" criado com %2$d tarefa(s) e %3$d subprojeto(s)"
 
-#: src/Templates.php:541
+#: src/Templates.php:545
 msgid "Modelo atualizado"
 msgstr "Modelo atualizado"
 
-#: src/Templates.php:554
+#: src/Templates.php:558
 msgid "Modelo criado"
 msgstr "Modelo criado"
 
@@ -1334,7 +1334,7 @@ msgid "Modelo excluído"
 msgstr "Modelo excluído"
 
 #: front/projecttemplate_edit.php:35 src/TemplateCloner.php:66
-#: src/Templates.php:531
+#: src/Templates.php:535
 msgid "Modelo não encontrado"
 msgstr "Modelo não encontrado"
 
@@ -1365,7 +1365,7 @@ msgstr "Mostrar apenas os projetos deste tipo"
 msgid "Mostrar projetos concluídos"
 msgstr "Mostrar projetos concluídos"
 
-#: src/I18nJs.php:193
+#: src/I18nJs.php:192
 msgid "Mostrar subprojetos"
 msgstr "Mostrar subprojetos"
 
@@ -1394,11 +1394,11 @@ msgstr "Mês"
 msgid "NENHUM — preencha \"E-mail do remetente\" em Configurar > Notificações ou \"E-mail do administrador\" em Configurar > Geral"
 msgstr "NENHUM — preencha \"E-mail do remetente\" em Configurar > Notificações ou \"E-mail do administrador\" em Configurar > Geral"
 
-#: src/I18nJs.php:117
+#: src/I18nJs.php:116
 msgid "Nenhum alerta não lido"
 msgstr "Nenhum alerta não lido"
 
-#: src/I18nJs.php:124
+#: src/I18nJs.php:123
 msgid "Nenhum comentário ainda."
 msgstr "Nenhum comentário ainda."
 
@@ -1438,7 +1438,7 @@ msgstr "Nenhum perfil com o direito Configuração (atualizar)."
 msgid "Nenhum projeto encontrado"
 msgstr "Nenhum projeto encontrado"
 
-#: src/I18nJs.php:198
+#: src/I18nJs.php:197
 msgid "Nenhum projeto encontrado com os filtros atuais."
 msgstr "Nenhum projeto encontrado com os filtros atuais."
 
@@ -1446,7 +1446,7 @@ msgstr "Nenhum projeto encontrado com os filtros atuais."
 msgid "Nenhum projeto no período"
 msgstr "Nenhum projeto no período"
 
-#: src/I18nJs.php:203
+#: src/I18nJs.php:202
 msgid "Nenhum projeto ou tarefa encontrado."
 msgstr "Nenhum projeto ou tarefa encontrado."
 
@@ -1454,11 +1454,11 @@ msgstr "Nenhum projeto ou tarefa encontrado."
 msgid "Nenhum remetente configurado: preencha \"E-mail do remetente\" em Configurar > Notificações ou \"E-mail do administrador\" em Configurar > Geral."
 msgstr "Nenhum remetente configurado: preencha \"E-mail do remetente\" em Configurar > Notificações ou \"E-mail do administrador\" em Configurar > Geral."
 
-#: src/I18nJs.php:166
+#: src/I18nJs.php:165
 msgid "Nenhum resultado"
 msgstr "Nenhum resultado"
 
-#: src/I18nJs.php:75 src/TaskDep.php:715
+#: src/I18nJs.php:74 src/TaskDep.php:715
 msgid "Nenhuma"
 msgstr "Nenhuma"
 
@@ -1466,11 +1466,11 @@ msgstr "Nenhuma"
 msgid "Nenhuma fase cadastrada na instância. Cadastre em Configurar > Listas suspensas > Estados de projeto."
 msgstr "Nenhuma fase cadastrada na instância. Cadastre em Configurar > Listas suspensas > Estados de projeto."
 
-#: src/I18nJs.php:85
+#: src/I18nJs.php:84
 msgid "Nenhuma tarefa atribuída a você em aberto."
 msgstr "Nenhuma tarefa atribuída a você em aberto."
 
-#: src/I18nJs.php:84
+#: src/I18nJs.php:83
 msgid "Nenhuma tarefa atribuída a você."
 msgstr "Nenhuma tarefa atribuída a você."
 
@@ -1478,11 +1478,11 @@ msgstr "Nenhuma tarefa atribuída a você."
 msgid "Nenhuma tarefa encontrada"
 msgstr "Nenhuma tarefa encontrada"
 
-#: src/I18nJs.php:191
+#: src/I18nJs.php:190
 msgid "Nenhuma tarefa encontrada com os filtros atuais."
 msgstr "Nenhuma tarefa encontrada com os filtros atuais."
 
-#: src/I18nJs.php:83
+#: src/I18nJs.php:82
 msgid "Nenhuma tarefa neste projeto ainda."
 msgstr "Nenhuma tarefa neste projeto ainda."
 
@@ -1490,7 +1490,7 @@ msgstr "Nenhuma tarefa neste projeto ainda."
 msgid "Nenhuma tarefa no período"
 msgstr "Nenhuma tarefa no período"
 
-#: src/I18nJs.php:113 templates/dashboard.html.twig:307
+#: src/I18nJs.php:112 templates/dashboard.html.twig:307
 msgid "No prazo"
 msgstr "No prazo"
 
@@ -1498,7 +1498,7 @@ msgstr "No prazo"
 msgid "Nome da nova fase…"
 msgstr "Nome da nova fase…"
 
-#: src/I18nJs.php:157
+#: src/I18nJs.php:156
 msgid "Nome da tarefa"
 msgstr "Nome da tarefa"
 
@@ -1519,7 +1519,7 @@ msgstr "Nome do novo tipo…"
 msgid "Nome do projeto"
 msgstr "Nome do projeto"
 
-#: src/I18nJs.php:158
+#: src/I18nJs.php:157
 msgid "Nome do subprojeto"
 msgstr "Nome do subprojeto"
 
@@ -1531,7 +1531,7 @@ msgstr "Nome e projeto são obrigatórios"
 msgid "Nova dependência"
 msgstr "Nova dependência"
 
-#: src/I18nJs.php:86
+#: src/I18nJs.php:85
 msgid "Nova tarefa…"
 msgstr "Nova tarefa…"
 
@@ -1568,19 +1568,19 @@ msgstr "Não (manter dados e direitos)"
 msgid "Não enviado: %s."
 msgstr "Não enviado: %s."
 
-#: src/I18nJs.php:197
+#: src/I18nJs.php:196
 msgid "Não foi possível carregar o Kanban de projetos."
 msgstr "Não foi possível carregar o Kanban de projetos."
 
-#: src/I18nJs.php:190
+#: src/I18nJs.php:189
 msgid "Não foi possível carregar o Kanban."
 msgstr "Não foi possível carregar o Kanban."
 
-#: src/I18nJs.php:187
+#: src/I18nJs.php:186
 msgid "Não foi possível carregar o burndown."
 msgstr "Não foi possível carregar o burndown."
 
-#: src/I18nJs.php:202
+#: src/I18nJs.php:201
 msgid "Não foi possível carregar os dados da timeline."
 msgstr "Não foi possível carregar os dados da timeline."
 
@@ -1652,7 +1652,7 @@ msgstr "Orçamento"
 msgid "Orçamento (ProjectPlus)"
 msgstr "Orçamento (ProjectPlus)"
 
-#: src/I18nJs.php:77
+#: src/I18nJs.php:76
 msgid "Orçamento (R$)"
 msgstr "Orçamento (R$)"
 
@@ -1698,12 +1698,12 @@ msgstr "PRAZO ESTOURADO"
 msgid "Painel (Visão geral)"
 msgstr "Painel (Visão geral)"
 
-#: src/I18nJs.php:112 src/ProjectTracking.php:71
+#: src/I18nJs.php:111 src/ProjectTracking.php:71
 #: templates/dashboard.html.twig:305
 msgid "Parado"
 msgstr "Parado"
 
-#: src/I18nJs.php:171
+#: src/I18nJs.php:170
 msgid "Pendentes"
 msgstr "Pendentes"
 
@@ -1731,7 +1731,7 @@ msgstr "Período"
 msgid "Período planejado (preenchimento = progresso)"
 msgstr "Período planejado (preenchimento = progresso)"
 
-#: src/I18nJs.php:170
+#: src/I18nJs.php:169
 msgid "Planejado"
 msgstr "Planejado"
 
@@ -1739,7 +1739,7 @@ msgstr "Planejado"
 msgid "Planejamento a corrigir"
 msgstr "Planejamento a corrigir"
 
-#: src/I18nJs.php:65
+#: src/I18nJs.php:64
 msgid "Prazo"
 msgstr "Prazo"
 
@@ -1779,7 +1779,7 @@ msgstr "Prazo vencido"
 msgid "Prioridade"
 msgstr "Prioridade"
 
-#: src/I18nJs.php:93 templates/dashboard.html.twig:262
+#: src/I18nJs.php:92 templates/dashboard.html.twig:262
 #: templates/dashboard.html.twig:367
 msgid "Progresso"
 msgstr "Progresso"
@@ -1805,7 +1805,7 @@ msgstr "ProjectPlus — acessos por módulo"
 msgid "ProjectPlus: atrasos, pendências e projetos parados"
 msgstr "ProjectPlus: atrasos, pendências e projetos parados"
 
-#: front/costs.php:113 src/I18nJs.php:92 src/KanbanTab.php:80
+#: front/costs.php:113 src/I18nJs.php:91 src/KanbanTab.php:80
 #: src/Reports.php:216 src/Reports.php:356 src/Reports.php:580
 #: templates/dashboard.html.twig:105 templates/dashboard.html.twig:260
 #: templates/dashboard.html.twig:365 templates/kanban.html.twig:93
@@ -1832,11 +1832,11 @@ msgstr "Projeto \"%s\" está sem atividade (parado)"
 msgid "Projeto (aplicado ao criar)"
 msgstr "Projeto (aplicado ao criar)"
 
-#: src/I18nJs.php:204
+#: src/I18nJs.php:203
 msgid "Projeto / tarefa"
 msgstr "Projeto / tarefa"
 
-#: src/I18nJs.php:106 templates/dashboard.html.twig:281
+#: src/I18nJs.php:105 templates/dashboard.html.twig:281
 msgid "Projeto com tarefas/subprojetos abertos — não pode ir para fase concluída"
 msgstr "Projeto com tarefas/subprojetos abertos — não pode ir para fase concluída"
 
@@ -1859,7 +1859,7 @@ msgstr "Projeto não encontrado"
 msgid "Projeto não encontrado ou fora do seu escopo"
 msgstr "Projeto não encontrado ou fora do seu escopo"
 
-#: src/I18nJs.php:186
+#: src/I18nJs.php:185
 msgid "Projeto não encontrado."
 msgstr "Projeto não encontrado."
 
@@ -1909,11 +1909,11 @@ msgstr "Projetos por fase"
 msgid "Projetos por tipo"
 msgstr "Projetos por tipo"
 
-#: src/I18nJs.php:179
+#: src/I18nJs.php:178
 msgid "Real (tarefas restantes)"
 msgstr "Real (tarefas restantes)"
 
-#: src/I18nJs.php:192
+#: src/I18nJs.php:191
 msgid "Recolher subprojetos"
 msgstr "Recolher subprojetos"
 
@@ -1925,7 +1925,7 @@ msgstr "Reexecutar a instalação costuma resolver: php bin/console plugin:insta
 msgid "Registros"
 msgstr "Registros"
 
-#: src/I18nJs.php:137
+#: src/I18nJs.php:136
 msgid "Regra geral: subtarefa aberta bloqueia a mãe"
 msgstr "Regra geral: subtarefa aberta bloqueia a mãe"
 
@@ -1951,31 +1951,31 @@ msgstr "Relatórios"
 msgid "Remetente que será usado"
 msgstr "Remetente que será usado"
 
-#: src/I18nJs.php:71
+#: src/I18nJs.php:70
 msgid "Remover"
 msgstr "Remover"
 
-#: src/I18nJs.php:96
+#: src/I18nJs.php:95
 msgid "Remover da equipe"
 msgstr "Remover da equipe"
 
-#: src/I18nJs.php:145
+#: src/I18nJs.php:144
 msgid "Remover este vínculo de dependência?"
 msgstr "Remover este vínculo de dependência?"
 
-#: src/I18nJs.php:90
+#: src/I18nJs.php:89
 msgid "Remover responsável"
 msgstr "Remover responsável"
 
-#: src/I18nJs.php:138 src/TaskDep.php:735
+#: src/I18nJs.php:137 src/TaskDep.php:735
 msgid "Remover vínculo"
 msgstr "Remover vínculo"
 
-#: src/I18nJs.php:59 templates/dashboard.html.twig:366
+#: src/I18nJs.php:58 templates/dashboard.html.twig:366
 msgid "Responsáveis"
 msgstr "Responsáveis"
 
-#: src/I18nJs.php:58 src/KanbanTab.php:81 templates/kanban.html.twig:94
+#: src/KanbanTab.php:81 templates/kanban.html.twig:94
 msgid "Responsável"
 msgstr "Responsável"
 
@@ -1988,7 +1988,7 @@ msgstr "Responsável(is)"
 msgid "Saldo"
 msgstr "Saldo"
 
-#: src/I18nJs.php:68
+#: src/I18nJs.php:67
 msgid "Salvar"
 msgstr "Salvar"
 
@@ -2021,11 +2021,11 @@ msgstr "Se você recebeu esta mensagem, os alertas por e-mail estão funcionando
 msgid "Selecione o projeto de origem"
 msgstr "Selecione o projeto de origem"
 
-#: src/I18nJs.php:185 templates/reports.html.twig:236
+#: src/I18nJs.php:184 templates/reports.html.twig:236
 msgid "Selecione um projeto para ver o burndown."
 msgstr "Selecione um projeto para ver o burndown."
 
-#: src/I18nJs.php:173
+#: src/I18nJs.php:172
 msgid "Sem dados para exibir"
 msgstr "Sem dados para exibir"
 
@@ -2033,7 +2033,7 @@ msgstr "Sem dados para exibir"
 msgid "Sem datas"
 msgstr "Sem datas"
 
-#: src/I18nJs.php:109 templates/dashboard.html.twig:328
+#: src/I18nJs.php:108 templates/dashboard.html.twig:328
 #: templates/dashboard.html.twig:413
 msgid "Sem datas planejadas — corrija o planejamento"
 msgstr "Sem datas planejadas — corrija o planejamento"
@@ -2084,11 +2084,11 @@ msgstr "Sem permissão para gerenciar dependências"
 msgid "Sem registro"
 msgstr "Sem registro"
 
-#: src/I18nJs.php:88 src/Kanban.php:289
+#: src/I18nJs.php:87 src/Kanban.php:289
 msgid "Sem responsável"
 msgstr "Sem responsável"
 
-#: src/I18nJs.php:87
+#: src/I18nJs.php:86
 msgid "Sem tarefa pai"
 msgstr "Sem tarefa pai"
 
@@ -2141,7 +2141,7 @@ msgstr "Suas tarefas em todos os projetos"
 msgid "Subir"
 msgstr "Subir"
 
-#: src/I18nJs.php:60
+#: src/I18nJs.php:59
 msgid "Subprojeto"
 msgstr "Subprojeto"
 
@@ -2150,12 +2150,12 @@ msgstr "Subprojeto"
 msgid "Subprojeto \"%s\""
 msgstr "Subprojeto \"%s\""
 
-#: src/I18nJs.php:199
+#: src/I18nJs.php:198
 #, php-format
 msgid "Subprojeto de: %s"
 msgstr "Subprojeto de: %s"
 
-#: src/I18nJs.php:61 templates/projecttemplate_edit.html.twig:116
+#: src/I18nJs.php:60 templates/projecttemplate_edit.html.twig:116
 msgid "Subprojetos"
 msgstr "Subprojetos"
 
@@ -2163,7 +2163,7 @@ msgstr "Subprojetos"
 msgid "Substitui o conjunto atual pelo do tipo escolhido, na mesma ordem. Útil quando dois tipos seguem o mesmo fluxo."
 msgstr "Substitui o conjunto atual pelo do tipo escolhido, na mesma ordem. Útil quando dois tipos seguem o mesmo fluxo."
 
-#: src/I18nJs.php:194
+#: src/I18nJs.php:193
 #, php-format
 msgid "Subtarefa da tarefa: %s"
 msgstr "Subtarefa da tarefa: %s"
@@ -2184,7 +2184,7 @@ msgstr "Tabela"
 msgid "Tabela de mapeamento AUSENTE — reexecute a instalação."
 msgstr "Tabela de mapeamento AUSENTE — reexecute a instalação."
 
-#: src/I18nJs.php:62 src/Reports.php:356 templates/dashboard.html.twig:364
+#: src/I18nJs.php:61 src/Reports.php:356 templates/dashboard.html.twig:364
 #: templates/reports.html.twig:81
 msgid "Tarefa"
 msgstr "Tarefa"
@@ -2231,7 +2231,7 @@ msgstr "Tarefa concluída"
 msgid "Tarefa criada"
 msgstr "Tarefa criada"
 
-#: src/I18nJs.php:102 src/Reports.php:357
+#: src/I18nJs.php:101 src/Reports.php:357
 msgid "Tarefa mãe"
 msgstr "Tarefa mãe"
 
@@ -2245,7 +2245,7 @@ msgstr "Tarefa não encontrada"
 msgid "Tarefa sem datas planejadas"
 msgstr "Tarefa sem datas planejadas"
 
-#: src/I18nJs.php:63 src/Profile.php:77 templates/dashboard.html.twig:175
+#: src/I18nJs.php:62 src/Profile.php:77 templates/dashboard.html.twig:175
 #: templates/dashboard.html.twig:284 templates/reports.html.twig:189
 msgid "Tarefas"
 msgstr "Tarefas"
@@ -2447,7 +2447,7 @@ msgstr "Zoom"
 msgid "abaixo do máximo em %d direito(s)"
 msgstr "abaixo do máximo em %d direito(s)"
 
-#: src/I18nJs.php:134
+#: src/I18nJs.php:133
 msgid "aberta"
 msgstr "aberta"
 
@@ -2473,7 +2473,7 @@ msgstr "bloqueada por: %s"
 msgid "buscar por nome…"
 msgstr "buscar por nome…"
 
-#: src/I18nJs.php:154
+#: src/I18nJs.php:153
 msgid "calcular automaticamente o %"
 msgstr "calcular automaticamente o %"
 
@@ -2485,15 +2485,15 @@ msgstr "campo \"name\" obrigatório"
 msgid "completo"
 msgstr "completo"
 
-#: src/I18nJs.php:135 src/TaskDep.php:728
+#: src/I18nJs.php:134 src/TaskDep.php:728
 msgid "concluída"
 msgstr "concluída"
 
-#: src/I18nJs.php:181
+#: src/I18nJs.php:180
 msgid "concluídas"
 msgstr "concluídas"
 
-#: src/I18nJs.php:183
+#: src/I18nJs.php:182
 msgid "concluído"
 msgstr "concluído"
 
@@ -2510,11 +2510,11 @@ msgstr "deve ser um objeto"
 msgid "deve ser uma lista"
 msgstr "deve ser uma lista"
 
-#: src/I18nJs.php:153
+#: src/I18nJs.php:152
 msgid "duração (d)"
 msgstr "duração (d)"
 
-#: src/I18nJs.php:125 src/TaskComment.php:509
+#: src/I18nJs.php:124 src/TaskComment.php:509
 msgid "editado"
 msgstr "editado"
 
@@ -2530,14 +2530,14 @@ msgstr "herda o padrão"
 msgid "hoje herda o conjunto padrão; salvar cria um conjunto próprio"
 msgstr "hoje herda o conjunto padrão; salvar cria um conjunto próprio"
 
-#: src/I18nJs.php:152
+#: src/I18nJs.php:151
 msgid "início (d)"
 msgstr "início (d)"
 
 #. TRANSLATORS: os 12 meses abreviados, em ordem, separados por "|".
 #. Vai num campo só porque "jan", "fev"… isolados seriam ambíguos
 #. demais para o tradutor e colidiriam com outros msgid curtos.
-#: src/I18nJs.php:209
+#: src/I18nJs.php:208
 msgid "jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez"
 msgstr "jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez"
 
@@ -2593,11 +2593,11 @@ msgstr "próprio"
 msgid "registrado"
 msgstr "registrado"
 
-#: src/I18nJs.php:182
+#: src/I18nJs.php:181
 msgid "restantes"
 msgstr "restantes"
 
-#: src/I18nJs.php:110
+#: src/I18nJs.php:109
 msgid "sem datas"
 msgstr "sem datas"
 
@@ -2605,11 +2605,11 @@ msgstr "sem datas"
 msgid "sem uma fase marcada como \"finalizada\" em Configurar > Listas suspensas > Estados de projeto, a trava \"projeto com tarefa ou subprojeto aberto não vai para fase finalizada\" nunca dispara nesse conjunto."
 msgstr "sem uma fase marcada como \"finalizada\" em Configurar > Listas suspensas > Estados de projeto, a trava \"projeto com tarefa ou subprojeto aberto não vai para fase finalizada\" nunca dispara nesse conjunto."
 
-#: src/I18nJs.php:136 src/TaskDep.php:723
+#: src/I18nJs.php:135 src/TaskDep.php:723
 msgid "subtarefa"
 msgstr "subtarefa"
 
-#: src/I18nJs.php:180
+#: src/I18nJs.php:179
 msgid "tarefas"
 msgstr "tarefas"
 
@@ -2621,7 +2621,7 @@ msgstr "todos os conjuntos têm ao menos uma fase marcada como finalizada"
 msgid "vale para todo tipo sem conjunto próprio, e para projeto sem tipo"
 msgstr "vale para todo tipo sem conjunto próprio, e para projeto sem tipo"
 
-#: src/I18nJs.php:143
+#: src/I18nJs.php:142
 msgid "É bloqueada por"
 msgstr "É bloqueada por"
 
@@ -2662,7 +2662,7 @@ msgstr "— Todos os projetos —"
 msgid "— Todos —"
 msgstr "— Todos —"
 
-#: src/I18nJs.php:144
+#: src/I18nJs.php:143
 msgid "— sem outras tarefas neste projeto —"
 msgstr "— sem outras tarefas neste projeto —"
 

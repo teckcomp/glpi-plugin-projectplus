@@ -301,7 +301,8 @@ class Templates
             $byParent[(int) $row['projecttasks_id']][] = $row;
         }
 
-        // Responsável (primeiro usuário da equipe) por tarefa do projeto.
+        // Responsáveis (equipe, só usuários) por tarefa do projeto — Bloco
+        // D-2b: TODOS, na ordem em que entraram (antes só o primeiro).
         $teamByTask = [];
         foreach (
             $DB->request([
@@ -326,8 +327,9 @@ class Templates
             ]) as $tm
         ) {
             $tid = (int) $tm['projecttasks_id'];
-            if (!isset($teamByTask[$tid])) {
-                $teamByTask[$tid] = (int) $tm['items_id']; // primeiro da equipe
+            $uid = (int) $tm['items_id'];
+            if ($uid > 0 && !in_array($uid, $teamByTask[$tid] ?? [], true)) {
+                $teamByTask[$tid][] = $uid;
             }
         }
 
@@ -344,7 +346,9 @@ class Templates
                     'projectstates_id'    => (int) ($t['projectstates_id'] ?? 0),
                     'projecttasktypes_id' => (int) ($t['projecttasktypes_id'] ?? 0),
                     'auto_percent_done'   => (int) ($t['auto_percent_done'] ?? 0),
-                    'users_id'            => (int) ($teamByTask[(int) $t['id']] ?? 0),
+                    // users_id = o primeiro (formato antigo); users_ids = todos
+                    'users_id'            => (int) (($teamByTask[(int) $t['id']] ?? [0])[0]),
+                    'users_ids'           => $teamByTask[(int) $t['id']] ?? [],
                 ];
                 if (!empty($t['planned_duration'])) {
                     $def['planned_duration'] = (int) $t['planned_duration'];
