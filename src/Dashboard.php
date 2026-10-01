@@ -956,34 +956,8 @@ class Dashboard extends CommonGLPI
 
         // Equipe completa (User) das tarefas listadas, em consulta única
         if (!empty($taskIds)) {
-            $byTid = [];
-            foreach (
-                $DB->request([
-                    'SELECT'    => [
-                        'glpi_projecttaskteams.projecttasks_id',
-                        'glpi_users.realname', 'glpi_users.firstname',
-                        'glpi_users.name AS login',
-                    ],
-                    'FROM'      => 'glpi_projecttaskteams',
-                    'LEFT JOIN' => [
-                        'glpi_users' => [
-                            'ON' => [
-                                'glpi_projecttaskteams' => 'items_id',
-                                'glpi_users'            => 'id',
-                            ],
-                        ],
-                    ],
-                    'WHERE' => [
-                        'glpi_projecttaskteams.itemtype'        => 'User',
-                        'glpi_projecttaskteams.projecttasks_id' => $taskIds,
-                    ],
-                ]) as $row
-            ) {
-                // Respeita a ordem de nome configurada no GLPI (config ou
-                // preferência da sessão), em vez de fixar "Sobrenome Nome".
-                $label = \formatUserName(0, $row['login'] ?? '', $row['realname'] ?? '', $row['firstname'] ?? '');
-                $byTid[(int) $row['projecttasks_id']][] = $label !== '' ? $label : '?';
-            }
+            // Bloco D-2a: id + nome (os chips editáveis precisam do id)
+            $teamUsers = self::teamUsers($taskIds);
             // Contador de comentários (Etapa 3, Bloco 2) — consulta única
             $comments = TaskComment::countForTasks($taskIds);
             // Dependências (Etapa 3, Bloco 3) — consulta única
@@ -991,7 +965,8 @@ class Dashboard extends CommonGLPI
 
             foreach ($groups as &$g) {
                 foreach ($g['tasks'] as &$t) {
-                    $t['team']     = $byTid[$t['id']] ?? [];
+                    $t['team_users'] = $teamUsers[$t['id']] ?? [];
+                    $t['team']       = array_column($t['team_users'], 'name');
                     $t['comments'] = $comments[$t['id']] ?? 0;
                     $t['deps']     = $deps[$t['id']]['deps'] ?? 0;
                     $t['blocked']  = $deps[$t['id']]['blocked'] ?? false;
@@ -1153,48 +1128,7 @@ class Dashboard extends CommonGLPI
         $now      = time();
         $states   = self::getStatesMap();
         foreach ($iterator as $row) {
-            $childId  = (int) $row['id'];
-            $tracking = ProjectTracking::getForProject($childId);
-
-            $isOverdue = !empty($row['plan_end_date'])
-                && strtotime($row['plan_end_date']) < $now
-                && (int) $row['percent_done'] < 100;
-
-            $budget     = Budget::getForProject($childId);
-            $budgetInfo = null;
-            if ($budget['planned'] > 0) {
-                $budgetInfo = [
-                    'planned_fmt' => number_format($budget['planned'], 2, ',', '.'),
-                    'spent_fmt'   => number_format($budget['spent_total'], 2, ',', '.'),
-                    'percent'     => $budget['percent'],
-                    'state'       => $budget['percent'] > 100 ? 'over'
-                        : ($budget['percent'] >= 80 ? 'warn' : 'ok'),
-                ];
-            }
-
-            $lastActivity = $tracking['last_activity'] ?? $row['date_mod'];
-
-            $childState = (int) $row['projectstates_id'];
-
-            $children[] = [
-                'id'            => $childId,
-                'name'          => $row['name'],
-                'state_name'    => $states[$childState]['name'] ?? null,
-                'state_color'   => $states[$childState]['color'] ?? self::PHASE_DEFAULT_COLOR,
-                'percent_done'  => (int) $row['percent_done'],
-                'plan_end_date' => $row['plan_end_date'],
-                'last_activity' => $lastActivity ? DateFmt::dateTime($lastActivity) : null,
-                'is_stalled'    => (bool) ($tracking['is_stalled'] ?? false),
-                'is_overdue'    => $isOverdue,
-                'budget'        => $budgetInfo,
-                'deadline'      => Deadline::compute(
-                    $row['plan_start_date'],
-                    $row['real_start_date'],
-                    $row['plan_end_date'],
-                    (int) $row['percent_done']
-                ),
-                'url'           => Url::project($childId),
-            ];
+            $children[] = self::projectRowData($row, $states, $now);
         }
 
         // Regra geral (Etapa 3, Bloco 3 / Fix 1): subprojeto com filhos
@@ -1206,6 +1140,216 @@ class Dashboard extends CommonGLPI
         unset($c);
 
         return $children;
+    }
+
+    /**
+     * Linha da tabela de projetos (MESMO formato do `children`): fase,
+     * progresso, última atividade, situação, orçamento, prazo. Extraída do
+     * getChildren no Bloco D-3a para servir também à faixa "Projeto", que
+     * redesenha a linha depois de editar.
+     *
+     * @param array $row linha de glpi_projects com id, name, percent_done,
+     *                   plan_*_date, real_start_date, date_mod, projectstates_id
+     */
+    private static function projectRowData(array $row, array $states, int $now): array
+    {
+        $childId  = (int) $row['id'];
+        $tracking = ProjectTracking::getForProject($childId);
+
+        $isOverdue = !empty($row['plan_end_date'])
+            && strtotime($row['plan_end_date']) < $now
+            && (int) $row['percent_done'] < 100;
+
+        $budget     = Budget::getForProject($childId);
+        $budgetInfo = null;
+        if ($budget['planned'] > 0) {
+            $budgetInfo = [
+                'planned_fmt' => number_format($budget['planned'], 2, ',', '.'),
+                'spent_fmt'   => number_format($budget['spent_total'], 2, ',', '.'),
+                'percent'     => $budget['percent'],
+                'state'       => $budget['percent'] > 100 ? 'over'
+                    : ($budget['percent'] >= 80 ? 'warn' : 'ok'),
+            ];
+        }
+
+        $lastActivity = $tracking['last_activity'] ?? $row['date_mod'];
+
+        $childState = (int) $row['projectstates_id'];
+
+        return [
+            'id'            => $childId,
+            'name'          => $row['name'],
+            'state_name'    => $states[$childState]['name'] ?? null,
+            'state_color'   => $states[$childState]['color'] ?? self::PHASE_DEFAULT_COLOR,
+            'percent_done'  => (int) $row['percent_done'],
+            'plan_end_date' => $row['plan_end_date'],
+            'last_activity' => $lastActivity ? DateFmt::dateTime($lastActivity) : null,
+            'is_stalled'    => (bool) ($tracking['is_stalled'] ?? false),
+            'is_overdue'    => $isOverdue,
+            'budget'        => $budgetInfo,
+            'deadline'      => Deadline::compute(
+                $row['plan_start_date'],
+                $row['real_start_date'],
+                $row['plan_end_date'],
+                (int) $row['percent_done']
+            ),
+            'url'           => Url::project($childId),
+        ];
+    }
+
+    /**
+     * Bloco D-3a — linhas (formato `children`, com `blocked`) dos projetos
+     * pedidos, na entidade do usuário. Usado depois de editar pela faixa:
+     * o projeto e os ANCESTRAIS (o % automático sobe para eles).
+     *
+     * @param int[] $ids
+     */
+    public static function getProjectRows(array $ids): array
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids))));
+        if (empty($ids)) {
+            return [];
+        }
+        $out    = [];
+        $now    = time();
+        $states = self::getStatesMap();
+        foreach (
+            $DB->request([
+                'SELECT' => [
+                    'id', 'name', 'percent_done', 'plan_end_date',
+                    'plan_start_date', 'real_start_date', 'date_mod',
+                    'projectstates_id',
+                ],
+                'FROM'   => 'glpi_projects',
+                'WHERE'  => ['id' => $ids, 'is_deleted' => 0]
+                    + getEntitiesRestrictCriteria('glpi_projects'),
+            ]) as $row
+        ) {
+            $out[] = self::projectRowData($row, $states, $now);
+        }
+        $blocked = TaskDep::blockedProjects(array_column($out, 'id'));
+        foreach ($out as &$r) {
+            $r['blocked'] = $blocked[$r['id']] ?? false;
+        }
+        unset($r);
+        return $out;
+    }
+
+    /**
+     * Bloco D-3a — ids dos projetos ACIMA deste (pai, avô...), do mais
+     * próximo para o mais distante. Para em ciclo ou profundidade 20.
+     *
+     * @return int[]
+     */
+    public static function projectAncestors(int $projectId): array
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        $out  = [];
+        $seen = [$projectId => true];
+        $cur  = $projectId;
+        for ($i = 0; $i < 20; $i++) {
+            $row = $DB->request([
+                'SELECT' => ['projects_id'],
+                'FROM'   => 'glpi_projects',
+                'WHERE'  => ['id' => $cur],
+            ])->current();
+            $parent = (int) ($row['projects_id'] ?? 0);
+            if ($parent <= 0 || isset($seen[$parent])) {
+                break;
+            }
+            $out[]         = $parent;
+            $seen[$parent] = true;
+            $cur           = $parent;
+        }
+        return $out;
+    }
+
+    /**
+     * Bloco D-3a — o que a faixa "Projeto" do painel edita: datas, fase,
+     * %, auto, tipo (para a lista de fases do conjunto), gestor (só exibe)
+     * e a EQUIPE DO PROJETO (glpi_projectteams, só usuários — grupo da
+     * equipe não aparece nem é tocado). Null = projeto inexistente, apagado
+     * ou fora da entidade.
+     */
+    public static function getProjectMeta(int $projectId): ?array
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        $p = $DB->request([
+            'SELECT' => [
+                'id', 'name', 'plan_start_date', 'plan_end_date', 'projectstates_id',
+                'projecttypes_id', 'percent_done', 'auto_percent_done', 'users_id',
+            ],
+            'FROM'   => 'glpi_projects',
+            'WHERE'  => ['id' => $projectId, 'is_deleted' => 0]
+                + getEntitiesRestrictCriteria('glpi_projects'),
+        ])->current();
+        if (!$p) {
+            return null;
+        }
+
+        $team = [];
+        foreach (
+            $DB->request([
+                'SELECT'    => [
+                    'glpi_projectteams.items_id',
+                    'glpi_users.realname',
+                    'glpi_users.firstname',
+                    'glpi_users.name AS login',
+                ],
+                'FROM'      => 'glpi_projectteams',
+                'LEFT JOIN' => [
+                    'glpi_users' => [
+                        'ON' => [
+                            'glpi_projectteams' => 'items_id',
+                            'glpi_users'        => 'id',
+                        ],
+                    ],
+                ],
+                'WHERE' => [
+                    'glpi_projectteams.projects_id' => $projectId,
+                    'glpi_projectteams.itemtype'    => 'User',
+                ],
+                'ORDER' => ['glpi_projectteams.id'],
+            ]) as $row
+        ) {
+            $label  = \formatUserName(0, $row['login'] ?? '', $row['realname'] ?? '', $row['firstname'] ?? '');
+            $team[] = ['id' => (int) $row['items_id'], 'name' => $label !== '' ? $label : '?'];
+        }
+
+        $manager = '';
+        if ((int) $p['users_id'] > 0) {
+            $u = $DB->request([
+                'SELECT' => ['name', 'realname', 'firstname'],
+                'FROM'   => 'glpi_users',
+                'WHERE'  => ['id' => (int) $p['users_id']],
+            ])->current();
+            if ($u) {
+                $manager = \formatUserName(0, $u['name'] ?? '', $u['realname'] ?? '', $u['firstname'] ?? '');
+            }
+        }
+
+        return [
+            'id'           => (int) $p['id'],
+            'name'         => $p['name'],
+            'start_iso'    => $p['plan_start_date'] ? substr($p['plan_start_date'], 0, 10) : '',
+            'end_iso'      => $p['plan_end_date'] ? substr($p['plan_end_date'], 0, 10) : '',
+            'state_id'     => (int) $p['projectstates_id'],
+            'type_id'      => (int) $p['projecttypes_id'],
+            'percent'      => (int) $p['percent_done'],
+            'auto_percent' => (bool) $p['auto_percent_done'],
+            'manager_id'   => (int) $p['users_id'],
+            'manager'      => $manager,
+            'team_users'   => $team,
+            // Bloco D-3b: contador do 💬 da faixa
+            'comments'     => TaskComment::countForProject((int) $p['id']),
+        ];
     }
 
     private static function countChildren(int $parentId): int
@@ -1255,6 +1399,101 @@ class Dashboard extends CommonGLPI
         return $out;
     }
 
+    /**
+     * Bloco D-2a — responsáveis (equipe, só USUÁRIOS) de cada tarefa:
+     * [taskId => [['id' => uid, 'name' => rótulo], ...]] na ordem em que
+     * entraram na equipe. Rótulo por formatUserName (names_format).
+     * Grupos da equipe ficam de fora — não aparecem nem são editados aqui.
+     *
+     * @param int[] $taskIds
+     * @return array<int, array<int, array{id:int,name:string}>>
+     */
+    public static function teamUsers(array $taskIds): array
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        $taskIds = array_values(array_unique(array_filter(array_map('intval', $taskIds))));
+        if (empty($taskIds)) {
+            return [];
+        }
+
+        $out = [];
+        foreach (
+            $DB->request([
+                'SELECT'    => [
+                    'glpi_projecttaskteams.projecttasks_id',
+                    'glpi_projecttaskteams.items_id',
+                    'glpi_users.realname',
+                    'glpi_users.firstname',
+                    'glpi_users.name AS login',
+                ],
+                'FROM'      => 'glpi_projecttaskteams',
+                'LEFT JOIN' => [
+                    'glpi_users' => [
+                        'ON' => [
+                            'glpi_projecttaskteams' => 'items_id',
+                            'glpi_users'            => 'id',
+                        ],
+                    ],
+                ],
+                'WHERE' => [
+                    'glpi_projecttaskteams.itemtype'        => 'User',
+                    'glpi_projecttaskteams.projecttasks_id' => $taskIds,
+                ],
+                'ORDER' => ['glpi_projecttaskteams.projecttasks_id', 'glpi_projecttaskteams.id'],
+            ]) as $row
+        ) {
+            $label = \formatUserName(0, $row['login'] ?? '', $row['realname'] ?? '', $row['firstname'] ?? '');
+            $out[(int) $row['projecttasks_id']][] = [
+                'id'   => (int) $row['items_id'],
+                'name' => $label !== '' ? $label : '?',
+            ];
+        }
+        return $out;
+    }
+
+    /**
+     * Bloco D-2a — usuários ativos para escolher responsável (antes montado
+     * dentro de front/dashboard.php; agora também em Minhas tarefas).
+     * Rótulo por formatUserName, ordem pelo rótulo com Collator.
+     *
+     * @return array<int, array{id:int,name:string}>
+     */
+    public static function userOptions(): array
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        $users = [];
+        foreach (
+            $DB->request([
+                'SELECT' => ['id', 'name', 'realname', 'firstname'],
+                'FROM'   => 'glpi_users',
+                'WHERE'  => ['is_active' => 1, 'is_deleted' => 0],
+                'LIMIT'  => 300,
+            ]) as $row
+        ) {
+            $label   = \formatUserName(
+                0,
+                (string) ($row['name'] ?? ''),
+                (string) ($row['realname'] ?? ''),
+                (string) ($row['firstname'] ?? '')
+            );
+            $users[] = [
+                'id'   => (int) $row['id'],
+                'name' => $label !== '' ? $label : (string) $row['name'],
+            ];
+        }
+        if (class_exists('\\Collator')) {
+            $coll = new \Collator(str_replace('_', '-', $_SESSION['glpilanguage'] ?? 'pt_BR'));
+            usort($users, static fn ($a, $b) => $coll->compare($a['name'], $b['name']));
+        } else {
+            usort($users, static fn ($a, $b) => strnatcasecmp($a['name'], $b['name']));
+        }
+        return $users;
+    }
+
     public static function getTasks(int $projectId): array
     {
         /** @var \DBmysql $DB */
@@ -1282,32 +1521,15 @@ class Dashboard extends CommonGLPI
             return [];
         }
 
-        $teams = [];
-        foreach (
-            $DB->request([
-                'SELECT'    => [
-                    'glpi_projecttaskteams.projecttasks_id',
-                    'glpi_users.realname',
-                    'glpi_users.firstname',
-                    'glpi_users.name AS login',
-                ],
-                'FROM'      => 'glpi_projecttaskteams',
-                'LEFT JOIN' => [
-                    'glpi_users' => [
-                        'ON' => [
-                            'glpi_projecttaskteams' => 'items_id',
-                            'glpi_users'            => 'id',
-                        ],
-                    ],
-                ],
-                'WHERE' => ['glpi_projecttaskteams.itemtype' => 'User'],
-            ]) as $row
-        ) {
-            // Respeita a ordem de nome configurada no GLPI (config ou
-            // preferência da sessão), em vez de fixar "Sobrenome Nome".
-            $label = \formatUserName(0, $row['login'] ?? '', $row['realname'] ?? '', $row['firstname'] ?? '');
-            $teams[(int) $row['projecttasks_id']][] = $label !== '' ? $label : '?';
+        // Bloco D-2a: equipe só das tarefas DESTE projeto (antes a consulta
+        // lia glpi_projecttaskteams inteira), com id + nome.
+        $allIds = [];
+        foreach ($byParent as $rows) {
+            foreach ($rows as $r) {
+                $allIds[] = (int) $r['id'];
+            }
         }
+        $teams = self::teamUsers($allIds);
 
         $out  = [];
         $walk = function (int $parentId, int $depth) use (&$walk, &$out, $byParent, $states, $teams, $projectId) {
@@ -1328,7 +1550,8 @@ class Dashboard extends CommonGLPI
                     'state_id'    => (int) $t['projectstates_id'],
                     'state_name'  => $states[(int) $t['projectstates_id']]['name'] ?? '—',
                     'state_color' => $states[(int) $t['projectstates_id']]['color'] ?? self::PHASE_DEFAULT_COLOR,
-                    'team'       => $teams[$id] ?? [],
+                    'team'       => array_column($teams[$id] ?? [], 'name'),
+                    'team_users' => $teams[$id] ?? [],
                     'deadline'   => Deadline::compute(
                         $t['plan_start_date'],
                         $t['real_start_date'],

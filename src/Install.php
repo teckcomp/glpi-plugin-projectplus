@@ -143,6 +143,7 @@ class Install
         ],
         'glpi_plugin_projectplus_taskcomments' => [
             'projecttasks_id' => 'INT %SIGN% NOT NULL DEFAULT 0',
+            'projects_id'     => 'INT %SIGN% NOT NULL DEFAULT 0', // Bloco D-3b
             'users_id'        => 'INT %SIGN% NOT NULL DEFAULT 0',
             'content'         => 'TEXT',
             'date_creation'   => 'TIMESTAMP NULL DEFAULT NULL',
@@ -158,6 +159,7 @@ class Install
         'glpi_plugin_projectplus_commentfiles' => [
             'comments_id'     => 'INT %SIGN% NOT NULL DEFAULT 0',
             'projecttasks_id' => 'INT %SIGN% NOT NULL DEFAULT 0',
+            'projects_id'     => 'INT %SIGN% NOT NULL DEFAULT 0', // Bloco D-3b
             'users_id'        => 'INT %SIGN% NOT NULL DEFAULT 0',
             'filename'        => "VARCHAR(255) NOT NULL DEFAULT ''",
             'stored'          => "VARCHAR(80) NOT NULL DEFAULT ''",
@@ -351,12 +353,14 @@ class Install
                 CREATE TABLE `glpi_plugin_projectplus_taskcomments` (
                     `id`               INT {$sign} NOT NULL AUTO_INCREMENT,
                     `projecttasks_id`  INT {$sign} NOT NULL DEFAULT 0,
+                    `projects_id`      INT {$sign} NOT NULL DEFAULT 0 COMMENT 'Bloco D-3b: comentário de projeto',
                     `users_id`         INT {$sign} NOT NULL DEFAULT 0 COMMENT 'autor',
                     `content`          TEXT,
                     `date_creation`    TIMESTAMP NULL DEFAULT NULL,
                     `date_mod`         TIMESTAMP NULL DEFAULT NULL,
                     PRIMARY KEY (`id`),
                     KEY `projecttasks_id` (`projecttasks_id`),
+                    KEY `projects_id` (`projects_id`),
                     KEY `users_id` (`users_id`)
                 ) ENGINE=InnoDB DEFAULT CHARSET={$charset} COLLATE={$collation}
             ");
@@ -373,6 +377,7 @@ class Install
                     `id`               INT {$sign} NOT NULL AUTO_INCREMENT,
                     `comments_id`      INT {$sign} NOT NULL DEFAULT 0,
                     `projecttasks_id`  INT {$sign} NOT NULL DEFAULT 0,
+                    `projects_id`      INT {$sign} NOT NULL DEFAULT 0 COMMENT 'Bloco D-3b',
                     `users_id`         INT {$sign} NOT NULL DEFAULT 0 COMMENT 'quem enviou',
                     `filename`         VARCHAR(255) NOT NULL DEFAULT '' COMMENT 'nome original',
                     `stored`           VARCHAR(80) NOT NULL DEFAULT '' COMMENT 'nome no disco',
@@ -381,7 +386,8 @@ class Install
                     `date_creation`    TIMESTAMP NULL DEFAULT NULL,
                     PRIMARY KEY (`id`),
                     KEY `comments_id` (`comments_id`),
-                    KEY `projecttasks_id` (`projecttasks_id`)
+                    KEY `projecttasks_id` (`projecttasks_id`),
+                    KEY `projects_id` (`projects_id`)
                 ) ENGINE=InnoDB DEFAULT CHARSET={$charset} COLLATE={$collation}
             ");
         }
@@ -392,6 +398,14 @@ class Install
         //      que passaram a existir DEPOIS da criação da tabela.
         // ------------------------------------------------------------------
         self::ensureSchema($migration);
+
+        // Bloco D-3b: índice da coluna nova em base que já existia (o
+        // addKey do core só acrescenta se o índice ainda não existe).
+        foreach (['glpi_plugin_projectplus_taskcomments', 'glpi_plugin_projectplus_commentfiles'] as $t) {
+            if ($DB->tableExists($t)) {
+                $migration->addKey($t, 'projects_id');
+            }
+        }
 
         // ------------------------------------------------------------------
         // 7.2) Migração ÚNICA dos custos da aba nativa do GLPI para a

@@ -6,6 +6,9 @@
  * POST add=1     content, projecttasks_id
  * POST delete=1  id, projecttasks_id
  *
+ * Bloco D-3b: aba do PROJETO manda projects_id no lugar de projecttasks_id
+ * (só para quem edita projeto; alerta só ao gestor).
+ *
  * CSRF: validado automaticamente pelo core em todo POST (Html::closeForm
  * inclui o token nos formulários da aba).
  */
@@ -29,11 +32,27 @@ if (!TaskComment::canComment()) {
     Html::back();
 }
 
-$taskId = (int) ($_POST['projecttasks_id'] ?? 0);
-$task   = new ProjectTask();
-if ($taskId <= 0 || !$task->getFromDB($taskId)) {
-    Session::addMessageAfterRedirect(__('Tarefa não encontrada', 'projectplus'), false, ERROR);
-    Html::back();
+$projectId = (int) ($_POST['projects_id'] ?? 0);
+$project   = null;
+$task      = null;
+$taskId    = 0;
+if ($projectId > 0) {
+    $project = new Project();
+    if (!$project->getFromDB($projectId)) {
+        Session::addMessageAfterRedirect(__('Projeto não encontrado', 'projectplus'), false, ERROR);
+        Html::back();
+    }
+    if (!TaskComment::canCommentProject() || !$project->canViewItem()) {
+        Session::addMessageAfterRedirect(__('Sem permissão para comentar', 'projectplus'), false, ERROR);
+        Html::back();
+    }
+} else {
+    $taskId = (int) ($_POST['projecttasks_id'] ?? 0);
+    $task   = new ProjectTask();
+    if ($taskId <= 0 || !$task->getFromDB($taskId)) {
+        Session::addMessageAfterRedirect(__('Tarefa não encontrada', 'projectplus'), false, ERROR);
+        Html::back();
+    }
 }
 
 if (isset($_POST['add'])) {
@@ -49,11 +68,15 @@ if (isset($_POST['add'])) {
         Html::back();
     }
 
-    $id = TaskComment::addForTask($task, $content);
+    $id = $project !== null
+        ? TaskComment::addForProject($project, $content)
+        : TaskComment::addForTask($task, $content);
     if ($id > 0) {
         $upload = ['saved' => 0, 'errors' => []];
         if ($files !== []) {
-            $upload = CommentFile::saveUploads($id, $taskId, $files);
+            $upload = $project !== null
+                ? CommentFile::saveUploads($id, 0, $files, null, $projectId)
+                : CommentFile::saveUploads($id, $taskId, $files);
         }
         foreach ($upload['errors'] as $err) {
             Session::addMessageAfterRedirect($err, false, ERROR);
@@ -72,6 +95,7 @@ if (isset($_POST['add'])) {
     if (
         $comment->getFromDB((int) ($_POST['id'] ?? 0))
         && (int) $comment->fields['projecttasks_id'] === $taskId // trava: só desta tarefa
+        && ($project === null || (int) ($comment->fields['projects_id'] ?? 0) === $projectId) // ...ou deste projeto
         && TaskComment::canManage((int) $comment->fields['users_id'])
     ) {
         CommentFile::deleteForComment((int) $comment->getID()); // cascata dos anexos

@@ -133,9 +133,10 @@ class CommentFile
      * @param array $files   lista de normalizeUploads()
      * @param ?callable $mover  move o arquivo (padrão: move_uploaded_file);
      *                          parametrizável só para o teste de unidade.
+     * @param int $projectId    Bloco D-3b: comentário de projeto ($taskId = 0)
      * @return array{saved:int,errors:string[]}
      */
-    public static function saveUploads(int $commentId, int $taskId, array $files, ?callable $mover = null): array
+    public static function saveUploads(int $commentId, int $taskId, array $files, ?callable $mover = null, int $projectId = 0): array
     {
         /** @var \DBmysql $DB */
         global $DB;
@@ -164,6 +165,8 @@ class CommentFile
                 'comments_id'     => $commentId,
                 'projecttasks_id' => $taskId,
                 'users_id'        => (int) Session::getLoginUserID(),
+                // Bloco D-3b: anexo de comentário de PROJETO (task = 0)
+                'projects_id'     => $projectId,
                 'filename'        => mb_substr($f['name'], 0, 255),
                 'stored'          => $stored,
                 'mime'            => self::ALLOWED[$ext][0],

@@ -41,6 +41,8 @@ foreach (Dashboard::getStatesMap() as $sid => $s) {
     $states[] = ['id' => $sid, 'name' => $s['name'], 'color' => $s['color']];
 }
 
+$canTeam = Access::canManageTaskTeams();
+
 TemplateRenderer::getInstance()->display(
     '@projectplus/mytasks.html.twig',
     [
@@ -48,6 +50,10 @@ TemplateRenderer::getInstance()->display(
         'glpi_root'       => $CFG_GLPI['root_doc'] ?? '',
         'states'          => $states,
         'current_user_id' => (int) Session::getLoginUserID(),
+        // Bloco D-2a: responsáveis editáveis também aqui (só gestor). A lista
+        // de usuários só é carregada para quem pode editar.
+        'can_team'        => $canTeam,
+        'users'           => $canTeam ? Dashboard::userOptions() : [],
         'csrf_token'      => Session::getNewCSRFToken(),
         'can_templates'   => Session::haveRight('config', UPDATE),
         'nav'             => Access::sidebar(),

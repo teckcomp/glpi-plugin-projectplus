@@ -7,6 +7,7 @@
      data-task-url="{{ plugin_web_dir }}/ajax/task.php"
      data-comment-url="{{ plugin_web_dir }}/ajax/comment.php"
      data-dep-url="{{ plugin_web_dir }}/ajax/taskdep.php"
+     data-project-url="{{ plugin_web_dir }}/ajax/project.php"
      data-alerts-url="{{ plugin_web_dir }}/ajax/alerts.php"
      data-csrf="{{ csrf_token }}"
      {# Bloco 4: o JS monta as linhas de subprojeto/tarefa no cliente e
@@ -557,7 +558,9 @@
     'states': states,
     'users': users,
     'current_user_id': current_user_id,
-    'phases_by_type': phases_by_type
+    'phases_by_type': phases_by_type,
+    'can_team': can_team,
+    'can_edit_project': can_edit_project
 }|json_encode|raw }}</script>
 
 <script src="{{ plugin_web_dir }}/js/projectplus.js"></script>

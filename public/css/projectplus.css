@@ -1185,3 +1185,52 @@ a.pp-kb-lane-head__name:hover { color: #065a82; text-decoration: underline; }
 .pp-auto-switch input:checked ~ .pp-auto-switch__txt { color: #3a8fd9; font-weight: 600; }
 .projectplus-tasktable .pp-task-percent:disabled { background: #f1f4f7; cursor: not-allowed; }
 .pp-task-done td.pp-auto-cell { text-decoration: none; }
+
+/* Bloco D-2a (30/09/2026) — responsáveis em chips (vários por tarefa) */
+.pp-team { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.pp-team__chip {
+    display: inline-flex; align-items: center; gap: 3px;
+    background: #eaf4fb; color: #16323f; border: 1px solid #cfe3f1;
+    border-radius: 12px; padding: 1px 4px 1px 9px; font-size: 0.78rem; white-space: nowrap;
+}
+.pp-team__x {
+    border: 0; background: transparent; color: #5a7684; cursor: pointer;
+    font-size: 0.95rem; line-height: 1; padding: 0 3px; border-radius: 50%;
+}
+.pp-team__x:hover { background: #d0e4f2; color: #b03a2e; }
+.pp-team__x:disabled { opacity: .4; cursor: default; }
+.pp-team__add {
+    border: 1px dashed #9fb6c6; background: #fff; color: #065a82; cursor: pointer;
+    border-radius: 12px; width: 24px; height: 22px; line-height: 1; font-weight: 700; padding: 0;
+}
+.pp-team__add:hover { background: #eaf4fb; }
+.pp-team__picker { display: inline-block; }
+.pp-team__picker .pp-ss { width: 220px; max-width: 60vw; }
+.pp-team__picker .pp-ss__input {
+    border: 1px solid #c6d0d9; border-radius: 6px; padding: 3px 7px; font-size: 0.8rem;
+}
+.projectplus-newtask .pp-nt-team { flex: 1 1 220px; min-width: 180px; }
+.projectplus-newtask .pp-team__picker .pp-ss { flex: none; min-width: 0; }
+
+/* Bloco D-3a (01/10/2026) — faixa "Projeto" no topo do painel de tarefas */
+.pp-projstrip {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;
+    background: #eef6fc; border-left: 3px solid #065a82; border-radius: 0;
+    padding: 8px 10px; margin: 0 0 10px;
+}
+.pp-projstrip__title { font-weight: 700; color: #065a82; }
+.pp-projstrip__mgr { font-size: 0.82rem; color: #4a6472; }
+.pp-projstrip__lbl { font-size: 0.78rem; color: #4a6472; margin-right: 2px; }
+.pp-projstrip__team { flex: 1 1 260px; }
+.pp-projstrip input[type="date"],
+.pp-projstrip input[type="number"],
+.pp-projstrip select {
+    border: 1px solid #c6d0d9; border-radius: 6px; padding: 3px 6px; font-size: 0.85rem; background: #fff;
+}
+.pp-projstrip input[type="number"] { width: 64px; }
+.pp-projstrip input[type="number"]:disabled { background: #eef1f4; color: #8a9aa5; }
+.pp-projstrip .pp-state-cell { display: inline-flex; align-items: center; gap: 5px; }
+
+/* Bloco D-3b (01/10/2026) — 💬 do projeto: painel logo abaixo da faixa */
+.pp-projcmt { margin: -6px 0 10px; border-left: 3px solid #065a82; background: #f7fbfe; }
+.pp-projstrip .pp-cmt-btn { margin-left: auto; }

@@ -138,36 +138,9 @@ foreach (Dashboard::getStatesMap() as $sid => $s) {
     $states[] = ['id' => $sid, 'name' => $s['name'], 'color' => $s['color']];
 }
 
-// Correção pós-produção 2: o rótulo segue formatUserName (names_format da
-// instância/preferência), como o resto do plugin desde o commit 35dd900 —
-// aqui era o último ponto com "Sobrenome Nome" fixo. A ordenação é pelo
-// RÓTULO exibido (com acentos, via Collator do intl, que o GLPI 11 exige).
-$users = [];
-foreach (
-    $DB->request([
-        'SELECT' => ['id', 'name', 'realname', 'firstname'],
-        'FROM'   => 'glpi_users',
-        'WHERE'  => ['is_active' => 1, 'is_deleted' => 0],
-        'LIMIT'  => 300,
-    ]) as $row
-) {
-    $label   = \formatUserName(
-        0,
-        (string) ($row['name'] ?? ''),
-        (string) ($row['realname'] ?? ''),
-        (string) ($row['firstname'] ?? '')
-    );
-    $users[] = [
-        'id'   => (int) $row['id'],
-        'name' => $label !== '' ? $label : (string) $row['name'],
-    ];
-}
-if (class_exists('\Collator')) {
-    $ppColl = new \Collator(str_replace('_', '-', $_SESSION['glpilanguage'] ?? 'pt_BR'));
-    usort($users, static fn ($a, $b) => $ppColl->compare($a['name'], $b['name']));
-} else {
-    usort($users, static fn ($a, $b) => strnatcasecmp($a['name'], $b['name']));
-}
+// Usuários para Gestor/Responsável (rótulo por formatUserName, ordem pelo
+// rótulo). Bloco D-2a: o mesmo método serve Minhas tarefas.
+$users = Dashboard::userOptions();
 
 // Tipos de projeto para o modal "Novo projeto" (Etapa 9): escolher o tipo é
 // o que faz o campo Estado listar só as fases DAQUELE conjunto.
@@ -207,6 +180,10 @@ TemplateRenderer::getInstance()->display(
         'projects'        => $data['projects'],
         'states'          => $states,
         'users'           => $users,
+        // Bloco D-2a: chips editáveis de responsáveis (só gestor)
+        'can_team'        => Access::canManageTaskTeams(),
+        // Bloco D-3a: faixa "Projeto" no painel (equipe, datas, fase, %, auto)
+        'can_edit_project' => Access::canEditProjects(),
         'parents'         => $parents,
         // Etapa 9 — filtro de tipo e donut adaptativo
         'ptypes'          => $ptypes,

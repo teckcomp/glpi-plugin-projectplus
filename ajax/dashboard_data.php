@@ -8,8 +8,12 @@
  * GET ?action=mytasks[&done=1]  -> tarefas do usuário logado (Etapa 3, Bloco 1)
  * GET ?action=taskcomments&id=NN -> comentários de uma tarefa (Etapa 3, Bloco 2)
  * GET ?action=taskdeps&id=NN    -> dependências de uma tarefa (Etapa 3, Bloco 3)
+ * GET ?action=projectmeta&id=NN -> faixa "Projeto" do painel (Bloco D-3a; só
+ *                                  para quem edita projeto)
+ * GET ?action=projectcomments&id=NN -> comentários do projeto (Bloco D-3b)
  */
 
+use GlpiPlugin\Projectplus\Access;
 use GlpiPlugin\Projectplus\Dashboard;
 use GlpiPlugin\Projectplus\Scope;
 use GlpiPlugin\Projectplus\TaskComment;
@@ -29,6 +33,13 @@ switch ($action) {
         echo json_encode(Dashboard::getChildren($parentId));
         break;
 
+    case 'projectmeta':
+        $meta = Access::canEditProjects()
+            ? Dashboard::getProjectMeta((int) ($_GET['id'] ?? 0))
+            : null;
+        echo json_encode(['ok' => $meta !== null, 'meta' => $meta]);
+        break;
+
     case 'tasks':
         $projectId = (int) ($_GET['id'] ?? 0);
         echo json_encode(Dashboard::getTasks($projectId));
@@ -37,6 +48,14 @@ switch ($action) {
     case 'taskchildren':
         $taskId = (int) ($_GET['id'] ?? 0);
         echo json_encode(Dashboard::getOpenTaskChildren($taskId));
+        break;
+
+    case 'projectcomments':
+        echo json_encode(
+            TaskComment::canCommentProject()
+                ? TaskComment::getForProject((int) ($_GET['id'] ?? 0))
+                : []
+        );
         break;
 
     case 'taskcomments':

@@ -171,8 +171,9 @@
 
 <script id="pp-data" type="application/json">{{ {
     'states': states,
-    'users': [],
-    'current_user_id': current_user_id
+    'users': users,
+    'current_user_id': current_user_id,
+    'can_team': can_team
 }|json_encode|raw }}</script>
 
 <script src="{{ plugin_web_dir }}/js/projectplus.js"></script>

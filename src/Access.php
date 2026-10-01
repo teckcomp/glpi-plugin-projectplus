@@ -137,6 +137,47 @@ class Access
     }
 
     /**
+     * Bloco D-3a (01/10/2026): pode editar o PROJETO pela faixa do painel
+     * (equipe, datas, fase, %, auto)? Mesmo critério do arrastar no Kanban de
+     * projetos (4b.2): módulo Projetos em UPDATE E direito nativo `project`
+     * UPDATE. Flag de PÁGINA; por projeto o servidor ainda exige
+     * canUpdateItem() (entidade).
+     */
+    public static function canEditProjects(): bool
+    {
+        return self::can('projects', UPDATE) && (bool) Session::haveRight('project', UPDATE);
+    }
+
+    /** @param \Project $project */
+    public static function canEditProject($project): bool
+    {
+        return self::canEditProjects() && (bool) $project->canUpdateItem();
+    }
+
+    /**
+     * Bloco D-2a (30/09/2026): pode trocar/adicionar RESPONSÁVEIS desta tarefa?
+     *
+     * Decisão do Claudio: só o GESTOR — direito nativo `project` UPDATE, na
+     * entidade da tarefa. Técnico "Interagir" (ator da tarefa) continua
+     * alterando %, fase e datas, mas NÃO mexe na equipe.
+     *
+     * @param \ProjectTask $task
+     */
+    public static function canManageTaskTeam($task): bool
+    {
+        if (!Session::haveAccessToEntity((int) $task->getEntityID())) {
+            return false;
+        }
+        return (bool) Session::haveRight('project', UPDATE);
+    }
+
+    /** Flag de PÁGINA (mostra chips com × e o "+"); o servidor confere por tarefa. */
+    public static function canManageTaskTeams(): bool
+    {
+        return (bool) Session::haveRight('project', UPDATE);
+    }
+
+    /**
      * O usuário logado é ator da tarefa? Responsável (`users_id`) ou membro
      * da equipe (`glpi_projecttaskteams`) — direto ou por um de seus grupos.
      *

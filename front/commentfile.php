@@ -43,6 +43,14 @@ if ($row === null) {
     exit;
 }
 
+// Bloco D-3b: anexo de comentário de PROJETO segue a regra dele (só quem
+// edita projeto).
+if ((int) ($row['projecttasks_id'] ?? 0) === 0 && (int) ($row['projects_id'] ?? 0) > 0
+    && !TaskComment::canCommentProject()) {
+    http_response_code(403);
+    exit;
+}
+
 $path = CommentFile::baseDir() . '/' . basename((string) $row['stored']);
 if (!is_file($path)) {
     http_response_code(404);

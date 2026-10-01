@@ -5,6 +5,7 @@ namespace GlpiPlugin\Projectplus;
 use CommonDBTM;
 use CommonGLPI;
 use Html;
+use Project;
 use ProjectTask;
 use Session;
 use User;
@@ -21,6 +22,11 @@ use User;
  * - Só o autor (ou admin com UPDATE em config) edita/exclui um
  *   comentário; comentário novo gera alerta no sino para a equipe
  *   da tarefa (e entra no feed de atividades).
+ *
+ * Bloco D-3b (01/10/2026): comentários de PROJETO na mesma tabela, com
+ * `projects_id` > 0 e `projecttasks_id` = 0 (anexos idem em commentfiles).
+ * Só quem EDITA projeto vê/escreve (Access::canEditProjects — decisão do
+ * Claudio: o 💬 fica na faixa "Projeto"); alerta no sino só para o GESTOR.
  */
 class TaskComment extends CommonDBTM
 {
@@ -40,6 +46,12 @@ class TaskComment extends CommonDBTM
     public static function canComment(): bool
     {
         return Session::haveRight('plugin_projectplus_dashboard', READ);
+    }
+
+    /** Bloco D-3b: comentários de projeto — só quem edita projeto. */
+    public static function canCommentProject(): bool
+    {
+        return self::canComment() && Access::canEditProjects();
     }
 
     /** Quem pode editar/excluir um comentário: o autor ou admin (config). */
@@ -62,6 +74,12 @@ class TaskComment extends CommonDBTM
             );
             return self::createTabEntry(__('Comentários (ProjectPlus)', 'projectplus'), $count);
         }
+        if ($item instanceof Project && self::canCommentProject()) {
+            return self::createTabEntry(
+                __('Comentários (ProjectPlus)', 'projectplus'),
+                self::countForProject((int) $item->getID())
+            );
+        }
         return '';
     }
 
@@ -72,6 +90,8 @@ class TaskComment extends CommonDBTM
     ) {
         if ($item instanceof ProjectTask) {
             self::showForTask($item);
+        } elseif ($item instanceof Project && self::canCommentProject()) {
+            self::showForProject($item);
         }
         return true;
     }
@@ -124,8 +144,50 @@ class TaskComment extends CommonDBTM
      */
     public static function getForTask(int $taskId): array
     {
+        return self::getWhere(['projecttasks_id' => $taskId]);
+    }
+
+    /** Bloco D-3b — comentários do PROJETO (não inclui os das tarefas). */
+    public static function getForProject(int $projectId): array
+    {
+        if ($projectId <= 0) {
+            return [];
+        }
+        return self::getWhere(['projecttasks_id' => 0, 'projects_id' => $projectId]);
+    }
+
+    /** Bloco D-3b — total de comentários do projeto (contado em PHP, lição 1). */
+    public static function countForProject(int $projectId): int
+    {
         /** @var \DBmysql $DB */
         global $DB;
+
+        if ($projectId <= 0 || !$DB->tableExists(self::getTable())
+            || !$DB->fieldExists(self::getTable(), 'projects_id')) {
+            return 0;
+        }
+        $n = 0;
+        foreach (
+            $DB->request([
+                'SELECT' => 'id',
+                'FROM'   => self::getTable(),
+                'WHERE'  => ['projecttasks_id' => 0, 'projects_id' => $projectId],
+            ]) as $row
+        ) {
+            $n++;
+        }
+        return $n;
+    }
+
+    private static function getWhere(array $where): array
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        $qualified = [];
+        foreach ($where as $k => $v) {
+            $qualified[self::getTable() . '.' . $k] = $v; // lição 16: JOIN pede coluna qualificada
+        }
 
         $out = [];
         foreach (
@@ -145,7 +207,7 @@ class TaskComment extends CommonDBTM
                         ],
                     ],
                 ],
-                'WHERE' => ['projecttasks_id' => $taskId],
+                'WHERE' => $qualified,
                 'ORDER' => [
                     self::getTable() . '.date_creation ASC',
                     self::getTable() . '.id ASC',
@@ -224,6 +286,80 @@ class TaskComment extends CommonDBTM
     }
 
     /**
+     * Bloco D-3b — comentário no PROJETO. Atualiza a atividade e avisa no
+     * sino só o GESTOR (glpi_projects.users_id), se não for o autor.
+     *
+     * @return int id do comentário criado (0 = falha)
+     */
+    public static function addForProject(Project $project, string $content): int
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        $now = date('Y-m-d H:i:s');
+        $DB->insert(self::getTable(), [
+            'projecttasks_id' => 0,
+            'projects_id'     => (int) $project->getID(),
+            'users_id'        => (int) Session::getLoginUserID(),
+            'content'         => $content,
+            'date_creation'   => $now,
+            'date_mod'        => $now,
+        ]);
+        $id = (int) $DB->insertId();
+
+        if ($id > 0) {
+            ProjectTracking::touch((int) $project->getID());
+            self::notifyManager($project, $content);
+        }
+        return $id;
+    }
+
+    private static function notifyManager(Project $project, string $content): void
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        $authorId  = (int) Session::getLoginUserID();
+        $managerId = (int) ($project->fields['users_id'] ?? 0);
+        if ($managerId <= 0 || $managerId === $authorId) {
+            return;
+        }
+
+        $excerpt = mb_substr(trim($content), 0, 80);
+        if (mb_strlen(trim($content)) > 80) {
+            $excerpt .= '…';
+        }
+        $message = sprintf(
+            __('%1$s comentou no projeto "%2$s": %3$s', 'projectplus'),
+            User::getFriendlyNameById($authorId),
+            $project->fields['name'] ?? '',
+            $excerpt
+        );
+
+        // Mesmo esquema do alerta de tarefa: unique key `dedup` guarda UM
+        // alerta 'comment' por usuário/projeto; os seguintes reabrem.
+        $DB->doQuery(
+            'INSERT IGNORE INTO `glpi_plugin_projectplus_alerts`
+                (`users_id`, `itemtype`, `items_id`, `kind`, `message`, `is_read`, `date_creation`)
+             VALUES ('
+                . $managerId . ", 'Project', " . (int) $project->getID() . ", 'comment', "
+                . "'" . $DB->escape($message) . "', 0, NOW())"
+        );
+        if ($DB->affectedRows() === 0) {
+            $DB->update(
+                'glpi_plugin_projectplus_alerts',
+                ['message' => $message, 'is_read' => 0, 'date_creation' => date('Y-m-d H:i:s')],
+                [
+                    'users_id' => $managerId,
+                    'itemtype' => 'Project',
+                    'items_id' => (int) $project->getID(),
+                    'kind'     => 'comment',
+                ]
+            );
+        }
+    }
+
+    /**
      * Alerta interno (sino) para a equipe da tarefa, exceto o autor.
      * A unique key `dedup` guarda UM alerta 'comment' por usuário/tarefa:
      * comentários seguintes atualizam a mensagem e reabrem o não-lido.
@@ -298,10 +434,38 @@ class TaskComment extends CommonDBTM
 
     public static function showForTask(ProjectTask $task): void
     {
-        $taskId     = (int) $task->getID();
-        $canComment = self::canComment();
-        $action     = Url::to('front/taskcomment.form.php');
-        $comments   = self::getForTask($taskId);
+        self::showTab(
+            'projecttasks_id',
+            (int) $task->getID(),
+            self::getForTask((int) $task->getID()),
+            self::canComment(),
+            __('Comentários da tarefa', 'projectplus'),
+            __('Nenhum comentário nesta tarefa', 'projectplus')
+        );
+    }
+
+    /** Bloco D-3b — aba "Comentários (ProjectPlus)" na ficha do projeto. */
+    public static function showForProject(Project $project): void
+    {
+        self::showTab(
+            'projects_id',
+            (int) $project->getID(),
+            self::getForProject((int) $project->getID()),
+            self::canCommentProject(),
+            __('Comentários do projeto', 'projectplus'),
+            __('Nenhum comentário neste projeto', 'projectplus')
+        );
+    }
+
+    private static function showTab(
+        string $field,
+        int $itemId,
+        array $comments,
+        bool $canComment,
+        string $title,
+        string $empty
+    ): void {
+        $action = Url::to('front/taskcomment.form.php');
 
         // ---- Formulário de novo comentário ----
         if ($canComment) {
@@ -317,7 +481,7 @@ class TaskComment extends CommonDBTM
                 . __('Anexos: imagens, PDF, DOC/DOCX, XLS/XLSX — até 10 MB cada', 'projectplus')
                 . '</span></td>';
             echo '<td style="width:120px">';
-            echo Html::hidden('projecttasks_id', ['value' => $taskId]);
+            echo Html::hidden($field, ['value' => $itemId]);
             echo "<button type='submit' name='add' value='1' class='btn btn-primary'>"
                 . __('Comentar', 'projectplus') . '</button>';
             echo '</td></tr></table>';
@@ -326,11 +490,11 @@ class TaskComment extends CommonDBTM
 
         // ---- Lista de comentários ----
         echo "<div class='spaced'><table class='tab_cadre_fixe'>";
-        echo '<tr><th colspan="4">' . __('Comentários da tarefa', 'projectplus') . '</th></tr>';
+        echo '<tr><th colspan="4">' . htmlspecialchars($title) . '</th></tr>';
 
         if (empty($comments)) {
             echo "<tr class='tab_bg_1'><td class='center'>"
-                . __('Nenhum comentário nesta tarefa', 'projectplus') . '</td></tr>';
+                . htmlspecialchars($empty) . '</td></tr>';
         } else {
             echo '<tr>'
                 . '<th>' . __('Autor', 'projectplus') . '</th>'
@@ -355,7 +519,7 @@ class TaskComment extends CommonDBTM
                 if ($c['can_edit']) {
                     echo "<form method='post' action='" . htmlspecialchars($action) . "' style='display:inline'>";
                     echo Html::hidden('id', ['value' => (int) $c['id']]);
-                    echo Html::hidden('projecttasks_id', ['value' => $taskId]);
+                    echo Html::hidden($field, ['value' => $itemId]);
                     echo "<button type='submit' name='delete' value='1' "
                         . "class='btn btn-sm btn-outline-danger' title='" . _sx('button', 'Delete permanently') . "'>&times;</button>";
                     Html::closeForm();
@@ -366,7 +530,9 @@ class TaskComment extends CommonDBTM
         echo '</table></div>';
 
         echo "<p class='projectplus-muted' style='margin:6px 2px'>"
-            . __('Estes comentários também aparecem no Gestor de Projetos (árvore de tarefas e Minhas tarefas).', 'projectplus')
+            . ($field === 'projects_id'
+                ? __('Estes comentários também aparecem no Gestor de Projetos (faixa Projeto do painel).', 'projectplus')
+                : __('Estes comentários também aparecem no Gestor de Projetos (árvore de tarefas e Minhas tarefas).', 'projectplus'))
             . '</p>';
     }
 }

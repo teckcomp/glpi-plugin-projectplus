@@ -1209,12 +1209,14 @@
     let ppDataUrl = null;      // ajax/dashboard_data.php (leituras)
     let ppCommentUrl = null;   // ajax/comment.php (Etapa 3, Bloco 2)
     let ppDepUrl = null;       // ajax/taskdep.php (Etapa 3, Bloco 3)
+    let ppProjectUrl = null;   // ajax/project.php (Bloco D-3a, faixa "Projeto")
 
     function initTaskPanels(root) {
         ppCsrf = root.dataset.csrf || null;
         ppDataUrl = root.dataset.ajaxUrl || null;
         ppCommentUrl = root.dataset.commentUrl || null;
         ppDepUrl = root.dataset.depUrl || null;
+        ppProjectUrl = root.dataset.projectUrl || null;
         const dataEl = document.getElementById('pp-data');
         if (dataEl) {
             try { ppData = JSON.parse(dataEl.textContent); } catch (e) { /* mantém default */ }
@@ -1253,11 +1255,23 @@
     }
 
     function loadTasks(container, projectId, ajaxUrl, taskUrl) {
-        fetch(ajaxUrl + '?action=tasks&id=' + encodeURIComponent(projectId), { credentials: 'same-origin' })
-            .then(function (r) { return r.json(); })
-            .then(function (tasks) {
-                container.innerHTML = renderTaskPanel(projectId, tasks);
+        const getJson = function (url) {
+            return fetch(url, { credentials: 'same-origin' }).then(function (r) { return r.json(); });
+        };
+        // Bloco D-3a: faixa "Projeto" só para quem edita projeto; falha na
+        // meta não derruba o painel (a faixa só não aparece).
+        const metaP = (ppData.can_edit_project && ppProjectUrl)
+            ? getJson(ajaxUrl + '?action=projectmeta&id=' + encodeURIComponent(projectId))
+                .then(function (r) { return (r && r.ok) ? r.meta : null; })
+                .catch(function () { return null; })
+            : Promise.resolve(null);
+        Promise.all([getJson(ajaxUrl + '?action=tasks&id=' + encodeURIComponent(projectId)), metaP])
+            .then(function (res) {
+                const tasks = res[0];
+                const meta  = res[1];
+                container.innerHTML = renderTaskPanel(projectId, tasks, meta);
                 bindTaskPanel(container, projectId, ajaxUrl, taskUrl, tasks);
+                bindProjectStrip(container.querySelector('.pp-projstrip'));
                 enhanceSearchSelects(container); // busca nos dropdowns da linha de criacao
             })
             .catch(function () {
@@ -1266,8 +1280,14 @@
             });
     }
 
-    function renderTaskPanel(projectId, tasks) {
+    function renderTaskPanel(projectId, tasks, meta) {
         let html = '<div class="projectplus-taskspanel">';
+
+        // Bloco D-3a: faixa "Projeto" (equipe, datas, fase, %, auto)
+        if (meta) {
+            html += '<div class="pp-projstrip" data-project-id="' + parseInt(meta.id, 10) + '">' +
+                projectStripInner(meta) + '</div>';
+        }
 
         // Formulário de nova tarefa
         html += '<div class="projectplus-newtask">' +
@@ -1277,12 +1297,9 @@
                 return '<option value="' + t.id + '">' + '&nbsp;'.repeat(t.depth * 2) + escapeHtml(t.name) + '</option>';
             }).join('') +
             '</select>' +
-            '<select class="pp-nt-user pp-search"><option value="0">' + escapeHtml(__('Sem responsável')) + '</option>' +
-            ppData.users.map(function (u) {
-                const sel = (u.id === ppData.current_user_id) ? ' selected' : '';
-                return '<option value="' + u.id + '"' + sel + '>' + escapeHtml(u.name) + '</option>';
-            }).join('') +
-            '</select>' +
+            // Bloco D-2a: vários responsáveis já na criação (chips + busca);
+            // nasce com o usuário logado, como o select único fazia.
+            newTaskTeamHtml() +
             '<input type="date" class="pp-nt-start" title="' + escapeHtml(__('Início planejado')) + '">' +
             '<input type="date" class="pp-nt-end" title="' + escapeHtml(__('Fim planejado')) + '">' +
             '<button type="button" class="projectplus-btn pp-nt-create">' + escapeHtml(__('Criar tarefa')) + '</button>' +
@@ -1349,7 +1366,7 @@
                           escapeHtml(__('Bloqueada por outra(s) tarefa(s) — veja 🔗')) + '">🔒</span> '
                         : '') +
                     '<a href="' + escapeHtml(t.url) + '" target="_blank">' + escapeHtml(t.name) + '</a></td>' +
-                '<td>' + (t.team.length ? escapeHtml(t.team.join(', ')) : '<span class="projectplus-muted">—</span>') + '</td>' +
+                '<td class="pp-team-cell">' + teamCellHtml(t) + '</td>' +
                 '<td><input type="date" class="pp-task-start" value="' + (t.start_iso || '') + '"></td>' +
                 '<td><input type="date" class="pp-task-end" value="' + (t.end_iso || '') + '"></td>' +
                 '<td><input type="number" class="pp-task-percent" min="0" max="100" value="' + t.percent + '"' +
@@ -1372,6 +1389,118 @@
 
         html += '</tbody></table>';
         return html;
+    }
+
+    // ------------------------------------------------------------------
+    // Responsáveis em chips (Bloco D-2a, 30/09/2026)
+    //
+    // Equipe da tarefa = tabela nativa glpi_projecttaskteams (só USUÁRIOS
+    // aparecem; grupo cadastrado na ficha nativa não é mostrado nem tocado).
+    // Editar é só do gestor (ppData.can_team, conferido de novo no servidor
+    // por tarefa). Sem o direito, a célula segue só texto, como antes.
+    // ------------------------------------------------------------------
+    // removeLabel/addLabel: Bloco D-3a reaproveita os chips na Equipe do
+    // projeto ("Remover da equipe"/"Adicionar à equipe"); sem rótulo, são
+    // os textos de responsável de tarefa.
+    function teamChipHtml(id, name, removeLabel) {
+        const lbl = removeLabel || __('Remover responsável');
+        return '<span class="pp-team__chip" data-uid="' + parseInt(id, 10) + '">' + escapeHtml(name) +
+            '<button type="button" class="pp-team__x" data-uid="' + parseInt(id, 10) + '" title="' +
+            escapeHtml(lbl) + '" aria-label="' + escapeHtml(lbl) + '">&times;</button></span>';
+    }
+
+    function teamAddBtnHtml(addLabel) {
+        const lbl = addLabel || __('Adicionar responsável');
+        return '<button type="button" class="pp-team__add" title="' + escapeHtml(lbl) +
+            '" aria-label="' + escapeHtml(lbl) + '">+</button>';
+    }
+
+    function teamEmptyHtml(hidden) {
+        return '<span class="pp-team__empty projectplus-muted"' + (hidden ? ' hidden' : '') + '>' +
+            escapeHtml(__('Sem responsável')) + '</span>';
+    }
+
+    function teamCellHtml(t) {
+        const list = Array.isArray(t.team_users) ? t.team_users : null;
+        if (!ppData.can_team || !list) {
+            const names = Array.isArray(t.team) ? t.team : [];
+            return names.length ? escapeHtml(names.join(', ')) : '<span class="projectplus-muted">—</span>';
+        }
+        return '<div class="pp-team pp-team--edit">' +
+            list.map(function (u) { return teamChipHtml(u.id, u.name); }).join('') +
+            teamAddBtnHtml() + '</div>';
+    }
+
+    function newTaskTeamHtml() {
+        const me = (Array.isArray(ppData.users) ? ppData.users : []).filter(function (u) {
+            return u.id === ppData.current_user_id;
+        })[0];
+        return '<div class="pp-team pp-nt-team" title="' + escapeHtml(__('Responsáveis')) + '">' +
+            teamEmptyHtml(!!me) +
+            (me ? teamChipHtml(me.id, me.name) : '') +
+            teamAddBtnHtml() + '</div>';
+    }
+
+    function teamIds(box) {
+        if (!box) { return []; }
+        return Array.prototype.map.call(box.querySelectorAll('.pp-team__chip'), function (c) {
+            return parseInt(c.dataset.uid, 10);
+        }).filter(function (n) { return n > 0; });
+    }
+
+    function refreshTeamEmpty(box) {
+        const empty = box.querySelector('.pp-team__empty');
+        if (empty) { empty.hidden = teamIds(box).length > 0; }
+    }
+
+    // Abre, no lugar do "+", um combobox de busca (pp-search) com os
+    // usuários que ainda NÃO estão na equipe. Escolher chama onPick(id,
+    // nome); sair sem escolher (blur/Esc) devolve o "+".
+    function openTeamPicker(addBtn, excludeIds, onPick, placeholder) {
+        if (addBtn.hidden || addBtn.disabled) { return; }
+        const skip = {};
+        (excludeIds || []).forEach(function (id) { skip[id] = true; });
+
+        const sel = document.createElement('select');
+        sel.className = 'pp-search';
+        sel.innerHTML = '<option value="">' + escapeHtml(placeholder || __('Adicionar responsável')) + '</option>' +
+            (Array.isArray(ppData.users) ? ppData.users : []).filter(function (u) {
+                return !skip[u.id];
+            }).map(function (u) {
+                return '<option value="' + u.id + '">' + escapeHtml(u.name) + '</option>';
+            }).join('');
+
+        const box = document.createElement('span');
+        box.className = 'pp-team__picker';
+        box.appendChild(sel);
+        addBtn.hidden = true;
+        addBtn.insertAdjacentElement('afterend', box);
+        enhanceSearchSelects(box);
+
+        let done = false;
+        const close = function () {
+            if (box.parentNode) { box.parentNode.removeChild(box); }
+            addBtn.hidden = false;
+        };
+        const input = box.querySelector('.pp-ss__input');
+        sel.addEventListener('change', function () {
+            const uid = parseInt(sel.value, 10);
+            if (done || !(uid > 0)) { return; }
+            done = true;
+            const label = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].textContent : '';
+            close();
+            onPick(uid, label);
+        });
+        if (input) {
+            input.addEventListener('blur', function () {
+                setTimeout(function () { if (!done) { done = true; close(); } }, 0);
+            });
+            input.addEventListener('keydown', function (ev) {
+                if (ev.key === 'Escape') { done = true; close(); }
+            });
+            input.value = '';
+            input.focus();
+        }
     }
 
     // Interruptor "Calcular automaticamente" (auto_percent_done nativo),
@@ -1405,7 +1534,7 @@
                     name: name,
                     projects_id: projectId,
                     projecttasks_id: parentId,
-                    users_id: container.querySelector('.pp-nt-user').value,
+                    users_ids: teamIds(container.querySelector('.pp-nt-team')).join(','),
                     plan_start_date: container.querySelector('.pp-nt-start').value,
                     plan_end_date: container.querySelector('.pp-nt-end').value
                 }, function () {
@@ -1417,6 +1546,27 @@
                     }
                     reload();
                 });
+            });
+        }
+
+        // Responsáveis da tarefa nova (Bloco D-2a) — só no cliente até criar
+        const ntTeam = container.querySelector('.pp-nt-team');
+        if (ntTeam) {
+            ntTeam.addEventListener('click', function (ev) {
+                const x = ev.target.closest('.pp-team__x');
+                if (x) {
+                    const chip = x.closest('.pp-team__chip');
+                    if (chip) { chip.remove(); }
+                    refreshTeamEmpty(ntTeam);
+                    return;
+                }
+                const add = ev.target.closest('.pp-team__add');
+                if (add) {
+                    openTeamPicker(add, teamIds(ntTeam), function (uid, name) {
+                        add.insertAdjacentHTML('beforebegin', teamChipHtml(uid, name));
+                        refreshTeamEmpty(ntTeam);
+                    });
+                }
             });
         }
 
@@ -1550,6 +1700,30 @@
                 });
             }
 
+            // Responsáveis (Bloco D-2a) — só existe com ppData.can_team (gestor)
+            const team = row.querySelector('.pp-team--edit');
+            if (team) {
+                team.addEventListener('click', function (ev) {
+                    const x = ev.target.closest('.pp-team__x');
+                    if (x) {
+                        x.disabled = true;
+                        taskPost(taskUrl, { action: 'team_remove', task_id: taskId, users_id: x.dataset.uid }, function (resp) {
+                            if (resp.ok) { reload(); } else { x.disabled = false; }
+                        });
+                        return;
+                    }
+                    const add = ev.target.closest('.pp-team__add');
+                    if (add) {
+                        openTeamPicker(add, teamIds(team), function (uid) {
+                            add.disabled = true;
+                            taskPost(taskUrl, { action: 'team_add', task_id: taskId, users_id: uid }, function (resp) {
+                                if (resp.ok) { reload(); } else { add.disabled = false; }
+                            });
+                        });
+                    }
+                });
+            }
+
             const done = row.querySelector('.pp-task-complete');
             if (done) {
                 done.addEventListener('click', function () {
@@ -1620,12 +1794,16 @@
         loadComments(td, row, taskId);
     }
 
-    function loadComments(container, row, taskId) {
-        fetch(ppDataUrl + '?action=taskcomments&id=' + encodeURIComponent(taskId), {
+    // kind = 'task' (padrão) ou 'project' (Bloco D-3b: 💬 da faixa
+    // "Projeto"). Mesmo painel, mesma tabela; muda só a leitura e a chave
+    // enviada no add (task_id x project_id).
+    function loadComments(container, row, taskId, kind) {
+        const action = (kind === 'project') ? 'projectcomments' : 'taskcomments';
+        fetch(ppDataUrl + '?action=' + action + '&id=' + encodeURIComponent(taskId), {
             credentials: 'same-origin'
         })
             .then(function (r) { return r.json(); })
-            .then(function (comments) { renderComments(container, row, taskId, comments); })
+            .then(function (comments) { renderComments(container, row, taskId, comments, kind); })
             .catch(function () {
                 container.innerHTML = '<div class="pp-cmt-panel">' +
                     '<span class="projectplus-muted">' +
@@ -1633,7 +1811,7 @@
             });
     }
 
-    function renderComments(container, row, taskId, comments) {
+    function renderComments(container, row, taskId, comments, kind) {
         let html = '<div class="pp-cmt-panel">';
 
         if (!comments.length) {
@@ -1672,11 +1850,16 @@
             '</div></div>';
 
         container.innerHTML = html;
-        bindCommentPanel(container, row, taskId, comments);
+        bindCommentPanel(container, row, taskId, comments, kind);
     }
 
-    function bindCommentPanel(container, row, taskId, comments) {
-        const reload = function () { loadComments(container, row, taskId); };
+    function bindCommentPanel(container, row, taskId, comments, kind) {
+        const reload = function () { loadComments(container, row, taskId, kind); };
+        const addData = function (content) {
+            const d = { action: 'add', content: content };
+            d[kind === 'project' ? 'project_id' : 'task_id'] = taskId;
+            return d;
+        };
 
         // Novo comentário
         const send  = container.querySelector('.pp-cmt-send');
@@ -1708,12 +1891,9 @@
                     }
                 };
                 if (hasFiles) {
-                    taskPostFiles(ppCommentUrl,
-                        { action: 'add', task_id: taskId, content: content },
-                        fpick.files, done);
+                    taskPostFiles(ppCommentUrl, addData(content), fpick.files, done);
                 } else {
-                    taskPost(ppCommentUrl,
-                        { action: 'add', task_id: taskId, content: content }, done);
+                    taskPost(ppCommentUrl, addData(content), done);
                 }
             };
             send.addEventListener('click', submit);
@@ -2234,53 +2414,16 @@
             tr.dataset.parentId = parentRow.dataset.projectId;
             tr.dataset.projectId = child.id;
 
-            let badge;
-            if (child.is_overdue) {
-                badge = '<span class="projectplus-badge projectplus-badge--overdue">' +
-                    escapeHtml(__('Atrasado')) + '</span>';
-            } else if (child.is_stalled) {
-                badge = '<span class="projectplus-badge projectplus-badge--stalled">' +
-                    escapeHtml(__('Parado')) + '</span>';
-            } else {
-                badge = '<span class="projectplus-badge projectplus-badge--ok">' +
-                    escapeHtml(__('No prazo')) + '</span>';
-            }
-
-            let budget = '<span class="projectplus-muted">—</span>';
-            if (child.budget) {
-                const w = Math.min(100, child.budget.percent);
-                budget = '<div class="projectplus-budgetbar"><div class="projectplus-budgetbar__fill ' +
-                    'projectplus-budgetbar__fill--' + child.budget.state + '" style="width:' + w + '%"></div></div> ' +
-                    child.budget.percent + '% <span class="projectplus-muted">(' +
-                    escapeHtml(child.budget.spent_fmt) + ' / ' + escapeHtml(child.budget.planned_fmt) + ')</span>';
-            }
-
+            const cells = projectRowCells(child, showBudget);
             tr.innerHTML =
                 '<td></td>' +
-                '<td>' + (child.blocked
-                    ? '<span class="pp-dep-lock" title="' +
-                      escapeHtml(__('Projeto com tarefas/subprojetos abertos — não pode ir para fase concluída')) +
-                      '">🔒</span> '
-                    : '') +
+                '<td>' + projectLockHtml(child.blocked) +
                 '<a href="' + escapeHtml(child.url) + '">' + escapeHtml(child.name) + '</a>' +
                     (showTasks
                         ? ' <button type="button" class="projectplus-tasksbtn" data-tasks-project="' + child.id + '">' +
                           escapeHtml(__('Tarefas')) + '</button>'
                         : '') + '</td>' +
-                '<td class="pp-phase-cell">' + phaseChip(child.state_name, child.state_color) + '</td>' +
-                '<td>' +
-                    '<div class="projectplus-progress">' +
-                        '<div class="projectplus-progress__bar" style="width:' +
-                        (parseInt(child.percent_done, 10) || 0) + '%"></div>' +
-                    '</div>' +
-                    '<span class="projectplus-progress__pct">' +
-                    (parseInt(child.percent_done, 10) || 0) + '%</span>' +
-                '</td>' +
-                '<td>' + (child.last_activity || '—') + '</td>' +
-                '<td>' + badge + '</td>' +
-                (showBudget ? '<td class="projectplus-budget-cell">' + budget + '</td>' : '') +
-                '<td class="pp-deadline-cell">' + deadlineCell(child.deadline) + '</td>' +
-                '<td>' + (child.plan_end_date ? formatDate(child.plan_end_date) : '—') + '</td>';
+                cells.map(function (c) { return '<td' + (c.cls ? ' class="' + c.cls + '"' : '') + '>' + c.html + '</td>'; }).join('');
             anchor.insertAdjacentElement('afterend', tr);
 
             // Botão Tarefas do subprojeto
@@ -2296,6 +2439,196 @@
                 });
             }
             anchor = tr;
+        });
+    }
+
+    function projectLockHtml(blocked) {
+        return blocked
+            ? '<span class="pp-dep-lock" title="' +
+              escapeHtml(__('Projeto com tarefas/subprojetos abertos — não pode ir para fase concluída')) +
+              '">🔒</span> '
+            : '';
+    }
+
+    // Células da linha de projeto a partir da coluna Fase — MESMA ordem do
+    // <thead> (Orçamento só com o direito de Custos). Usada pelo subprojeto
+    // (insertChildren) e pelo redesenho depois de editar na faixa (D-3a).
+    function projectRowCells(p, showBudget) {
+        let badge;
+        if (p.is_overdue) {
+            badge = '<span class="projectplus-badge projectplus-badge--overdue">' + escapeHtml(__('Atrasado')) + '</span>';
+        } else if (p.is_stalled) {
+            badge = '<span class="projectplus-badge projectplus-badge--stalled">' + escapeHtml(__('Parado')) + '</span>';
+        } else {
+            badge = '<span class="projectplus-badge projectplus-badge--ok">' + escapeHtml(__('No prazo')) + '</span>';
+        }
+        let budget = '<span class="projectplus-muted">—</span>';
+        if (p.budget) {
+            const w = Math.min(100, p.budget.percent);
+            budget = '<div class="projectplus-budgetbar"><div class="projectplus-budgetbar__fill ' +
+                'projectplus-budgetbar__fill--' + p.budget.state + '" style="width:' + w + '%"></div></div> ' +
+                p.budget.percent + '% <span class="projectplus-muted">(' +
+                escapeHtml(p.budget.spent_fmt) + ' / ' + escapeHtml(p.budget.planned_fmt) + ')</span>';
+        }
+        const pct = parseInt(p.percent_done, 10) || 0;
+        const cells = [
+            { cls: 'pp-phase-cell', html: phaseChip(p.state_name, p.state_color) },
+            { cls: '', html: '<div class="projectplus-progress"><div class="projectplus-progress__bar" style="width:' +
+                pct + '%"></div></div><span class="projectplus-progress__pct">' + pct + '%</span>' },
+            { cls: '', html: (p.last_activity || '—') },
+            { cls: '', html: badge }
+        ];
+        if (showBudget) { cells.push({ cls: 'projectplus-budget-cell', html: budget }); }
+        cells.push({ cls: 'pp-deadline-cell', html: deadlineCell(p.deadline) });
+        cells.push({ cls: '', html: p.plan_end_date ? formatDate(p.plan_end_date) : '—' });
+        return cells;
+    }
+
+    // Bloco D-3a: depois de editar pela faixa, redesenha as linhas da tabela
+    // de projetos (o próprio e os ancestrais — o % automático sobe) sem
+    // recarregar a página. Mantém as duas primeiras células (expandir, nome
+    // + botão Tarefas, com seus listeners); só o cadeado é refeito.
+    function refreshProjectRows(rows) {
+        const rootEl = document.getElementById('projectplus-dashboard');
+        if (!rootEl || !Array.isArray(rows)) { return; }
+        const showBudget = rootEl.dataset.ppCosts !== '0';
+        rows.forEach(function (p) {
+            const id  = parseInt(p.id, 10);
+            const sel = 'tr.projectplus-row-item[data-project-id="' + id + '"],' +
+                'tr.projectplus-row--child[data-project-id="' + id + '"]';
+            rootEl.querySelectorAll(sel).forEach(function (tr) {
+                const cells = projectRowCells(p, showBudget);
+                if (tr.children.length !== cells.length + 2) { return; } // layout inesperado: não mexe
+                cells.forEach(function (c, i) { tr.children[i + 2].innerHTML = c.html; });
+                const nameTd = tr.children[1];
+                const lock = nameTd.querySelector('.pp-dep-lock');
+                if (lock) {
+                    if (lock.nextSibling && lock.nextSibling.nodeType === 3) { lock.nextSibling.remove(); }
+                    lock.remove();
+                }
+                if (p.blocked) { nameTd.insertAdjacentHTML('afterbegin', projectLockHtml(true)); }
+            });
+        });
+    }
+
+    // ------------------------------------------------------------------
+    // Faixa "Projeto" no topo do painel de tarefas (Bloco D-3a, 01/10/2026)
+    //
+    // Mesmas funções da linha da tarefa, aplicadas ao PROJETO: Equipe do
+    // projeto (glpi_projectteams — quem entra passa a enxergar o projeto),
+    // início/fim, fase (conjunto do tipo), % e auto. Só para quem edita
+    // projeto (ppData.can_edit_project; o servidor confere por projeto).
+    // Cada gravação devolve meta + linhas: a faixa e as linhas da tabela se
+    // redesenham sem recarregar a página.
+    // ------------------------------------------------------------------
+    function projectStripInner(m) {
+        const phases = phasesForType(m.type_id).slice();
+        if (m.state_id && !phases.some(function (x) { return Number(x.id) === Number(m.state_id); })) {
+            const cur = (ppData.states || []).filter(function (x) { return Number(x.id) === Number(m.state_id); })[0];
+            if (cur) { phases.push(cur); }
+        }
+        const stateOpts = '<option value="0">—</option>' + phases.map(function (x) {
+            return '<option value="' + parseInt(x.id, 10) + '"' + (Number(x.id) === Number(m.state_id) ? ' selected' : '') + '>' +
+                escapeHtml(x.name) + '</option>';
+        }).join('');
+        const autoTip = m.auto_percent
+            ? __('Cálculo automático a partir das tarefas e subprojetos')
+            : __('Calcular automaticamente a partir das tarefas e subprojetos');
+        const team = Array.isArray(m.team_users) ? m.team_users : [];
+        return '<span class="pp-projstrip__title">' + escapeHtml(__('Projeto')) + '</span>' +
+            (m.manager
+                ? '<span class="pp-projstrip__mgr">' + escapeHtml(__('Gestor')) + ': ' + escapeHtml(m.manager) + '</span>'
+                : '') +
+            '<div class="pp-team pp-projstrip__team">' +
+                '<span class="pp-projstrip__lbl">' + escapeHtml(__('Equipe do projeto')) + '</span>' +
+                team.map(function (u) { return teamChipHtml(u.id, u.name, __('Remover da equipe')); }).join('') +
+                teamAddBtnHtml(__('Adicionar à equipe')) +
+            '</div>' +
+            '<input type="date" class="pp-ps-start" value="' + escapeHtml(m.start_iso || '') + '" title="' + escapeHtml(__('Início planejado')) + '">' +
+            '<input type="date" class="pp-ps-end" value="' + escapeHtml(m.end_iso || '') + '" title="' + escapeHtml(__('Fim planejado')) + '">' +
+            '<span class="pp-state-cell"><span class="pp-phase-dot" style="background:' + stateColor(m.state_id) + '"></span>' +
+                '<select class="pp-ps-state" title="' + escapeHtml(__('Fase')) + '">' + stateOpts + '</select></span>' +
+            '<input type="number" class="pp-ps-percent" min="0" max="100" value="' + (parseInt(m.percent, 10) || 0) + '" title="' +
+                escapeHtml(m.auto_percent ? autoTip : __('Progresso')) + '"' + (m.auto_percent ? ' disabled' : '') + '>' +
+            '<label class="pp-auto-switch" title="' + escapeHtml(autoTip) + '">' +
+                '<input type="checkbox" class="pp-ps-auto"' + (m.auto_percent ? ' checked' : '') + '>' +
+                '<span class="pp-auto-switch__track"></span><span class="pp-auto-switch__txt">auto</span></label>' +
+            // Bloco D-3b: 💬 do projeto (painel abre logo abaixo da faixa)
+            commentBtnHtml({ comments: m.comments });
+    }
+
+    // Painel de comentários do projeto: IRMÃO da faixa (não dentro), para
+    // sobreviver ao redesenho da faixa depois de cada edição.
+    function toggleProjectComments(strip) {
+        const next = strip.nextElementSibling;
+        if (next && next.classList.contains('pp-projcmt')) {
+            next.remove();
+            return;
+        }
+        const box = document.createElement('div');
+        box.className = 'pp-projcmt';
+        box.innerHTML = '<div class="pp-cmt-panel"><span class="projectplus-muted">' +
+            escapeHtml(__('Carregando comentários…')) + '</span></div>';
+        strip.insertAdjacentElement('afterend', box);
+        loadComments(box, strip, strip.dataset.projectId, 'project');
+    }
+
+    function bindProjectStrip(strip) {
+        if (!strip || strip.dataset.ppBound) { return; }
+        strip.dataset.ppBound = '1';
+        const pid = strip.dataset.projectId;
+
+        const post = function (data, ctl) {
+            if (ctl) { ctl.disabled = true; }
+            data.project_id = pid;
+            taskPost(ppProjectUrl, data, function (resp) {
+                // Sucesso OU recusa: a resposta traz o estado real do banco
+                // — a faixa volta ao que está gravado (fase recusada pela
+                // trava, por exemplo, retorna sozinha, com a mensagem).
+                if (resp && resp.meta) {
+                    strip.innerHTML = projectStripInner(resp.meta);
+                } else if (ctl) {
+                    ctl.disabled = false;
+                }
+                if (resp && resp.rows) { refreshProjectRows(resp.rows); }
+            });
+        };
+
+        strip.addEventListener('change', function (ev) {
+            const t = ev.target;
+            if (!t || !t.classList) { return; }
+            if (t.classList.contains('pp-ps-start') || t.classList.contains('pp-ps-end')) {
+                const st = strip.querySelector('.pp-ps-start');
+                const en = strip.querySelector('.pp-ps-end');
+                post({ action: 'dates', plan_start_date: st ? st.value : '', plan_end_date: en ? en.value : '' }, t);
+            } else if (t.classList.contains('pp-ps-state')) {
+                const dot = strip.querySelector('.pp-phase-dot');
+                if (dot) { dot.style.background = stateColor(t.value); }
+                post({ action: 'state', projectstates_id: t.value }, t);
+            } else if (t.classList.contains('pp-ps-percent')) {
+                post({ action: 'percent', percent: t.value }, t);
+            } else if (t.classList.contains('pp-ps-auto')) {
+                post({ action: 'auto_percent', value: t.checked ? 1 : 0 }, t);
+            }
+        });
+
+        strip.addEventListener('click', function (ev) {
+            if (ev.target.closest('.pp-cmt-btn')) {
+                toggleProjectComments(strip);
+                return;
+            }
+            const x = ev.target.closest('.pp-team__x');
+            if (x) {
+                post({ action: 'team_remove', users_id: x.dataset.uid }, x);
+                return;
+            }
+            const add = ev.target.closest('.pp-team__add');
+            if (add) {
+                const box = add.closest('.pp-team');
+                openTeamPicker(add, teamIds(box), function (uid) {
+                    post({ action: 'team_add', users_id: uid }, add);
+                }, __('Adicionar à equipe'));
+            }
         });
     }
 
@@ -2634,6 +2967,16 @@
         openSubtasksSet: openSubtasksSet,
         expandAncestors: expandAncestors,
         bindTaskRows: bindTaskRows,
+        // Bloco D-2a: painel completo (linha de criação + chips) no harness
+        setData: function (d) { ppData = d; },
+        renderTaskPanel: renderTaskPanel,
+        bindTaskPanel: bindTaskPanel,
+        // Bloco D-3a
+        setProjectUrl: function (u) { ppProjectUrl = u; },
+        initTaskPanels: initTaskPanels,
+        bindProjectStrip: bindProjectStrip,
+        refreshProjectRows: refreshProjectRows,
+        insertChildren: function (row, children) { insertChildren(row, children); },
     };
 
     window.ProjectPlus = ProjectPlus;

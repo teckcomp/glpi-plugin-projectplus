@@ -45,7 +45,8 @@ function plugin_init_projectplus(): void
     Plugin::registerClass(TaskCost::class, ['addtabon' => ProjectTask::class]);
 
     // Aba "Comentários (ProjectPlus)" dentro da tarefa nativa do projeto
-    Plugin::registerClass(TaskComment::class, ['addtabon' => ProjectTask::class]);
+    // Bloco D-3b: aba também na ficha do projeto (só para quem edita projeto)
+    Plugin::registerClass(TaskComment::class, ['addtabon' => [ProjectTask::class, Project::class]]);
 
     // Aba "Dependências (ProjectPlus)" dentro da tarefa nativa do projeto
     // (Etapa 3, Bloco 3 — usa a tabela nativa glpi_projecttasklinks)

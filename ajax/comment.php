@@ -4,6 +4,8 @@
  * ProjectPlus — comentários por tarefa (Etapa 3, Bloco 2).
  *
  * POST action=add     task_id, content
+ *                     ou project_id, content (Bloco D-3b: comentário de projeto,
+ *                     só para quem edita projeto; alerta só ao gestor)
  * POST action=update  id, content        (só o autor / admin)
  * POST action=delete  id                 (só o autor / admin)
  *
@@ -52,19 +54,33 @@ switch ($action) {
             pp_reply(['ok' => false, 'message' => __('Comentário vazio ou longo demais', 'projectplus')]);
         }
 
-        $task = new ProjectTask();
-        if (!$task->getFromDB((int) ($_POST['task_id'] ?? 0))) {
-            pp_reply(['ok' => false, 'message' => __('Tarefa não encontrada', 'projectplus')]);
+        $projectId = (int) ($_POST['project_id'] ?? 0);
+        if ($projectId > 0) {
+            // Bloco D-3b — comentário de PROJETO
+            $project = new Project();
+            if (!$project->getFromDB($projectId)) {
+                pp_reply(['ok' => false, 'message' => __('Projeto não encontrado', 'projectplus')]);
+            }
+            if (!TaskComment::canCommentProject() || !$project->canViewItem()) {
+                pp_reply(['ok' => false, 'message' => __('Sem permissão para comentar', 'projectplus')]);
+            }
+            $id = TaskComment::addForProject($project, $content);
+        } else {
+            $task = new ProjectTask();
+            if (!$task->getFromDB((int) ($_POST['task_id'] ?? 0))) {
+                pp_reply(['ok' => false, 'message' => __('Tarefa não encontrada', 'projectplus')]);
+            }
+            $id = TaskComment::addForTask($task, $content);
         }
-
-        $id = TaskComment::addForTask($task, $content);
         if ($id <= 0) {
             pp_reply(['ok' => false, 'message' => __('Falha ao salvar o comentário', 'projectplus')]);
         }
 
         $upload = ['saved' => 0, 'errors' => []];
         if ($files !== []) {
-            $upload = CommentFile::saveUploads($id, (int) $task->getID(), $files);
+            $upload = $projectId > 0
+                ? CommentFile::saveUploads($id, 0, $files, null, $projectId)
+                : CommentFile::saveUploads($id, (int) $task->getID(), $files);
         }
 
         // Sem texto e nenhum anexo aceito: o comentário ficaria vazio — desfaz.
@@ -80,7 +96,9 @@ switch ($action) {
         pp_reply([
             'ok'           => true,
             'id'           => $id,
-            'count'        => TaskComment::countForTask((int) $task->getID()),
+            'count'        => $projectId > 0
+                ? TaskComment::countForProject($projectId)
+                : TaskComment::countForTask((int) $task->getID()),
             'files_saved'  => $upload['saved'],
             'files_errors' => $upload['errors'],
         ]);
@@ -99,6 +117,9 @@ switch ($action) {
         if (!TaskComment::canManage((int) $comment->fields['users_id'])) {
             pp_reply(['ok' => false, 'message' => __('Só o autor pode editar este comentário', 'projectplus')]);
         }
+        if ((int) ($comment->fields['projects_id'] ?? 0) > 0 && !TaskComment::canCommentProject()) {
+            pp_reply(['ok' => false, 'message' => __('Sem permissão para comentar', 'projectplus')]);
+        }
 
         $DB->update(TaskComment::getTable(), [
             'content'  => $content,
@@ -116,6 +137,10 @@ switch ($action) {
         if (!TaskComment::canManage((int) $comment->fields['users_id'])) {
             pp_reply(['ok' => false, 'message' => __('Só o autor pode excluir este comentário', 'projectplus')]);
         }
+        $cProject = (int) ($comment->fields['projects_id'] ?? 0);
+        if ($cProject > 0 && (int) $comment->fields['projecttasks_id'] === 0 && !TaskComment::canCommentProject()) {
+            pp_reply(['ok' => false, 'message' => __('Sem permissão para comentar', 'projectplus')]);
+        }
 
         $taskId = (int) $comment->fields['projecttasks_id'];
         CommentFile::deleteForComment((int) $comment->getID()); // cascata dos anexos
@@ -123,7 +148,9 @@ switch ($action) {
 
         pp_reply([
             'ok'    => true,
-            'count' => TaskComment::countForTask($taskId),
+            'count' => ($taskId === 0 && $cProject > 0)
+                ? TaskComment::countForProject($cProject)
+                : TaskComment::countForTask($taskId),
         ]);
         break;
 

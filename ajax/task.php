@@ -10,6 +10,12 @@
  * POST action=complete task_id
  * POST action=auto_percent task_id, value (0|1) — liga/desliga o
  *                      "Calcular automaticamente" nativo (auto_percent_done)
+ * POST action=team_add    task_id, users_id — Bloco D-2a: inclui responsável
+ * POST action=team_remove task_id, users_id — Bloco D-2a: retira responsável
+ *                      (os dois só para o GESTOR: Access::canManageTaskTeam)
+ *
+ * No create, `users_ids` (lista separada por vírgula) traz VÁRIOS
+ * responsáveis; `users_id` (um só) segue aceito por compatibilidade.
  *
  * O CSRF é validado automaticamente pelo core (includes.php) em todo POST.
  * Cada resposta devolve um token novo em 'csrf' — o JS deve usá-lo na
@@ -108,6 +114,75 @@ $canCreate = Session::haveRight('projecttask', CREATE) || Session::haveRight('pr
  * Correção de 22/09/2026: antes o teste era `projecttask` UPDATE, bit que o
  * GLPI 11 não tem — técnico com "Interagir" recebia "Sem permissão".
  */
+/**
+ * Bloco D-2a — ids de usuário vindos do POST ("10,12" ou array), só
+ * positivos, sem repetição, e só de usuários ATIVOS e não apagados.
+ *
+ * @return int[]
+ */
+function pp_user_ids($raw): array
+{
+    /** @var \DBmysql $DB */
+    global $DB;
+
+    $parts = is_array($raw) ? $raw : explode(',', (string) $raw);
+    $ids   = [];
+    foreach ($parts as $p) {
+        $n = (int) trim((string) $p);
+        if ($n > 0) {
+            $ids[$n] = $n;
+        }
+    }
+    if (empty($ids)) {
+        return [];
+    }
+    $ok = [];
+    foreach (
+        $DB->request([
+            'SELECT' => ['id'],
+            'FROM'   => 'glpi_users',
+            'WHERE'  => ['id' => array_values($ids), 'is_active' => 1, 'is_deleted' => 0],
+        ]) as $row
+    ) {
+        $ok[(int) $row['id']] = true;
+    }
+    // preserva a ordem de escolha
+    return array_values(array_filter($ids, static fn ($id) => isset($ok[$id])));
+}
+
+/** Id da linha de equipe (usuário) da tarefa, ou 0. */
+function pp_team_row(int $taskId, int $userId): int
+{
+    /** @var \DBmysql $DB */
+    global $DB;
+
+    $row = $DB->request([
+        'SELECT' => ['id'],
+        'FROM'   => 'glpi_projecttaskteams',
+        'WHERE'  => [
+            'projecttasks_id' => $taskId,
+            'itemtype'        => 'User',
+            'items_id'        => $userId,
+        ],
+        'LIMIT'  => 1,
+    ])->current();
+
+    return (int) ($row['id'] ?? 0);
+}
+
+/** Tarefa do POST para mexer na EQUIPE (só gestor — Bloco D-2a). */
+function pp_task_for_team(): ProjectTask
+{
+    $task = new ProjectTask();
+    if (!$task->getFromDB((int) ($_POST['task_id'] ?? 0))) {
+        pp_reply(['ok' => false, 'message' => __('Tarefa não encontrada', 'projectplus')]);
+    }
+    if (!Access::canManageTaskTeam($task)) {
+        pp_reply(['ok' => false, 'message' => __('Sem permissão', 'projectplus')]);
+    }
+    return $task;
+}
+
 function pp_task_for_update(string $module = 'tasks'): ProjectTask
 {
     $task = new ProjectTask();
@@ -152,9 +227,12 @@ switch ($action) {
             pp_reply(['ok' => false, 'message' => __('Falha ao criar a tarefa', 'projectplus')]);
         }
 
-        // Responsável (equipe da tarefa) — opcional
-        $assignee = (int) ($_POST['users_id'] ?? 0);
-        if ($assignee > 0) {
+        // Responsáveis (equipe da tarefa) — opcional. Bloco D-2a: vários,
+        // em `users_ids`; `users_id` único segue valendo (compatibilidade).
+        $assignees = pp_user_ids(
+            isset($_POST['users_ids']) ? $_POST['users_ids'] : ($_POST['users_id'] ?? '')
+        );
+        foreach ($assignees as $assignee) {
             $team = new ProjectTaskTeam();
             $team->add([
                 'projecttasks_id' => (int) $taskId,
@@ -277,6 +355,44 @@ switch ($action) {
 
         $ok = $task->update(['id' => $task->getID(), 'projectstates_id' => $newState]);
         pp_reply(['ok' => (bool) $ok, 'task_id' => (int) $task->getID(), 'state_id' => $newState]);
+        break;
+
+    case 'team_add':
+        // Bloco D-2a — inclui um responsável (usuário) na equipe da tarefa.
+        $task = pp_task_for_team();
+        $uid  = pp_user_ids($_POST['users_id'] ?? '')[0] ?? 0;
+        if ($uid <= 0) {
+            pp_reply(['ok' => false, 'message' => __('Usuário não encontrado.', 'projectplus')]);
+        }
+        if (pp_team_row((int) $task->getID(), $uid) > 0) {
+            pp_reply(['ok' => true, 'already' => true]); // idempotente
+        }
+        $team = new ProjectTaskTeam();
+        $ok   = $team->add([
+            'projecttasks_id' => (int) $task->getID(),
+            'itemtype'        => 'User',
+            'items_id'        => $uid,
+        ]);
+        if ($ok) {
+            ProjectTracking::touch((int) $task->fields['projects_id']);
+        }
+        pp_reply(['ok' => (bool) $ok]);
+        break;
+
+    case 'team_remove':
+        // Bloco D-2a — retira um responsável. Só linha de USUÁRIO: grupo na
+        // equipe (cadastrado pela ficha nativa) nunca é tocado aqui.
+        $task  = pp_task_for_team();
+        $rowId = pp_team_row((int) $task->getID(), (int) ($_POST['users_id'] ?? 0));
+        if ($rowId <= 0) {
+            pp_reply(['ok' => true, 'already' => true]); // já não estava
+        }
+        $team = new ProjectTaskTeam();
+        $ok   = $team->delete(['id' => $rowId]);
+        if ($ok) {
+            ProjectTracking::touch((int) $task->fields['projects_id']);
+        }
+        pp_reply(['ok' => (bool) $ok]);
         break;
 
     default:
