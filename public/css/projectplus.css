@@ -899,6 +899,9 @@ tr.pp-focus-task > td {
 .pp-tpl-check input { margin: 0; }
 
 .pp-tpl-projmeta .pp-tpl-meta { border-top: 0; margin-top: 0; padding-top: 0; }
+/* Bloco D-1 (30/09/2026) — Gestor/Responsável do editor de Modelos com busca */
+.pp-tpl-field--user .pp-ss { width: 220px; max-width: 70vw; }
+.pp-tpl-field--user .pp-ss__input { background: #fff; }
 .pp-pm-content {
     width: 100%; margin-top: 8px; border: 1px solid #e1e5ea; border-radius: 6px;
     padding: 6px 8px; font-size: 0.85rem; color: #2c3e50; resize: vertical;

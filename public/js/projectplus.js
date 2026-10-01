@@ -726,6 +726,18 @@
     }
 
     /**
+     * Bloco D-1 (30/09/2026): campo de usuario (Gestor/Responsavel) do editor
+     * de Modelos com BUSCA. E <div>, nao <label>: o combobox poe um input ao
+     * lado do select escondido, e o label mandaria o clique para o select
+     * oculto (mesma decisao dos filtros de Minhas tarefas). A classe do select
+     * (pp-pm-user / pp-tpl-user) segue igual — o serialize nao muda.
+     */
+    function tplUserField(label, cls, selectedId) {
+        return '<div class="pp-tpl-field pp-tpl-field--user"><span>' + escapeHtml(label) + '</span>' +
+            '<select class="' + cls + ' pp-search">' + tplOptions(ppTplRef.users, selectedId) + '</select></div>';
+    }
+
+    /**
      * Editor de Modelos, Etapa 9 — de que TIPO de projeto e este campo
      * "Estado"?
      *
@@ -927,12 +939,13 @@
                 '<label class="pp-tpl-num" title="' + escapeHtml(__('Duração do projeto em dias (define a data de fim)')) + '">' + escapeHtml(__('duração (d)')) + '<input type="number" class="pp-pm-dur" min="1" step="1" value="' + dur + '"></label>' +
                 '<label class="pp-tpl-field">' + escapeHtml(__('Fase')) + '<select class="pp-pm-state">' + tplOptions(ppTplRef.states, stateId) + '</select></label>' +
                 '<label class="pp-tpl-field">' + escapeHtml(__('Tipo')) + '<select class="pp-pm-ptype">' + tplOptions(ppTplRef.ptypes, ptypeId) + '</select></label>' +
-                '<label class="pp-tpl-field">' + escapeHtml(__('Gestor')) + '<select class="pp-pm-user">' + tplOptions(ppTplRef.users, userId) + '</select></label>' +
+                tplUserField(__('Gestor'), 'pp-pm-user', userId) +
                 '<label class="pp-tpl-field">' + escapeHtml(__('Orçamento (R$)')) + '<input type="number" class="pp-pm-budget" min="0" step="0.01" value="' + budget + '"></label>' +
                 '<label class="pp-tpl-check"><input type="checkbox" class="pp-pm-auto"' + (auto ? ' checked' : '') + '> ' + escapeHtml(__('calcular automaticamente o %')) + '</label>' +
             '</div>' +
             '<textarea class="pp-pm-content" rows="2" placeholder="' + escapeHtml(__('Descrição do projeto (opcional)')) + '"></textarea>';
         container.querySelector('.pp-pm-content').value = data.content || '';
+        enhanceSearchSelects(container); // D-1: busca no Gestor
     }
 
     function serializeProjectMeta(container) {
@@ -970,7 +983,7 @@
             '<div class="pp-tpl-meta">' +
                 '<label class="pp-tpl-field">' + escapeHtml(__('Fase')) + '<select class="pp-tpl-state">' + tplOptions(ppTplRef.states, stateId) + '</select></label>' +
                 '<label class="pp-tpl-field">' + escapeHtml(__('Tipo')) + '<select class="pp-tpl-ttype">' + tplOptions(ppTplRef.ttypes, ttypeId) + '</select></label>' +
-                '<label class="pp-tpl-field">' + escapeHtml(__('Responsável')) + '<select class="pp-tpl-user">' + tplOptions(ppTplRef.users, userId) + '</select></label>' +
+                tplUserField(__('Responsável'), 'pp-tpl-user', userId) +
                 '<label class="pp-tpl-check"><input type="checkbox" class="pp-tpl-auto"' + (auto ? ' checked' : '') + '> ' + escapeHtml(__('calcular automaticamente o %')) + '</label>' +
             '</div>' +
             '<textarea class="pp-tpl-content" rows="1" placeholder="' + escapeHtml(__('Descrição (opcional)')) + '"></textarea>' +
@@ -988,6 +1001,7 @@
         (Array.isArray(data.children) ? data.children : []).forEach(function (c) {
             childrenC.appendChild(buildTplTask(c));
         });
+        enhanceSearchSelects(el); // D-1: busca no Responsavel (filhas ja vem prontas)
         return el;
     }
 
@@ -1016,7 +1030,7 @@
             '<div class="pp-tpl-meta">' +
                 '<label class="pp-tpl-field">' + escapeHtml(__('Fase')) + '<select class="pp-tpl-state">' + tplOptions(ppTplRef.states, stateId) + '</select></label>' +
                 '<label class="pp-tpl-field">' + escapeHtml(__('Tipo')) + '<select class="pp-tpl-ptype">' + tplOptions(ppTplRef.ptypes, ptypeId) + '</select></label>' +
-                '<label class="pp-tpl-field">' + escapeHtml(__('Gestor')) + '<select class="pp-tpl-user">' + tplOptions(ppTplRef.users, userId) + '</select></label>' +
+                tplUserField(__('Gestor'), 'pp-tpl-user', userId) +
                 '<label class="pp-tpl-field">' + escapeHtml(__('Orçamento (R$)')) + '<input type="number" class="pp-tpl-budget" min="0" step="0.01" value="' + budget + '"></label>' +
                 '<label class="pp-tpl-check"><input type="checkbox" class="pp-tpl-auto"' + (auto ? ' checked' : '') + '> ' + escapeHtml(__('calcular automaticamente o %')) + '</label>' +
             '</div>' +
@@ -1039,6 +1053,7 @@
         (Array.isArray(data.subprojects) ? data.subprojects : []).forEach(function (p) {
             psubs.appendChild(buildTplProject(p));
         });
+        enhanceSearchSelects(el); // D-1: busca no Gestor do subprojeto
         return el;
     }
 
