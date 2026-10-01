@@ -1208,7 +1208,7 @@
             '<th>' + escapeHtml(__('Fim')) + '</th>' +
             '<th>%</th>' +
             '<th>' + escapeHtml(__('Fase')) + '</th>' +
-            '<th>' + escapeHtml(__('Prazo')) + '</th><th></th><th></th><th></th>' +
+            '<th>' + escapeHtml(__('Prazo')) + '</th><th></th><th></th><th></th><th></th>' +
             '</tr></thead><tbody>';
 
         tasks.forEach(function (t, idx) {
@@ -1242,6 +1242,7 @@
                 '<td class="pp-state-cell"><span class="pp-phase-dot" style="background:' + stateColor(t.state_id) + '"></span>' +
                     '<select class="pp-task-state"><option value="0">—</option>' + stateOpts + '</select></td>' +
                 '<td class="pp-deadline-cell">' + deadlineCell(t.deadline) + '</td>' +
+                '<td class="pp-auto-cell">' + autoSwitchHtml(t) + '</td>' +
                 '<td class="pp-dep-cell">' + depBtnHtml(t) + '</td>' +
                 '<td class="pp-cmt-cell">' + commentBtnHtml(t) + '</td>' +
                 '<td>' + (t.percent >= 100
@@ -1254,6 +1255,21 @@
 
         html += '</tbody></table>';
         return html;
+    }
+
+    // Interruptor "Calcular automaticamente" (auto_percent_done nativo),
+    // o mesmo da ficha do GLPI: ligado, o % vira a média das subtarefas e
+    // o campo trava; desligado, volta a ser editável. Só aparece em tarefa
+    // com subtarefa — ou já ligada, para poder desligar.
+    function autoSwitchHtml(t) {
+        if (!t.has_children && !t.auto_percent) { return ''; }
+        const tip = t.auto_percent
+            ? __('Cálculo automático a partir das subtarefas')
+            : __('Calcular automaticamente a partir das subtarefas');
+        return '<label class="pp-auto-switch" title="' + escapeHtml(tip) + '">' +
+            '<input type="checkbox" class="pp-task-auto"' + (t.auto_percent ? ' checked' : '') + '>' +
+            '<span class="pp-auto-switch__track"></span>' +
+            '<span class="pp-auto-switch__txt">auto</span></label>';
     }
 
     function bindTaskPanel(container, projectId, ajaxUrl, taskUrl, tasks) {
@@ -1368,6 +1384,21 @@
                         // Recarrega sempre: atualiza o % automático da tarefa
                         // mãe e a barra de prazo/risco da linha alterada
                         if (resp.ok) { reload(); }
+                    });
+                });
+            }
+
+            const auto = row.querySelector('.pp-task-auto');
+            if (auto) {
+                auto.addEventListener('change', function () {
+                    const on = auto.checked;
+                    auto.disabled = true;
+                    taskPost(taskUrl, { action: 'auto_percent', task_id: taskId, value: on ? 1 : 0 }, function (resp) {
+                        auto.disabled = false;
+                        // Ligando, o core recalcula o % (e o das mães/projeto):
+                        // recarrega para mostrar o valor novo, a trava do campo
+                        // e o ✓ escondido. Recusado, o interruptor volta.
+                        if (resp.ok) { reload(); } else { auto.checked = !on; }
                     });
                 });
             }

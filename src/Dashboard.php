@@ -885,6 +885,7 @@ class Dashboard extends CommonGLPI
                 'parent_id'    => (int) $row['projecttasks_id'],
                 'parent_name'  => $row['parent_name'],
                 'auto_percent' => (bool) $row['auto_percent_done'],
+                'has_children' => false, // preenchido abaixo (consulta única)
                 'percent'      => $pct,
                 'start'       => $row['plan_start_date'] ? DateFmt::date($row['plan_start_date']) : null,
                 'end'         => $row['plan_end_date'] ? DateFmt::date($row['plan_end_date']) : null,
@@ -897,6 +898,19 @@ class Dashboard extends CommonGLPI
                 'deadline'    => $deadline,
             ];
         }
+
+        // Quais das tarefas listadas têm subtarefa (mesmo fora da lista do
+        // usuário) — decide se o interruptor "Calcular automaticamente"
+        // aparece na linha. Linhas trazidas e contadas em PHP (lição do
+        // COUNT + GROUPBY do Iterator do GLPI 11).
+        $withKids = self::tasksWithChildren($taskIds);
+        foreach ($groups as &$g) {
+            foreach ($g['tasks'] as &$t) {
+                $t['has_children'] = isset($withKids[$t['id']]);
+            }
+            unset($t);
+        }
+        unset($g);
 
         // Árvore dentro de cada projeto: filha aninhada sob a mãe quando a
         // mãe também está na lista do usuário; caso contrário fica na raiz
@@ -1124,6 +1138,35 @@ class Dashboard extends CommonGLPI
         return (int) ($row['cpt'] ?? 0);
     }
 
+    /**
+     * Das tarefas informadas, quais têm ao menos uma subtarefa direta.
+     *
+     * @param int[] $taskIds
+     * @return array<int, true> id da tarefa-mãe => true
+     */
+    public static function tasksWithChildren(array $taskIds): array
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        $taskIds = array_values(array_filter(array_map('intval', $taskIds)));
+        if (empty($taskIds)) {
+            return [];
+        }
+
+        $out = [];
+        foreach (
+            $DB->request([
+                'SELECT' => ['projecttasks_id'],
+                'FROM'   => 'glpi_projecttasks',
+                'WHERE'  => ['projecttasks_id' => $taskIds],
+            ]) as $row
+        ) {
+            $out[(int) $row['projecttasks_id']] = true;
+        }
+        return $out;
+    }
+
     public static function getTasks(int $projectId): array
     {
         /** @var \DBmysql $DB */
@@ -1188,6 +1231,7 @@ class Dashboard extends CommonGLPI
                     'url'          => Url::project($projectId, $id),
                     'depth'        => $depth,
                     'auto_percent' => (bool) $t['auto_percent_done'],
+                    'has_children' => !empty($byParent[$id]),
                     'percent'      => (int) $t['percent_done'],
                     'start'      => $t['plan_start_date'] ? DateFmt::date($t['plan_start_date']) : null,
                     'end'        => $t['plan_end_date'] ? DateFmt::date($t['plan_end_date']) : null,

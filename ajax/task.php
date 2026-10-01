@@ -8,6 +8,8 @@
  * POST action=state    task_id, projectstates_id
  * POST action=percent  task_id, percent (0-100)
  * POST action=complete task_id
+ * POST action=auto_percent task_id, value (0|1) — liga/desliga o
+ *                      "Calcular automaticamente" nativo (auto_percent_done)
  *
  * O CSRF é validado automaticamente pelo core (includes.php) em todo POST.
  * Cada resposta devolve um token novo em 'csrf' — o JS deve usá-lo na
@@ -54,6 +56,25 @@ function pp_open_children(int $taskId): int
     ])->current();
 
     return (int) ($row['cpt'] ?? 0);
+}
+
+/**
+ * A tarefa tem ao menos uma subtarefa direta? O cálculo automático nativo
+ * (ProjectTask::recalculatePercentDone) é a MÉDIA das subtarefas — sem
+ * nenhuma, o AVG do core volta NULL. Por isso só se liga com filhas.
+ */
+function pp_has_children(int $taskId): bool
+{
+    /** @var \DBmysql $DB */
+    global $DB;
+
+    $row = $DB->request([
+        'COUNT' => 'cpt',
+        'FROM'  => 'glpi_projecttasks',
+        'WHERE' => ['projecttasks_id' => $taskId],
+    ])->current();
+
+    return (int) ($row['cpt'] ?? 0) > 0;
 }
 
 /**
@@ -205,6 +226,21 @@ switch ($action) {
         }
         $ok = $task->update(['id' => $task->getID(), 'percent_done' => 100]);
         pp_reply(['ok' => (bool) $ok]);
+        break;
+
+    case 'auto_percent':
+        // Mesmo interruptor "Calcular automaticamente" da ficha nativa.
+        // O core faz o resto: ligando, o prepareInputForUpdate descarta o
+        // percent_done enviado e o post_updateItem recalcula a tarefa pela
+        // média das subtarefas (e sobe para mães/projeto); desligando, o %
+        // atual fica e volta a ser editável.
+        $task = pp_task_for_update('tasks');
+        $on   = !empty($_POST['value']) ? 1 : 0;
+        if ($on === 1 && !pp_has_children($task->getID())) {
+            pp_reply(['ok' => false, 'message' => __('O cálculo automático precisa de ao menos uma subtarefa', 'projectplus')]);
+        }
+        $ok = $task->update(['id' => $task->getID(), 'auto_percent_done' => $on]);
+        pp_reply(['ok' => (bool) $ok, 'auto' => $on]);
         break;
 
     case 'kanban_move':

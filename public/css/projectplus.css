@@ -1113,3 +1113,30 @@ tr.pp-focus-task > td {
 .pp-ss__item:hover, .pp-ss__item--act { background: #eaf4fb; }
 .pp-ss__item--sel { font-weight: 700; color: #065a82; }
 .pp-ss__empty { padding: 8px 10px; font-size: 0.8rem; color: #8a97a5; }
+
+/* Interruptor "Calcular automaticamente" na árvore de tarefas (auto_percent_done
+   nativo). Ligado = % pela média das subtarefas, campo % travado. */
+.pp-auto-cell { white-space: nowrap; }
+.pp-auto-switch {
+    display: inline-flex; align-items: center; gap: 4px;
+    cursor: pointer; margin: 0; user-select: none; position: relative;
+}
+.pp-auto-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+.pp-auto-switch__track {
+    position: relative; width: 28px; height: 16px; flex: none;
+    border-radius: 8px; background: #cfd6de; transition: background .15s;
+}
+.pp-auto-switch__track::after {
+    content: ""; position: absolute; top: 2px; left: 2px;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, .25);
+    transition: transform .15s;
+}
+.pp-auto-switch input:checked + .pp-auto-switch__track { background: #3a8fd9; }
+.pp-auto-switch input:checked + .pp-auto-switch__track::after { transform: translateX(12px); }
+.pp-auto-switch input:focus-visible + .pp-auto-switch__track { outline: 2px solid #3a8fd9; outline-offset: 2px; }
+.pp-auto-switch input:disabled + .pp-auto-switch__track { opacity: .5; }
+.pp-auto-switch__txt { font-size: 11px; color: #8a97a5; }
+.pp-auto-switch input:checked ~ .pp-auto-switch__txt { color: #3a8fd9; font-weight: 600; }
+.projectplus-tasktable .pp-task-percent:disabled { background: #f1f4f7; cursor: not-allowed; }
+.pp-task-done td.pp-auto-cell { text-decoration: none; }

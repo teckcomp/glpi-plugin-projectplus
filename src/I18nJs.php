@@ -93,6 +93,7 @@ class I18nJs
                 'Criar tarefa'             => __('Criar tarefa', 'projectplus'),
                 'Tarefa mãe'               => __('Tarefa mãe', 'projectplus'),
                 'Cálculo automático a partir das subtarefas' => __('Cálculo automático a partir das subtarefas', 'projectplus'),
+                'Calcular automaticamente a partir das subtarefas' => __('Calcular automaticamente a partir das subtarefas', 'projectplus'),
                 'Bloqueada por outra(s) tarefa(s) — veja 🔗' => __('Bloqueada por outra(s) tarefa(s) — veja 🔗', 'projectplus'),
                 'Projeto com tarefas/subprojetos abertos — não pode ir para fase concluída' => __('Projeto com tarefas/subprojetos abertos — não pode ir para fase concluída', 'projectplus'),
 
