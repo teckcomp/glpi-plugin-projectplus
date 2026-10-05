@@ -892,6 +892,7 @@
         // Liga os listeners delegados e já filtra o que acabou de ser montado.
         initTplPhaseFilter(root);
         tplRefreshAllStateSelects(root);
+        tplRefreshMoves(treeEl); // Bloco E
 
         // Botões de topo (raiz)
         const addRootTask = root.querySelector('[data-add-roottask]');
@@ -899,11 +900,13 @@
         if (addRootTask) {
             addRootTask.addEventListener('click', function () {
                 rootTasksEl.appendChild(buildTplTask(null));
+                tplRefreshMoves(treeEl);
             });
         }
         if (addRootSub) {
             addRootSub.addEventListener('click', function () {
                 rootSubsEl.appendChild(buildTplProject(null));
+                tplRefreshMoves(treeEl);
             });
         }
 
@@ -928,6 +931,17 @@
             const btn = e.target.closest('button[data-act]');
             if (!btn) { return; }
             const act = btn.dataset.act;
+            if (act === 'move-up' || act === 'move-down' || act === 'promote' || act === 'demote') {
+                const mnode = btn.closest('.pp-tpl-node');
+                if (mnode && tplMoveNode(mnode, act)) {
+                    tplRefreshMoves(treeEl);
+                    tplFlash(mnode);
+                    // o botão clicado pode ter ficado desabilitado na posição nova
+                    const again = mnode.querySelector(':scope > .pp-tpl-row > .pp-tpl-moves [data-act="' + act + '"]');
+                    if (again && !again.disabled) { again.focus(); }
+                }
+                return;
+            }
             if (act === 'remove') {
                 const node = btn.closest('.pp-tpl-node');
                 if (node) { node.remove(); }
@@ -941,6 +955,7 @@
                 const node = btn.closest('.pp-tpl-node--project');
                 node.querySelector(':scope > .pp-tpl-psection > .pp-tpl-psubs').appendChild(buildTplProject(null));
             }
+            tplRefreshMoves(treeEl); // Bloco E: estado dos ↑↓/promover/rebaixar
         });
 
         form.addEventListener('submit', function (e) {
@@ -1005,6 +1020,131 @@
         };
     }
 
+    // ------------------------------------------------------------------
+    // Bloco E (05/10/2026) — reorganizar a árvore do modelo sem refazer:
+    // mover ↑↓ entre irmãs, Promover (sobe um nível, logo abaixo da antiga
+    // mãe) e Rebaixar (vira a última filha da irmã de cima). O nó leva as
+    // filhas junto. Tudo no cliente: as datas do modelo são relativas ao
+    // início do PROJETO RAIZ em qualquer profundidade, então mudar o nó de
+    // nível não altera datas. Cada lista da árvore só contém nós de um tipo
+    // (tarefas OU subprojetos), então "irmã" = elemento vizinho na lista.
+    // ------------------------------------------------------------------
+    function tplMovesHtml() {
+        return '<span class="pp-tpl-moves">' +
+            '<button type="button" class="pp-tpl-mv" data-act="move-up" title="' + escapeHtml(__('Mover para cima')) + '"><i class="ti ti-arrow-up"></i></button>' +
+            '<button type="button" class="pp-tpl-mv" data-act="move-down" title="' + escapeHtml(__('Mover para baixo')) + '"><i class="ti ti-arrow-down"></i></button>' +
+            '<button type="button" class="pp-tpl-mv" data-act="promote" title="' + escapeHtml(__('Promover (subir um nível)')) + '"><i class="ti ti-indent-decrease"></i></button>' +
+            '<button type="button" class="pp-tpl-mv" data-act="demote" title="' + escapeHtml(__('Rebaixar (para dentro do item de cima)')) + '"><i class="ti ti-indent-increase"></i></button>' +
+            '</span>';
+    }
+
+    function tplIsTask(node) { return node.classList.contains('pp-tpl-node--task'); }
+
+    function tplSibling(node, dir) {
+        const kind = tplIsTask(node) ? 'pp-tpl-node--task' : 'pp-tpl-node--project';
+        let el = dir < 0 ? node.previousElementSibling : node.nextElementSibling;
+        while (el && !el.classList.contains(kind)) {
+            el = dir < 0 ? el.previousElementSibling : el.nextElementSibling;
+        }
+        return el;
+    }
+
+    /** Nó "mãe" de onde se promove, ou null quando já está no nível mais alto possível. */
+    function tplPromoteParent(node) {
+        const list = node.parentElement;
+        if (!list) { return null; }
+        if (tplIsTask(node)) {
+            // só subtarefa sobe: a lista é .pp-tpl-children de uma tarefa
+            return list.classList.contains('pp-tpl-children')
+                ? list.closest('.pp-tpl-node--task') : null;
+        }
+        // só subprojeto aninhado sobe: a lista é .pp-tpl-psubs de um subprojeto
+        return list.classList.contains('pp-tpl-psubs')
+            ? list.closest('.pp-tpl-node--project') : null;
+    }
+
+    /** Lista de filhas do nó (destino do Rebaixar). */
+    function tplChildList(node) {
+        return tplIsTask(node)
+            ? node.querySelector(':scope > .pp-tpl-children')
+            : node.querySelector(':scope > .pp-tpl-psection > .pp-tpl-psubs');
+    }
+
+    function tplNodeName(node) {
+        const inp = node.querySelector(':scope > .pp-tpl-row > .pp-tpl-name');
+        return inp ? (inp.value || '').trim() : '';
+    }
+
+    /**
+     * Nome repetido na lista de destino. Ao criar o projeto, o TemplateCloner
+     * descarta EM SILÊNCIO o segundo item com o mesmo nome sob o mesmo pai
+     * (anti-duplicação) — então a mudança de nível é recusada aqui, com aviso.
+     */
+    function tplNameClash(node, destList) {
+        const name = tplNodeName(node).toLowerCase();
+        if (!name || !destList) { return ''; }
+        const kind = tplIsTask(node) ? 'pp-tpl-node--task' : 'pp-tpl-node--project';
+        let clash = '';
+        Array.prototype.forEach.call(destList.children, function (el) {
+            if (el !== node && el.classList.contains(kind) && tplNodeName(el).toLowerCase() === name) {
+                clash = tplNodeName(node);
+            }
+        });
+        return clash;
+    }
+
+    function tplFlash(node) {
+        node.classList.remove('pp-tpl-node--moved');
+        void node.offsetWidth; // reinicia a animação
+        node.classList.add('pp-tpl-node--moved');
+        setTimeout(function () { node.classList.remove('pp-tpl-node--moved'); }, 1300);
+    }
+
+    /** Aplica o movimento; devolve true quando a árvore mudou. */
+    function tplMoveNode(node, act) {
+        if (act === 'move-up' || act === 'move-down') {
+            const sib = tplSibling(node, act === 'move-up' ? -1 : 1);
+            if (!sib) { return false; }
+            if (act === 'move-up') { sib.before(node); } else { sib.after(node); }
+            return true;
+        }
+        let dest = null;
+        let place = null;
+        if (act === 'promote') {
+            const mother = tplPromoteParent(node);
+            if (!mother) { return false; }
+            dest = mother.parentElement;
+            place = function () { mother.after(node); };
+        } else if (act === 'demote') {
+            const above = tplSibling(node, -1);
+            if (!above) { return false; }
+            dest = tplChildList(above);
+            place = function () { dest.appendChild(node); };
+        } else {
+            return false;
+        }
+        const clash = tplNameClash(node, dest);
+        if (clash) {
+            alert(__('Já existe um item com o nome %s nesse nível. Renomeie antes de mover — senão ele seria ignorado ao criar o projeto.', clash));
+            return false;
+        }
+        place();
+        return true;
+    }
+
+    /** Liga/desliga os botões conforme a posição de cada nó. */
+    function tplRefreshMoves(root) {
+        root.querySelectorAll('.pp-tpl-node').forEach(function (node) {
+            const box = node.querySelector(':scope > .pp-tpl-row > .pp-tpl-moves');
+            if (!box) { return; }
+            const up = !!tplSibling(node, -1);
+            box.querySelector('[data-act="move-up"]').disabled   = !up;
+            box.querySelector('[data-act="move-down"]').disabled = !tplSibling(node, 1);
+            box.querySelector('[data-act="promote"]').disabled   = !tplPromoteParent(node);
+            box.querySelector('[data-act="demote"]').disabled    = !up;
+        });
+    }
+
     function buildTplTask(data) {
         data = data || {};
         const stateId     = parseInt(data.projectstates_id, 10) || 0;
@@ -1020,6 +1160,7 @@
                 '<input type="text" class="pp-tpl-name" placeholder="' + escapeHtml(__('Nome da tarefa')) + '" maxlength="255">' +
                 '<label class="pp-tpl-num">' + escapeHtml(__('início (d)')) + '<input type="number" class="pp-tpl-offset" min="0" step="1" value="0"></label>' +
                 '<label class="pp-tpl-num">' + escapeHtml(__('duração (d)')) + '<input type="number" class="pp-tpl-dur" min="1" step="1" value="1"></label>' +
+                tplMovesHtml() +
                 '<button type="button" class="pp-tpl-mini" data-act="add-subtask">' + escapeHtml(__('+ subtarefa')) + '</button>' +
                 '<button type="button" class="pp-tpl-mini pp-tpl-mini--danger" data-act="remove" title="' + escapeHtml(__('Remover')) + '">&times;</button>' +
             '</div>' +
@@ -1066,6 +1207,7 @@
                 '<input type="text" class="pp-tpl-name" placeholder="' + escapeHtml(__('Nome do subprojeto')) + '" maxlength="255">' +
                 '<label class="pp-tpl-num">' + escapeHtml(__('início (d)')) + '<input type="number" class="pp-tpl-offset" min="0" step="1" value="0"></label>' +
                 '<label class="pp-tpl-num">' + escapeHtml(__('duração (d)')) + '<input type="number" class="pp-tpl-dur" min="1" step="1" value="1"></label>' +
+                tplMovesHtml() +
                 '<button type="button" class="pp-tpl-mini" data-act="add-ptask">' + escapeHtml(__('+ tarefa')) + '</button>' +
                 '<button type="button" class="pp-tpl-mini" data-act="add-psub">' + escapeHtml(__('+ subprojeto')) + '</button>' +
                 '<button type="button" class="pp-tpl-mini pp-tpl-mini--danger" data-act="remove" title="' + escapeHtml(__('Remover')) + '">&times;</button>' +

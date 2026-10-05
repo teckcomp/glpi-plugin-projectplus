@@ -865,6 +865,22 @@ tr.pp-focus-task > td {
 .pp-tpl-mini--danger { border-color: #d9534f; color: #d9534f; font-size: 0.95rem; line-height: 1; padding: 3px 9px; }
 .pp-tpl-mini--danger:hover { background: #d9534f; color: #fff; }
 
+/* Bloco E (05/10/2026) — mover ↑↓ / promover / rebaixar nós do modelo */
+.pp-tpl-moves { display: inline-flex; gap: 2px; flex: 0 0 auto; }
+.pp-tpl-mv {
+    border: 1px solid #c6d0d9; background: #fff; color: #4a6378;
+    border-radius: 6px; width: 28px; height: 26px; padding: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 0.9rem; cursor: pointer;
+}
+.pp-tpl-mv:hover:not(:disabled) { background: #eaf4fb; border-color: #4a9fd4; color: #4a9fd4; }
+.pp-tpl-mv:disabled { opacity: .35; cursor: default; }
+.pp-tpl-node--moved { animation: pp-tpl-moved 1.2s ease-out; }
+@keyframes pp-tpl-moved {
+    0%   { box-shadow: 0 0 0 3px rgba(74, 159, 212, .55); background: #eaf4fb; }
+    100% { box-shadow: 0 0 0 0 rgba(74, 159, 212, 0); }
+}
+
 /* Aninhamento: recuo dos filhos */
 .pp-tpl-children { margin: 8px 0 0 22px; display: flex; flex-direction: column; gap: 8px; }
 .pp-tpl-children:empty { margin: 0; }

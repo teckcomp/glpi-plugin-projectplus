@@ -158,6 +158,12 @@ class I18nJs
                 '+ tarefa'                 => __('+ tarefa', 'projectplus'),
                 '+ subtarefa'              => __('+ subtarefa', 'projectplus'),
                 '+ subprojeto'             => __('+ subprojeto', 'projectplus'),
+                // Bloco E: reorganizar a árvore do modelo
+                'Mover para cima'          => __('Mover para cima', 'projectplus'),
+                'Mover para baixo'         => __('Mover para baixo', 'projectplus'),
+                'Promover (subir um nível)' => __('Promover (subir um nível)', 'projectplus'),
+                'Rebaixar (para dentro do item de cima)' => __('Rebaixar (para dentro do item de cima)', 'projectplus'),
+                'Já existe um item com o nome %s nesse nível. Renomeie antes de mover — senão ele seria ignorado ao criar o projeto.' => __('Já existe um item com o nome %s nesse nível. Renomeie antes de mover — senão ele seria ignorado ao criar o projeto.', 'projectplus'),
 
                 // ---- donuts da Visão geral ----
                 'Concluída'                => __('Concluída', 'projectplus'),
