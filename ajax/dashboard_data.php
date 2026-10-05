@@ -72,9 +72,11 @@ switch ($action) {
         break;
 
     case 'projectcomments':
+        // Bloco F-2b: quem enxerga o projeto (💬 da linha do projeto)
+        $pcId = (int) ($_GET['id'] ?? 0);
         echo json_encode(
-            TaskComment::canCommentProject()
-                ? TaskComment::getForProject((int) ($_GET['id'] ?? 0))
+            TaskComment::canCommentOnProject($pcId)
+                ? TaskComment::getForProject($pcId)
                 : []
         );
         break;

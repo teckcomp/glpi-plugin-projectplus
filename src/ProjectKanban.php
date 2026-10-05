@@ -32,7 +32,7 @@ class ProjectKanban
     /** O perfil pode ver ALGUM kanban de projetos? */
     public static function canAccess(): bool
     {
-        return Access::can('projectkanban') || Access::can('kanban');
+        return Access::can('kanban'); // Bloco F-2a: direito do Cliente aposentado
     }
 
     /**

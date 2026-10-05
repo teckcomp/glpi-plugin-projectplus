@@ -68,6 +68,8 @@
 
         <div class="projectplus-header">
             <div class="pp-tl-controls">
+                {# Bloco F-2a: escondido na Visão do cliente #}
+                {% if not nav.client %}
                 <form method="get" class="pp-type-pick" action="{{ plugin_web_dir }}/front/timeline.php">
                     {% if type_scope %}<input type="hidden" name="scope" value="{{ type_scope }}">{% endif %}
                     <label>
@@ -84,6 +86,7 @@
                         <button type="submit" class="projectplus-btn projectplus-btn--ghost">{{ __('Abrir', 'projectplus') }}</button>
                     </noscript>
                 </form>
+                {% endif %}
                 <div class="pp-tl-zoom" role="group" aria-label="{{ __('Zoom', 'projectplus') }}">
                     <button type="button" class="pp-tl-zoom__btn" data-pp-zoom="day">{{ __('Dia', 'projectplus') }}</button>
                     <button type="button" class="pp-tl-zoom__btn pp-tl-zoom__btn--active" data-pp-zoom="week">{{ __('Semana', 'projectplus') }}</button>
@@ -101,7 +104,7 @@
                 <input type="search" class="pp-tablesearch" id="pp-tl-search"
                        placeholder="{{ __('Buscar projeto ou tarefa…', 'projectplus') }}"
                        aria-label="{{ __('Buscar projeto ou tarefa', 'projectplus') }}">
-                {% if scope_can_expand %}
+                {% if scope_can_expand and not nav.client %}
                 <a class="projectplus-btn projectplus-btn--ghost pp-scope-toggle" href="{{ scope_toggle_url }}"
                    title="{{ scope_is_expanded ? __('Voltar ao escopo pessoal', 'projectplus') : __('Incluir todos os projetos que você pode ver', 'projectplus') }}">
                     {% if scope_is_expanded %}

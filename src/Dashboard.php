@@ -257,6 +257,8 @@ class Dashboard extends CommonGLPI
                     $pct
                 ),
                 'url'           => Url::project((int) $row['id']),
+                // Bloco F-2b: 💬 na linha do projeto
+                'comments'      => TaskComment::countForProject((int) $row['id']),
             ];
 
             $kpis['active']++;
@@ -1216,6 +1218,8 @@ class Dashboard extends CommonGLPI
                 (int) $row['percent_done']
             ),
             'url'           => Url::project($childId),
+            // Bloco F-2b: 💬 na linha do subprojeto (e no redesenho da faixa)
+            'comments'      => TaskComment::countForProject($childId),
         ];
     }
 

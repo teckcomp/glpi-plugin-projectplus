@@ -52,10 +52,34 @@ class TaskComment extends CommonDBTM
         return Access::canEnter();
     }
 
-    /** Bloco D-3b: comentários de projeto — só quem edita projeto. */
+    /**
+     * Comentários de projeto no geral (aba nativa, flag da faixa). Bloco
+     * F-2b (05/10/2026): deixou de ser só de quem edita projeto — todo
+     * mundo que entra no plugin; a regra POR PROJETO é a de baixo.
+     */
     public static function canCommentProject(): bool
     {
-        return self::canComment() && Access::canEditProjects();
+        return self::canComment();
+    }
+
+    /**
+     * Bloco F-2b: lê/escreve no 💬 DESTE projeto quem entra no plugin e
+     * ENXERGA o projeto (entidade + escopo do plugin, inclusive o cliente
+     * na equipe do projeto). Não depende do direito nativo de projeto.
+     */
+    public static function canCommentOnProject(int $projectId): bool
+    {
+        if ($projectId <= 0 || !self::canComment()) {
+            return false;
+        }
+        $project = new Project();
+        if (!$project->getFromDB($projectId) || (int) $project->fields['is_deleted'] === 1) {
+            return false;
+        }
+        if (!Session::haveAccessToEntity((int) $project->fields['entities_id'])) {
+            return false;
+        }
+        return Scope::canSeeProject($projectId);
     }
 
     /** Quem pode editar/excluir um comentário: o autor ou admin (config). */
@@ -313,21 +337,54 @@ class TaskComment extends CommonDBTM
 
         if ($id > 0) {
             ProjectTracking::touch((int) $project->getID());
-            self::notifyManager($project, $content);
+            self::notifyProjectParticipants($project, $content);
         }
         return $id;
     }
 
-    private static function notifyManager(Project $project, string $content): void
+    /**
+     * Bloco F-2b (decisão do Claudio): avisa no sino o GESTOR do projeto e
+     * quem JÁ comentou nele (participantes da conversa), menos o autor.
+     *
+     * @return int[] ids avisados (para o harness)
+     */
+    public static function projectRecipients(Project $project, int $authorId): array
     {
         /** @var \DBmysql $DB */
         global $DB;
 
-        $authorId  = (int) Session::getLoginUserID();
+        $ids = [];
         $managerId = (int) ($project->fields['users_id'] ?? 0);
-        if ($managerId <= 0 || $managerId === $authorId) {
-            return;
+        if ($managerId > 0) {
+            $ids[$managerId] = true;
         }
+        foreach (
+            $DB->request([
+                'SELECT' => 'users_id',
+                'FROM'   => self::getTable(),
+                'WHERE'  => ['projecttasks_id' => 0, 'projects_id' => (int) $project->getID()],
+            ]) as $r
+        ) {
+            if ((int) $r['users_id'] > 0) {
+                $ids[(int) $r['users_id']] = true;
+            }
+        }
+        unset($ids[$authorId]);
+        return array_keys($ids);
+    }
+
+    private static function notifyProjectParticipants(Project $project, string $content): void
+    {
+        $authorId = (int) Session::getLoginUserID();
+        foreach (self::projectRecipients($project, $authorId) as $uid) {
+            self::notifyProjectUser($project, $content, $authorId, $uid);
+        }
+    }
+
+    private static function notifyProjectUser(Project $project, string $content, int $authorId, int $managerId): void
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
 
         $excerpt = mb_substr(trim($content), 0, 80);
         if (mb_strlen(trim($content)) > 80) {

@@ -66,13 +66,31 @@ class Install
         'plugin_projectplus_projects',
         'plugin_projectplus_tasks',
         'plugin_projectplus_kanban',
-        'plugin_projectplus_projectkanban',
+        'plugin_projectplus_timeline',
         'plugin_projectplus_costs',
         'plugin_projectplus_reports',
         'plugin_projectplus_templates',
         'plugin_projectplus_alerts',
         'plugin_projectplus_seemanaged',
         'plugin_projectplus_seeall',
+        'plugin_projectplus_clientview',
+    ];
+
+    /**
+     * Direitos APOSENTADOS (Bloco F-2a, 05/10/2026). A instalação migra e
+     * apaga as linhas; a purga da desinstalação ainda os remove de bases
+     * que nunca reinstalaram.
+     */
+    public const LEGACY_RIGHTS = [
+        'plugin_projectplus_projectkanban',
+    ];
+
+    /**
+     * Direitos que NÃO entram na reconciliação do administrador: "Visão do
+     * cliente" esconde controles — dar ao admin seria piorar a tela dele.
+     */
+    public const NOT_FOR_ADMIN = [
+        'plugin_projectplus_clientview',
     ];
 
     /**
@@ -471,9 +489,17 @@ class Install
         $migration->addRight('plugin_projectplus_reports', READ, $keepDashboard);
         $migration->addRight('plugin_projectplus_alerts', READ, $keepDashboard);
 
-        // Kanban de projetos (exclusivo do perfil Cliente): a linha existe
-        // para todos (valor 0) e é marcada à mão no perfil Cliente.
-        $migration->addRight('plugin_projectplus_projectkanban', 0);
+        // Bloco F-2a (05/10/2026) — Timeline ganha direito próprio (antes
+        // vinha de Tarefas → Ver). Quem já tinha Tarefas → Ver recebe
+        // Timeline → Ver na primeira execução; addRight não mexe depois.
+        $migration->addRight('plugin_projectplus_timeline', READ, ['plugin_projectplus_tasks' => READ]);
+
+        // Bloco F-2a — "Visão do cliente" substitui "Kanban de projetos
+        // (Cliente)". Quem tinha o direito antigo recebe a Visão do cliente
+        // (e Kanban → Ver, para não perder o board) antes de a linha velha
+        // ser apagada. Base nova: ninguém tem o antigo, nasce 0 para todos.
+        $migration->addRight('plugin_projectplus_clientview', READ, ['plugin_projectplus_projectkanban' => READ]);
+        self::retireProjectKanbanRight();
 
         // Modelos: hoje travado em super-admin (config UPDATE, lição 11).
         // Vira direito próprio, preservando o comportamento (só quem tem
@@ -694,7 +720,7 @@ class Install
             CommentFile::purgeAllFiles();
 
             // Remove os direitos de todos os perfis
-            ProfileRight::deleteProfileRights(self::RIGHTS);
+            ProfileRight::deleteProfileRights(array_merge(self::RIGHTS, self::LEGACY_RIGHTS));
 
             // Remove também a configuração do plugin
             CoreConfig::deleteConfigurationValues(
@@ -751,7 +777,7 @@ class Install
      */
     public static function missingAdminRights(int $profileId): array
     {
-        $max     = Profile::getMaxRights();
+        $max     = array_diff_key(Profile::getMaxRights(), array_flip(self::NOT_FOR_ADMIN));
         $current = ProfileRight::getProfileRights($profileId, array_keys($max));
 
         $missing = [];
@@ -783,6 +809,52 @@ class Install
      *
      * @return array<int,int> id do perfil => quantos direitos foram elevados
      */
+    /**
+     * Aposenta `plugin_projectplus_projectkanban` (Bloco F-2a): perfil que
+     * tinha o direito e NÃO tinha o Kanban de tarefas recebe Kanban → Ver
+     * (o board de projetos passou a ser liberado pelo Kanban); depois as
+     * linhas antigas são apagadas. Sem linhas antigas, não faz nada —
+     * idempotente.
+     *
+     * @return int quantos perfis ganharam Kanban → Ver
+     */
+    public static function retireProjectKanbanRight(): int
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        $old = [];
+        foreach (
+            $DB->request([
+                'SELECT' => ['profiles_id', 'rights'],
+                'FROM'   => 'glpi_profilerights',
+                'WHERE'  => ['name' => 'plugin_projectplus_projectkanban'],
+            ]) as $r
+        ) {
+            $old[(int) $r['profiles_id']] = (int) $r['rights'];
+        }
+        if ($old === []) {
+            return 0;
+        }
+
+        $granted = 0;
+        foreach ($old as $profileId => $rights) {
+            if (($rights & READ) === 0) {
+                continue;
+            }
+            $cur = ProfileRight::getProfileRights($profileId, ['plugin_projectplus_kanban']);
+            $kb  = (int) ($cur['plugin_projectplus_kanban'] ?? 0);
+            if (($kb & READ) === 0) {
+                ProfileRight::updateProfileRights($profileId, ['plugin_projectplus_kanban' => $kb | READ]);
+                $granted++;
+            }
+        }
+
+        ProfileRight::deleteProfileRights(self::LEGACY_RIGHTS);
+
+        return $granted;
+    }
+
     public static function ensureAdminRights(): array
     {
         $changed = [];

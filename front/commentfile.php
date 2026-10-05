@@ -43,10 +43,10 @@ if ($row === null) {
     exit;
 }
 
-// Bloco D-3b: anexo de comentário de PROJETO segue a regra dele (só quem
-// edita projeto).
+// Bloco D-3b/F-2b: anexo de comentário de PROJETO segue a regra dele (quem
+// enxerga o projeto).
 if ((int) ($row['projecttasks_id'] ?? 0) === 0 && (int) ($row['projects_id'] ?? 0) > 0
-    && !TaskComment::canCommentProject()) {
+    && !TaskComment::canCommentOnProject((int) $row['projects_id'])) {
     http_response_code(403);
     exit;
 }

@@ -210,10 +210,14 @@ class Timeline
                         ? (int) $t['projecttasks_id'] : 0;
                     $byParent[$key][] = $t;
                 }
+                // Bloco F-2b: $pid entra no use() — sem ele o link da tarefa
+                // (Url::project, Bloco A) recebia null e lançava TypeError
+                // ("Ocorreu um erro inesperado" sempre que havia tarefa).
                 $walkTask = function (int $taskParent, int $taskDepth) use (
                     &$walkTask,
                     &$group,
                     &$dates,
+                    $pid,
                     $byParent,
                     $states,
                     $deps,

@@ -22,7 +22,8 @@ include('../../../inc/includes.php');
 /** @var array $CFG_GLPI */
 global $CFG_GLPI;
 
-Session::checkRight('plugin_projectplus_tasks', READ);
+// Bloco F-2a: direito próprio (antes reaproveitava Tarefas → Ver)
+Session::checkRight('plugin_projectplus_timeline', READ);
 
 // Escopo (Etapa 8, Bloco 3): abre no PESSOAL (minhas tarefas, mesmo critério
 // de "Minhas tarefas"); quem tem direito de escopo amplia via ?scope=all

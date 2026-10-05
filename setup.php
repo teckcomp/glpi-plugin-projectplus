@@ -68,10 +68,10 @@ function plugin_init_projectplus(): void
     // Item de menu: Ferramentas > Gestor de Projetos. Bloco F-1b: aparece
     // para quem tem QUALQUER módulo do plugin (não só o Painel) e abre na
     // primeira tela que o perfil alcança (Access::homePath).
-    // Lista igual à Access::ENTRY (+ projectkanban, que entra pelo Kanban);
-    // checada aqui direto na sessão para não depender de autoload no init.
+    // Lista igual à Access::ENTRY; checada aqui direto na sessão para não
+    // depender de autoload no init.
     $ppCanEnter = false;
-    foreach (['dashboard', 'tasks', 'kanban', 'projectkanban', 'reports', 'costs', 'templates'] as $ppModule) {
+    foreach (['dashboard', 'tasks', 'kanban', 'timeline', 'reports', 'costs', 'templates'] as $ppModule) {
         if (Session::haveRight('plugin_projectplus_' . $ppModule, READ)) {
             $ppCanEnter = true;
             break;

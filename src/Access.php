@@ -31,7 +31,8 @@ class Access
         'projects'      => 'plugin_projectplus_projects',
         'tasks'         => 'plugin_projectplus_tasks',
         'kanban'        => 'plugin_projectplus_kanban',
-        'projectkanban' => 'plugin_projectplus_projectkanban',
+        'timeline'      => 'plugin_projectplus_timeline',
+        'clientview'    => 'plugin_projectplus_clientview',
         'costs'         => 'plugin_projectplus_costs',
         'reports'       => 'plugin_projectplus_reports',
         'templates'     => 'plugin_projectplus_templates',
@@ -78,6 +79,7 @@ class Access
         'dashboard' => 'front/dashboard.php',
         'tasks'     => 'front/mytasks.php',
         'kanban'    => 'front/kanban.php',
+        'timeline'  => 'front/timeline.php',
         'reports'   => 'front/reports.php',
         'costs'     => 'front/costs.php',
         'templates' => 'front/projecttemplates.php',
@@ -87,7 +89,7 @@ class Access
     public static function homePath(): ?string
     {
         foreach (self::ENTRY as $module => $path) {
-            $ok = ($module === 'kanban') ? self::canKanban() : self::can($module);
+            $ok = self::can($module);
             if ($ok) {
                 return $path;
             }
@@ -107,7 +109,9 @@ class Access
      */
     public static function canKanban(): bool
     {
-        return self::can('kanban') || self::can('projectkanban');
+        // Bloco F-2a: o direito "Kanban de projetos (Cliente)" foi aposentado;
+        // os dois boards são liberados pelo Kanban.
+        return self::can('kanban');
     }
 
     /**
@@ -118,7 +122,12 @@ class Access
      */
     public static function kanbanIsProjects(): bool
     {
-        return self::can('projectkanban') && !self::can('kanban');
+        // Bloco F-2b: sempre falso. No F-2a a Visão do cliente redirecionava
+        // para o board de projetos — e o botão "Kanban de tarefas" (que
+        // aponta para kanban.php) caía de volta nele, num laço. Com o
+        // direito do Cliente aposentado, não há mais quem só tenha o board
+        // de projetos: o Kanban abre sempre no de tarefas.
+        return false;
     }
 
     /**
@@ -251,12 +260,14 @@ class Access
             'dashboard' => self::can('dashboard'),
             'tasks'     => self::can('tasks'),
             'kanban'    => self::canKanban(),
-            'timeline'  => self::can('tasks'),
+            'timeline'  => self::can('timeline'),
             'templates' => self::can('templates'),
             'costs'     => self::can('costs'),
             'reports'   => self::can('reports'),
             'alerts'    => self::can('alerts'),
             'config'    => (bool) Session::haveRight('config', UPDATE),
+            // Bloco F-2a: Visão do cliente esconde controles nas telas
+            'client'    => self::can('clientview'),
         ];
     }
 }

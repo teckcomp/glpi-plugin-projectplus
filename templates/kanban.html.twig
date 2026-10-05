@@ -71,6 +71,8 @@
 
         <div class="projectplus-header">
             <div class="pp-kb-controls">
+                {# Bloco F-2a: escondido na Visão do cliente #}
+                {% if not nav.client %}
                 <form method="get" class="pp-type-pick" action="{{ plugin_web_dir }}/front/kanban.php">
                     {% if type_scope %}<input type="hidden" name="scope" value="{{ type_scope }}">{% endif %}
                     <label>
@@ -89,6 +91,7 @@
                         <button type="submit" class="projectplus-btn projectplus-btn--ghost">{{ __('Abrir', 'projectplus') }}</button>
                     </noscript>
                 </form>
+                {% endif %}
                 <div class="pp-seg pp-kb-seg" role="group" aria-label="{{ __('Agrupar por', 'projectplus') }}">
                     <button type="button" class="pp-seg__btn pp-seg__btn--active" data-pp-lane="project">{{ __('Projeto', 'projectplus') }}</button>
                     <button type="button" class="pp-seg__btn" data-pp-lane="responsible">{{ __('Responsável', 'projectplus') }}</button>
@@ -102,7 +105,7 @@
                 <input type="search" class="pp-tablesearch" data-pp-role="search"
                        placeholder="{{ __('Buscar tarefa ou projeto…', 'projectplus') }}"
                        aria-label="{{ __('Buscar tarefa ou projeto', 'projectplus') }}">
-                {% if scope_can_expand %}
+                {% if scope_can_expand and not nav.client %}
                 <a class="projectplus-btn projectplus-btn--ghost pp-scope-toggle" href="{{ scope_toggle_url }}"
                    title="{{ scope_is_expanded ? __('Voltar ao escopo pessoal', 'projectplus') : __('Incluir todos os projetos que você pode ver', 'projectplus') }}">
                     {% if scope_is_expanded %}

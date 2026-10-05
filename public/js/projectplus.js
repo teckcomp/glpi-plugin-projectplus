@@ -246,6 +246,7 @@
         initTaskStateChart();
         initExpandButtons(root, ajaxUrl);
         initTaskExpand(root, ajaxUrl);
+        bindProjectRowComments(root);
         initModals();
         enhanceSearchSelects(document); // busca nos dropdowns do modal
         initTaskPanels(root);
@@ -2709,7 +2710,48 @@
         if (showBudget) { cells.push({ cls: 'projectplus-budget-cell', html: budget }); }
         cells.push({ cls: 'pp-deadline-cell', html: deadlineCell(p.deadline) });
         cells.push({ cls: '', html: p.plan_end_date ? formatDate(p.plan_end_date) : '—' });
+        // Bloco F-2b: 💬 do projeto (mesma coluna do <thead> do Twig)
+        cells.push({ cls: 'pp-cmt-cell', html: commentBtnHtml({ comments: p.comments }) });
         return cells;
+    }
+
+    // Bloco F-2b (05/10/2026): 💬 na linha do projeto/subprojeto. O painel
+    // abre logo abaixo da linha — depois do painel de Tarefas, se aberto,
+    // para o botão Tarefas continuar achando o dele no irmão seguinte.
+    function toggleProjectRowComments(row, projectId) {
+        let anchor = row;
+        let next = row.nextElementSibling;
+        if (next && next.classList.contains('projectplus-taskspanel-row')) {
+            anchor = next;
+            next = next.nextElementSibling;
+        }
+        if (next && next.classList.contains('pp-projrow-cmt')) {
+            next.remove();
+            return;
+        }
+        const tr = document.createElement('tr');
+        tr.className = 'pp-cmt-row pp-projrow-cmt';
+        const td = document.createElement('td');
+        td.colSpan = row.children.length;
+        td.innerHTML = '<div class="pp-cmt-panel"><span class="projectplus-muted">' +
+            escapeHtml(__('Carregando comentários…')) + '</span></div>';
+        tr.appendChild(td);
+        anchor.insertAdjacentElement('afterend', tr);
+        loadComments(td, row, projectId, 'project');
+    }
+
+    function bindProjectRowComments(root) {
+        if (!root || root.dataset.ppProjCmtBound) { return; }
+        root.dataset.ppProjCmtBound = '1';
+        root.addEventListener('click', function (ev) {
+            const btn = ev.target.closest ? ev.target.closest('.pp-cmt-btn') : null;
+            if (!btn) { return; }
+            const tr = btn.closest('tr');
+            if (!tr || !(tr.classList.contains('projectplus-row-item') || tr.classList.contains('projectplus-row--child'))) {
+                return; // 💬 de tarefa e da faixa têm handler próprio
+            }
+            toggleProjectRowComments(tr, tr.dataset.projectId);
+        });
     }
 
     // Bloco D-3a: depois de editar pela faixa, redesenha as linhas da tabela
@@ -3205,6 +3247,8 @@
         bindProjectStrip: bindProjectStrip,
         refreshProjectRows: refreshProjectRows,
         insertChildren: function (row, children) { insertChildren(row, children); },
+        bindProjectRowComments: bindProjectRowComments,
+        projectRowCells: projectRowCells,
     };
 
     window.ProjectPlus = ProjectPlus;

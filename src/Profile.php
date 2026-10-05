@@ -87,8 +87,9 @@ class Profile extends CommonDBTM
                 ],
             ],
             [
-                'label'  => __('Kanban de projetos (Cliente)', 'projectplus'),
-                'field'  => 'plugin_projectplus_projectkanban',
+                // Bloco F-2a: direito próprio (antes vinha de Tarefas)
+                'label'  => __('Timeline', 'projectplus'),
+                'field'  => 'plugin_projectplus_timeline',
                 'rights' => [READ => __('Ver', 'projectplus')],
             ],
             [
@@ -112,6 +113,14 @@ class Profile extends CommonDBTM
             [
                 'label'  => __('Alertas (sino)', 'projectplus'),
                 'field'  => 'plugin_projectplus_alerts',
+                'rights' => [READ => __('Ver', 'projectplus')],
+            ],
+            [
+                // Bloco F-2a: substitui "Kanban de projetos (Cliente)".
+                // Esconde filtros de tipo/projeto, "Ver só os meus" e
+                // "Lista nativa" — não dá acesso a nada por si só.
+                'label'  => __('Visão do cliente', 'projectplus'),
+                'field'  => 'plugin_projectplus_clientview',
                 'rights' => [READ => __('Ver', 'projectplus')],
             ],
         ];

@@ -84,10 +84,11 @@
         <div class="projectplus-header" id="overview">
             <form method="get" class="projectplus-period" action="">
                 {% if filter_scope %}<input type="hidden" name="scope" value="{{ filter_scope }}">{% endif %}
-                <input type="date" name="from" value="{{ filter_from }}" title="{{ __('Início do período', 'projectplus') }}">
+                {# Bloco F-2a: na Visão do cliente não há "Aplicar" — as datas enviam sozinhas #}
+                <input type="date" name="from" value="{{ filter_from }}" title="{{ __('Início do período', 'projectplus') }}"{% if nav.client %} onchange="this.form.submit()"{% endif %}>
                 <span>—</span>
-                <input type="date" name="until" value="{{ filter_until }}" title="{{ __('Fim do período', 'projectplus') }}">
-                {% if type_options is not empty %}
+                <input type="date" name="until" value="{{ filter_until }}" title="{{ __('Fim do período', 'projectplus') }}"{% if nav.client %} onchange="this.form.submit()"{% endif %}>
+                {% if type_options is not empty and not nav.client %}
                 <select name="type" class="pp-type-pick" title="{{ __('Tipo de projeto', 'projectplus') }}">
                     <option value="">{{ __('Todos os tipos', 'projectplus') }}</option>
                     {% for t in type_options %}
@@ -95,7 +96,9 @@
                     {% endfor %}
                 </select>
                 {% endif %}
+                {% if not nav.client %}
                 <button type="submit" class="projectplus-btn projectplus-btn--ghost">{{ __('Aplicar', 'projectplus') }}</button>
+                {% endif %}
                 {% if filter_from or filter_until or filter_type is not null %}
                     <a href="?" class="projectplus-period__clear" title="{{ __('Limpar filtro', 'projectplus') }}">&times;</a>
                 {% endif %}
@@ -114,7 +117,7 @@
             </div>
             {% endif %}
             <div class="projectplus-actions">
-                {% if scope_can_expand %}
+                {% if scope_can_expand and not nav.client %}
                 <a class="projectplus-btn projectplus-btn--ghost pp-scope-toggle" href="{{ scope_toggle_url }}"
                    title="{{ scope_is_expanded ? __('Voltar ao escopo pessoal', 'projectplus') : __('Incluir todos os projetos que você pode ver', 'projectplus') }}">
                     {% if scope_is_expanded %}
@@ -143,9 +146,11 @@
                     + {{ __('Novo projeto', 'projectplus') }}
                 </button>
                 {% endif %}
+                {% if not nav.client %}
                 <a class="projectplus-btn projectplus-btn--ghost" href="{{ glpi_root }}/front/project.php">
                     {{ __('Lista nativa', 'projectplus') }}
                 </a>
+                {% endif %}
             </div>
         </div>
 
@@ -265,6 +270,7 @@
                             {% if can_costs %}<th>{{ __('Orçamento', 'projectplus') }}</th>{% endif %}
                             <th>{{ __('Prazo decorrido', 'projectplus') }}</th>
                             <th>{{ __('Prazo final', 'projectplus') }}</th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -336,9 +342,14 @@
                                 {% endif %}
                             </td>
                             <td>{{ project.plan_end_date ? project.plan_end_date|formatted_date : '—' }}</td>
+                            {# Bloco F-2b: 💬 do projeto para quem o enxerga #}
+                            <td class="pp-cmt-cell">
+                                <button type="button" class="pp-cmt-btn{% if project.comments > 0 %} pp-cmt-btn--has{% endif %}"
+                                        title="{{ __('Comentários', 'projectplus') }}">💬{% if project.comments > 0 %}<span class="pp-cmt-count">{{ project.comments }}</span>{% endif %}</button>
+                            </td>
                         </tr>
                     {% else %}
-                        <tr><td colspan="{{ can_costs ? 9 : 8 }}">{{ __('Nenhum projeto no período', 'projectplus') }}</td></tr>
+                        <tr><td colspan="{{ can_costs ? 10 : 9 }}">{{ __('Nenhum projeto no período', 'projectplus') }}</td></tr>
                     {% endfor %}
                     </tbody>
                 </table>

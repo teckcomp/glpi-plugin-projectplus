@@ -61,7 +61,9 @@ switch ($action) {
             if (!$project->getFromDB($projectId)) {
                 pp_reply(['ok' => false, 'message' => __('Projeto não encontrado', 'projectplus')]);
             }
-            if (!TaskComment::canCommentProject() || !$project->canViewItem()) {
+            // Bloco F-2b: quem enxerga o projeto (escopo do plugin), não o
+            // direito nativo — o cliente na equipe comenta também.
+            if (!TaskComment::canCommentOnProject($projectId)) {
                 pp_reply(['ok' => false, 'message' => __('Sem permissão para comentar', 'projectplus')]);
             }
             $id = TaskComment::addForProject($project, $content);
@@ -117,7 +119,9 @@ switch ($action) {
         if (!TaskComment::canManage((int) $comment->fields['users_id'])) {
             pp_reply(['ok' => false, 'message' => __('Só o autor pode editar este comentário', 'projectplus')]);
         }
-        if ((int) ($comment->fields['projects_id'] ?? 0) > 0 && !TaskComment::canCommentProject()) {
+        if ((int) ($comment->fields['projecttasks_id'] ?? 0) === 0
+            && (int) ($comment->fields['projects_id'] ?? 0) > 0
+            && !TaskComment::canCommentOnProject((int) $comment->fields['projects_id'])) {
             pp_reply(['ok' => false, 'message' => __('Sem permissão para comentar', 'projectplus')]);
         }
 
@@ -138,7 +142,7 @@ switch ($action) {
             pp_reply(['ok' => false, 'message' => __('Só o autor pode excluir este comentário', 'projectplus')]);
         }
         $cProject = (int) ($comment->fields['projects_id'] ?? 0);
-        if ($cProject > 0 && (int) $comment->fields['projecttasks_id'] === 0 && !TaskComment::canCommentProject()) {
+        if ($cProject > 0 && (int) $comment->fields['projecttasks_id'] === 0 && !TaskComment::canCommentOnProject($cProject)) {
             pp_reply(['ok' => false, 'message' => __('Sem permissão para comentar', 'projectplus')]);
         }
 

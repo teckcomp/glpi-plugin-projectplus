@@ -86,7 +86,10 @@
                    restritas ao tipo escolhido. Os dois recortam lista E KPIs,
                    no cliente — sem mexer em escopo. Não são <label>: o
                    combobox de busca põe um input ao lado do select escondido. #}
-                {% if type_options is not empty %}
+                {# Bloco F-2a: na Visão do cliente os dois filtros ficam ocultos
+                   (o select de Projeto continua no DOM: o link de projeto
+                   ?project=ID ainda recorta a lista) #}
+                {% if type_options is not empty and not nav.client %}
                 <div class="pp-mt-project">
                     <span class="pp-mt-project__label">{{ __('Tipo', 'projectplus') }}</span>
                     <select id="pp-mt-type" class="pp-mt-type" title="{{ __('Tipo de projeto', 'projectplus') }}">
@@ -97,7 +100,7 @@
                     </select>
                 </div>
                 {% endif %}
-                <div class="pp-mt-project">
+                <div class="pp-mt-project"{% if nav.client %} hidden{% endif %}>
                     <span class="pp-mt-project__label">{{ __('Projeto', 'projectplus') }}</span>
                     <select id="pp-mt-project" class="pp-search">
                         <option value="0">{{ __('Todos os projetos', 'projectplus') }}</option>

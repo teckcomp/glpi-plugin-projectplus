@@ -24,13 +24,13 @@ include('../../../inc/includes.php');
 /** @var array $CFG_GLPI */
 global $CFG_GLPI;
 
-// Kanban aparece para quem tem o board de tarefas OU o de projetos (Cliente).
+// Kanban (os dois boards) — Bloco F-2a: o direito do Cliente foi aposentado.
 if (!Access::canKanban()) {
     Html::displayRightError();
 }
 
-// Roteamento (Etapa 8, Bloco 4): quem SÓ tem o Kanban de PROJETOS (Cliente)
-// cai no board de projetos. Assim o item "Kanban" da sidebar continua
+// Roteamento (Etapa 8, Bloco 4; F-2a): na Visão do cliente o Kanban abre no
+// board de projetos. Assim o item "Kanban" da sidebar continua
 // apontando para esta URL em todas as telas — quem decide o destino é o
 // direito, não o template.
 if (Access::kanbanIsProjects()) {
