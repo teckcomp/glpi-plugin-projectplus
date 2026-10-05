@@ -8,6 +8,8 @@
      data-comment-url="{{ plugin_web_dir }}/ajax/comment.php"
      data-dep-url="{{ plugin_web_dir }}/ajax/taskdep.php"
      data-alerts-url="{{ plugin_web_dir }}/ajax/alerts.php"
+     data-initial-project="{{ initial_project }}"
+     data-initial-task="{{ initial_task }}"
      data-csrf="{{ csrf_token }}">
 
     {# ================= COLUNA ESQUERDA: título + sidebar ================= #}
@@ -120,9 +122,11 @@
                     </div>
                 </div>
                 {% endif %}
+                {% if nav.dashboard %}
                 <a class="projectplus-btn projectplus-btn--ghost" href="{{ plugin_web_dir }}/front/dashboard.php">
                     {{ __('Visão geral', 'projectplus') }}
                 </a>
+                {% endif %}
             </div>
         </div>
 

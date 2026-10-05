@@ -560,7 +560,9 @@
     'current_user_id': current_user_id,
     'phases_by_type': phases_by_type,
     'can_team': can_team,
-    'can_edit_project': can_edit_project
+    'can_edit_project': can_edit_project,
+    'scope_mine': filter_scope == 'mine',
+    'tasks_mine': tasks_mine
 }|json_encode|raw }}</script>
 
 <script src="{{ plugin_web_dir }}/js/projectplus.js"></script>

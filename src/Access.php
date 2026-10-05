@@ -69,6 +69,39 @@ class Access
     }
 
     /**
+     * Telas de entrada do plugin, na ordem em que o menu escolhe a primeira
+     * que o perfil alcança (Bloco F-1b, 05/10/2026). O Painel (Visão geral)
+     * deixou de ser a porta única: o técnico com só Tarefas/Kanban entra
+     * direto em "Minhas tarefas". Alertas (sino) não tem tela própria.
+     */
+    private const ENTRY = [
+        'dashboard' => 'front/dashboard.php',
+        'tasks'     => 'front/mytasks.php',
+        'kanban'    => 'front/kanban.php',
+        'reports'   => 'front/reports.php',
+        'costs'     => 'front/costs.php',
+        'templates' => 'front/projecttemplates.php',
+    ];
+
+    /** Caminho da primeira tela que o perfil alcança; null = nenhuma. */
+    public static function homePath(): ?string
+    {
+        foreach (self::ENTRY as $module => $path) {
+            $ok = ($module === 'kanban') ? self::canKanban() : self::can($module);
+            if ($ok) {
+                return $path;
+            }
+        }
+        return null;
+    }
+
+    /** O perfil entra no plugin (menu, leituras comuns, comentários)? */
+    public static function canEnter(): bool
+    {
+        return self::homePath() !== null;
+    }
+
+    /**
      * O item "Kanban" da sidebar aparece se o perfil puder ver ALGUM Kanban:
      * o de tarefas (comum) OU o de projetos (Cliente).
      */

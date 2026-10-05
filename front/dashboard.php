@@ -44,8 +44,8 @@ $until = preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['until'] ?? '') ? $_GET['unti
 // direito de escopo pode ampliar via ?scope=all (sem memória em sessão).
 $scopeMode           = Scope::mode();
 $scopeProjectIds     = Scope::projectIds($scopeMode);      // projetos exatos (equipe/gerência)
-$scopeMyTaskIds      = Scope::myTaskIds($scopeMode);       // personal: minhas tarefas
-$scopeTaskProjectIds = Scope::taskProjectIds($scopeMode);  // managed: tarefas por projeto
+$scopeMyTaskIds      = Scope::myTaskIds($scopeMode);       // personal e managed: minhas tarefas (F-1)
+$scopeTaskProjectIds = Scope::taskProjectIds($scopeMode);  // managed: projetos alcançáveis (subprojetos)
 
 // Tipo de projeto (Etapa 9). Aqui o tipo é OPCIONAL — ao contrário dos
 // Kanbans, a Visão geral é justamente a tela que cruza departamentos: sem
@@ -191,6 +191,9 @@ TemplateRenderer::getInstance()->display(
         'filter_type'     => $typeId,
         'type_chart'      => $data['type_chart'],
         'filter_scope'    => $scopeIsExpanded ? '' : 'mine',
+        // Bloco F-1: painel do projeto só com as MINHAS tarefas (fora do
+        // "Ver todos") — o JS escolhe a mensagem de lista vazia por isto.
+        'tasks_mine'      => $scopeMyTaskIds !== null,
         // Conjunto de fases por tipo, para o campo Estado do modal seguir o
         // tipo escolhido sem recarregar a página.
         'phases_by_type'  => TypePhase::phasesByType(),

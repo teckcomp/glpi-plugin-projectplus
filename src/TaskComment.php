@@ -42,10 +42,14 @@ class TaskComment extends CommonDBTM
         return _n('Comentário', 'Comentários', $nb, 'projectplus');
     }
 
-    /** Quem pode ler/escrever comentários: quem vê o painel. */
+    /**
+     * Quem pode ler/escrever comentários: quem entra no plugin. Bloco F-1b:
+     * antes era só quem tinha o Painel — o técnico sem Visão geral perdia o
+     * 💬 em Minhas tarefas.
+     */
     public static function canComment(): bool
     {
-        return Session::haveRight('plugin_projectplus_dashboard', READ);
+        return Access::canEnter();
     }
 
     /** Bloco D-3b: comentários de projeto — só quem edita projeto. */

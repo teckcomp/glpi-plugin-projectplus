@@ -13,7 +13,8 @@ use GlpiPlugin\Projectplus\Reports;
 
 include('../../../inc/includes.php');
 
-Session::checkRight('plugin_projectplus_dashboard', READ);
+// Bloco F-1b: burndown é dos Relatórios, não do Painel
+Session::checkRight('plugin_projectplus_reports', READ);
 
 header('Content-Type: application/json; charset=UTF-8');
 

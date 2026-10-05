@@ -15,12 +15,15 @@
  *     - managed  : personal + projetos onde ele é o gestor
  *                  (`glpi_projects.users_id`). Requer direito `seemanaged`.
  *     - all      : sem filtro. Requer direito `seeall`.
- *   TAREFAS que aparecem:
+ *   TAREFAS que aparecem (Bloco F-1, 05/10/2026 — decisão do Claudio):
  *     - personal : só as MINHAS tarefas (equipe da tarefa,
  *                  `glpi_projecttaskteams`), independentemente do projeto.
- *     - managed  : todas as tarefas dos projetos do escopo (raízes +
- *                  descendentes) — visão de status do que ele gerencia.
+ *     - managed  : IDEM — só as minhas. "Ver projetos que gerencio"
+ *                  amplia só a lista de PROJETOS; quem precisa da visão da
+ *                  equipe inteira recebe "Ver todos" (seeall).
  *     - all      : sem filtro.
+ *   Subprojetos no managed: os DESCENDENTES dos projetos que ele gerencia
+ *   entram; os de projeto em que ele é só da equipe, não (cada um por si).
  *
  * O modo vem do `?scope` da URL (sem memória em sessão — a tela sempre
  * reabre no pessoal) cruzado com o direito de escopo do perfil.
@@ -141,21 +144,26 @@ class Scope
     }
 
     /**
-     * IDs das MINHAS tarefas (equipe da tarefa) — usado só no modo personal
-     * para filtrar a lista/indicadores de tarefas. `null` fora do personal.
+     * IDs das MINHAS tarefas (equipe da tarefa) — filtra lista/indicadores
+     * de tarefas no personal E no managed (Bloco F-1). `null` só no 'all'.
      */
     public static function myTaskIds(?string $mode = null): ?array
     {
         $mode = $mode ?? self::mode();
-        if ($mode !== 'personal') {
+        if ($mode === 'all') {
             return null;
         }
         return self::myTasks((int) Session::getLoginUserID());
     }
 
     /**
-     * IDs de projeto (com descendentes) para filtrar TAREFAS por projeto no
-     * modo 'managed'. `null` fora do managed.
+     * PROJETOS alcançáveis no modo 'managed': os da equipe (cada um por si)
+     * + os que ele gerencia COM descendentes. `null` fora do managed.
+     *
+     * Bloco F-1: o nome ficou do tempo em que filtrava tarefas por projeto;
+     * hoje serve a canSeeProject(), às opções de projeto de "Minhas
+     * tarefas" e à expansão de subprojetos do painel. Antes somava os
+     * descendentes também dos projetos em que ele era só da equipe.
      */
     public static function taskProjectIds(?string $mode = null): ?array
     {
@@ -163,14 +171,36 @@ class Scope
         if ($mode !== 'managed') {
             return null;
         }
-        $all = [];
-        foreach (self::projectIds('managed') as $pid) {
+        $uid = (int) Session::getLoginUserID();
+        $all = self::teamProjects($uid);
+        foreach (self::managedProjects($uid) as $pid) {
             $all[(int) $pid] = true;
             foreach (Budget::getDescendantIds((int) $pid) as $d) {
                 $all[(int) $d] = true;
             }
         }
         return array_map('intval', array_keys($all));
+    }
+
+    /**
+     * Projetos que o usuário pode VER no modo atual (lista ou expansão):
+     * `null` = todos; personal = equipe; managed = equipe + gerenciados com
+     * descendentes. Uma consulta só — o laço de getChildren() usa o mapa.
+     *
+     * @return array<int, true>|null
+     */
+    public static function visibleProjectMap(?string $mode = null): ?array
+    {
+        $mode = $mode ?? self::mode();
+        $ids  = self::projectIds($mode);
+        if ($ids === null) {
+            return null;
+        }
+        $map = [];
+        foreach (array_merge($ids, (array) self::taskProjectIds($mode)) as $id) {
+            $map[(int) $id] = true;
+        }
+        return $map;
     }
 
     // ---------------------------------------------------------------

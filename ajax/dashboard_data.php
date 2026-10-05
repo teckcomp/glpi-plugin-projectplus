@@ -21,16 +21,35 @@ use GlpiPlugin\Projectplus\TaskDep;
 
 include('../../../inc/includes.php');
 
-Session::checkRight('plugin_projectplus_dashboard', READ);
+// Bloco F-1b: o endpoint serve o painel E Minhas tarefas/comentários. A
+// porta é "entra no plugin"; cada ação confere o módulo dela abaixo.
+if (!Access::canEnter()) {
+    Html::displayRightError();
+}
 
 header('Content-Type: application/json; charset=UTF-8');
 
 $action = $_GET['action'] ?? 'data';
 
+$moduleOf = [
+    'children'    => 'dashboard',
+    'projectmeta' => 'dashboard',
+    'tasks'       => 'dashboard',
+    'taskchildren' => 'dashboard',
+    'mytasks'     => 'tasks',
+];
+if (isset($moduleOf[$action]) && !Access::can($moduleOf[$action])) {
+    http_response_code(403);
+    echo json_encode(['error' => 'forbidden']);
+    return;
+}
+
 switch ($action) {
     case 'children':
+        // Bloco F-1: só os subprojetos que o usuário enxerga. O JS repassa o
+        // `scope=mine` da tela, então Scope::mode() aqui é o mesmo da página.
         $parentId = (int) ($_GET['id'] ?? 0);
-        echo json_encode(Dashboard::getChildren($parentId));
+        echo json_encode(Dashboard::getChildren($parentId, Scope::visibleProjectMap()));
         break;
 
     case 'projectmeta':
@@ -41,8 +60,10 @@ switch ($action) {
         break;
 
     case 'tasks':
+        // Bloco F-1: fora do "Ver todos", só as MINHAS tarefas (mães de
+        // outros entram só com o nome, como contexto).
         $projectId = (int) ($_GET['id'] ?? 0);
-        echo json_encode(Dashboard::getTasks($projectId));
+        echo json_encode(Dashboard::getTasks($projectId, Scope::myTaskIds()));
         break;
 
     case 'taskchildren':

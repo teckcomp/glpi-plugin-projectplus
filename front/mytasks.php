@@ -59,6 +59,10 @@ TemplateRenderer::getInstance()->display(
         'nav'             => Access::sidebar(),
         // Bloco C: mesmos tipos do seletor da Visão geral (filtro no cliente)
         'type_options'    => TypePhase::selectorTypes(),
+        // Bloco F-1b: link de projeto/tarefa de quem não tem o Painel
+        // (Url::project) chega aqui com ?project=ID[&task=ID]
+        'initial_project' => max(0, (int) ($_GET['project'] ?? 0)),
+        'initial_task'    => max(0, (int) ($_GET['task'] ?? 0)),
     ]
 );
 

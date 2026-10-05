@@ -515,6 +515,10 @@
         const projSel    = document.getElementById('pp-mt-project');
         const typeSel    = document.getElementById('pp-mt-type');
         let lastData     = null;
+        // Bloco F-1b: ?project=ID[&task=ID] vindo de um link de projeto/tarefa
+        // (quem não tem o Painel). Aplicado só na PRIMEIRA carga.
+        let pendingProject = String(parseInt(root.dataset.initialProject, 10) || '');
+        let pendingTask    = String(parseInt(root.dataset.initialTask, 10) || '');
 
         // Tipo escolhido: null = todos; 0 = "Sem tipo"
         function typeFilter() {
@@ -556,7 +560,8 @@
         function fillProjectSelect(projects) {
             if (!projSel) { return; }
             projects = projectsOfType(projects); // projeto obedece ao tipo
-            const keep = projSel.value || '0';
+            const keep = pendingProject || projSel.value || '0';
+            pendingProject = '';
             const first = projSel.options[0]; // "Todos os projetos" (Twig)
             projSel.innerHTML = '';
             if (first) { projSel.appendChild(first); }
@@ -647,6 +652,16 @@
             groupsEl.querySelectorAll('.pp-mt-group').forEach(function (card) {
                 bindTaskRows(card, taskUrl, refresh);
             });
+
+            // Bloco F-1b: destaca a tarefa do link (mesma classe do painel)
+            if (pendingTask) {
+                const tr = groupsEl.querySelector('tr[data-task-id="' + pendingTask + '"]');
+                pendingTask = '';
+                if (tr) {
+                    tr.classList.add('pp-focus-task');
+                    if (tr.scrollIntoView) { tr.scrollIntoView({ block: 'center' }); }
+                }
+            }
         }
 
         if (doneToggle) {
@@ -1453,7 +1468,7 @@
                 .then(function (r) { return (r && r.ok) ? r.meta : null; })
                 .catch(function () { return null; })
             : Promise.resolve(null);
-        Promise.all([getJson(ajaxUrl + '?action=tasks&id=' + encodeURIComponent(projectId)), metaP])
+        Promise.all([getJson(ajaxUrl + '?action=tasks&id=' + encodeURIComponent(projectId) + scopeQs()), metaP])
             .then(function (res) {
                 const tasks = res[0];
                 const meta  = res[1];
@@ -1466,6 +1481,12 @@
                 container.innerHTML = '<div class="projectplus-taskspanel">' +
                     escapeHtml(__('Erro ao carregar tarefas.')) + '</div>';
             });
+    }
+
+    // Bloco F-1 (05/10/2026): as leituras do painel repassam o "Ver só os
+    // meus" da tela; sem isso o endpoint usaria o escopo PADRÃO do perfil.
+    function scopeQs() {
+        return (ppData && ppData.scope_mine) ? '&scope=mine' : '';
     }
 
     function renderTaskPanel(projectId, tasks, meta) {
@@ -1481,7 +1502,7 @@
         html += '<div class="projectplus-newtask">' +
             '<input type="text" class="pp-nt-name" placeholder="' + escapeHtml(__('Nova tarefa…')) + '" maxlength="255">' +
             '<select class="pp-nt-parent pp-search"><option value="0">' + escapeHtml(__('Sem tarefa pai')) + '</option>' +
-            tasks.map(function (t) {
+            tasks.filter(function (t) { return !t.context; }).map(function (t) {
                 return '<option value="' + t.id + '">' + '&nbsp;'.repeat(t.depth * 2) + escapeHtml(t.name) + '</option>';
             }).join('') +
             '</select>' +
@@ -1494,8 +1515,11 @@
             '</div>';
 
         if (tasks.length === 0) {
+            // Bloco F-1: fora do "Ver todos" a lista é só das MINHAS tarefas
             html += '<p class="projectplus-muted">' +
-                escapeHtml(__('Nenhuma tarefa neste projeto ainda.')) + '</p></div>';
+                escapeHtml(ppData.tasks_mine
+                    ? __('Nenhuma tarefa atribuída a você.')
+                    : __('Nenhuma tarefa neste projeto ainda.')) + '</p></div>';
             return html;
         }
 
@@ -1539,6 +1563,22 @@
                     escapeHtml(s.name) + '</option>';
             }).join('');
             const kids = collapsible ? directChildren(tasks, idx) : 0;
+            if (t.context) {
+                // Bloco F-1: mãe que não é do usuário — só o nome, sem link
+                // nem ações. Mesmas 11 células da linha normal (lição 36).
+                html += '<tr class="pp-task-context" data-task-id="' + t.id + '" data-depth="' + t.depth + '" data-context="1">' +
+                    '<td style="padding-left:' + (10 + t.depth * 22) + 'px">' +
+                        (kids > 0
+                            ? '<button type="button" class="projectplus-expand__btn pp-subexp" title="' +
+                              escapeHtml(_n('%d subtarefa', '%d subtarefas', kids, kids)) + '">+</button> '
+                            : '') +
+                        (t.depth > 0 ? '<span class="pp-task-branch">└</span> ' : '') +
+                        '<span class="pp-task-ctxname" title="' + escapeHtml(__('Tarefa mãe')) + '">' +
+                        escapeHtml(t.name) + '</span></td>' +
+                    '<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>' +
+                    '</tr>';
+                return;
+            }
             html += '<tr data-task-id="' + t.id + '" data-depth="' + t.depth + '" class="' + (t.percent >= 100 ? 'pp-task-done' : '') + '">' +
                 '<td style="padding-left:' + (10 + t.depth * 22) + 'px">' +
                     (kids > 0
@@ -2571,7 +2611,7 @@
                 }
 
                 btn.disabled = true;
-                fetch(ajaxUrl + '?action=children&id=' + encodeURIComponent(projectId), {
+                fetch(ajaxUrl + '?action=children&id=' + encodeURIComponent(projectId) + scopeQs(), {
                     credentials: 'same-origin'
                 })
                     .then(function (r) { return r.json(); })

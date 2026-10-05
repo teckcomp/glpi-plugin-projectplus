@@ -87,6 +87,14 @@ final class Url
             $query['task'] = $taskId;
         }
 
-        return self::to('front/dashboard.php') . '?' . http_build_query($query);
+        // Bloco F-1b (05/10/2026): sem o Painel, o projeto/tarefa abre em
+        // "Minhas tarefas" já filtrada no projeto (decisão do Claudio). Sem
+        // nenhum dos dois, segue para o painel (que recusa) — caso do perfil
+        // só com Kanban de projetos, tratado no F-2.
+        $page = (!Access::can('dashboard') && Access::can('tasks'))
+            ? 'front/mytasks.php'
+            : 'front/dashboard.php';
+
+        return self::to($page) . '?' . http_build_query($query);
     }
 }

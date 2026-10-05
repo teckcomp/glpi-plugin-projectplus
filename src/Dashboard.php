@@ -32,7 +32,8 @@ class Dashboard extends CommonGLPI
     {
         return [
             'title' => self::getMenuName(),
-            'page'  => Url::to('front/dashboard.php'),
+            // Bloco F-1b: sem Painel, o menu abre em Minhas tarefas/Kanban/...
+            'page'  => Url::to(Access::homePath() ?? 'front/dashboard.php'),
             'icon'  => 'ti ti-layout-dashboard',
         ];
     }
@@ -125,6 +126,20 @@ class Dashboard extends CommonGLPI
 
         $now = time();
 
+        // Bloco F-1: $myTaskIds passou a vir preenchido também no managed
+        // (tarefas = só as minhas). A lista PLANA de projetos continua sendo
+        // só do personal — o gestor segue expandindo os subprojetos dos
+        // projetos que gerencia. personal = minhas tarefas sem lista de
+        // projetos por tarefa; managed = as duas; all = nenhuma.
+        $flatProjects = ($myTaskIds !== null && $taskProjectIds === null);
+        $childAllowed = null;
+        if ($taskProjectIds !== null) {
+            $childAllowed = [];
+            foreach (array_merge((array) $projectIds, $taskProjectIds) as $id) {
+                $childAllowed[(int) $id] = true;
+            }
+        }
+
         // --- Projetos PAI apenas (requisito 2) ---
         $where = [
             'glpi_projects.projects_id' => 0,
@@ -201,7 +216,7 @@ class Dashboard extends CommonGLPI
                 && $pct < 100;
 
             $tracking = ProjectTracking::getForProject((int) $row['id']);
-            $children = self::countChildren((int) $row['id']);
+            $children = $flatProjects ? 0 : self::countChildren((int) $row['id'], $childAllowed);
 
             $budget     = Budget::getForProject((int) $row['id']);
             $budgetInfo = null;
@@ -233,7 +248,7 @@ class Dashboard extends CommonGLPI
                 'is_overdue'    => $isOverdue,
                 // No escopo pessoal a lista é PLANA: sem expandir para
                 // subprojetos que o usuário não participa (Bloco 3).
-                'children'      => ($myTaskIds !== null) ? 0 : $children,
+                'children'      => $children,
                 'budget'        => $budgetInfo,
                 'deadline'      => Deadline::compute(
                     $row['plan_start_date'],
@@ -1104,7 +1119,11 @@ class Dashboard extends CommonGLPI
     // Subprojetos e tarefas por projeto (Blocos 3 / 3.1 — inalterados)
     // ------------------------------------------------------------------
 
-    public static function getChildren(int $parentId): array
+    /**
+     * @param array<int, true>|null $allowed Bloco F-1: subprojetos visíveis
+     *        no escopo (Scope::visibleProjectMap); null = todos.
+     */
+    public static function getChildren(int $parentId, ?array $allowed = null): array
     {
         /** @var \DBmysql $DB */
         global $DB;
@@ -1128,6 +1147,9 @@ class Dashboard extends CommonGLPI
         $now      = time();
         $states   = self::getStatesMap();
         foreach ($iterator as $row) {
+            if ($allowed !== null && !isset($allowed[(int) $row['id']])) {
+                continue;
+            }
             $children[] = self::projectRowData($row, $states, $now);
         }
 
@@ -1352,19 +1374,36 @@ class Dashboard extends CommonGLPI
         ];
     }
 
-    private static function countChildren(int $parentId): int
+    /**
+     * @param array<int, true>|null $allowed Bloco F-1: só conta os filhos
+     *        que o usuário enxerga (null = todos). Com filtro as linhas vêm
+     *        e são contadas em PHP.
+     */
+    private static function countChildren(int $parentId, ?array $allowed = null): int
     {
         /** @var \DBmysql $DB */
         global $DB;
 
+        $where = [
+            'projects_id' => $parentId,
+            'is_deleted'  => 0,
+            'is_template' => 0,
+        ];
+
+        if ($allowed !== null) {
+            $n = 0;
+            foreach ($DB->request(['SELECT' => 'id', 'FROM' => 'glpi_projects', 'WHERE' => $where]) as $r) {
+                if (isset($allowed[(int) $r['id']])) {
+                    $n++;
+                }
+            }
+            return $n;
+        }
+
         $row = $DB->request([
             'COUNT' => 'cpt',
             'FROM'  => 'glpi_projects',
-            'WHERE' => [
-                'projects_id' => $parentId,
-                'is_deleted'  => 0,
-                'is_template' => 0,
-            ],
+            'WHERE' => $where,
         ])->current();
 
         return (int) ($row['cpt'] ?? 0);
@@ -1494,7 +1533,15 @@ class Dashboard extends CommonGLPI
         return $users;
     }
 
-    public static function getTasks(int $projectId): array
+    /**
+     * Árvore de tarefas do painel do projeto.
+     *
+     * @param int[]|null $myTaskIds Bloco F-1 (05/10/2026): com lista, só as
+     *        MINHAS tarefas aparecem; a mãe que não é minha entra como
+     *        CONTEXTO (`context` = true), só com o nome, para a subtarefa não
+     *        ficar solta. Irmãs e ramos sem tarefa minha somem. null = todas.
+     */
+    public static function getTasks(int $projectId, ?array $myTaskIds = null): array
     {
         /** @var \DBmysql $DB */
         global $DB;
@@ -1521,20 +1568,67 @@ class Dashboard extends CommonGLPI
             return [];
         }
 
+        // Bloco F-1: quais linhas entram. $keep = minhas; $context = mães
+        // (de qualquer nível) de uma tarefa minha que não são minhas.
+        $keep    = null;
+        $context = [];
+        if ($myTaskIds !== null) {
+            $parentOf = [];
+            foreach ($byParent as $pid => $rows) {
+                foreach ($rows as $r) {
+                    $parentOf[(int) $r['id']] = (int) $pid;
+                }
+            }
+            $keep = [];
+            foreach ($myTaskIds as $mid) {
+                $mid = (int) $mid;
+                if (isset($parentOf[$mid])) {
+                    $keep[$mid] = true;
+                }
+            }
+            foreach (array_keys($keep) as $mid) {
+                $up = $parentOf[$mid];
+                while ($up > 0 && isset($parentOf[$up]) && !isset($keep[$up]) && !isset($context[$up])) {
+                    $context[$up] = true;
+                    $up = $parentOf[$up];
+                }
+            }
+            if ($keep === []) {
+                return [];
+            }
+        }
+
         // Bloco D-2a: equipe só das tarefas DESTE projeto (antes a consulta
         // lia glpi_projecttaskteams inteira), com id + nome.
         $allIds = [];
         foreach ($byParent as $rows) {
             foreach ($rows as $r) {
-                $allIds[] = (int) $r['id'];
+                if ($keep === null || isset($keep[(int) $r['id']])) {
+                    $allIds[] = (int) $r['id'];
+                }
             }
         }
         $teams = self::teamUsers($allIds);
 
         $out  = [];
-        $walk = function (int $parentId, int $depth) use (&$walk, &$out, $byParent, $states, $teams, $projectId) {
+        $walk = function (int $parentId, int $depth) use (&$walk, &$out, $byParent, $states, $teams, $projectId, $keep, $context) {
             foreach ($byParent[$parentId] ?? [] as $t) {
-                $id    = (int) $t['id'];
+                $id = (int) $t['id'];
+                if ($keep !== null && !isset($keep[$id])) {
+                    if (isset($context[$id])) {
+                        // Só o nome (decisão do Claudio): sem link, %,
+                        // fase, prazo, responsáveis nem ações.
+                        $out[] = [
+                            'id'           => $id,
+                            'name'         => $t['name'],
+                            'depth'        => $depth,
+                            'context'      => true,
+                            'has_children' => true,
+                        ];
+                        $walk($id, $depth + 1);
+                    }
+                    continue;
+                }
                 $out[] = [
                     'id'           => $id,
                     'name'         => $t['name'],
@@ -1565,10 +1659,13 @@ class Dashboard extends CommonGLPI
         $walk(0, 0);
 
         // Contador de comentários (Etapa 3, Bloco 2) — consulta única
-        $comments = TaskComment::countForTasks(array_column($out, 'id'));
+        $comments = TaskComment::countForTasks($allIds);
         // Dependências (Etapa 3, Bloco 3) — consulta única
-        $deps = TaskDep::countForTasks(array_column($out, 'id'));
+        $deps = TaskDep::countForTasks($allIds);
         foreach ($out as &$t) {
+            if (!empty($t['context'])) {
+                continue;
+            }
             $t['comments'] = $comments[$t['id']] ?? 0;
             $t['deps']     = $deps[$t['id']]['deps'] ?? 0;
             $t['blocked']  = $deps[$t['id']]['blocked'] ?? false;

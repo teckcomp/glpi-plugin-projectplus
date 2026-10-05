@@ -536,6 +536,9 @@ tr.pp-focus-task > td {
 
 /* Fix 1 — hierarquia de tarefas e cálculo automático */
 .pp-task-parent { color: #8a97a5; font-size: 0.78rem; }
+/* Bloco F-1: mãe de contexto (tarefa de outra pessoa), só o nome */
+.projectplus-tasktable tr.pp-task-context td { background: #f6f8fa; }
+.pp-task-ctxname { color: #8a97a5; font-style: italic; }
 .projectplus-tasktable .pp-task-percent:disabled {
     background: #f0f2f5; color: #8a97a5; border-style: dashed;
     cursor: not-allowed;

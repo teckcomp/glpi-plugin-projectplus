@@ -28,8 +28,11 @@ Session::checkRight('plugin_projectplus_tasks', READ);
 // de "Minhas tarefas"); quem tem direito de escopo amplia via ?scope=all
 // (gerência = tarefas dos meus projetos; todos = tudo).
 $scopeMode           = Scope::mode();
-$onlyUser            = ($scopeMode === 'personal') ? (int) Session::getLoginUserID() : null;
-$scopeTaskProjectIds = Scope::taskProjectIds($scopeMode); // managed: por projeto; senão null
+// Bloco F-1: fora do "Ver todos" as tarefas são sempre as MINHAS — também
+// no managed, que por isso não restringe mais por projeto (senão ficaria
+// MENOR que o pessoal: tarefa minha em projeto alheio sumiria).
+$onlyUser            = ($scopeMode !== 'all') ? (int) Session::getLoginUserID() : null;
+$scopeTaskProjectIds = null;
 
 // Botão "Ver tudo" / "Ver só os meus".
 $scopeCanExpand  = Scope::canExpand();

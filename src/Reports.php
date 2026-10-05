@@ -23,7 +23,8 @@ class Reports
 {
     public static function canAccess(): bool
     {
-        return Session::haveRight('plugin_projectplus_dashboard', READ);
+        // Bloco F-1b: o direito da tela (antes reaproveitava o do Painel)
+        return Session::haveRight('plugin_projectplus_reports', READ);
     }
 
     // ------------------------------------------------------------------
@@ -364,12 +365,14 @@ class Reports
 
         // Escopo do perfil (Etapa 8, Bloco 4), mesma semântica do painel:
         // - personal : só as MINHAS tarefas (equipe da tarefa);
-        // - managed  : tarefas dos projetos que gerencia/participa (+ descendentes);
+        // - managed  : idem personal desde o Bloco F-1;
         // - all      : sem restrição.
-        $myTaskIds      = Scope::myTaskIds();      // != null só no personal
-        $taskProjectIds = Scope::taskProjectIds(); // != null só no managed
+        // Bloco F-1: personal E managed = só as MINHAS tarefas (o managed
+        // amplia só projetos). Sem restrição extra por projeto, para o
+        // managed não ficar menor que o pessoal.
+        $myTaskIds = Scope::myTaskIds();           // null só no "todos"
 
-        $scopeIds = self::combineIds(self::scopeProjectIds($filterId), $taskProjectIds);
+        $scopeIds = self::scopeProjectIds($filterId);
         if ($scopeIds !== null) {
             $where['glpi_projecttasks.projects_id'] = Scope::inList($scopeIds);
         } else {

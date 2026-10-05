@@ -65,8 +65,19 @@ function plugin_init_projectplus(): void
     // Etapa 8, Bloco 1 — matriz de direitos granulares por módulo/escopo.
     Plugin::registerClass(\GlpiPlugin\Projectplus\Profile::class, ['addtabon' => \Profile::class]);
 
-    // Item de menu: Ferramentas > ProjectPlus (dashboard)
-    if (Session::haveRight('plugin_projectplus_dashboard', READ)) {
+    // Item de menu: Ferramentas > Gestor de Projetos. Bloco F-1b: aparece
+    // para quem tem QUALQUER módulo do plugin (não só o Painel) e abre na
+    // primeira tela que o perfil alcança (Access::homePath).
+    // Lista igual à Access::ENTRY (+ projectkanban, que entra pelo Kanban);
+    // checada aqui direto na sessão para não depender de autoload no init.
+    $ppCanEnter = false;
+    foreach (['dashboard', 'tasks', 'kanban', 'projectkanban', 'reports', 'costs', 'templates'] as $ppModule) {
+        if (Session::haveRight('plugin_projectplus_' . $ppModule, READ)) {
+            $ppCanEnter = true;
+            break;
+        }
+    }
+    if ($ppCanEnter) {
         $PLUGIN_HOOKS['menu_toadd']['projectplus'] = [
             'tools' => Dashboard::class,
         ];

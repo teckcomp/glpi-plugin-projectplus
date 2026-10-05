@@ -111,9 +111,11 @@
                     {% endif %}
                 </a>
                 {% endif %}
+                {% if nav.dashboard %}
                 <a class="projectplus-btn projectplus-btn--ghost" href="{{ plugin_web_dir }}/front/dashboard.php">
                     {{ __('Visão geral', 'projectplus') }}
                 </a>
+                {% endif %}
             </div>
         </div>
 
