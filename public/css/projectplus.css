@@ -1037,6 +1037,18 @@ a.pp-kb-lane-head__name:hover { color: #065a82; text-decoration: underline; }
 .pp-kb-card-item[draggable="true"]:active { cursor: grabbing; }
 .pp-kb-card-item--dragging { opacity: .45; }
 .pp-kb-col--drop { background: #eaf4fb; outline: 2px dashed #4a9fd4; outline-offset: -4px; }
+/* Bloco G (05/10/2026) — raia de projeto fechada: uma célula baixa por fase
+   com a contagem; clicar em qualquer célula abre a raia. */
+.pp-kb-col--closed {
+    min-height: 34px; padding: 6px 8px; cursor: pointer;
+    align-items: center; justify-content: center;
+}
+.pp-kb-lane .pp-kb-col--closed:hover { background: #e3f0fa; }
+.pp-kb-col-count {
+    font-size: 0.75rem; font-weight: 700; color: #16323f;
+    background: #fff; border: 1px solid #c6d0d9; border-radius: 10px;
+    padding: 1px 9px; min-width: 22px; text-align: center;
+}
 .pp-kb-lane .pp-kb-col--drop { background: #d6ebf9; }
 .pp-kb-card-item--blocked { border-color: #d9534f; }
 /* Concluída (pedido de 31/07/2026): cartão pronto ganha a cor VERDE da

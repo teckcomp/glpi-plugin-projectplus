@@ -194,8 +194,8 @@ class I18nJs
                 // ---- Kanban de tarefas ----
                 'Não foi possível carregar o Kanban.' => __('Não foi possível carregar o Kanban.', 'projectplus'),
                 'Nenhuma tarefa encontrada com os filtros atuais.' => __('Nenhuma tarefa encontrada com os filtros atuais.', 'projectplus'),
-                'Recolher subprojetos'     => __('Recolher subprojetos', 'projectplus'),
-                'Mostrar subprojetos'      => __('Mostrar subprojetos', 'projectplus'),
+                'Recolher'                 => __('Recolher', 'projectplus'),
+                'Expandir'                 => __('Expandir', 'projectplus'),
                 'Subtarefa da tarefa: %s'  => __('Subtarefa da tarefa: %s', 'projectplus'),
 
                 // ---- Kanban de projetos ----

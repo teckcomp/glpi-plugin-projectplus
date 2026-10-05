@@ -25,7 +25,9 @@
  * fora da área visível).
  *
  * Interações: alternar swimlane (Projeto / Responsável), expandir/recolher
- * subprojeto (lane), mostrar/ocultar concluídas, busca. Redesenha 100% no
+ * a raia do projeto (Bloco G, 05/10/2026: fechada mostra só a faixa e a
+ * contagem por fase; aberta mostra os cartões e as raias dos subprojetos),
+ * mostrar/ocultar concluídas, busca. Redesenha 100% no
  * cliente ao trocar qualquer controle.
  *
  * Bloco 2a: arrastar cartão entre COLUNAS muda a fase da tarefa (POST em
@@ -107,7 +109,14 @@
             showDone: false,
             query: '',
             data: data,
-            expandedLanes: new Set(),  // ids de PROJETO cujos subprojetos estão visíveis
+            // Bloco G (05/10/2026): raia de PROJETO recolhível. Aberta = cartões
+            // do projeto + raias dos subprojetos; fechada = só a faixa e a
+            // contagem por fase. `laneOpenDefault` diz como as raias nascem e
+            // `laneFlip` guarda as que o usuário inverteu (sobrevive ao
+            // re-render do arrastar). Com busca ativa, tudo abre.
+            laneOpenDefault: null,     // decidido no 1º render (ver laneOpenDefaultFor)
+            laneFlip: new Set(),
+            optsLanesOpen: (typeof opts.lanesOpen === 'boolean') ? opts.lanesOpen : null,
             _holder: holder,           // referência estável p/ handlers de re-render
             // Bloco 2a — arrastar-e-soltar (mudar fase): endpoint + token
             // (rotacionado a cada resposta) + permissão de edição.
@@ -150,7 +159,8 @@
     // Árvore de projetos (lanes "Projeto"): a partir de data.projects
     // (mapa id -> {name, parent_id}), monta a lista ORDENADA e já filtrada
     // pelo estado de expansão atual (raízes sempre visíveis; subprojeto só
-    // aparece se o pai estiver em state.expandedLanes).
+    // aparece se a raia do pai estiver aberta — Bloco G: `expandedLanes` é
+    // qualquer objeto com has(id), hoje isLaneOpen()).
     // ------------------------------------------------------------------
     function buildProjectLaneRows(projects, expandedLanes) {
         const byParent = {};
@@ -179,9 +189,57 @@
         return rows;
     }
 
+    // Bloco G — raias nascem FECHADAS no board cheio com vários projetos;
+    // com UM projeto raiz só (aba nativa da ficha, ou escopo pequeno) nascem
+    // abertas, porque recolher a única raia não ajuda em nada.
+    function laneOpenDefaultFor(projects, forced) {
+        if (forced === true || forced === false) { return forced; }
+        let roots = 0;
+        Object.keys(projects || {}).forEach(function (k) {
+            if (!Number(projects[k].parent_id)) { roots++; }
+        });
+        return roots <= 1;
+    }
+
+    function isLaneOpen(state, id) {
+        if (state.lane !== 'project' || state.query !== '') { return true; }
+        return state.laneOpenDefault !== state.laneFlip.has(id);
+    }
+
+    function toggleLane(state, id) {
+        if (state.laneFlip.has(id)) {
+            state.laneFlip.delete(id);
+        } else {
+            state.laneFlip.add(id);
+        }
+    }
+
+    // ids do projeto + todos os descendentes (mapa projects do payload).
+    function subtreeIds(projects, rootId) {
+        const kids = {};
+        Object.keys(projects || {}).forEach(function (k) {
+            const par = String(projects[k].parent_id);
+            (kids[par] = kids[par] || []).push(Number(k));
+        });
+        const out = [];
+        const seen = {};
+        const stack = [rootId];
+        while (stack.length) {
+            const id = stack.pop();
+            if (seen[id]) { continue; }
+            seen[id] = true;
+            out.push(id);
+            (kids[String(id)] || []).forEach(function (c) { stack.push(c); });
+        }
+        return out;
+    }
+
     function render(holder, state) {
         const data    = state.data;
         const columns = data.columns;
+        if (state.laneOpenDefault === null) {
+            state.laneOpenDefault = laneOpenDefaultFor(data.projects, state.optsLanesOpen);
+        }
 
         // Mapa id -> cartão (p/ achar o nome da mãe na tag da subtarefa).
         const byId = {};
@@ -195,7 +253,7 @@
             laneRows = data.lanes.responsible.map(function (l) { return { id: l.id, name: l.name, depth: 0, hasChildren: false }; });
             laneKey  = 'responsible_id';
         } else {
-            laneRows = buildProjectLaneRows(data.projects, state.expandedLanes);
+            laneRows = buildProjectLaneRows(data.projects, { has: function (id) { return isLaneOpen(state, id); } });
             laneKey  = 'project_id';
         }
 
@@ -249,7 +307,9 @@
             const h = document.createElement('div');
             h.className = 'pp-kb-col-head';
             h.style.setProperty('--pp-kb-color', col.color);
-            h.textContent = col.name + ' (' + countInColumn(grouped, activeLanes, col.id) + ')';
+            // Bloco G: conta TODOS os cartões visíveis da coluna, inclusive os
+            // de raia fechada e de subprojeto recolhido.
+            h.textContent = col.name + ' (' + countInColumn(grouped, Object.keys(grouped).map(function (k) { return { id: k }; }), col.id) + ')';
             headRow.appendChild(h);
         });
         board.appendChild(headRow);
@@ -273,6 +333,44 @@
                 + (zebra[idx] ? ' pp-kb-lane--alt' : '')
                 + (lane.depth > 0 ? ' pp-kb-lane--nested' : '');
             row.dataset.laneId = String(lane.id);
+
+            // Bloco G: raia fechada = faixa + uma célula por fase com a
+            // contagem (do projeto E dos subprojetos, que ficam escondidos).
+            if (!isLaneOpen(state, lane.id)) {
+                row.classList.add('pp-kb-lane--closed');
+                const ids = subtreeIds(data.projects, lane.id);
+                const byCol = {};
+                let total = 0;
+                ids.forEach(function (pid) {
+                    const g = grouped[pid];
+                    if (!g) { return; }
+                    Object.keys(g).forEach(function (sid) {
+                        byCol[sid] = (byCol[sid] || 0) + g[sid].length;
+                        total += g[sid].length;
+                    });
+                });
+                row.appendChild(laneHeadEl(lane, state, total, holder));
+                columns.forEach(function (col) {
+                    const cell = document.createElement('div');
+                    cell.className = 'pp-kb-col pp-kb-col--closed';
+                    cell.dataset.stateId = String(col.id);
+                    cell.dataset.laneId = String(lane.id);
+                    const n = byCol[col.id] || 0;
+                    if (n > 0) {
+                        const b = document.createElement('span');
+                        b.className = 'pp-kb-col-count';
+                        b.textContent = String(n);
+                        cell.appendChild(b);
+                    }
+                    cell.addEventListener('click', function () {
+                        toggleLane(state, lane.id);
+                        render(holder, state);
+                    });
+                    row.appendChild(cell);
+                });
+                board.appendChild(row);
+                return;
+            }
 
             row.appendChild(laneHeadEl(lane, state, laneCount(grouped, lane.id), holder));
 
@@ -356,27 +454,26 @@
         inner.className = 'pp-kb-lane-head__in';
         inner.style.paddingLeft = (12 + lane.depth * 18) + 'px';
 
-        if (state.lane === 'project' && lane.hasChildren) {
-            const toggle = document.createElement('button');
-            toggle.type = 'button';
-            toggle.className = 'pp-kb-lane-toggle';
-            const isOpen = state.expandedLanes.has(lane.id);
-            toggle.textContent = isOpen ? '−' : '+';
-            toggle.title = isOpen ? __('Recolher subprojetos') : __('Mostrar subprojetos');
-            toggle.addEventListener('click', function () {
-                if (state.expandedLanes.has(lane.id)) {
-                    state.expandedLanes.delete(lane.id);
-                } else {
-                    state.expandedLanes.add(lane.id);
-                }
-                render(holder, state);
-            });
-            inner.appendChild(toggle);
-        } else if (lane.depth > 0) {
+        if (lane.depth > 0) {
             const mark = document.createElement('span');
             mark.className = 'pp-kb-lane-head__mark';
             mark.textContent = '↳';
             inner.appendChild(mark);
+        }
+        // Bloco G: toda raia de PROJETO tem +/−. Com busca ativa as raias
+        // ficam todas abertas, então o botão some (não teria efeito).
+        if (state.lane === 'project' && state.query === '') {
+            const toggle = document.createElement('button');
+            toggle.type = 'button';
+            toggle.className = 'pp-kb-lane-toggle';
+            const isOpen = isLaneOpen(state, lane.id);
+            toggle.textContent = isOpen ? '−' : '+';
+            toggle.title = isOpen ? __('Recolher') : __('Expandir');
+            toggle.addEventListener('click', function () {
+                toggleLane(state, lane.id);
+                render(holder, state);
+            });
+            inner.appendChild(toggle);
         }
 
         let nameEl;
@@ -582,7 +679,8 @@
     }
 
     // Exposto só para os testes isolados (jsdom) do Bloco 2a.
-    ProjectPlusKanban._test = { applyCardState: applyCardState, laneZebra: laneZebra, laneCount: laneCount };
+    ProjectPlusKanban._test = { applyCardState: applyCardState, laneZebra: laneZebra, laneCount: laneCount,
+        laneOpenDefaultFor: laneOpenDefaultFor, subtreeIds: subtreeIds };
 
     window.ProjectPlusKanban = ProjectPlusKanban;
 })();
