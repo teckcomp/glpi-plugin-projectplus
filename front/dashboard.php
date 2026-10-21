@@ -187,6 +187,10 @@ TemplateRenderer::getInstance()->display(
         'users'           => $users,
         // Bloco D-2a: chips editáveis de responsáveis (só gestor)
         'can_team'        => Access::canManageTaskTeams(),
+        // Bloco M-2: excluir = módulo em Interagir + direito NATIVO de excluir
+        // (o servidor confere de novo por item, com entidade).
+        'can_delete_tasks'   => Access::can('tasks', UPDATE) && Session::haveRight('projecttask', DELETE),
+        'can_delete_project' => Access::can('projects', UPDATE) && Session::haveRight('project', DELETE),
         // Bloco D-3a: faixa "Projeto" no painel (equipe, datas, fase, %, auto)
         'can_edit_project' => Access::canEditProjects(),
         'parents'         => $parents,

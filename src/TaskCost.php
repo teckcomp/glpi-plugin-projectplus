@@ -119,7 +119,7 @@ class TaskCost extends CommonDBTM
                     ],
                 ],
             ],
-            'WHERE' => ['glpi_projecttasks.projects_id' => $projectId],
+            'WHERE' => array_merge(['glpi_projecttasks.projects_id' => $projectId], Trash::liveTasks()), // Bloco M-1
         ])->current();
 
         return (float) ($row['total'] ?? 0);

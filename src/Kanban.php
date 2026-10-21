@@ -76,7 +76,7 @@ class Kanban
         $row = $DB->request([
             'SELECT' => ['COUNT' => 'id AS cpt'],
             'FROM'   => 'glpi_projecttasks',
-            'WHERE'  => ['projects_id' => $ids],
+            'WHERE'  => array_merge(['projects_id' => $ids], Trash::liveTasks()), // Bloco M-1
         ])->current();
 
         return (int) ($row['cpt'] ?? 0);
@@ -198,7 +198,7 @@ class Kanban
                         'ON' => ['glpi_projecttasks' => 'projects_id', 'glpi_projects' => 'id'],
                     ],
                 ],
-                'WHERE'      => $where,
+                'WHERE'      => array_merge($where, Trash::liveTasks()), // Bloco M-1
                 'ORDER'      => ['glpi_projects.name', 'glpi_projecttasks.name'],
             ]) as $row
         ) {

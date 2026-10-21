@@ -423,6 +423,8 @@ class Reports
             $where['glpi_projecttasks.id'] = Scope::inList($idRestriction);
         }
 
+        $where = array_merge($where, Trash::liveTasks()); // Bloco M-1: fora da lixeira
+
         $states = Dashboard::getStatesMap();
 
         $ttypes = [];
@@ -700,7 +702,7 @@ class Reports
             $DB->request([
                 'SELECT' => ['id', 'percent_done', 'date_mod', 'plan_start_date', 'plan_end_date'],
                 'FROM'   => 'glpi_projecttasks',
-                'WHERE'  => ['projects_id' => $scopeIds],
+                'WHERE'  => array_merge(['projects_id' => $scopeIds], Trash::liveTasks()), // Bloco M-1
             ]) as $row
         ) {
             $total++;

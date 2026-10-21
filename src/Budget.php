@@ -206,7 +206,7 @@ class Budget
                             ],
                         ],
                     ],
-                    'WHERE' => ['glpi_projecttasks.projects_id' => $projectId],
+                    'WHERE' => array_merge(['glpi_projecttasks.projects_id' => $projectId], Trash::liveTasks()), // Bloco M-1
                 ]) as $row
             ) {
                 // Nome do autor segue formatUserName (names_format), como o resto

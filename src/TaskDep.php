@@ -151,10 +151,10 @@ class TaskDep extends CommonGLPI
                 $DB->request([
                     'SELECT' => 'id',
                     'FROM'   => 'glpi_projecttasks',
-                    'WHERE'  => [
+                    'WHERE'  => array_merge([
                         'id'           => array_values(array_unique($sourceIds)),
                         'percent_done' => ['<', 100],
-                    ],
+                    ], Trash::liveTasks()), // Bloco M-1: tarefa na lixeira não bloqueia
                 ]) as $row
             ) {
                 $openSources[(int) $row['id']] = true;
@@ -184,10 +184,10 @@ class TaskDep extends CommonGLPI
             $DB->request([
                 'SELECT' => 'projecttasks_id',
                 'FROM'   => 'glpi_projecttasks',
-                'WHERE'  => [
+                'WHERE'  => array_merge([
                     'projecttasks_id' => $taskIds,
                     'percent_done'    => ['<', 100],
-                ],
+                ], Trash::liveTasks()), // Bloco M-1
             ]) as $row
         ) {
             $tid = (int) $row['projecttasks_id'];
@@ -228,7 +228,7 @@ class TaskDep extends CommonGLPI
                     self::TABLE . '.projecttasks_id_target' => $taskId,
                     self::TABLE . '.type'                   => self::TYPE_FINISH_TO_START,
                     'glpi_projecttasks.percent_done'        => ['<', 100],
-                ],
+                ] + Trash::liveTasks(), // Bloco M-1
             ]) as $row
         ) {
             $names[] = (string) $row['name'];
@@ -267,10 +267,10 @@ class TaskDep extends CommonGLPI
             $DB->request([
                 'SELECT' => ['id', 'name', 'percent_done'],
                 'FROM'   => 'glpi_projecttasks',
-                'WHERE'  => [
+                'WHERE'  => array_merge([
                     'projecttasks_id' => $taskId,
                     'percent_done'    => ['<', 100],
-                ],
+                ], Trash::liveTasks()), // Bloco M-1
                 'ORDER'  => 'name',
             ]) as $row
         ) {
@@ -311,7 +311,7 @@ class TaskDep extends CommonGLPI
                     'WHERE'      => [
                         self::TABLE . '.' . $selfCol => $taskId,
                         self::TABLE . '.type'        => self::TYPE_FINISH_TO_START,
-                    ],
+                    ] + Trash::liveTasks(), // Bloco M-1
                     'ORDER'      => 'glpi_projecttasks.name',
                 ]) as $row
             ) {
@@ -339,10 +339,10 @@ class TaskDep extends CommonGLPI
             $DB->request([
                 'SELECT' => ['id', 'name', 'percent_done'],
                 'FROM'   => 'glpi_projecttasks',
-                'WHERE'  => [
+                'WHERE'  => array_merge([
                     'projects_id' => (int) $task->fields['projects_id'],
                     'NOT'         => ['id' => array_keys($linkedIds)],
-                ],
+                ], Trash::liveTasks()), // Bloco M-1
                 'ORDER'  => 'name',
             ]) as $row
         ) {
@@ -548,10 +548,10 @@ class TaskDep extends CommonGLPI
             $DB->request([
                 'SELECT' => 'projects_id',
                 'FROM'   => 'glpi_projecttasks',
-                'WHERE'  => [
+                'WHERE'  => array_merge([
                     'projects_id'  => $projectIds,
                     'percent_done' => ['<', 100],
-                ],
+                ], Trash::liveTasks()), // Bloco M-1
             ]) as $row
         ) {
             $blocked[(int) $row['projects_id']] = true;
@@ -594,10 +594,10 @@ class TaskDep extends CommonGLPI
             $DB->request([
                 'SELECT' => 'name',
                 'FROM'   => 'glpi_projecttasks',
-                'WHERE'  => [
+                'WHERE'  => array_merge([
                     'projects_id'  => $projectId,
                     'percent_done' => ['<', 100],
-                ],
+                ], Trash::liveTasks()), // Bloco M-1
                 'ORDER'  => 'name',
             ]) as $row
         ) {

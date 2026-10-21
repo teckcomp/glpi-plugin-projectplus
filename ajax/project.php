@@ -26,6 +26,8 @@ use GlpiPlugin\Projectplus\Access;
 use GlpiPlugin\Projectplus\Dashboard;
 use GlpiPlugin\Projectplus\ProjectTracking;
 use GlpiPlugin\Projectplus\TaskDep;
+use GlpiPlugin\Projectplus\Budget;
+use GlpiPlugin\Projectplus\Url;
 
 include('../../../inc/includes.php');
 
@@ -143,6 +145,47 @@ $action = $_POST['action'] ?? '';
 $canUpdate = Access::can('projects', UPDATE) && Session::haveRight('project', UPDATE);
 
 switch ($action) {
+    // Bloco M-2 (21/10/2026): projeto para a LIXEIRA nativa, COM todos os
+    // subprojetos (decisão do Claudio). O core não leva subprojetos sozinho;
+    // o plugin manda cada um, do mais fundo para cima. Tarefas não são
+    // tocadas: Trash::liveTasks() as esconde enquanto o projeto delas estiver
+    // na lixeira, e elas voltam quando ele for restaurado. Permissão: módulo
+    // Projetos em Interagir + direito NATIVO de excluir projeto, conferido
+    // pelo core em CADA projeto antes de mexer em qualquer um.
+    case 'delete':
+        $root = new Project();
+        $rid  = (int) ($_POST['project_id'] ?? 0);
+        if (!$root->getFromDB($rid) || !empty($root->fields['is_deleted'])) {
+            pp_reply(['ok' => false, 'message' => __('Projeto não encontrado', 'projectplus')]);
+        }
+        if (!Access::can('projects', UPDATE) || !$root->can($rid, DELETE)) {
+            pp_reply(['ok' => false, 'message' => __('Sem permissão', 'projectplus')]);
+        }
+        $desc = Budget::getDescendantIds($rid); // pré-ordem: pai antes do filho
+        $probe = new Project();
+        foreach ($desc as $sid) {
+            if (!$probe->getFromDB($sid) || !$probe->can($sid, DELETE)) {
+                pp_reply(['ok' => false, 'message' => sprintf(
+                    __('Sem permissão para mover o subprojeto "%s" para a lixeira — nada foi alterado', 'projectplus'),
+                    $probe->fields['name'] ?? ('#' . $sid)
+                )]);
+            }
+        }
+        foreach (array_reverse($desc) as $sid) {
+            $sub = new Project();
+            if ($sub->getFromDB($sid)) {
+                $sub->delete(['id' => $sid]);
+            }
+        }
+        if (!$root->delete(['id' => $rid])) {
+            pp_reply(['ok' => false, 'message' => __('Não foi possível mover para a lixeira', 'projectplus')]);
+        }
+        $parent = (int) $root->fields['projects_id'];
+        pp_reply([
+            'ok'       => true,
+            'redirect' => $parent > 0 ? Url::project($parent) : Url::to('front/dashboard.php'),
+        ]);
+
     case 'kanban_move':
         if (!$canUpdate) {
             pp_reply(['ok' => false, 'message' => __('Sem permissão', 'projectplus')]);

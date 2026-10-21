@@ -25,6 +25,7 @@
 use GlpiPlugin\Projectplus\Access;
 use GlpiPlugin\Projectplus\ProjectTracking;
 use GlpiPlugin\Projectplus\TaskDep;
+use GlpiPlugin\Projectplus\Trash;
 
 include('../../../inc/includes.php');
 
@@ -55,10 +56,10 @@ function pp_open_children(int $taskId): int
     $row = $DB->request([
         'COUNT' => 'cpt',
         'FROM'  => 'glpi_projecttasks',
-        'WHERE' => [
+        'WHERE' => array_merge([
             'projecttasks_id' => $taskId,
             'percent_done'    => ['<', 100],
-        ],
+        ], Trash::liveTasks()), // Bloco M-1
     ])->current();
 
     return (int) ($row['cpt'] ?? 0);
@@ -77,7 +78,7 @@ function pp_has_children(int $taskId): bool
     $row = $DB->request([
         'COUNT' => 'cpt',
         'FROM'  => 'glpi_projecttasks',
-        'WHERE' => ['projecttasks_id' => $taskId],
+        'WHERE' => array_merge(['projecttasks_id' => $taskId], Trash::liveTasks()), // Bloco M-1
     ])->current();
 
     return (int) ($row['cpt'] ?? 0) > 0;
@@ -196,6 +197,27 @@ function pp_task_for_update(string $module = 'tasks'): ProjectTask
 }
 
 switch ($action) {
+    // Bloco M-2 (21/10/2026): tarefa para a LIXEIRA nativa (reversível).
+    // Regra: módulo Tarefas em Interagir + direito NATIVO de excluir tarefa
+    // de projeto, conferido pelo próprio core (can(DELETE): direito +
+    // entidade). O core leva as subtarefas junto (ProjectTask::post_deleteItem)
+    // e as traz de volta ao restaurar.
+    case 'delete':
+        $task = new ProjectTask();
+        $tid  = (int) ($_POST['task_id'] ?? 0);
+        if (!$task->getFromDB($tid) || !empty($task->fields['is_deleted'])) {
+            pp_reply(['ok' => false, 'message' => __('Tarefa não encontrada', 'projectplus')]);
+        }
+        if (!Access::can('tasks', UPDATE) || !$task->can($tid, DELETE)) {
+            pp_reply(['ok' => false, 'message' => __('Sem permissão', 'projectplus')]);
+        }
+        $pid = (int) $task->fields['projects_id'];
+        if (!$task->delete(['id' => $tid])) {
+            pp_reply(['ok' => false, 'message' => __('Não foi possível mover para a lixeira', 'projectplus')]);
+        }
+        ProjectTracking::touch($pid);
+        pp_reply(['ok' => true]);
+
     case 'create':
         if (!$canCreate) {
             pp_reply(['ok' => false, 'message' => __('Sem permissão para criar tarefas', 'projectplus')]);

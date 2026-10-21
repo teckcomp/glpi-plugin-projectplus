@@ -59,6 +59,9 @@ TemplateRenderer::getInstance()->display(
         // Bloco D-2a: responsáveis editáveis também aqui (só gestor). A lista
         // de usuários só é carregada para quem pode editar.
         'can_team'        => $canTeam,
+        // Bloco M-2: excluir = módulo em Interagir + direito NATIVO de excluir
+        // (o servidor confere de novo por item, com entidade).
+        'can_delete_tasks'   => Access::can('tasks', UPDATE) && Session::haveRight('projecttask', DELETE),
         'users'           => $canTeam ? Dashboard::userOptions() : [],
         'csrf_token'      => Session::getNewCSRFToken(),
         'can_templates'   => Session::haveRight('config', UPDATE),

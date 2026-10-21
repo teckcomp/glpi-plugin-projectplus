@@ -143,7 +143,7 @@ class ProjectKanban
             $DB->request([
                 'SELECT' => ['projects_id', 'percent_done'],
                 'FROM'   => 'glpi_projecttasks',
-                'WHERE'  => ['projects_id' => $ids],
+                'WHERE'  => array_merge(['projects_id' => $ids], Trash::liveTasks()), // Bloco M-1
             ]) as $r
         ) {
             $pid             = (int) $r['projects_id'];

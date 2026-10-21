@@ -71,6 +71,12 @@ class I18nJs
                 'Editar'                   => __('Editar', 'projectplus'),
                 'Excluir'                  => __('Excluir', 'projectplus'),
                 'Concluir'                 => __('Concluir', 'projectplus'),
+                // Bloco M-2: excluir (lixeira nativa)
+                'Mover para a lixeira'     => __('Mover para a lixeira', 'projectplus'),
+                'Mover a tarefa “%s” para a lixeira? As subtarefas vão junto. Ela pode ser restaurada pela lixeira do GLPI.'
+                    => __('Mover a tarefa “%s” para a lixeira? As subtarefas vão junto. Ela pode ser restaurada pela lixeira do GLPI.', 'projectplus'),
+                'Mover o projeto “%s” e todos os subprojetos para a lixeira? Ele pode ser restaurado pela lixeira do GLPI.'
+                    => __('Mover o projeto “%s” e todos os subprojetos para a lixeira? Ele pode ser restaurado pela lixeira do GLPI.', 'projectplus'),
                 'Nenhuma'                  => __('Nenhuma', 'projectplus'),
                 'Carregando…'              => __('Carregando…', 'projectplus'),
                 'Orçamento (R$)'           => __('Orçamento (R$)', 'projectplus'),

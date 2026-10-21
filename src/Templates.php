@@ -310,7 +310,7 @@ class Templates
             $DB->request([
                 'SELECT' => ['plan_start_date'],
                 'FROM'   => 'glpi_projecttasks',
-                'WHERE'  => ['projects_id' => $projectId, 'NOT' => ['plan_start_date' => null]],
+                'WHERE'  => array_merge(['projects_id' => $projectId, 'NOT' => ['plan_start_date' => null]], Trash::liveTasks()), // Bloco M-1
             ]) as $t
         ) {
             $ts = strtotime($t['plan_start_date']);
@@ -339,7 +339,7 @@ class Templates
                     'projectstates_id', 'projecttasktypes_id', 'auto_percent_done',
                 ],
                 'FROM'  => 'glpi_projecttasks',
-                'WHERE' => ['projects_id' => $projectId],
+                'WHERE' => array_merge(['projects_id' => $projectId], Trash::liveTasks()), // Bloco M-1: lixeira não entra no Modelo
                 'ORDER' => ['projecttasks_id', 'id'],
             ]) as $row
         ) {
@@ -367,7 +367,7 @@ class Templates
                 'WHERE' => [
                     'glpi_projecttaskteams.itemtype' => 'User',
                     'glpi_projecttasks.projects_id'  => $projectId,
-                ],
+                ] + Trash::liveTasks(), // Bloco M-1
                 'ORDER' => ['glpi_projecttaskteams.projecttasks_id', 'glpi_projecttaskteams.id'],
             ]) as $tm
         ) {

@@ -1691,11 +1691,15 @@
                 '<td class="pp-auto-cell">' + autoSwitchHtml(t) + '</td>' +
                 '<td class="pp-dep-cell">' + depBtnHtml(t) + '</td>' +
                 '<td class="pp-cmt-cell">' + commentBtnHtml(t) + '</td>' +
-                '<td>' + (t.percent >= 100
+                '<td class="pp-task-endcell">' + (t.percent >= 100
                     ? '<span class="pp-task-donemark" title="' + escapeHtml(__('Concluída')) + '">✓ ' + escapeHtml(__('Concluída')) + '</span>'
                     : (!t.auto_percent
                         ? '<button type="button" class="pp-task-complete" title="' + escapeHtml(__('Concluir')) + '">✓</button>'
-                        : '')) + '</td>' +
+                        : '')) +
+                    // Bloco M-2: 🗑 na MESMA célula do ✓ (sem coluna nova — lição 155)
+                    (ppData.can_delete_tasks
+                        ? '<button type="button" class="pp-task-del" title="' + escapeHtml(__('Mover para a lixeira')) + '"><i class="ti ti-trash"></i></button>'
+                        : '') + '</td>' +
                 '</tr>';
         });
 
@@ -2040,6 +2044,22 @@
             if (done) {
                 done.addEventListener('click', function () {
                     taskPost(taskUrl, { action: 'complete', task_id: taskId }, function () { reload(); });
+                });
+            }
+
+            // Bloco M-2: tarefa para a lixeira (confirmação; subtarefas vão junto)
+            const del = row.querySelector('.pp-task-del');
+            if (del) {
+                del.addEventListener('click', function () {
+                    const a = row.querySelector('td a');
+                    const name = a ? a.textContent : '';
+                    if (!window.confirm(__('Mover a tarefa “%s” para a lixeira? As subtarefas vão junto. Ela pode ser restaurada pela lixeira do GLPI.', name))) {
+                        return;
+                    }
+                    del.disabled = true;
+                    taskPost(taskUrl, { action: 'delete', task_id: taskId }, function (resp) {
+                        if (resp.ok) { reload(); } else { del.disabled = false; }
+                    });
                 });
             }
 
@@ -2907,7 +2927,12 @@
                 '<input type="checkbox" class="pp-ps-auto"' + (m.auto_percent ? ' checked' : '') + '>' +
                 '<span class="pp-auto-switch__track"></span><span class="pp-auto-switch__txt">auto</span></label>' +
             // Bloco D-3b: 💬 do projeto (painel abre logo abaixo da faixa)
-            commentBtnHtml({ comments: m.comments });
+            commentBtnHtml({ comments: m.comments }) +
+            // Bloco M-2: projeto (com subprojetos) para a lixeira
+            (ppData.can_delete_project
+                ? '<button type="button" class="pp-ps-del" data-name="' + escapeHtml(m.name || '') + '" title="' +
+                  escapeHtml(__('Mover para a lixeira')) + '"><i class="ti ti-trash"></i></button>'
+                : '');
     }
 
     // Painel de comentários do projeto: IRMÃO da faixa (não dentro), para
@@ -2966,6 +2991,21 @@
         });
 
         strip.addEventListener('click', function (ev) {
+            const pdel = ev.target.closest('.pp-ps-del');
+            if (pdel) {
+                if (!window.confirm(__('Mover o projeto “%s” e todos os subprojetos para a lixeira? Ele pode ser restaurado pela lixeira do GLPI.', pdel.dataset.name || ''))) {
+                    return;
+                }
+                pdel.disabled = true;
+                taskPost(ppProjectUrl, { action: 'delete', project_id: pid }, function (resp) {
+                    if (resp && resp.ok) {
+                        window.location.href = resp.redirect || window.location.pathname;
+                    } else {
+                        pdel.disabled = false;
+                    }
+                });
+                return;
+            }
             if (ev.target.closest('.pp-cmt-btn')) {
                 toggleProjectComments(strip);
                 return;

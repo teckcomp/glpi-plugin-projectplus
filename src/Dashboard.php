@@ -323,6 +323,8 @@ class Dashboard extends CommonGLPI
             );
         }
 
+        $taskWhere = array_merge($taskWhere, Trash::liveTasks()); // Bloco M-1: fora da lixeira
+
         $tasksChart     = ['done' => 0, 'in_progress' => 0, 'pending' => 0, 'overdue' => 0];
         $taskStateCount = []; // projectstates_id => quantidade (donut "Tarefas por Estado")
         foreach (
@@ -583,6 +585,7 @@ class Dashboard extends CommonGLPI
         }
 
         $states = self::getStatesMap();
+        $where  = array_merge($where, Trash::liveTasks()); // Bloco M-1: fora da lixeira
 
         $tasks = [];
         $now   = time();
@@ -679,7 +682,7 @@ class Dashboard extends CommonGLPI
                         ],
                     ],
                 ],
-                'WHERE' => ['glpi_projecttasks.projecttasks_id' => $parentId],
+                'WHERE' => array_merge(['glpi_projecttasks.projecttasks_id' => $parentId], Trash::liveTasks()), // Bloco M-1
                 'ORDER' => 'glpi_projecttasks.plan_end_date ASC',
             ]) as $row
         ) {
@@ -764,7 +767,7 @@ class Dashboard extends CommonGLPI
             $DB->request([
                 'SELECT' => 'projecttasks_id',
                 'FROM'   => 'glpi_projecttasks',
-                'WHERE'  => ['projecttasks_id' => $ids],
+                'WHERE'  => array_merge(['projecttasks_id' => $ids], Trash::liveTasks()), // Bloco M-1
             ]) as $row
         ) {
             $pid          = (int) $row['projecttasks_id'];
@@ -859,6 +862,7 @@ class Dashboard extends CommonGLPI
                     'glpi_projecttaskteams.items_id' => $userId,
                     'glpi_projects.is_deleted'       => 0,
                     'glpi_projects.is_template'      => 0,
+                    'glpi_projecttasks.is_deleted'   => 0, // Bloco M-1
                 ] + getEntitiesRestrictCriteria('glpi_projects'),
                 'ORDER'      => ['glpi_projects.name', 'glpi_projecttasks.plan_end_date'],
             ]) as $row
@@ -1434,7 +1438,7 @@ class Dashboard extends CommonGLPI
             $DB->request([
                 'SELECT' => ['projecttasks_id'],
                 'FROM'   => 'glpi_projecttasks',
-                'WHERE'  => ['projecttasks_id' => $taskIds],
+                'WHERE'  => array_merge(['projecttasks_id' => $taskIds], Trash::liveTasks()), // Bloco M-1
             ]) as $row
         ) {
             $out[(int) $row['projecttasks_id']] = true;
@@ -1566,7 +1570,7 @@ class Dashboard extends CommonGLPI
                     'projectstates_id', 'auto_percent_done',
                 ],
                 'FROM'  => 'glpi_projecttasks',
-                'WHERE' => ['projects_id' => $projectId],
+                'WHERE' => array_merge(['projects_id' => $projectId], Trash::liveTasks()), // Bloco M-1
                 'ORDER' => ['projecttasks_id', 'id'],
             ]) as $row
         ) {

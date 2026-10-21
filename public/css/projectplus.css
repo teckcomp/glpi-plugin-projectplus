@@ -1313,3 +1313,12 @@ html.pp-kb-fs-page .pp-kb-fs { visibility: visible; }
 .pp-fav-btn i { margin-right: 4px; }
 .pp-fav-btn--on, .pp-fav-btn--on:hover { color: #b7791f; border-color: #e8c27a; background: #fff8e6; }
 .pp-fav-btn--on i { color: #e0a100; }
+
+/* ===== Bloco M-2 (21/10/2026) — mover para a lixeira ===== */
+.pp-task-endcell { white-space: nowrap; }
+.pp-task-del, .pp-ps-del {
+    border: 1px solid #e3c9c9; background: #fff; color: #b54848; border-radius: 6px;
+    padding: 1px 7px; margin-left: 4px; cursor: pointer; line-height: 1.4;
+}
+.pp-task-del:hover, .pp-ps-del:hover { background: #fdeeee; border-color: #d99a9a; }
+.pp-task-del:disabled, .pp-ps-del:disabled { opacity: .5; cursor: wait; }

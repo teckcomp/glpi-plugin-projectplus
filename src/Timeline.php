@@ -134,7 +134,7 @@ class Timeline
                     'projectstates_id',
                 ],
                 'FROM'  => 'glpi_projecttasks',
-                'WHERE' => ['projects_id' => Scope::inList($visibleProjectIds)],
+                'WHERE' => array_merge(['projects_id' => Scope::inList($visibleProjectIds)], Trash::liveTasks()), // Bloco M-1
                 'ORDER' => ['projecttasks_id', 'id'],
             ]) as $row
         ) {

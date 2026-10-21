@@ -132,11 +132,11 @@ class Notification
         $iterator = $DB->request([
             'SELECT' => ['id', 'name', 'projects_id', 'plan_end_date'],
             'FROM'   => 'glpi_projecttasks',
-            'WHERE'  => [
+            'WHERE'  => array_merge([
                 'percent_done'  => ['<', 100],
                 'plan_end_date' => ['<', date('Y-m-d H:i:s')],
                 'NOT'           => ['plan_end_date' => null],
-            ],
+            ], Trash::liveTasks()), // Bloco M-1
         ]);
 
         foreach ($iterator as $row) {
@@ -166,11 +166,11 @@ class Notification
         $iterator = $DB->request([
             'SELECT' => ['id', 'name', 'plan_end_date'],
             'FROM'   => 'glpi_projecttasks',
-            'WHERE'  => [
+            'WHERE'  => array_merge([
                 'percent_done' => ['<', 100],
                 ['plan_end_date' => ['>=', date('Y-m-d H:i:s')]],
                 ['plan_end_date' => ['<=', date('Y-m-d H:i:s', time() + $days * DAY_TIMESTAMP)]],
-            ],
+            ], Trash::liveTasks()), // Bloco M-1
         ]);
 
         foreach ($iterator as $row) {
@@ -286,11 +286,11 @@ class Notification
                     ],
                 ],
             ],
-            'WHERE' => [
+            'WHERE' => array_merge([
                 'glpi_projecttasks.percent_done' => ['<', 100],
                 'glpi_projects.is_deleted'       => 0,
                 'glpi_projects.is_template'      => 0,
-            ],
+            ], Trash::liveTasks()), // Bloco M-1
         ]);
 
         foreach ($iterator as $row) {
