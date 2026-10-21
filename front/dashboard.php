@@ -13,6 +13,7 @@ use GlpiPlugin\Projectplus\Scope;
 use GlpiPlugin\Projectplus\TypePhase;
 use GlpiPlugin\Projectplus\Templates;
 use GlpiPlugin\Projectplus\Url;
+use GlpiPlugin\Projectplus\Favorite;
 
 include('../../../inc/includes.php');
 
@@ -20,6 +21,9 @@ include('../../../inc/includes.php');
 global $CFG_GLPI;
 
 Session::checkRight('plugin_projectplus_dashboard', READ);
+
+// Bloco L: entrando sem nada na URL, abre com o filtro favorito.
+Favorite::applyRedirect('dashboard', 'front/dashboard.php');
 
 Html::header(
     Dashboard::getMenuName(),
@@ -123,7 +127,7 @@ if ($scopeIsExpanded) {
     $scopeToggle['scope'] = 'mine';
 }
 $scopeToggleUrl = Url::to('front/dashboard.php')
-    . ($scopeToggle === [] ? '' : ('?' . http_build_query($scopeToggle)));
+    . ('?' . http_build_query(Favorite::markAll($scopeToggle))); // Bloco L: Ver tudo nunca vai com URL vazia
 
 $ganttActive = false;
 $plugin      = new Plugin();
@@ -211,6 +215,7 @@ TemplateRenderer::getInstance()->display(
         'today'           => date('Y-m-d'), // Bloco J: início padrão no modal (fuso do servidor, não UTC do navegador)
         'can_tasks'       => Access::can('tasks'),
         'nav'             => Access::sidebar(),
+        'fav'            => Favorite::payload('dashboard'), // Bloco L
         'scope_can_expand'  => $scopeCanExpand,
         'scope_is_expanded' => $scopeIsExpanded,
         'scope_toggle_url'  => $scopeToggleUrl,

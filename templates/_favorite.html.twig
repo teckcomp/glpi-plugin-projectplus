@@ -1,0 +1,15 @@
+{# Bloco L (21/10/2026) — botão ☆/★ "Favoritar filtros". Incluído na barra de
+   ações das 7 telas com filtro; precisa da variável `fav` (Favorite::payload)
+   e de `plugin_web_dir`. Rótulos vêm daqui, traduzidos: favorite.js não tem
+   strings próprias (nenhuma chave no dicionário JS). #}
+{% if fav is defined and fav.available %}
+<button type="button" class="projectplus-btn projectplus-btn--ghost pp-fav-btn" data-pp-fav="{{ fav|json_encode }}"
+        data-label-off="{{ __('Favoritar filtros', 'projectplus') }}"
+        data-label-on="{{ __('Filtros favoritos', 'projectplus') }}"
+        data-title-off="{{ __('A tela passa a abrir sempre com os filtros atuais', 'projectplus') }}"
+        data-title-on="{{ __('A tela abre com estes filtros. Clique para remover o favorito.', 'projectplus') }}"
+        data-msg-error="{{ __('Não foi possível salvar o favorito', 'projectplus') }}">
+    <i class="ti ti-star"></i><span>{{ __('Favoritar filtros', 'projectplus') }}</span>
+</button>
+<script src="{{ plugin_web_dir }}/js/favorite.js"></script>
+{% endif %}

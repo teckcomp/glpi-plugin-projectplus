@@ -77,7 +77,7 @@
         <div class="projectplus-header">
             <div class="pp-mt-filters">
                 <label class="pp-mt-toggle">
-                    <input type="checkbox" id="pp-mt-done">
+                    <input type="checkbox" id="pp-mt-done" data-pp-fav-ui="done"{{ initial_done ? ' checked' : '' }}>
                     {{ __('Mostrar tarefas concluídas', 'projectplus') }}
                 </label>
                 {# Filtros de TIPO e de PROJETO (Bloco C, 30/09/2026). Tipo:
@@ -92,22 +92,23 @@
                 {% if type_options is not empty and not nav.client %}
                 <div class="pp-mt-project">
                     <span class="pp-mt-project__label">{{ __('Tipo', 'projectplus') }}</span>
-                    <select id="pp-mt-type" class="pp-mt-type" title="{{ __('Tipo de projeto', 'projectplus') }}">
+                    <select id="pp-mt-type" class="pp-mt-type" data-pp-fav-ui="type" title="{{ __('Tipo de projeto', 'projectplus') }}">
                         <option value="">{{ __('Todos os tipos', 'projectplus') }}</option>
                         {% for t in type_options %}
-                        <option value="{{ t.id }}">{{ t.name }}</option>
+                        <option value="{{ t.id }}"{{ initial_type is not empty and initial_type == t.id ~ '' ? ' selected' : '' }}>{{ t.name }}</option>
                         {% endfor %}
                     </select>
                 </div>
                 {% endif %}
                 <div class="pp-mt-project"{% if nav.client %} hidden{% endif %}>
                     <span class="pp-mt-project__label">{{ __('Projeto', 'projectplus') }}</span>
-                    <select id="pp-mt-project" class="pp-search">
+                    <select id="pp-mt-project" class="pp-search" data-pp-fav-ui="project">
                         <option value="0">{{ __('Todos os projetos', 'projectplus') }}</option>
                     </select>
                 </div>
             </div>
             <div class="projectplus-actions">
+                {% include '@projectplus/_favorite.html.twig' %}
                 {# Sino de alertas — mesma estrutura da Visão geral; o
                    endpoint já devolve só os alertas do usuário logado
                    (tarefas em que está na equipe / projetos que gerencia) #}

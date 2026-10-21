@@ -655,6 +655,8 @@
             });
             const exists = Array.prototype.some.call(projSel.options, function (o) { return o.value === keep; });
             projSel.value = exists ? keep : '0';
+            // Bloco L: o valor mudou sem evento 'change' — repinta o ☆/★.
+            document.dispatchEvent(new Event('pp-fav-refresh'));
             const input = projSel.parentNode && projSel.parentNode.querySelector('.pp-ss__input');
             if (input && document.activeElement !== input) {
                 const opt = projSel.options[projSel.selectedIndex];

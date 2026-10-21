@@ -88,7 +88,8 @@
         }
 
         const state = {
-            showDone: false,
+            // Bloco L: "Mostrar concluídos" pode nascer marcado (favorito).
+            showDone: !!(root.querySelector('[data-pp-role="done"]') || {}).checked,
             query: '',
             data: data,
             _holder: holder,                       // referência estável p/ re-render

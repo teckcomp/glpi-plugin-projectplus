@@ -14,6 +14,7 @@ use GlpiPlugin\Projectplus\Dashboard;
 use GlpiPlugin\Projectplus\I18nJs;
 use GlpiPlugin\Projectplus\TypePhase;
 use GlpiPlugin\Projectplus\Url;
+use GlpiPlugin\Projectplus\Favorite;
 
 include('../../../inc/includes.php');
 
@@ -21,6 +22,9 @@ include('../../../inc/includes.php');
 global $CFG_GLPI;
 
 Session::checkRight('plugin_projectplus_tasks', READ);
+
+// Bloco L: entrando sem nada na URL, abre com o filtro favorito.
+Favorite::applyRedirect('mytasks', 'front/mytasks.php');
 
 Html::header(
     __('Minhas tarefas', 'projectplus'),
@@ -43,6 +47,8 @@ foreach (Dashboard::getStatesMap() as $sid => $s) {
 
 $canTeam = Access::canManageTaskTeams();
 
+$favMt = Favorite::get('mytasks')['ui'] ?? [];
+
 TemplateRenderer::getInstance()->display(
     '@projectplus/mytasks.html.twig',
     [
@@ -57,12 +63,17 @@ TemplateRenderer::getInstance()->display(
         'csrf_token'      => Session::getNewCSRFToken(),
         'can_templates'   => Session::haveRight('config', UPDATE),
         'nav'             => Access::sidebar(),
+        'fav'            => Favorite::payload('mytasks'), // Bloco L
         // Bloco C: mesmos tipos do seletor da Visão geral (filtro no cliente)
         'type_options'    => TypePhase::selectorTypes(),
         // Bloco F-1b: link de projeto/tarefa de quem não tem o Painel
         // (Url::project) chega aqui com ?project=ID[&task=ID]
-        'initial_project' => max(0, (int) ($_GET['project'] ?? 0)),
+        // Bloco L: sem projeto/tarefa na URL, o favorito da tela (Tipo,
+        // Projeto, concluídas) vira o estado inicial — a URL sempre vence.
+        'initial_project' => max(0, (int) ($_GET['project'] ?? ($favMt['project'] ?? 0))),
         'initial_task'    => max(0, (int) ($_GET['task'] ?? 0)),
+        'initial_type'    => isset($_GET['project']) ? '' : (string) ($favMt['type'] ?? ''),
+        'initial_done'    => !isset($_GET['project']) && ($favMt['done'] ?? '') === '1',
     ]
 );
 

@@ -16,6 +16,7 @@ use GlpiPlugin\Projectplus\Scope;
 use GlpiPlugin\Projectplus\Timeline;
 use GlpiPlugin\Projectplus\TypePhase;
 use GlpiPlugin\Projectplus\Url;
+use GlpiPlugin\Projectplus\Favorite;
 
 include('../../../inc/includes.php');
 
@@ -56,7 +57,10 @@ if ($scopeIsExpanded) {
     $scopeQuery['scope'] = 'mine';
 }
 $scopeToggleUrl = Url::to('front/timeline.php')
-    . ($scopeQuery === [] ? '' : ('?' . http_build_query($scopeQuery)));
+    . ('?' . http_build_query(Favorite::markAll($scopeQuery))); // Bloco L: Ver tudo nunca vai com URL vazia
+
+// Bloco L: entrando sem nada na URL, abre com o filtro favorito.
+Favorite::applyRedirect('timeline', 'front/timeline.php');
 
 Html::header(
     __('Timeline', 'projectplus'),
@@ -80,6 +84,7 @@ TemplateRenderer::getInstance()->display(
         'only_mine'      => $scopeMode === 'personal',
         'can_templates'  => Session::haveRight('config', UPDATE),
         'nav'             => Access::sidebar(),
+        'fav'            => Favorite::payload('timeline'), // Bloco L
         'scope_can_expand'  => $scopeCanExpand,
         'scope_is_expanded' => $scopeIsExpanded,
         'scope_toggle_url'  => $scopeToggleUrl,

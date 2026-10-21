@@ -101,6 +101,7 @@
                 </label>
             </div>
             <div class="projectplus-actions">
+                {% include '@projectplus/_favorite.html.twig' %}
                 <input type="search" class="pp-tablesearch" id="pp-tl-search"
                        placeholder="{{ __('Buscar projeto ou tarefa…', 'projectplus') }}"
                        aria-label="{{ __('Buscar projeto ou tarefa', 'projectplus') }}">

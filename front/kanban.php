@@ -18,6 +18,7 @@ use GlpiPlugin\Projectplus\ProjectKanban;
 use GlpiPlugin\Projectplus\Scope;
 use GlpiPlugin\Projectplus\TypePhase;
 use GlpiPlugin\Projectplus\Url;
+use GlpiPlugin\Projectplus\Favorite;
 
 include('../../../inc/includes.php');
 
@@ -74,7 +75,10 @@ if ($scopeIsExpanded) {
     $scopeQuery['scope'] = 'mine';
 }
 $scopeToggleUrl = Url::to('front/kanban.php')
-    . ($scopeQuery === [] ? '' : ('?' . http_build_query($scopeQuery)));
+    . ('?' . http_build_query(Favorite::markAll($scopeQuery))); // Bloco L: Ver tudo nunca vai com URL vazia
+
+// Bloco L: entrando sem nada na URL, abre com o filtro favorito.
+Favorite::applyRedirect('kanban', 'front/kanban.php');
 
 Html::header(
     __('Kanban', 'projectplus'),
@@ -97,6 +101,9 @@ TemplateRenderer::getInstance()->display(
         'kanban'         => Kanban::getBoardData(null, $scopeMyTaskIds, $scopeTaskProjectIds, $typeId),
         'can_templates'  => Session::haveRight('config', UPDATE),
         'nav'             => Access::sidebar(),
+        'fav'            => Favorite::payload('kanban'), // Bloco L
+        'fav_lane'        => Favorite::ui('kanban', 'lane') ?? 'project',
+        'fav_done'        => Favorite::ui('kanban', 'done') === '1',
         // Bloco 4 (ajuste 4b.1): caminho de IDA para o board de projetos —
         // sem ele, quem tem os dois Kanbans só chegaria lá pela URL, porque
         // a sidebar aponta para o board de tarefas.

@@ -17,6 +17,7 @@ use GlpiPlugin\Projectplus\ProjectKanban;
 use GlpiPlugin\Projectplus\Scope;
 use GlpiPlugin\Projectplus\TypePhase;
 use GlpiPlugin\Projectplus\Url;
+use GlpiPlugin\Projectplus\Favorite;
 
 include('../../../inc/includes.php');
 
@@ -53,7 +54,10 @@ if ($scopeIsExpanded) {
     $scopeQuery['scope'] = 'mine';
 }
 $scopeToggleUrl = Url::to('front/projectkanban.php')
-    . ($scopeQuery === [] ? '' : ('?' . http_build_query($scopeQuery)));
+    . ('?' . http_build_query(Favorite::markAll($scopeQuery))); // Bloco L: Ver tudo nunca vai com URL vazia
+
+// Bloco L: entrando sem nada na URL, abre com o filtro favorito.
+Favorite::applyRedirect('projectkanban', 'front/projectkanban.php');
 
 Html::header(
     __('Kanban de projetos', 'projectplus'),
@@ -81,6 +85,8 @@ TemplateRenderer::getInstance()->display(
         ),
         'can_templates'     => Session::haveRight('config', UPDATE),
         'nav'               => Access::sidebar(),
+        'fav'              => Favorite::payload('projectkanban'), // Bloco L
+        'fav_done'          => Favorite::ui('projectkanban', 'done') === '1',
         // Quem tem o Kanban de TAREFAS vê o atalho para o outro board.
         'can_task_kanban'   => Access::can('kanban'),
         // Ajuste 4b.2 — arrastar cartão muda a fase do PROJETO. Exige o

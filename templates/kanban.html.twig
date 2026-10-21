@@ -96,16 +96,17 @@
                     </noscript>
                 </form>
                 {% endif %}
-                <div class="pp-seg pp-kb-seg" role="group" aria-label="{{ __('Agrupar por', 'projectplus') }}">
-                    <button type="button" class="pp-seg__btn pp-seg__btn--active" data-pp-lane="project">{{ __('Projeto', 'projectplus') }}</button>
-                    <button type="button" class="pp-seg__btn" data-pp-lane="responsible">{{ __('Responsável', 'projectplus') }}</button>
+                <div class="pp-seg pp-kb-seg" role="group" aria-label="{{ __('Agrupar por', 'projectplus') }}" data-pp-fav-ui="lane">
+                    <button type="button" class="pp-seg__btn{{ fav_lane != 'responsible' ? ' pp-seg__btn--active' : '' }}" data-pp-lane="project">{{ __('Projeto', 'projectplus') }}</button>
+                    <button type="button" class="pp-seg__btn{{ fav_lane == 'responsible' ? ' pp-seg__btn--active' : '' }}" data-pp-lane="responsible">{{ __('Responsável', 'projectplus') }}</button>
                 </div>
                 <label class="pp-mt-toggle">
-                    <input type="checkbox" data-pp-role="done">
+                    <input type="checkbox" data-pp-role="done" data-pp-fav-ui="done"{{ fav_done ? ' checked' : '' }}>
                     {{ __('Mostrar tarefas concluídas', 'projectplus') }}
                 </label>
             </div>
             <div class="projectplus-actions">
+                {% include '@projectplus/_favorite.html.twig' %}
                 <input type="search" class="pp-tablesearch" data-pp-role="search"
                        placeholder="{{ __('Buscar tarefa ou projeto…', 'projectplus') }}"
                        aria-label="{{ __('Buscar tarefa ou projeto', 'projectplus') }}">

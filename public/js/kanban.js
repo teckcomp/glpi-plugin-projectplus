@@ -79,7 +79,10 @@
 
     // Compatibilidade com a tela cheia (front/kanban.php + kanban.html.twig)
     ProjectPlusKanban.init = function () {
-        ProjectPlusKanban.mount('pp-kb-widget', 'pp-kb-data', { defaultLane: 'project' });
+        // Bloco L: a raia inicial vem do HTML (botão ativo — favorito da tela).
+        const act = document.querySelector('#pp-kb-widget .pp-kb-seg .pp-seg__btn--active');
+        const lane = (act && act.dataset.ppLane === 'responsible') ? 'responsible' : 'project';
+        ProjectPlusKanban.mount('pp-kb-widget', 'pp-kb-data', { defaultLane: lane });
     };
 
     ProjectPlusKanban.mount = function (rootId, dataId, opts) {
@@ -106,7 +109,8 @@
 
         const state = {
             lane: opts.defaultLane === 'responsible' ? 'responsible' : 'project',
-            showDone: false,
+            // Bloco L: "Mostrar concluídas" pode nascer marcado (favorito).
+            showDone: !!(root.querySelector('[data-pp-role="done"]') || {}).checked,
             query: '',
             data: data,
             // Bloco G (05/10/2026): raia de PROJETO recolhível. Aberta = cartões

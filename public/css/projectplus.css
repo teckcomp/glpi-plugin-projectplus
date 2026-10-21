@@ -1308,3 +1308,8 @@ html.pp-kb-fs-page .pp-kb-fs { visibility: visible; }
     width: 30px; height: 28px; padding: 1px; border: 1px solid #c6d0d9; border-radius: 6px; background: #fff; cursor: pointer;
 }
 .pp-tp-row--editing td { background: #eef6fc; opacity: 1; }
+
+/* ===== Bloco L (21/10/2026) — Favoritar filtros ===== */
+.pp-fav-btn i { margin-right: 4px; }
+.pp-fav-btn--on, .pp-fav-btn--on:hover { color: #b7791f; border-color: #e8c27a; background: #fff8e6; }
+.pp-fav-btn--on i { color: #e0a100; }

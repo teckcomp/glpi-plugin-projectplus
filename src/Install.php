@@ -39,6 +39,7 @@ class Install
         'glpi_plugin_projectplus_taskcomments',
         'glpi_plugin_projectplus_typephases',
         'glpi_plugin_projectplus_commentfiles',
+        'glpi_plugin_projectplus_userprefs', // Bloco L: filtros favoritos
     ];
 
     /**
@@ -185,6 +186,13 @@ class Install
             'filesize'        => 'INT UNSIGNED NOT NULL DEFAULT 0',
             'date_creation'   => 'TIMESTAMP NULL DEFAULT NULL',
         ],
+        'glpi_plugin_projectplus_userprefs' => [
+            'users_id'      => 'INT %SIGN% NOT NULL DEFAULT 0',
+            'screen'        => "VARCHAR(64) NOT NULL DEFAULT ''",
+            'filters'       => 'TEXT',
+            'date_creation' => 'TIMESTAMP NULL DEFAULT NULL',
+            'date_mod'      => 'TIMESTAMP NULL DEFAULT NULL',
+        ],
     ];
 
     /**
@@ -196,6 +204,7 @@ class Install
         'glpi_plugin_projectplus_projecttrackings' => ['projects_id'],
         'glpi_plugin_projectplus_alerts'           => ['dedup'],
         'glpi_plugin_projectplus_typephases'       => ['type_state'],
+        'glpi_plugin_projectplus_userprefs'        => ['user_screen'],
     ];
 
     public static function install(): bool
@@ -406,6 +415,25 @@ class Install
                     KEY `comments_id` (`comments_id`),
                     KEY `projecttasks_id` (`projecttasks_id`),
                     KEY `projects_id` (`projects_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET={$charset} COLLATE={$collation}
+            ");
+        }
+
+        // ------------------------------------------------------------------
+        // 7.3) Filtros favoritos por usuário e tela (Bloco L, 21/10/2026).
+        //      Uma linha por (usuário, tela); `filters` = JSON {qs, ui}.
+        // ------------------------------------------------------------------
+        if (!$DB->tableExists('glpi_plugin_projectplus_userprefs')) {
+            $DB->doQuery("
+                CREATE TABLE `glpi_plugin_projectplus_userprefs` (
+                    `id`            INT {$sign} NOT NULL AUTO_INCREMENT,
+                    `users_id`      INT {$sign} NOT NULL DEFAULT 0,
+                    `screen`        VARCHAR(64) NOT NULL DEFAULT '' COMMENT 'tela do plugin (Favorite::SCREENS)',
+                    `filters`       TEXT,
+                    `date_creation` TIMESTAMP NULL DEFAULT NULL,
+                    `date_mod`      TIMESTAMP NULL DEFAULT NULL,
+                    PRIMARY KEY (`id`),
+                    UNIQUE KEY `user_screen` (`users_id`, `screen`)
                 ) ENGINE=InnoDB DEFAULT CHARSET={$charset} COLLATE={$collation}
             ");
         }

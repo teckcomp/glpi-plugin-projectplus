@@ -23,6 +23,7 @@ use GlpiPlugin\Projectplus\I18nJs;
 use GlpiPlugin\Projectplus\Reports;
 use GlpiPlugin\Projectplus\Scope;
 use GlpiPlugin\Projectplus\Url;
+use GlpiPlugin\Projectplus\Favorite;
 
 include('../../../inc/includes.php');
 
@@ -30,6 +31,9 @@ include('../../../inc/includes.php');
 global $CFG_GLPI;
 
 Session::checkRight('plugin_projectplus_reports', READ);
+
+// Bloco L: entrando sem nada na URL, abre com o filtro favorito.
+Favorite::applyRedirect('reports', 'front/reports.php');
 
 Html::header(
     __('Relatórios', 'projectplus'),
@@ -93,7 +97,7 @@ if ($scopeIsExpanded) {
     $scopeQuery['scope'] = 'mine';
 }
 $scopeToggleUrl = Url::to('front/reports.php')
-    . ($scopeQuery === [] ? '' : ('?' . http_build_query($scopeQuery)));
+    . ('?' . http_build_query(Favorite::markAll($scopeQuery))); // Bloco L: Ver tudo nunca vai com URL vazia
 
 // Lista de fases (mesma tabela glpi_projectstates para Projetos e Tarefas)
 $states = [];
@@ -121,6 +125,7 @@ TemplateRenderer::getInstance()->display(
         'generated_at'      => DateFmt::now(),
         'can_templates'     => Session::haveRight('config', UPDATE),
         'nav'             => Access::sidebar(),
+        'fav'            => Favorite::payload('reports'), // Bloco L
         'filter_scope'      => $scopeIsExpanded ? '' : 'mine',
         'scope_can_expand'  => $scopeCanExpand,
         'scope_is_expanded' => $scopeIsExpanded,

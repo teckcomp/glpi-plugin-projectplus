@@ -130,7 +130,8 @@
                         {# Escopo (Bloco 4): preserva o modo atual ao aplicar os filtros #}
                         {% if filter_scope %}<input type="hidden" name="scope" value="{{ filter_scope }}">{% endif %}
                         <button type="submit" class="projectplus-btn">{{ __('Aplicar', 'projectplus') }}</button>
-                        <a class="projectplus-btn projectplus-btn--ghost" href="{{ plugin_web_dir }}/front/reports.php">{{ __('Limpar', 'projectplus') }}</a>
+                        <a class="projectplus-btn projectplus-btn--ghost" href="{{ plugin_web_dir }}/front/reports.php?scope=all">{{ __('Limpar', 'projectplus') }}</a>
+                        {% include '@projectplus/_favorite.html.twig' %}
                         {% if scope_can_expand %}
                         <a class="projectplus-btn projectplus-btn--ghost pp-scope-toggle" href="{{ scope_toggle_url }}"
                            title="{{ scope_is_expanded ? __('Voltar ao escopo pessoal', 'projectplus') : __('Incluir todos os projetos que você pode ver', 'projectplus') }}">

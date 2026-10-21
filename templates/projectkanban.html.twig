@@ -97,11 +97,12 @@
                 </form>
                 {% endif %}
                 <label class="pp-mt-toggle">
-                    <input type="checkbox" data-pp-role="done">
+                    <input type="checkbox" data-pp-role="done" data-pp-fav-ui="done"{{ fav_done ? ' checked' : '' }}>
                     {{ __('Mostrar projetos concluídos', 'projectplus') }}
                 </label>
             </div>
             <div class="projectplus-actions">
+                {% include '@projectplus/_favorite.html.twig' %}
                 <input type="search" class="pp-tablesearch" data-pp-role="search"
                        placeholder="{{ __('Buscar projeto…', 'projectplus') }}"
                        aria-label="{{ __('Buscar projeto', 'projectplus') }}">

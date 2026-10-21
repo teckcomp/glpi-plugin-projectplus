@@ -79,6 +79,7 @@
                 <noscript><button type="submit" class="projectplus-btn projectplus-btn--ghost">{{ __('Aplicar', 'projectplus') }}</button></noscript>
             </form>
             <div class="projectplus-actions">
+                {% include '@projectplus/_favorite.html.twig' %}
                 {% if scope_can_expand %}
                 <a class="projectplus-btn projectplus-btn--ghost pp-scope-toggle" href="{{ scope_toggle_url }}"
                    title="{{ scope_is_expanded ? __('Voltar ao escopo pessoal', 'projectplus') : __('Incluir todos os projetos que você pode ver', 'projectplus') }}">

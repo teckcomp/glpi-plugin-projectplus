@@ -16,6 +16,7 @@ use GlpiPlugin\Projectplus\DateFmt;
 use GlpiPlugin\Projectplus\I18nJs;
 use GlpiPlugin\Projectplus\Scope;
 use GlpiPlugin\Projectplus\Url;
+use GlpiPlugin\Projectplus\Favorite;
 
 include('../../../inc/includes.php');
 
@@ -24,6 +25,9 @@ include('../../../inc/includes.php');
 global $CFG_GLPI, $DB;
 
 Session::checkRight('plugin_projectplus_costs', READ);
+
+// Bloco L: entrando sem nada na URL, abre com o filtro favorito.
+Favorite::applyRedirect('costs', 'front/costs.php');
 
 Html::header(
     __('Custos consolidados', 'projectplus'),
@@ -56,7 +60,7 @@ if ($scopeIsExpanded) {
     $scopeQuery['scope'] = 'mine';
 }
 $scopeToggleUrl = Url::to('front/costs.php')
-    . ($scopeQuery === [] ? '' : ('?' . http_build_query($scopeQuery)));
+    . ('?' . http_build_query(Favorite::markAll($scopeQuery))); // Bloco L: Ver tudo nunca vai com URL vazia
 
 // Projetos para o seletor do filtro: raízes (sem escopo) ou exatamente os
 // projetos do escopo (que podem ser subprojetos).
@@ -166,6 +170,7 @@ TemplateRenderer::getInstance()->display(
         'generated_at'   => DateFmt::now(),
         'can_templates'  => Session::haveRight('config', UPDATE),
         'nav'             => Access::sidebar(),
+        'fav'            => Favorite::payload('costs'), // Bloco L
         'filter_scope'      => $scopeIsExpanded ? '' : 'mine',
         'scope_can_expand'  => $scopeCanExpand,
         'scope_is_expanded' => $scopeIsExpanded,
