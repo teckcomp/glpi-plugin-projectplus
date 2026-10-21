@@ -124,6 +124,8 @@
             csrf: root.dataset.csrf || null,
             canEdit: root.dataset.canEdit === '1',
         };
+        fitHeight(holder);
+        bindFullscreen(root);
 
         const laneBtns = root.querySelectorAll('.pp-kb-seg .pp-seg__btn');
         laneBtns.forEach(function (btn) {
@@ -677,6 +679,101 @@
             + '<span class="pp-deadline__label pp-deadline__label--' + d.state + '">' + d.label + '</span>';
         return wrap;
     }
+
+    // Bloco H (21/10/2026): o board rola DENTRO de .pp-kb-scroll, então a
+    // barra horizontal fica na borda de baixo dele. Com `max-height: 74vh`
+    // essa borda caía fora da janela (o board começa a ~1/4 da altura) e a
+    // barra só aparecia rolando a página — "a barra não existe". Ajusta a
+    // altura ao que cabe entre o topo do board e o fim da janela, e refaz no
+    // resize (serve também à tela cheia). Na aba nativa (widget) o CSS do
+    // widget continua mandando. Usado também pelo Kanban de projetos.
+    function fitHeight(holder, margin) {
+        if (!holder || !holder.closest || holder.closest('.pp-kb-widget--tab')) {
+            return null;
+        }
+        margin = typeof margin === 'number' ? margin : 24;
+        const apply = function () {
+            const rectTop = holder.getBoundingClientRect().top;
+            // Bloco I: em tela cheia o widget é position:fixed — a posição
+            // já é relativa à janela, não se soma o scroll da página.
+            const docTop = holder.closest('.pp-kb-fs') ? rectTop : rectTop + (window.scrollY || 0);
+            const h = window.innerHeight - docTop - margin;
+            holder.style.maxHeight = h >= 320 ? h + 'px' : '';
+        };
+        apply();
+        window.addEventListener('resize', apply);
+        return apply;
+    }
+    ProjectPlusKanban.fitHeight = fitHeight;
+
+    // Bloco I (21/10/2026): "tela cheia" do PLUGIN — o widget (toolbar +
+    // board) cobre a janela por cima do GLPI (classe pp-kb-fs, position:
+    // fixed). NÃO usa a Fullscreen API do navegador: ela morre em qualquer
+    // troca de página (seletor de Tipo faz submit; "Kanban de projetos" é um
+    // link) e só pode ser reativada por clique do usuário — o pedido é entrar
+    // e sair SÓ pelo botão, sobrevivendo a essas trocas. O estado vive em
+    // sessionStorage (a aba do navegador) e é reaplicado em todo mount; Esc
+    // não sai. Rótulos vêm traduzidos do Twig (data-label-*). Usado pelos
+    // dois boards. Na aba nativa (sem botão) não faz nada.
+    const FS_KEY = 'pp-kb-fs';
+    function fsStored() {
+        try {
+            return window.sessionStorage.getItem(FS_KEY) === '1';
+        } catch (e) {
+            return false;
+        }
+    }
+    function fsStore(on) {
+        try {
+            if (on) {
+                window.sessionStorage.setItem(FS_KEY, '1');
+            } else {
+                window.sessionStorage.removeItem(FS_KEY);
+            }
+        } catch (e) { /* storage indisponível: só não lembra */ }
+    }
+    function bindFullscreen(root) {
+        const btn = root ? root.querySelector('[data-pp-role="fullscreen"]') : null;
+        if (!btn) {
+            return;
+        }
+        const label = btn.querySelector('span');
+        // Em tela cheia o widget sai do layout do GLPI e vai para o <body>:
+        // um ancestral com transform/filter faz position:fixed ficar preso
+        // dentro dele (o GLPI "aparecia por baixo"). Um marcador guarda o
+        // lugar original para a volta.
+        const marker = document.createComment('pp-kb-fs-marker');
+        const apply = function (on) {
+            root.classList.toggle('pp-kb-fs', on);
+            document.documentElement.classList.toggle('pp-kb-fs-page', on);
+            if (on && root.parentNode !== document.body) {
+                root.parentNode.insertBefore(marker, root);
+                document.body.appendChild(root);
+            } else if (!on && marker.parentNode) {
+                marker.parentNode.insertBefore(root, marker);
+                marker.parentNode.removeChild(marker);
+            }
+            if (label) {
+                label.textContent = on ? (btn.dataset.labelOn || '') : (btn.dataset.labelOff || '');
+            }
+            const ico = btn.querySelector('i');
+            if (ico) {
+                ico.className = on ? 'ti ti-minimize' : 'ti ti-maximize';
+            }
+            if (on) {
+                window.scrollTo(0, 0);
+            }
+            // o board é refeito pelo fitHeight no resize
+            window.dispatchEvent(new Event('resize'));
+        };
+        btn.addEventListener('click', function () {
+            const on = !root.classList.contains('pp-kb-fs');
+            fsStore(on);
+            apply(on);
+        });
+        apply(fsStored());
+    }
+    ProjectPlusKanban.bindFullscreen = bindFullscreen;
 
     // Exposto só para os testes isolados (jsdom) do Bloco 2a.
     ProjectPlusKanban._test = { applyCardState: applyCardState, laneZebra: laneZebra, laneCount: laneCount,

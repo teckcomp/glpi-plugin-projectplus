@@ -96,6 +96,14 @@
             csrf: root.dataset.csrf || null,
             canEdit: root.dataset.canEdit === '1',
         };
+        // Bloco H: altura do board ajustada à janela (barra horizontal visível).
+        if (window.ProjectPlusKanban && typeof window.ProjectPlusKanban.fitHeight === 'function') {
+            window.ProjectPlusKanban.fitHeight(holder);
+        }
+        // Bloco I: tela cheia (helper compartilhado do kanban.js).
+        if (window.ProjectPlusKanban && typeof window.ProjectPlusKanban.bindFullscreen === 'function') {
+            window.ProjectPlusKanban.bindFullscreen(root);
+        }
 
         const doneToggle = root.querySelector('[data-pp-role="done"]');
         if (doneToggle) {

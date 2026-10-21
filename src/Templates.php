@@ -584,21 +584,12 @@ class Templates
             $ttypes[] = ['id' => (int) $r['id'], 'name' => (string) $r['name']];
         }
 
-        $users = [];
-        foreach (
-            $DB->request([
-                'SELECT' => ['id', 'name', 'realname', 'firstname'],
-                'FROM'   => 'glpi_users',
-                'WHERE'  => ['is_active' => 1, 'is_deleted' => 0],
-                'ORDER'  => 'realname',
-                'LIMIT'  => 500,
-            ]) as $r
-        ) {
-            // Respeita a ordem de nome configurada no GLPI (config ou
-            // preferência da sessão), em vez de fixar "Sobrenome Nome".
-            $label   = \formatUserName((int) $r['id'], (string) $r['name'], $r['realname'] ?? '', $r['firstname'] ?? '');
-            $users[] = ['id' => (int) $r['id'], 'name' => $label !== '' ? $label : (string) $r['name']];
-        }
+        // Bloco H (21/10/2026): mesma lista de usuários do painel e de Minhas
+        // tarefas (Dashboard::userOptions — porta única). Aqui havia uma
+        // consulta própria com `LIMIT 500` ordenada por sobrenome: em base
+        // grande os últimos do alfabeto ficavam fora do editor de Modelos
+        // (mesma classe de bug do LIMIT 300 do painel).
+        $users = Dashboard::userOptions();
 
         return [
             'states' => $states,

@@ -69,6 +69,10 @@
          data-csrf="{{ csrf_token }}"
          data-can-edit="{{ can_edit ? '1' : '0' }}">
 
+        {# Bloco I: tela cheia guardada na aba — marca o modo DURANTE o parse (antes do JS do
+           fim da página), senão o GLPI aparece por um instante por baixo. #}
+        <script>(function(s){try{if(window.sessionStorage.getItem('pp-kb-fs')==='1'){document.documentElement.classList.add('pp-kb-fs-page');s.parentNode.classList.add('pp-kb-fs');}}catch(e){}})(document.currentScript);</script>
+
         <div class="projectplus-header">
             <div class="pp-kb-controls">
                 {# Bloco F-2a: escondido na Visão do cliente #}
@@ -121,6 +125,12 @@
                     <i class="ti ti-layout-columns"></i>{{ __('Kanban de projetos', 'projectplus') }}
                 </a>
                 {% endif %}
+                <button type="button" class="projectplus-btn projectplus-btn--ghost pp-kb-fsbtn" data-pp-role="fullscreen"
+                        data-label-on="{{ __('Sair da tela cheia', 'projectplus') }}"
+                        data-label-off="{{ __('Tela cheia', 'projectplus') }}"
+                        title="{{ __('Mostrar o quadro em tela cheia, por cima do menu do GLPI', 'projectplus') }}">
+                    <i class="ti ti-maximize"></i><span>{{ __('Tela cheia', 'projectplus') }}</span>
+                </button>
                 {% if nav.dashboard %}
                 <a class="projectplus-btn projectplus-btn--ghost" href="{{ plugin_web_dir }}/front/dashboard.php">
                     {{ __('Visão geral', 'projectplus') }}

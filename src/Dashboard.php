@@ -1513,8 +1513,13 @@ class Dashboard extends CommonGLPI
             $DB->request([
                 'SELECT' => ['id', 'name', 'realname', 'firstname'],
                 'FROM'   => 'glpi_users',
+                // Bloco H (21/10/2026): SEM limite. Havia `LIMIT 300` sem
+                // ORDER, e a ordem alfabética era feita depois, em PHP, sobre a
+                // lista já cortada — em base com mais de 300 usuários ativos
+                // quem ficava fora dos 300 que o MySQL devolvia sumia do
+                // combobox (Kayan Lucas, João Pedro id 565, em produção). O
+                // combobox tem busca; a lista inteira é o esperado.
                 'WHERE'  => ['is_active' => 1, 'is_deleted' => 0],
-                'LIMIT'  => 300,
             ]) as $row
         ) {
             $label   = \formatUserName(
