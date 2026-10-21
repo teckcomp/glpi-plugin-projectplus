@@ -1,0 +1,9 @@
+{# ProjectPlus — Bloco N-1a: barra superior na tela de Configuração (front/config.form.php).
+   A tela continua sendo o formulário do PluginConfig::showForm(); a barra dá o caminho de
+   volta para as telas do plugin, que antes não existia. #}
+
+<link rel="stylesheet" href="{{ plugin_web_dir }}/css/projectplus.css">
+
+<div class="projectplus-app pp-app--config">
+    {% include '@projectplus/_topbar.html.twig' with {pp_active: 'config', pp_title: __('Configurações', 'projectplus')} %}
+</div>

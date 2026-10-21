@@ -4,64 +4,8 @@
 
 <div class="projectplus-app" id="projectplus-typephases">
 
-    {# ================= COLUNA ESQUERDA: título + sidebar ================= #}
-    <div class="projectplus-left">
-        <div class="projectplus-pagetitle">
-            <div class="projectplus-brand">
-                <img class="projectplus-brand__mark" alt=""
-                     src="{{ plugin_web_dir }}/img/projectplus-mark.svg">
-                <h2>{{ __('Fases', 'projectplus') }}</h2>
-            </div>
-            <span>{{ __('Conjunto de fases por tipo de projeto', 'projectplus') }}</span>
-        </div>
-        <nav class="projectplus-sidebar">
-            <ul>
-                {% if nav.dashboard %}
-                <li class="projectplus-sidebar__item">
-                    <a href="{{ plugin_web_dir }}/front/dashboard.php"><i class="ti ti-layout-dashboard"></i>{{ __('Visão geral', 'projectplus') }}</a>
-                </li>
-                {% endif %}
-                {% if nav.tasks %}
-                <li class="projectplus-sidebar__item">
-                    <a href="{{ plugin_web_dir }}/front/mytasks.php"><i class="ti ti-user-check"></i>{{ __('Minhas tarefas', 'projectplus') }}</a>
-                </li>
-                {% endif %}
-                {% if nav.kanban %}
-                <li class="projectplus-sidebar__item">
-                    <a href="{{ plugin_web_dir }}/front/kanban.php"><i class="ti ti-layout-kanban"></i>{{ __('Kanban', 'projectplus') }}</a>
-                </li>
-                {% endif %}
-                {% if nav.timeline %}
-                <li class="projectplus-sidebar__item">
-                    <a href="{{ plugin_web_dir }}/front/timeline.php"><i class="ti ti-stopwatch"></i>{{ __('Timeline', 'projectplus') }}</a>
-                </li>
-                {% endif %}
-                {% if nav.templates %}
-                <li class="projectplus-sidebar__item">
-                    <a href="{{ plugin_web_dir }}/front/projecttemplates.php"><i class="ti ti-clipboard-list"></i>{{ __('Modelos', 'projectplus') }}</a>
-                </li>
-                {% endif %}
-                {% if nav.costs %}
-                <li class="projectplus-sidebar__item">
-                    <a href="{{ plugin_web_dir }}/front/costs.php"><i class="ti ti-coin"></i>{{ __('Orçamento', 'projectplus') }}</a>
-                </li>
-                {% endif %}
-                {% if nav.reports %}
-                <li class="projectplus-sidebar__item">
-                    <a href="{{ plugin_web_dir }}/front/reports.php"><i class="ti ti-report-analytics"></i>{{ __('Relatórios', 'projectplus') }}</a>
-                </li>
-                {% endif %}
-                {% if nav.config %}
-                <li class="projectplus-sidebar__item">
-                    <a href="{{ plugin_web_dir }}/front/config.form.php"><i class="ti ti-settings"></i>{{ __('Configurações', 'projectplus') }}</a>
-                </li>
-                <li class="projectplus-sidebar__item projectplus-sidebar__item--active">
-                    <a href="{{ plugin_web_dir }}/front/typephases.php"><i class="ti ti-columns-3"></i>{{ __('Fases por tipo', 'projectplus') }}</a>
-                </li>
-                {% endif %}
-            </ul>
-        </nav>
-    </div>
+    {# Bloco N-1a: barra superior no lugar da coluna lateral #}
+    {% include '@projectplus/_topbar.html.twig' with {pp_active: 'config', pp_title: __('Fases por tipo', 'projectplus'), pp_sub: __('Conjunto de fases por tipo de projeto', 'projectplus')} %}
 
     {# ================= ÁREA PRINCIPAL ================= #}
     <div class="projectplus-main">

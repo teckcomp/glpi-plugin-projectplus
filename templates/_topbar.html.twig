@@ -1,0 +1,59 @@
+{# ProjectPlus — Bloco N-1a: barra superior (substitui a coluna lateral nas telas do plugin).
+   Recebe do contexto: nav (Access::sidebar()), plugin_web_dir.
+   Recebe pelo include: pp_active (painel|minhas|kanban|timeline|relatorios|orcamento|modelos|config),
+   pp_title e pp_sub (opcionais — sem pp_title não há linha de título, para as telas que já têm o
+   próprio título dentro da área principal). #}
+{% set pp_active = pp_active|default('') %}
+{% set pp_title = pp_title|default('') %}
+{% set pp_sub = pp_sub|default('') %}
+<div class="pp-shell projectplus-noprint">
+    <nav class="pp-topbar" aria-label="Project+">
+        <a class="pp-topbar__brand" href="{{ plugin_web_dir }}/front/dashboard.php">
+            <img class="pp-topbar__mark" alt="" src="{{ plugin_web_dir }}/img/projectplus-mark.svg">
+            <span class="pp-topbar__name">
+                <strong>Project+</strong>
+                <span>{{ __('Projetos, tarefas e prazos', 'projectplus') }}</span>
+            </span>
+        </a>
+        <span class="pp-topbar__sep" aria-hidden="true"></span>
+        <ul class="pp-topbar__tabs">
+            {% if nav.dashboard %}
+            <li><a class="pp-topbar__tab{{ pp_active == 'painel' ? ' pp-topbar__tab--active' : '' }}" href="{{ plugin_web_dir }}/front/dashboard.php"{{ pp_active == 'painel' ? ' aria-current="page"' : '' }}><i class="ti ti-layout-dashboard"></i>{{ __('Painel', 'projectplus') }}</a></li>
+            {% endif %}
+            {% if nav.tasks %}
+            <li><a class="pp-topbar__tab{{ pp_active == 'minhas' ? ' pp-topbar__tab--active' : '' }}" href="{{ plugin_web_dir }}/front/mytasks.php"{{ pp_active == 'minhas' ? ' aria-current="page"' : '' }}><i class="ti ti-user-check"></i>{{ __('Minhas tarefas', 'projectplus') }}</a></li>
+            {% endif %}
+            {% if nav.kanban %}
+            <li><a class="pp-topbar__tab{{ pp_active == 'kanban' ? ' pp-topbar__tab--active' : '' }}" href="{{ plugin_web_dir }}/front/kanban.php"{{ pp_active == 'kanban' ? ' aria-current="page"' : '' }}><i class="ti ti-layout-kanban"></i>{{ __('Kanban', 'projectplus') }}</a></li>
+            {% endif %}
+            {% if nav.timeline %}
+            <li><a class="pp-topbar__tab{{ pp_active == 'timeline' ? ' pp-topbar__tab--active' : '' }}" href="{{ plugin_web_dir }}/front/timeline.php"{{ pp_active == 'timeline' ? ' aria-current="page"' : '' }}><i class="ti ti-stopwatch"></i>{{ __('Timeline', 'projectplus') }}</a></li>
+            {% endif %}
+            {% if nav.reports %}
+            <li><a class="pp-topbar__tab{{ pp_active == 'relatorios' ? ' pp-topbar__tab--active' : '' }}" href="{{ plugin_web_dir }}/front/reports.php"{{ pp_active == 'relatorios' ? ' aria-current="page"' : '' }}><i class="ti ti-report-analytics"></i>{{ __('Relatórios', 'projectplus') }}</a></li>
+            {% endif %}
+            {% if nav.costs %}
+            <li><a class="pp-topbar__tab{{ pp_active == 'orcamento' ? ' pp-topbar__tab--active' : '' }}" href="{{ plugin_web_dir }}/front/costs.php"{{ pp_active == 'orcamento' ? ' aria-current="page"' : '' }}><i class="ti ti-coin"></i>{{ __('Orçamento', 'projectplus') }}</a></li>
+            {% endif %}
+            {% if nav.templates %}
+            <li><a class="pp-topbar__tab{{ pp_active == 'modelos' ? ' pp-topbar__tab--active' : '' }}" href="{{ plugin_web_dir }}/front/projecttemplates.php"{{ pp_active == 'modelos' ? ' aria-current="page"' : '' }}><i class="ti ti-clipboard-list"></i>{{ __('Modelos', 'projectplus') }}</a></li>
+            {% endif %}
+        </ul>
+        <span class="pp-topbar__spacer"></span>
+        {% if nav.config %}
+        <details class="pp-topbar__menu{{ pp_active == 'config' ? ' pp-topbar__menu--active' : '' }}">
+            <summary class="pp-topbar__iconbtn" title="{{ __('Configurações', 'projectplus') }}" aria-label="{{ __('Configurações', 'projectplus') }}"><i class="ti ti-settings"></i></summary>
+            <div class="pp-topbar__dropdown">
+                <a href="{{ plugin_web_dir }}/front/config.form.php"><i class="ti ti-adjustments"></i>{{ __('Configurações', 'projectplus') }}</a>
+                <a href="{{ plugin_web_dir }}/front/typephases.php"><i class="ti ti-columns-3"></i>{{ __('Fases por tipo', 'projectplus') }}</a>
+            </div>
+        </details>
+        {% endif %}
+    </nav>
+    {% if pp_title %}
+    <div class="pp-pagehead">
+        <h1>{{ pp_title }}</h1>
+        {% if pp_sub %}<span>{{ pp_sub }}</span>{% endif %}
+    </div>
+    {% endif %}
+</div>

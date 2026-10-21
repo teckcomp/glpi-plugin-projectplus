@@ -1322,3 +1322,55 @@ html.pp-kb-fs-page .pp-kb-fs { visibility: visible; }
 }
 .pp-task-del:hover, .pp-ps-del:hover { background: #fdeeee; border-color: #d99a9a; }
 .pp-task-del:disabled, .pp-ps-del:disabled { opacity: .5; cursor: wait; }
+
+/* ===== Bloco N-1a — barra superior no lugar da coluna lateral =====
+   A coluna esquerda (.projectplus-left) saiu das telas; o app vira coluna:
+   barra superior + título da tela + área principal. O tema (cores em
+   variáveis, escuro/claro) entra no Bloco N-1b. */
+.projectplus-app { flex-direction: column; gap: 14px; padding: 12px 14px 0; }
+.projectplus-main { padding-right: 0; }
+.pp-shell { display: flex; flex-direction: column; gap: 12px; }
+.pp-topbar {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    background: #fff; border: 1px solid #e1e5ea; border-radius: 10px; padding: 8px 12px;
+}
+.pp-topbar__brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
+.pp-topbar__mark { width: 36px; height: 36px; border-radius: 9px; display: block; flex: 0 0 auto; }
+.pp-topbar__name { display: flex; flex-direction: column; line-height: 1.2; }
+.pp-topbar__name strong { font-size: 15px; color: #16323f; }
+.pp-topbar__name span { font-size: 11.5px; color: #8a97a5; }
+.pp-topbar__sep { width: 1px; height: 30px; background: #e1e5ea; }
+.pp-topbar__tabs { list-style: none; margin: 0; padding: 0; display: flex; gap: 6px; flex-wrap: wrap; }
+.pp-topbar__tab {
+    display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 12px;
+    border-radius: 7px; border: 1px solid #e1e5ea; background: #f7f9fb; color: #2c3e50;
+    font-size: 0.85rem; font-weight: 600; text-decoration: none; white-space: nowrap;
+}
+.pp-topbar__tab i { font-size: 1rem; color: #7c8a99; }
+.pp-topbar__tab:hover { background: #eaf4fb; color: #065a82; }
+.pp-topbar__tab--active { border-color: #4a9fd4; background: #eaf4fb; color: #065a82; }
+.pp-topbar__tab--active i { color: #065a82; }
+.pp-topbar__spacer { flex: 1 1 auto; }
+.pp-topbar__menu { position: relative; }
+.pp-topbar__menu > summary { list-style: none; }
+.pp-topbar__menu > summary::-webkit-details-marker { display: none; }
+.pp-topbar__iconbtn {
+    width: 34px; height: 34px; border-radius: 7px; border: 1px solid #e1e5ea; background: #f7f9fb;
+    color: #2c3e50; display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 1.05rem;
+}
+.pp-topbar__menu--active > .pp-topbar__iconbtn,
+.pp-topbar__menu[open] > .pp-topbar__iconbtn { border-color: #4a9fd4; background: #eaf4fb; color: #065a82; }
+.pp-topbar__dropdown {
+    position: absolute; right: 0; top: calc(100% + 6px); z-index: 1050; min-width: 210px;
+    background: #fff; border: 1px solid #e1e5ea; border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(22,50,63,.15); padding: 6px; display: flex; flex-direction: column;
+}
+.pp-topbar__dropdown a {
+    display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 6px;
+    color: #2c3e50; text-decoration: none; font-size: 0.88rem;
+}
+.pp-topbar__dropdown a:hover { background: #eaf4fb; color: #065a82; }
+.pp-pagehead { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; padding: 0 2px; }
+.pp-pagehead h1 { margin: 0; font-size: 1.3rem; font-weight: 700; color: #16323f; }
+.pp-pagehead span { color: #8a97a5; font-size: 0.85rem; }
