@@ -548,12 +548,12 @@
                         : '') + '</td>' +
                 '<td>' + escapeHtml(t.project || '—') + '</td>' +
                 '<td>' + (t.team && t.team.length
-                    ? escapeHtml(t.team.join(', '))
+                    ? t.team.map(function (m) { return '<span class="pp-person">' + escapeHtml(m) + '</span>'; }).join('')
                     : '<span class="projectplus-muted">—</span>') + '</td>' +
+                '<td class="pp-phase-cell">' + phaseChip(t.state_name, t.state_color) + '</td>' +
                 '<td><div class="projectplus-progress">' +
                     '<div class="projectplus-progress__bar" style="width:' + pct + '%"></div></div>' +
                     '<span class="projectplus-progress__pct">' + pct + '%</span></td>' +
-                '<td class="pp-phase-cell">' + phaseChip(t.state_name, t.state_color) + '</td>' +
                 '<td class="pp-deadline-cell">' + deadlineCell(t.deadline) + '</td>' +
                 '<td>' + (t.is_overdue
                     ? '<span class="projectplus-badge projectplus-badge--overdue">' + escapeHtml(t.end || '—') + '</span>'
@@ -1511,18 +1511,23 @@
         const taskUrl = root.dataset.taskUrl;
         const ajaxUrl = root.dataset.ajaxUrl;
 
-        root.querySelectorAll('[data-tasks-project]').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                const projectId = btn.dataset.tasksProject;
-                const row = btn.closest('tr');
-                const existing = row.nextElementSibling;
+        // Bloco N-2: delegação — o botão Tarefas mora na célula Ações, que o
+        // redesenho pela faixa (refreshProjectRows) refaz; linhas de subprojeto
+        // também passam por aqui. Guarda contra ligar duas vezes.
+        if (root.dataset.ppTasksBound) { return; }
+        root.dataset.ppTasksBound = '1';
+        root.addEventListener('click', function (ev) {
+            const btn = ev.target.closest ? ev.target.closest('[data-tasks-project]') : null;
+            if (!btn || !root.contains(btn)) { return; }
+            const projectId = btn.dataset.tasksProject;
+            const row = btn.closest('tr');
+            const existing = row.nextElementSibling;
 
-                if (existing && existing.classList.contains('projectplus-taskspanel-row')) {
-                    existing.remove(); // toggle: fecha
-                    return;
-                }
-                openTaskPanel(row, projectId, ajaxUrl, taskUrl);
-            });
+            if (existing && existing.classList.contains('projectplus-taskspanel-row')) {
+                existing.remove(); // toggle: fecha
+                return;
+            }
+            openTaskPanel(row, projectId, ajaxUrl, taskUrl);
         });
     }
 
@@ -2093,7 +2098,7 @@
     function commentBtnHtml(t) {
         const n = parseInt(t.comments, 10) || 0;
         return '<button type="button" class="pp-cmt-btn' + (n > 0 ? ' pp-cmt-btn--has' : '') +
-            '" title="' + escapeHtml(__('Comentários')) + '">💬' +
+            '" title="' + escapeHtml(__('Comentários')) + '" aria-label="' + escapeHtml(__('Comentários')) + '"><i class="ti ti-message"></i>' +
             (n > 0 ? '<span class="pp-cmt-count">' + n + '</span>' : '') +
             '</button>';
     }
@@ -2316,7 +2321,7 @@
         const n = parseInt(t.deps, 10) || 0;
         return '<button type="button" class="pp-dep-btn' + (n > 0 ? ' pp-dep-btn--has' : '') +
             (t.blocked ? ' pp-dep-btn--blocked' : '') +
-            '" title="' + escapeHtml(__('Dependências')) + '">🔗' +
+            '" title="' + escapeHtml(__('Dependências')) + '" aria-label="' + escapeHtml(__('Dependências')) + '"><i class="ti ti-link"></i>' +
             (n > 0 ? '<span class="pp-dep-count">' + n + '</span>' : '') +
             '</button>';
     }
@@ -2746,30 +2751,14 @@
             tr.dataset.parentId = parentRow.dataset.projectId;
             tr.dataset.projectId = child.id;
 
-            const cells = projectRowCells(child, showBudget);
+            const cells = projectRowCells(child, showBudget, showTasks);
             tr.innerHTML =
                 '<td></td>' +
-                '<td>' + projectLockHtml(child.blocked) +
-                '<a href="' + escapeHtml(child.url) + '">' + escapeHtml(child.name) + '</a>' +
-                    (showTasks
-                        ? ' <button type="button" class="projectplus-tasksbtn" data-tasks-project="' + child.id + '">' +
-                          escapeHtml(__('Tarefas')) + '</button>'
-                        : '') + '</td>' +
+                '<td class="pp-name-cell">' + projectLockHtml(child.blocked) +
+                '<a href="' + escapeHtml(child.url) + '">' + escapeHtml(child.name) + '</a></td>' +
                 cells.map(function (c) { return '<td' + (c.cls ? ' class="' + c.cls + '"' : '') + '>' + c.html + '</td>'; }).join('');
             anchor.insertAdjacentElement('afterend', tr);
-
-            // Botão Tarefas do subprojeto
-            const btn = tr.querySelector('[data-tasks-project]');
-            if (btn && rootEl) {
-                btn.addEventListener('click', function () {
-                    const existing = tr.nextElementSibling;
-                    if (existing && existing.classList.contains('projectplus-taskspanel-row')) {
-                        existing.remove();
-                        return;
-                    }
-                    openTaskPanel(tr, child.id, rootEl.dataset.ajaxUrl, rootEl.dataset.taskUrl);
-                });
-            }
+            // Botão Tarefas do subprojeto: delegação em initTaskPanels (Bloco N-2)
             anchor = tr;
         });
     }
@@ -2785,7 +2774,7 @@
     // Células da linha de projeto a partir da coluna Fase — MESMA ordem do
     // <thead> (Orçamento só com o direito de Custos). Usada pelo subprojeto
     // (insertChildren) e pelo redesenho depois de editar na faixa (D-3a).
-    function projectRowCells(p, showBudget) {
+    function projectRowCells(p, showBudget, showTasks) {
         let badge;
         if (p.is_overdue) {
             badge = '<span class="projectplus-badge projectplus-badge--overdue">' + escapeHtml(__('Atrasado')) + '</span>';
@@ -2803,18 +2792,27 @@
                 escapeHtml(p.budget.spent_fmt) + ' / ' + escapeHtml(p.budget.planned_fmt) + ')</span>';
         }
         const pct = parseInt(p.percent_done, 10) || 0;
+        // Bloco N-2: ordem do mockup — Fase, Progresso, Prazo decorrido, Prazo
+        // final, Situação, Última atividade, [Orçamento], Ações (Tarefas + 💬).
+        const deadline = (p.deadline && p.deadline.state === 'none')
+            ? '<span class="projectplus-muted">' + escapeHtml(__('sem datas')) + '</span>'
+            : deadlineCell(p.deadline);
         const cells = [
             { cls: 'pp-phase-cell', html: phaseChip(p.state_name, p.state_color) },
             { cls: '', html: '<div class="projectplus-progress"><div class="projectplus-progress__bar" style="width:' +
                 pct + '%"></div></div><span class="projectplus-progress__pct">' + pct + '%</span>' },
-            { cls: '', html: (p.last_activity || '—') },
-            { cls: '', html: badge }
+            { cls: 'pp-deadline-cell', html: deadline },
+            { cls: '', html: p.plan_end_date ? formatDate(p.plan_end_date) : '—' },
+            { cls: '', html: badge },
+            { cls: 'pp-muted-cell', html: (p.last_activity || '—') }
         ];
         if (showBudget) { cells.push({ cls: 'projectplus-budget-cell', html: budget }); }
-        cells.push({ cls: 'pp-deadline-cell', html: deadlineCell(p.deadline) });
-        cells.push({ cls: '', html: p.plan_end_date ? formatDate(p.plan_end_date) : '—' });
-        // Bloco F-2b: 💬 do projeto (mesma coluna do <thead> do Twig)
-        cells.push({ cls: 'pp-cmt-cell', html: commentBtnHtml({ comments: p.comments }) });
+        // Bloco F-2b: 💬 do projeto; Bloco N-2: o botão Tarefas mora aqui também
+        // (clique tratado por delegação em initTaskPanels — sobrevive ao redesenho).
+        cells.push({ cls: 'pp-actions-cell pp-cmt-cell', html: (showTasks
+            ? '<button type="button" class="projectplus-tasksbtn" data-tasks-project="' + parseInt(p.id, 10) + '">' +
+              escapeHtml(__('Tarefas')) + '</button> '
+            : '') + commentBtnHtml({ comments: p.comments }) });
         return cells;
     }
 
@@ -2865,12 +2863,13 @@
         const rootEl = document.getElementById('projectplus-dashboard');
         if (!rootEl || !Array.isArray(rows)) { return; }
         const showBudget = rootEl.dataset.ppCosts !== '0';
+        const showTasks  = rootEl.dataset.ppTasks !== '0';
         rows.forEach(function (p) {
             const id  = parseInt(p.id, 10);
             const sel = 'tr.projectplus-row-item[data-project-id="' + id + '"],' +
                 'tr.projectplus-row--child[data-project-id="' + id + '"]';
             rootEl.querySelectorAll(sel).forEach(function (tr) {
-                const cells = projectRowCells(p, showBudget);
+                const cells = projectRowCells(p, showBudget, showTasks);
                 if (tr.children.length !== cells.length + 2) { return; } // layout inesperado: não mexe
                 cells.forEach(function (c, i) { tr.children[i + 2].innerHTML = c.html; });
                 const nameTd = tr.children[1];

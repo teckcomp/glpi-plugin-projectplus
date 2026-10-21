@@ -8,6 +8,7 @@ use Glpi\Application\View\TemplateRenderer;
 use GlpiPlugin\Projectplus\Access;
 use GlpiPlugin\Projectplus\Budget;
 use GlpiPlugin\Projectplus\Dashboard;
+use GlpiPlugin\Projectplus\DateFmt;
 use GlpiPlugin\Projectplus\I18nJs;
 use GlpiPlugin\Projectplus\Scope;
 use GlpiPlugin\Projectplus\TypePhase;
@@ -167,6 +168,91 @@ foreach (
     $parents[] = ['id' => (int) $row['id'], 'name' => $row['name']];
 }
 
+// ---- Bloco N-2: dados de apresentação do Painel (cabeçalho, painéis, atenção) ----
+// Linha do título: data por extenso no idioma do usuário · projetos ativos · entidade.
+$lang = (string) ($_SESSION['glpilanguage'] ?? 'pt_BR');
+$todayLabel = DateFmt::date(date('Y-m-d'));
+$monthName  = '';
+if (class_exists('IntlDateFormatter')) {
+    $fmt = new IntlDateFormatter($lang, IntlDateFormatter::FULL, IntlDateFormatter::NONE);
+    // Padrão do idioma ("quarta-feira, 21 de outubro" / "Wednesday 21 October")
+    $pattern = 'EEEE, d MMMM';
+    if (class_exists('IntlDatePatternGenerator')) {
+        $gen = IntlDatePatternGenerator::create($lang);
+        $best = $gen ? $gen->getBestPattern('EEEEdMMMM') : false;
+        if (is_string($best) && $best !== '') {
+            $pattern = $best;
+        }
+    }
+    $fmt->setPattern($pattern);
+    $f = $fmt->format(time());
+    if (is_string($f) && $f !== '') {
+        $todayLabel = mb_strtoupper(mb_substr($f, 0, 1)) . mb_substr($f, 1);
+    }
+    $fmtMonth = new IntlDateFormatter($lang, IntlDateFormatter::NONE, IntlDateFormatter::NONE);
+    $fmtMonth->setPattern('LLLL');
+    $m = $fmtMonth->format(time());
+    $monthName = is_string($m) ? $m : '';
+}
+$entityName = Dropdown::getDropdownName('glpi_entities', (int) Session::getActiveEntity());
+$activeCount = (int) ($data['kpis']['active'] ?? 0);
+$headSub = $todayLabel . ' · '
+    . sprintf(_n('%d projeto ativo', '%d projetos ativos', $activeCount, 'projectplus'), $activeCount)
+    . ' · ' . $entityName;
+$headMeta = sprintf(__('Atualizado às %s', 'projectplus'), date('H:i'));
+
+// Situação dos projetos: no prazo (planejado + em andamento) × atrasado × concluído.
+$sc = $data['status_chart'];
+$onTime = (int) ($sc['in_progress'] ?? 0) + (int) ($sc['planned'] ?? 0);
+$situationItems = [
+    ['name' => __('No prazo', 'projectplus'),  'color' => 'var(--pp-ok)',     'count' => $onTime],
+    ['name' => __('Atrasado', 'projectplus'),  'color' => 'var(--pp-danger)', 'count' => (int) ($sc['overdue'] ?? 0)],
+    ['name' => __('Concluído', 'projectplus'), 'color' => 'var(--pp-muted)',  'count' => (int) ($sc['done'] ?? 0)],
+];
+$situation = Dashboard::donutSegments($situationItems);
+$situation['items']  = $situationItems;
+$situation['center'] = $situation['total'] > 0 ? (round(100 * $onTime / $situation['total']) . '%') : '—';
+
+// Segundo donut: por tipo (sem tipo escolhido) ou por fase (com tipo).
+$secondDonut = Dashboard::donutSegments($typeId === null ? $data['type_chart'] : $data['phase_chart']);
+$kpiTypes    = count(array_filter($data['type_chart'], static fn($t) => (int) ($t['count'] ?? 0) > 0));
+
+// Tarefas por fase: barras proporcionais ao total.
+$taskTotal = 0;
+foreach ($data['task_state_chart'] as $t) {
+    $taskTotal += (int) $t['count'];
+}
+$taskBars = [];
+foreach ($data['task_state_chart'] as $t) {
+    $taskBars[] = [
+        'name'  => $t['name'],
+        'color' => $t['color'],
+        'count' => (int) $t['count'],
+        'pct'   => $taskTotal > 0 ? round(100 * (int) $t['count'] / $taskTotal, 1) : 0,
+    ];
+}
+
+// Precisa de atenção — contado sobre a MESMA lista de projetos da tela.
+$noEnd = 0;
+$overBudget = 0;
+foreach ($data['projects'] as $p) {
+    if (empty($p['plan_end_date'])) {
+        $noEnd++;
+    }
+    if (!empty($p['budget']) && in_array($p['budget']['state'] ?? '', ['warn', 'over'], true)) {
+        $overBudget++;
+    }
+}
+$attention = [];
+if (Access::can('tasks')) {
+    $attention[] = ['label' => __('Tarefas atrasadas', 'projectplus'), 'count' => (int) ($data['kpis']['tasks_overdue'] ?? 0), 'level' => 'danger'];
+}
+$attention[] = ['label' => __('Projetos atrasados', 'projectplus'), 'count' => (int) ($data['kpis']['overdue'] ?? 0), 'level' => 'danger'];
+$attention[] = ['label' => __('Projetos sem prazo final', 'projectplus'), 'count' => $noEnd, 'level' => 'warn'];
+if (Access::can('costs')) {
+    $attention[] = ['label' => __('Orçamento acima do alerta', 'projectplus'), 'count' => $overBudget, 'level' => 'warn'];
+}
+
 TemplateRenderer::getInstance()->display(
     '@projectplus/dashboard.html.twig',
     [
@@ -228,6 +314,15 @@ TemplateRenderer::getInstance()->display(
         'focus_project_name' => $focusName,
         'focus_task_id'      => $focusTaskId,
         'focus_error'        => $focusError,
+        // Bloco N-2 — apresentação do Painel
+        'head_sub'     => $headSub,
+        'head_meta'    => $headMeta,
+        'month_name'   => $monthName,
+        'kpi_types'    => $kpiTypes,
+        'situation'    => $situation,
+        'second_donut' => $secondDonut,
+        'task_bars'    => $taskBars,
+        'attention'    => $attention,
     ]
 );
 

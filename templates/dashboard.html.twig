@@ -19,34 +19,47 @@
      data-focus-task="{{ focus_task_id|default(0) }}">
 
     {# Bloco N-1a: barra superior no lugar da coluna lateral #}
-    {% include '@projectplus/_topbar.html.twig' with {pp_active: 'painel', pp_title: __('Painel', 'projectplus'), pp_sub: __('Visão geral dos projetos e seu andamento', 'projectplus')} %}
+    {% include '@projectplus/_topbar.html.twig' with {pp_active: 'painel', pp_title: __('Painel', 'projectplus'), pp_sub: head_sub, pp_meta: head_meta, pp_bell: nav.alerts, pp_new: can_create} %}
 
     {# ================= ÁREA PRINCIPAL ================= #}
     <div class="projectplus-main">
 
-        {# Cabeçalho: filtro de período + ações #}
-        <div class="projectplus-header" id="overview">
-            <form method="get" class="projectplus-period" action="">
+        {# ===== Bloco N-2: faixa de filtros (período, tipo, escopo, favorito) =====
+           Tipo e datas aplicam sozinhos ao mudar — não há mais o botão "Aplicar". #}
+        <div class="pp-filterbar" id="overview">
+            {% include '@projectplus/_favorite.html.twig' %}
+            <span class="pp-filterbar__sep"></span>
+            <form method="get" class="pp-filterbar__form" action="">
                 {% if filter_scope %}<input type="hidden" name="scope" value="{{ filter_scope }}">{% endif %}
-                {# Bloco F-2a: na Visão do cliente não há "Aplicar" — as datas enviam sozinhas #}
-                <input type="date" name="from" value="{{ filter_from }}" title="{{ __('Início do período', 'projectplus') }}"{% if nav.client %} onchange="this.form.submit()"{% endif %}>
-                <span>—</span>
-                <input type="date" name="until" value="{{ filter_until }}" title="{{ __('Fim do período', 'projectplus') }}"{% if nav.client %} onchange="this.form.submit()"{% endif %}>
+                <span class="pp-filterbar__label">{{ __('Período', 'projectplus') }}</span>
+                <input type="date" name="from" value="{{ filter_from }}" title="{{ __('Início do período', 'projectplus') }}" onchange="this.form.submit()">
+                <span class="pp-filterbar__muted">{{ __('até', 'projectplus') }}</span>
+                <input type="date" name="until" value="{{ filter_until }}" title="{{ __('Fim do período', 'projectplus') }}" onchange="this.form.submit()">
                 {% if type_options is not empty and not nav.client %}
-                <select name="type" class="pp-type-pick" title="{{ __('Tipo de projeto', 'projectplus') }}">
+                <span class="pp-filterbar__label">{{ __('Tipo', 'projectplus') }}</span>
+                <select name="type" class="pp-type-pick" title="{{ __('Tipo de projeto', 'projectplus') }}" onchange="this.form.submit()">
                     <option value="">{{ __('Todos os tipos', 'projectplus') }}</option>
                     {% for t in type_options %}
                     <option value="{{ t.id }}" {{ (filter_type is not null and filter_type == t.id) ? 'selected' : '' }}>{{ t.name }}</option>
                     {% endfor %}
                 </select>
                 {% endif %}
-                {% if not nav.client %}
-                <button type="submit" class="projectplus-btn projectplus-btn--ghost">{{ __('Aplicar', 'projectplus') }}</button>
-                {% endif %}
+                <noscript><button type="submit" class="projectplus-btn projectplus-btn--ghost">{{ __('Aplicar', 'projectplus') }}</button></noscript>
                 {% if filter_from or filter_until or filter_type is not null %}
                     <a href="?" class="projectplus-period__clear" title="{{ __('Limpar filtro', 'projectplus') }}">&times;</a>
                 {% endif %}
             </form>
+            {% if scope_can_expand and not nav.client %}
+            <div class="pp-seg pp-seg--links" role="group" aria-label="{{ __('Escopo', 'projectplus') }}">
+                {% if scope_is_expanded %}
+                <span class="pp-seg__btn pp-seg__btn--active" aria-current="true">{{ __('Todos', 'projectplus') }}</span>
+                <a class="pp-seg__btn" href="{{ scope_toggle_url }}" title="{{ __('Voltar ao escopo pessoal', 'projectplus') }}">{{ __('Só os meus', 'projectplus') }}</a>
+                {% else %}
+                <a class="pp-seg__btn" href="{{ scope_toggle_url }}" title="{{ __('Incluir todos os projetos que você pode ver', 'projectplus') }}">{{ __('Todos', 'projectplus') }}</a>
+                <span class="pp-seg__btn pp-seg__btn--active" aria-current="true">{{ __('Só os meus', 'projectplus') }}</span>
+                {% endif %}
+            </div>
+            {% endif %}
             {% if focus_project_id %}
             <div class="projectplus-focus">
                 <span class="projectplus-focus__label">{{ __('Projeto', 'projectplus') }}:</span>
@@ -60,149 +73,141 @@
                 {{ __('Projeto não encontrado ou fora do seu escopo', 'projectplus') }}
             </div>
             {% endif %}
-            <div class="projectplus-actions">
-                {% include '@projectplus/_favorite.html.twig' %}
-                {% if scope_can_expand and not nav.client %}
-                <a class="projectplus-btn projectplus-btn--ghost pp-scope-toggle" href="{{ scope_toggle_url }}"
-                   title="{{ scope_is_expanded ? __('Voltar ao escopo pessoal', 'projectplus') : __('Incluir todos os projetos que você pode ver', 'projectplus') }}">
-                    {% if scope_is_expanded %}
-                    <i class="ti ti-user"></i>{{ __('Ver só os meus', 'projectplus') }}
-                    {% else %}
-                    <i class="ti ti-eye"></i>{{ __('Ver tudo', 'projectplus') }}
-                    {% endif %}
-                </a>
-                {% endif %}
-                {% if nav.alerts %}
-                <div class="pp-bell-wrap">
-                    <button type="button" id="pp-bell" class="pp-bell" title="{{ __('Alertas', 'projectplus') }}">
-                        <i class="ti ti-bell"></i><span class="pp-bell__badge" hidden>0</span>
-                    </button>
-                    <div id="pp-bell-panel" class="pp-bell__panel" hidden>
-                        <div class="pp-bell__head">
-                            <strong>{{ __('Alertas', 'projectplus') }}</strong>
-                            <button type="button" class="pp-bell__readall">{{ __('Marcar todas como lidas', 'projectplus') }}</button>
-                        </div>
-                        <ul class="pp-bell__list"></ul>
-                    </div>
-                </div>
-                {% endif %}
-                {% if can_create %}
-                <button type="button" class="projectplus-btn" data-pp-modal-open="pp-modal-newproject">
-                    + {{ __('Novo projeto', 'projectplus') }}
-                </button>
-                {% endif %}
-                {% if not nav.client %}
-                <a class="projectplus-btn projectplus-btn--ghost" href="{{ glpi_root }}/front/project.php">
-                    {{ __('Lista nativa', 'projectplus') }}
-                </a>
-                {% endif %}
-            </div>
+            <span class="pp-filterbar__spacer"></span>
+            {% if not nav.client %}
+            <a class="pp-filterbar__link" href="{{ glpi_root }}/front/project.php">{{ __('Lista nativa', 'projectplus') }}</a>
+            {% endif %}
         </div>
 
-        {# ================= 6 KPIs (Etapa 3, Bloco 4 — nova ordem) ================= #}
-        <div class="projectplus-kpis">
-            <div class="projectplus-kpi">
-                <span class="projectplus-kpi__icon projectplus-kpi__icon--blue"><i class="ti ti-briefcase"></i></span>
-                <div>
-                    <span class="projectplus-kpi__value">{{ kpis.active }}</span>
-                    <span class="projectplus-kpi__label">{{ __('Projetos', 'projectplus') }}</span>
-                    <span class="projectplus-kpi__sub">{{ __('Ativos', 'projectplus') }}</span>
-                </div>
+        {# ===== Bloco N-2: indicadores ===== #}
+        <div class="pp-kpis">
+            <div class="pp-kpi">
+                <span class="pp-kpi__label">{{ __('Projetos ativos', 'projectplus') }}</span>
+                <span class="pp-kpi__value">{{ kpis.active }}</span>
+                <span class="pp-kpi__sub">{{ _n('em %d tipo', 'em %d tipos', kpi_types, 'projectplus')|format(kpi_types) }}</span>
             </div>
-            <div class="projectplus-kpi">
-                <span class="projectplus-kpi__icon projectplus-kpi__icon--teal"><i class="ti ti-alert-circle"></i></span>
-                <div>
-                    <span class="projectplus-kpi__value">{{ kpis.overdue }}</span>
-                    <span class="projectplus-kpi__label">{{ __('Projetos em atraso', 'projectplus') }}</span>
-                    <span class="projectplus-kpi__sub">{{ __('Em risco', 'projectplus') }}</span>
-                </div>
+            <div class="pp-kpi">
+                <span class="pp-kpi__label">{{ __('Projetos em atraso', 'projectplus') }}</span>
+                <span class="pp-kpi__value{{ kpis.overdue > 0 ? ' pp-kpi__value--danger' : '' }}">{{ kpis.overdue }}</span>
+                <span class="pp-kpi__sub">{{ __('em risco', 'projectplus') }}</span>
             </div>
             {% if can_tasks %}
-            <div class="projectplus-kpi">
-                <span class="projectplus-kpi__icon projectplus-kpi__icon--amber"><i class="ti ti-file-text"></i></span>
-                <div>
-                    <span class="projectplus-kpi__value">{{ kpis.open_tasks }}</span>
-                    <span class="projectplus-kpi__label">{{ __('Tarefas', 'projectplus') }}</span>
-                    <span class="projectplus-kpi__sub">{{ __('Em andamento', 'projectplus') }}</span>
-                </div>
+            <div class="pp-kpi">
+                <span class="pp-kpi__label">{{ __('Tarefas abertas', 'projectplus') }}</span>
+                <span class="pp-kpi__value">{{ kpis.open_tasks }}</span>
+                <span class="pp-kpi__sub">{{ __('em andamento', 'projectplus') }}</span>
             </div>
-            <div class="projectplus-kpi">
-                <span class="projectplus-kpi__icon projectplus-kpi__icon--red"><i class="ti ti-alert-triangle"></i></span>
-                <div>
-                    <span class="projectplus-kpi__value">{{ kpis.tasks_overdue }}</span>
-                    <span class="projectplus-kpi__label">{{ __('Tarefas em atraso', 'projectplus') }}</span>
-                    <span class="projectplus-kpi__sub">{{ __('Prazo vencido', 'projectplus') }}</span>
-                </div>
+            <div class="pp-kpi">
+                <span class="pp-kpi__label">{{ __('Tarefas atrasadas', 'projectplus') }}</span>
+                <span class="pp-kpi__value{{ kpis.tasks_overdue > 0 ? ' pp-kpi__value--danger' : '' }}">{{ kpis.tasks_overdue }}</span>
+                <span class="pp-kpi__sub{{ kpis.tasks_overdue > 0 ? ' pp-kpi__sub--warn' : '' }}">{{ __('prazo vencido', 'projectplus') }}</span>
             </div>
             {% endif %}
-            <div class="projectplus-kpi">
-                <span class="projectplus-kpi__icon projectplus-kpi__icon--green"><i class="ti ti-percentage"></i></span>
-                <div>
-                    <span class="projectplus-kpi__value">{{ kpis.avg_progress }}%</span>
-                    <span class="projectplus-kpi__label">{{ __('Progresso médio', 'projectplus') }}</span>
-                    <span class="projectplus-kpi__sub">{{ __('Percentual finalizado', 'projectplus') }}</span>
-                </div>
+            <div class="pp-kpi">
+                <span class="pp-kpi__label">{{ __('Progresso médio', 'projectplus') }}</span>
+                <span class="pp-kpi__value">{{ kpis.avg_progress }}%</span>
+                <span class="pp-kpi__sub">{{ __('percentual finalizado', 'projectplus') }}</span>
             </div>
-            <div class="projectplus-kpi">
-                <span class="projectplus-kpi__icon projectplus-kpi__icon--indigo"><i class="ti ti-circle-check"></i></span>
-                <div>
-                    <span class="projectplus-kpi__value">{{ kpis.done_month }}</span>
-                    <span class="projectplus-kpi__label">{{ __('Projetos concluídos', 'projectplus') }}</span>
-                    <span class="projectplus-kpi__sub">{{ __('Este mês', 'projectplus') }}</span>
-                </div>
+            <div class="pp-kpi">
+                <span class="pp-kpi__label">{{ __('Concluídos no mês', 'projectplus') }}</span>
+                <span class="pp-kpi__value">{{ kpis.done_month }}</span>
+                <span class="pp-kpi__sub">{{ month_name }}</span>
             </div>
         </div>
 
-        {# ================= LINHA 2: 4 donuts (Etapa 3, Bloco 4) ================= #}
-        <div class="projectplus-row projectplus-row--charts">
-            <div class="projectplus-card projectplus-card--chart">
-                <h3>{{ __('Projetos por Status', 'projectplus') }}</h3>
-                <div id="projectplus-status-chart" class="projectplus-donut"
-                     data-done="{{ status_chart.done }}"
-                     data-inprogress="{{ status_chart.in_progress }}"
-                     data-planned="{{ status_chart.planned }}"
-                     data-overdue="{{ status_chart.overdue }}"></div>
+        {# ===== Bloco N-2: painéis (situação, tipo/fase, tarefas por fase, atenção) =====
+           Donuts desenhados no servidor (SVG), segmentos de Dashboard::donutSegments(). #}
+        <div class="pp-panels">
+            <div class="pp-panel">
+                <h3 class="pp-panel__title">{{ __('Situação dos projetos', 'projectplus') }}</h3>
+                <div class="pp-donut">
+                    <svg class="pp-donut__svg" width="120" height="120" viewBox="0 0 120 120" role="img"
+                         aria-label="{{ __('Situação dos projetos', 'projectplus') }}">
+                        <circle cx="60" cy="60" r="48" class="pp-donut__track"></circle>
+                        {% for seg in situation.segs %}
+                        <circle cx="60" cy="60" r="48" class="pp-donut__seg" style="stroke: {{ seg.color }}"
+                                stroke-dasharray="{{ seg.dash }} 301.59" stroke-dashoffset="{{ seg.offset }}"
+                                transform="rotate(-90 60 60)"></circle>
+                        {% endfor %}
+                        <text x="60" y="61" text-anchor="middle" class="pp-donut__big">{{ situation.center }}</text>
+                        <text x="60" y="78" text-anchor="middle" class="pp-donut__small">{{ __('no prazo', 'projectplus') }}</text>
+                    </svg>
+                    <ul class="pp-legend">
+                        {% for it in situation.items %}
+                        <li><span class="pp-legend__dot" style="background: {{ it.color }}"></span><span class="pp-legend__name">{{ it.name }}</span><b>{{ it.count }}</b></li>
+                        {% endfor %}
+                    </ul>
+                </div>
             </div>
-            {# Etapa 9 — donut ADAPTATIVO: sem tipo escolhido, "Projetos por fase"
-               misturaria os vocabulários de todos os setores; a leitura que faz
-               sentido cruzando departamentos é "Projetos por tipo". #}
-            <div class="projectplus-card projectplus-card--chart">
-                {% if filter_type is null %}
-                <h3>{{ __('Projetos por tipo', 'projectplus') }}</h3>
-                <div id="projectplus-phase-chart" class="projectplus-donut"
-                     data-phases="{{ type_chart|json_encode }}"></div>
+
+            {# Etapa 9 — donut ADAPTATIVO: sem tipo escolhido, "por tipo"; com tipo, "por fase". #}
+            <div class="pp-panel">
+                <h3 class="pp-panel__title">{{ filter_type is null ? __('Por tipo', 'projectplus') : __('Por fase', 'projectplus') }}</h3>
+                {% if second_donut.total > 0 %}
+                <div class="pp-donut">
+                    <svg class="pp-donut__svg" width="120" height="120" viewBox="0 0 120 120" role="img"
+                         aria-label="{{ filter_type is null ? __('Por tipo', 'projectplus') : __('Por fase', 'projectplus') }}">
+                        <circle cx="60" cy="60" r="48" class="pp-donut__track"></circle>
+                        {% for seg in second_donut.segs %}
+                        <circle cx="60" cy="60" r="48" class="pp-donut__seg" style="stroke: {{ seg.color }}"
+                                stroke-dasharray="{{ seg.dash }} 301.59" stroke-dashoffset="{{ seg.offset }}"
+                                transform="rotate(-90 60 60)"></circle>
+                        {% endfor %}
+                        <text x="60" y="64" text-anchor="middle" class="pp-donut__big">{{ second_donut.total }}</text>
+                        <text x="60" y="80" text-anchor="middle" class="pp-donut__small">{{ _n('projeto', 'projetos', second_donut.total, 'projectplus') }}</text>
+                    </svg>
+                    <ul class="pp-legend">
+                        {% for it in second_donut.segs %}
+                        <li><span class="pp-legend__dot" style="background: {{ it.color }}"></span><span class="pp-legend__name">{{ it.name }}</span><b>{{ it.count }}</b></li>
+                        {% endfor %}
+                    </ul>
+                </div>
                 {% else %}
-                <h3>{{ __('Projetos por fase', 'projectplus') }}</h3>
-                <div id="projectplus-phase-chart" class="projectplus-donut"
-                     data-phases="{{ phase_chart|json_encode }}"></div>
+                <p class="pp-panel__empty">{{ __('Nenhum projeto no período', 'projectplus') }}</p>
                 {% endif %}
             </div>
+
             {% if can_tasks %}
-            <div class="projectplus-card projectplus-card--chart">
-                <h3>{{ __('Tarefas por status', 'projectplus') }}</h3>
-                <div id="projectplus-tasks-chart" class="projectplus-donut"
-                     data-done="{{ tasks_chart.done }}"
-                     data-inprogress="{{ tasks_chart.in_progress }}"
-                     data-pending="{{ tasks_chart.pending }}"
-                     data-overdue="{{ tasks_chart.overdue }}"></div>
-            </div>
-            <div class="projectplus-card projectplus-card--chart">
-                <h3>{{ __('Tarefas por fase', 'projectplus') }}</h3>
-                <div id="projectplus-taskstate-chart" class="projectplus-donut"
-                     data-phases="{{ task_state_chart|json_encode }}"></div>
+            <div class="pp-panel">
+                <h3 class="pp-panel__title">{{ __('Tarefas por fase', 'projectplus') }}</h3>
+                {% if task_bars %}
+                <ul class="pp-bars">
+                    {% for b in task_bars %}
+                    <li>
+                        <div class="pp-bars__row"><span><span class="pp-legend__dot" style="background: {{ b.color }}"></span>{{ b.name }}</span><b>{{ b.count }}</b></div>
+                        <div class="pp-bars__track"><div class="pp-bars__fill" style="width: {{ b.pct }}%; background: {{ b.color }}"></div></div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="pp-panel__empty">{{ __('Nenhuma tarefa no período', 'projectplus') }}</p>
+                {% endif %}
             </div>
             {% endif %}
+
+            <div class="pp-panel">
+                <h3 class="pp-panel__title">{{ __('Precisa de atenção', 'projectplus') }}</h3>
+                <ul class="pp-attn">
+                    {% for a in attention %}
+                    <li><span>{{ a.label }}</span><span class="pp-attn__count pp-attn__count--{{ a.count > 0 ? a.level : 'zero' }}">{{ a.count }}</span></li>
+                    {% endfor %}
+                </ul>
+            </div>
         </div>
 
-        {# ================= LINHA 3: Projetos em andamento (largura total) ================= #}
+        {# ================= LINHA 3: Projetos em andamento (largura total) =================
+           Bloco N-2: ordem das colunas do mockup — Fase, Progresso, Prazo decorrido, Prazo final,
+           Situação, Última atividade, [Orçamento], Ações (Tarefas + 💬). A MESMA ordem está em
+           projectRowCells() do projectplus.js (subprojetos e redesenho pela faixa). #}
         <div class="projectplus-row">
-            <div class="projectplus-card projectplus-card--full" id="projects-table">
+            <div class="projectplus-card projectplus-card--full pp-tablecard" id="projects-table">
                 <div class="pp-tablehead">
                     <h3>{{ __('Projetos em andamento', 'projectplus') }}</h3>
                     <input type="search" class="pp-tablesearch"
                            placeholder="{{ __('Buscar projeto…', 'projectplus') }}"
                            aria-label="{{ __('Buscar projeto', 'projectplus') }}">
                 </div>
+                <div class="pp-tablewrap">
                 <table class="projectplus-table">
                     <thead>
                         <tr>
@@ -210,12 +215,12 @@
                             <th>{{ __('Projeto', 'projectplus') }}</th>
                             <th>{{ __('Fase', 'projectplus') }}</th>
                             <th>{{ __('Progresso', 'projectplus') }}</th>
-                            <th>{{ __('Última atividade', 'projectplus') }}</th>
-                            <th>{{ __('Situação', 'projectplus') }}</th>
-                            {% if can_costs %}<th>{{ __('Orçamento', 'projectplus') }}</th>{% endif %}
                             <th>{{ __('Prazo decorrido', 'projectplus') }}</th>
                             <th>{{ __('Prazo final', 'projectplus') }}</th>
-                            <th></th>
+                            <th>{{ __('Situação', 'projectplus') }}</th>
+                            <th>{{ __('Última atividade', 'projectplus') }}</th>
+                            {% if can_costs %}<th>{{ __('Orçamento', 'projectplus') }}</th>{% endif %}
+                            <th class="pp-actions-cell">{{ __('Ações', 'projectplus') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -228,13 +233,8 @@
                                             data-project-id="{{ project.id }}">+</button>
                                 {% endif %}
                             </td>
-                            <td>{% if project.blocked %}<span class="pp-dep-lock"
-                                    title="{{ __('Projeto com tarefas/subprojetos abertos — não pode ir para fase concluída', 'projectplus') }}">🔒</span> {% endif %}<a href="{{ project.url }}">{{ project.name }}</a>
-                                {% if can_tasks %}
-                                <button type="button" class="projectplus-tasksbtn"
-                                        data-tasks-project="{{ project.id }}">{{ __('Tarefas', 'projectplus') }}</button>
-                                {% endif %}
-                            </td>
+                            <td class="pp-name-cell">{% if project.blocked %}<span class="pp-dep-lock"
+                                    title="{{ __('Projeto com tarefas/subprojetos abertos — não pode ir para fase concluída', 'projectplus') }}">🔒</span> {% endif %}<a href="{{ project.url }}">{{ project.name }}</a></td>
                             <td class="pp-phase-cell">
                                 {% if project.state_name %}
                                     <span class="pp-phase" style="--pp-phase-color: {{ project.state_color }}">{{ project.state_name }}</span>
@@ -248,7 +248,19 @@
                                 </div>
                                 <span class="projectplus-progress__pct">{{ project.percent_done }}%</span>
                             </td>
-                            <td>{{ project.last_activity|formatted_datetime }}</td>
+                            <td class="pp-deadline-cell">
+                                {% if project.deadline.state == 'done' %}
+                                    <span class="projectplus-muted">—</span>
+                                {% elseif project.deadline.state == 'none' %}
+                                    <span class="projectplus-muted" title="{{ __('Sem datas planejadas — corrija o planejamento', 'projectplus') }}">{{ __('sem datas', 'projectplus') }}</span>
+                                {% else %}
+                                    <div class="pp-deadline"><div
+                                        class="pp-deadline__fill pp-deadline__fill--{{ project.deadline.state }}"
+                                        style="width: {{ project.deadline.display }}%"></div></div>
+                                    <span class="pp-deadline__label pp-deadline__label--{{ project.deadline.state }}">{{ project.deadline.label }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ project.plan_end_date ? project.plan_end_date|formatted_date : '—' }}</td>
                             <td>
                                 {% if project.is_overdue %}
                                     <span class="projectplus-badge projectplus-badge--overdue">{{ __('Atrasado', 'projectplus') }}</span>
@@ -258,6 +270,7 @@
                                     <span class="projectplus-badge projectplus-badge--ok">{{ __('No prazo', 'projectplus') }}</span>
                                 {% endif %}
                             </td>
+                            <td class="pp-muted-cell">{{ project.last_activity|formatted_datetime }}</td>
                             {% if can_costs %}
                             <td class="projectplus-budget-cell">
                                 {% if project.budget %}
@@ -271,26 +284,12 @@
                                 {% endif %}
                             </td>
                             {% endif %}
-                            <td class="pp-deadline-cell">
-                                {% if project.deadline.state == 'done' %}
-                                    <span class="projectplus-muted">—</span>
-                                {% elseif project.deadline.state == 'none' %}
-                                    <div class="pp-deadline pp-deadline--none"
-                                         title="{{ __('Sem datas planejadas — corrija o planejamento', 'projectplus') }}"><div
-                                        class="pp-deadline__fill" style="width:0%"></div></div>
-                                    <span class="projectplus-muted">—</span>
-                                {% else %}
-                                    <div class="pp-deadline"><div
-                                        class="pp-deadline__fill pp-deadline__fill--{{ project.deadline.state }}"
-                                        style="width: {{ project.deadline.display }}%"></div></div>
-                                    <span class="pp-deadline__label pp-deadline__label--{{ project.deadline.state }}">{{ project.deadline.label }}</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ project.plan_end_date ? project.plan_end_date|formatted_date : '—' }}</td>
-                            {# Bloco F-2b: 💬 do projeto para quem o enxerga #}
-                            <td class="pp-cmt-cell">
+                            {# Bloco F-2b: 💬 do projeto para quem o enxerga; Bloco N-2: Tarefas veio para cá #}
+                            <td class="pp-actions-cell pp-cmt-cell">
+                                {% if can_tasks %}<button type="button" class="projectplus-tasksbtn"
+                                        data-tasks-project="{{ project.id }}">{{ __('Tarefas', 'projectplus') }}</button>{% endif %}
                                 <button type="button" class="pp-cmt-btn{% if project.comments > 0 %} pp-cmt-btn--has{% endif %}"
-                                        title="{{ __('Comentários', 'projectplus') }}">💬{% if project.comments > 0 %}<span class="pp-cmt-count">{{ project.comments }}</span>{% endif %}</button>
+                                        title="{{ __('Comentários', 'projectplus') }}" aria-label="{{ __('Comentários', 'projectplus') }}"><i class="ti ti-message"></i>{% if project.comments > 0 %}<span class="pp-cmt-count">{{ project.comments }}</span>{% endif %}</button>
                             </td>
                         </tr>
                     {% else %}
@@ -298,6 +297,7 @@
                     {% endfor %}
                     </tbody>
                 </table>
+                </div>
             </div>
         </div>
 
@@ -306,13 +306,14 @@
            Tarefas (papel Cliente) — ele acompanha o projeto, não a tarefa. #}
         {% if can_tasks %}
         <div class="projectplus-row">
-            <div class="projectplus-card projectplus-card--full" id="tasks-table">
+            <div class="projectplus-card projectplus-card--full pp-tablecard" id="tasks-table">
                 <div class="pp-tablehead">
                     <h3>{{ __('Tarefas em andamento', 'projectplus') }}</h3>
                     <input type="search" class="pp-tablesearch"
                            placeholder="{{ __('Buscar tarefa…', 'projectplus') }}"
                            aria-label="{{ __('Buscar tarefa', 'projectplus') }}">
                 </div>
+                <div class="pp-tablewrap">
                 <table class="projectplus-table">
                     <thead>
                         <tr>
@@ -320,8 +321,8 @@
                             <th>{{ __('Tarefa', 'projectplus') }}</th>
                             <th>{{ __('Projeto', 'projectplus') }}</th>
                             <th>{{ __('Responsáveis', 'projectplus') }}</th>
-                            <th>{{ __('Progresso', 'projectplus') }}</th>
                             <th>{{ __('Fase', 'projectplus') }}</th>
+                            <th>{{ __('Progresso', 'projectplus') }}</th>
                             <th>{{ __('Prazo decorrido', 'projectplus') }}</th>
                             <th>{{ __('Prazo final', 'projectplus') }}</th>
                             <th></th>
@@ -343,7 +344,14 @@
                             <td>{{ task.project }}</td>
                             <td>
                                 {% if task.team %}
-                                    {{ task.team|join(', ') }}
+                                    {% for member in task.team %}<span class="pp-person">{{ member }}</span>{% endfor %}
+                                {% else %}
+                                    <span class="projectplus-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="pp-phase-cell">
+                                {% if task.state_name %}
+                                    <span class="pp-phase" style="--pp-phase-color: {{ task.state_color }}">{{ task.state_name }}</span>
                                 {% else %}
                                     <span class="projectplus-muted">—</span>
                                 {% endif %}
@@ -353,13 +361,6 @@
                                     <div class="projectplus-progress__bar" style="width: {{ task.percent }}%"></div>
                                 </div>
                                 <span class="projectplus-progress__pct">{{ task.percent }}%</span>
-                            </td>
-                            <td class="pp-phase-cell">
-                                {% if task.state_name %}
-                                    <span class="pp-phase" style="--pp-phase-color: {{ task.state_color }}">{{ task.state_name }}</span>
-                                {% else %}
-                                    <span class="projectplus-muted">—</span>
-                                {% endif %}
                             </td>
                             <td class="pp-deadline-cell">
                                 {% if task.deadline.state == 'done' %}
@@ -385,11 +386,11 @@
                             </td>
                             <td class="pp-dep-cell">
                                 <button type="button" class="pp-dep-btn{% if task.deps > 0 %} pp-dep-btn--has{% endif %}{% if task.blocked %} pp-dep-btn--blocked{% endif %}"
-                                        title="{{ __('Dependências', 'projectplus') }}">🔗{% if task.deps > 0 %}<span class="pp-dep-count">{{ task.deps }}</span>{% endif %}</button>
+                                        title="{{ __('Dependências', 'projectplus') }}" aria-label="{{ __('Dependências', 'projectplus') }}"><i class="ti ti-link"></i>{% if task.deps > 0 %}<span class="pp-dep-count">{{ task.deps }}</span>{% endif %}</button>
                             </td>
                             <td class="pp-cmt-cell">
                                 <button type="button" class="pp-cmt-btn{% if task.comments > 0 %} pp-cmt-btn--has{% endif %}"
-                                        title="{{ __('Comentários', 'projectplus') }}">💬{% if task.comments > 0 %}<span class="pp-cmt-count">{{ task.comments }}</span>{% endif %}</button>
+                                        title="{{ __('Comentários', 'projectplus') }}" aria-label="{{ __('Comentários', 'projectplus') }}"><i class="ti ti-message"></i>{% if task.comments > 0 %}<span class="pp-cmt-count">{{ task.comments }}</span>{% endif %}</button>
                             </td>
                         </tr>
                     {% else %}
@@ -397,6 +398,7 @@
                     {% endfor %}
                     </tbody>
                 </table>
+                </div>
             </div>
         </div>
         {% endif %}

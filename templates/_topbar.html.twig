@@ -2,11 +2,18 @@
    Recebe do contexto: nav (Access::sidebar()), plugin_web_dir.
    Recebe pelo include: pp_active (painel|minhas|kanban|timeline|relatorios|orcamento|modelos|config),
    pp_title e pp_sub (opcionais — sem pp_title não há linha de título, para as telas que já têm o
-   próprio título dentro da área principal). #}
+   próprio título dentro da área principal), pp_meta (texto à direita da linha de título),
+   pp_bell (sino de alertas — Bloco N-2) e pp_new (botão "Novo projeto", que abre o modal da tela). #}
 {% set pp_active = pp_active|default('') %}
 {% set pp_title = pp_title|default('') %}
 {% set pp_sub = pp_sub|default('') %}
+{% set pp_meta = pp_meta|default('') %}
+{% set pp_bell = pp_bell|default(false) %}
+{% set pp_new = pp_new|default(false) %}
 <div class="pp-shell projectplus-noprint">
+    {# Bloco N-1b: tema marcado DURANTE o parse (antes do conteúdo da tela), senão a página
+       aparece clara por um instante. Padrão = escuro; a escolha fica no navegador (localStorage). #}
+    <script>(function(s){var t='dark';try{t=window.localStorage.getItem('pp-theme')==='light'?'light':'dark';}catch(e){}document.documentElement.setAttribute('data-pp-theme',t);var a=s.closest('.projectplus-app');if(a){a.setAttribute('data-bs-theme',t);}})(document.currentScript);</script>
     <nav class="pp-topbar" aria-label="Project+">
         <a class="pp-topbar__brand" href="{{ plugin_web_dir }}/front/dashboard.php">
             <img class="pp-topbar__mark" alt="" src="{{ plugin_web_dir }}/img/projectplus-mark.svg">
@@ -40,6 +47,24 @@
             {% endif %}
         </ul>
         <span class="pp-topbar__spacer"></span>
+        {% if pp_bell %}
+        <div class="pp-bell-wrap">
+            <button type="button" id="pp-bell" class="pp-topbar__iconbtn pp-bell" title="{{ __('Alertas', 'projectplus') }}" aria-label="{{ __('Alertas', 'projectplus') }}">
+                <i class="ti ti-bell"></i><span class="pp-bell__badge" hidden>0</span>
+            </button>
+            <div id="pp-bell-panel" class="pp-bell__panel" hidden>
+                <div class="pp-bell__head">
+                    <strong>{{ __('Alertas', 'projectplus') }}</strong>
+                    <button type="button" class="pp-bell__readall">{{ __('Marcar todas como lidas', 'projectplus') }}</button>
+                </div>
+                <ul class="pp-bell__list"></ul>
+            </div>
+        </div>
+        {% endif %}
+        <button type="button" class="pp-topbar__iconbtn pp-topbar__theme" data-pp-theme-toggle
+                title="{{ __('Alternar tema claro/escuro', 'projectplus') }}" aria-label="{{ __('Alternar tema claro/escuro', 'projectplus') }}">
+            <i class="ti ti-sun pp-topbar__ico-light"></i><i class="ti ti-moon pp-topbar__ico-dark"></i>
+        </button>
         {% if nav.config %}
         <details class="pp-topbar__menu{{ pp_active == 'config' ? ' pp-topbar__menu--active' : '' }}">
             <summary class="pp-topbar__iconbtn" title="{{ __('Configurações', 'projectplus') }}" aria-label="{{ __('Configurações', 'projectplus') }}"><i class="ti ti-settings"></i></summary>
@@ -49,11 +74,35 @@
             </div>
         </details>
         {% endif %}
+        {% if pp_new %}
+        <button type="button" class="pp-topbar__new" data-pp-modal-open="pp-modal-newproject"><i class="ti ti-plus"></i>{{ __('Novo projeto', 'projectplus') }}</button>
+        {% endif %}
     </nav>
+    {# Bloco N-1b: botão de tema e fechamento do menu da engrenagem (clique fora / Esc). #}
+    <script>(function(s){
+        var shell=s.parentNode;
+        function apply(t){
+            document.documentElement.setAttribute('data-pp-theme',t);
+            document.querySelectorAll('.projectplus-app, .projectplus-modal, .pp-kb-fs').forEach(function(el){el.setAttribute('data-bs-theme',t);});
+        }
+        document.addEventListener('DOMContentLoaded',function(){apply(document.documentElement.getAttribute('data-pp-theme')||'dark');});
+        var btn=shell.querySelector('[data-pp-theme-toggle]');
+        if(btn){btn.addEventListener('click',function(){
+            var t=document.documentElement.getAttribute('data-pp-theme')==='light'?'dark':'light';
+            try{window.localStorage.setItem('pp-theme',t);}catch(e){}
+            apply(t);
+        });}
+        var menu=shell.querySelector('.pp-topbar__menu');
+        if(menu){
+            document.addEventListener('click',function(e){if(menu.open&&!menu.contains(e.target)){menu.open=false;}});
+            document.addEventListener('keydown',function(e){if(e.key==='Escape'&&menu.open){menu.open=false;}});
+        }
+    })(document.currentScript);</script>
     {% if pp_title %}
     <div class="pp-pagehead">
         <h1>{{ pp_title }}</h1>
         {% if pp_sub %}<span>{{ pp_sub }}</span>{% endif %}
+        {% if pp_meta %}<span class="pp-pagehead__meta">{{ pp_meta }}</span>{% endif %}
     </div>
     {% endif %}
 </div>

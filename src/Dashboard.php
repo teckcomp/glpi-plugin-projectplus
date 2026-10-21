@@ -98,6 +98,41 @@ class Dashboard extends CommonGLPI
      *
      * @return array<int, array{name:string,color:string,is_finished:bool}>
      */
+    /**
+     * Bloco N-2: segmentos de um donut SVG (círculo r=48, circunferência 301,59)
+     * desenhado no servidor. Recebe [['name','color','count'], ...] e devolve
+     * total + itens com dash (comprimento do arco) e offset (início negativo),
+     * já com um respiro de 2px entre fatias quando há mais de uma.
+     * Itens com count 0 ficam fora dos segmentos.
+     */
+    public static function donutSegments(array $items): array
+    {
+        $circ  = 301.59;
+        $total = 0;
+        foreach ($items as $it) {
+            $total += max(0, (int) ($it['count'] ?? 0));
+        }
+        $segs = [];
+        if ($total <= 0) {
+            return ['total' => 0, 'segs' => []];
+        }
+        $live = array_values(array_filter($items, static fn($it) => (int) ($it['count'] ?? 0) > 0));
+        $gap  = count($live) > 1 ? 2.0 : 0.0;
+        $pos  = 0.0;
+        foreach ($live as $it) {
+            $len    = $circ * ((int) $it['count']) / $total;
+            $segs[] = [
+                'name'   => (string) ($it['name'] ?? ''),
+                'color'  => (string) ($it['color'] ?? self::PHASE_DEFAULT_COLOR),
+                'count'  => (int) $it['count'],
+                'dash'   => round(max(0.0, $len - $gap), 2),
+                'offset' => round(-$pos, 2),
+            ];
+            $pos += $len;
+        }
+        return ['total' => $total, 'segs' => $segs];
+    }
+
     public static function getStatesMap(?int $typeId = null): array
     {
         return TypePhase::statesFor($typeId);

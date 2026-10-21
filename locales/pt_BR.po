@@ -12,7 +12,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ProjectPlus\n"
 "Report-Msgid-Bugs-To: https://github.com/teckcomp/glpi-plugin-projectplus/issues\n"
-"POT-Creation-Date: 2026-10-21 18:29+0000\n"
+"POT-Creation-Date: 2026-10-21 19:04+0000\n"
 "PO-Revision-Date: 2026-07-25 00:00+0000\n"
 "Last-Translator: Teckcomp I.T. Services\n"
 "Language-Team: Portugues do Brasil\n"
@@ -74,6 +74,13 @@ msgstr[1] "%d arquivos selecionados"
 msgid "%d ponto(s) de atenção — ver as linhas marcadas abaixo."
 msgstr "%d ponto(s) de atenção — ver as linhas marcadas abaixo."
 
+#: front/dashboard.php:200
+#, php-format
+msgid "%d projeto ativo"
+msgid_plural "%d projetos ativos"
+msgstr[0] "%d projeto ativo"
+msgstr[1] "%d projetos ativos"
+
 #: src/I18nJs.php:247 src/I18nJs.php:248
 #, php-format
 msgid "%d restante"
@@ -81,7 +88,7 @@ msgid_plural "%d restantes"
 msgstr[0] "%d restante"
 msgstr[1] "%d restantes"
 
-#: templates/dashboard.html.twig:434
+#: templates/dashboard.html.twig:436
 msgid "%d subprojeto"
 msgid_plural "%d subprojetos"
 msgstr[0] "%d subprojeto"
@@ -101,7 +108,7 @@ msgid_plural "%d subtarefas abertas"
 msgstr[0] "%d subtarefa aberta"
 msgstr[1] "%d subtarefas abertas"
 
-#: src/I18nJs.php:237 src/I18nJs.php:238 templates/dashboard.html.twig:434
+#: src/I18nJs.php:237 src/I18nJs.php:238 templates/dashboard.html.twig:436
 #, php-format
 msgid "%d tarefa"
 msgid_plural "%d tarefas"
@@ -225,7 +232,7 @@ msgstr "Agrupar por"
 msgid "Alerta de orçamento ao atingir (% do teto)"
 msgstr "Alerta de orçamento ao atingir (% do teto)"
 
-#: templates/dashboard.html.twig:77 templates/dashboard.html.twig:82
+#: templates/_topbar.html.twig:52 templates/_topbar.html.twig:57
 #: templates/mytasks.html.twig:61 templates/mytasks.html.twig:66
 msgid "Alertas"
 msgstr "Alertas"
@@ -238,9 +245,13 @@ msgstr "Alertas (sino)"
 msgid "Alertas por e-mail (opção do plugin)"
 msgstr "Alertas por e-mail (opção do plugin)"
 
-#: templates/dashboard.html.twig:481
+#: templates/dashboard.html.twig:483
 msgid "Alta"
 msgstr "Alta"
+
+#: templates/_topbar.html.twig:65
+msgid "Alternar tema claro/escuro"
+msgstr "Alternar tema claro/escuro"
 
 #: src/I18nJs.php:231
 msgid "Anexar arquivo"
@@ -262,7 +273,7 @@ msgstr "Ao desinstalar"
 msgid "Apagar tabelas, dados e direitos do plugin ao desinstalar"
 msgstr "Apagar tabelas, dados e direitos do plugin ao desinstalar"
 
-#: templates/costs.html.twig:23 templates/dashboard.html.twig:44
+#: templates/costs.html.twig:23 templates/dashboard.html.twig:47
 #: templates/reports.html.twig:76
 msgid "Aplicar"
 msgstr "Aplicar"
@@ -291,10 +302,6 @@ msgstr "As tarefas precisam ser do mesmo projeto"
 msgid "Ativo"
 msgstr "Ativo"
 
-#: templates/dashboard.html.twig:109
-msgid "Ativos"
-msgstr "Ativos"
-
 #: src/Reports.php:361
 msgid "Atrasada"
 msgstr "Atrasada"
@@ -303,7 +310,8 @@ msgstr "Atrasada"
 msgid "Atrasadas"
 msgstr "Atrasadas"
 
-#: src/I18nJs.php:116 src/Reports.php:220 templates/dashboard.html.twig:254
+#: front/dashboard.php:209 src/I18nJs.php:116 src/Reports.php:220
+#: templates/dashboard.html.twig:266
 msgid "Atrasado"
 msgstr "Atrasado"
 
@@ -315,15 +323,24 @@ msgstr "Atribuídas a você"
 msgid "Atualizado em"
 msgstr "Atualizado em"
 
+#: front/dashboard.php:202
+#, php-format
+msgid "Atualizado às %s"
+msgstr "Atualizado às %s"
+
 #: src/Reports.php:554 src/TaskComment.php:561
 msgid "Autor"
 msgstr "Autor"
+
+#: templates/dashboard.html.twig:223
+msgid "Ações"
+msgstr "Ações"
 
 #: src/Config.php:453
 msgid "BLOQUEADO:"
 msgstr "BLOQUEADO:"
 
-#: templates/dashboard.html.twig:479
+#: templates/dashboard.html.twig:481
 msgid "Baixa"
 msgstr "Baixa"
 
@@ -344,7 +361,7 @@ msgstr "Bloqueada por"
 msgid "Bloqueada por (precisam terminar antes)"
 msgstr "Bloqueada por (precisam terminar antes)"
 
-#: src/I18nJs.php:110 templates/dashboard.html.twig:342
+#: src/I18nJs.php:110 templates/dashboard.html.twig:343
 msgid "Bloqueada por outra(s) tarefa(s) — veja 🔗"
 msgstr "Bloqueada por outra(s) tarefa(s) — veja 🔗"
 
@@ -368,7 +385,7 @@ msgstr "Board com os PROJETOS nas colunas de fase"
 msgid "Burndown"
 msgstr "Burndown"
 
-#: templates/dashboard.html.twig:204 templates/projectkanban.html.twig:52
+#: templates/dashboard.html.twig:208 templates/projectkanban.html.twig:52
 msgid "Buscar projeto"
 msgstr "Buscar projeto"
 
@@ -380,7 +397,7 @@ msgstr "Buscar projeto ou tarefa"
 msgid "Buscar projeto ou tarefa…"
 msgstr "Buscar projeto ou tarefa…"
 
-#: templates/dashboard.html.twig:203 templates/projectkanban.html.twig:51
+#: templates/dashboard.html.twig:207 templates/projectkanban.html.twig:51
 msgid "Buscar projeto…"
 msgstr "Buscar projeto…"
 
@@ -416,7 +433,7 @@ msgstr "Calcular automaticamente a partir das tarefas e subprojetos"
 msgid "Canal de e-mail do GLPI"
 msgstr "Canal de e-mail do GLPI"
 
-#: src/I18nJs.php:68 templates/dashboard.html.twig:520
+#: src/I18nJs.php:68 templates/dashboard.html.twig:522
 #: templates/projecttemplate_edit.html.twig:69
 #: templates/projecttemplates.html.twig:123
 #: templates/projecttemplates.html.twig:166 templates/typephases.html.twig:165
@@ -499,8 +516,8 @@ msgstr "Comentário não encontrado"
 msgid "Comentário vazio ou longo demais"
 msgstr "Comentário vazio ou longo demais"
 
-#: src/I18nJs.php:126 templates/dashboard.html.twig:293
-#: templates/dashboard.html.twig:392
+#: src/I18nJs.php:126 templates/dashboard.html.twig:292
+#: templates/dashboard.html.twig:393
 msgid "Comentários"
 msgstr "Comentários"
 
@@ -533,9 +550,13 @@ msgstr "Concluída"
 msgid "Concluídas"
 msgstr "Concluídas"
 
-#: src/I18nJs.php:178
+#: front/dashboard.php:210 src/I18nJs.php:178
 msgid "Concluído"
 msgstr "Concluído"
+
+#: templates/dashboard.html.twig:112
+msgid "Concluídos no mês"
+msgstr "Concluídos no mês"
 
 #: src/Config.php:234
 msgid "Configurar fases por tipo"
@@ -549,7 +570,7 @@ msgstr "Configuração do ProjectPlus"
 msgid "Configuração salva"
 msgstr "Configuração salva"
 
-#: templates/_topbar.html.twig:45 templates/_topbar.html.twig:47
+#: templates/_topbar.html.twig:70 templates/_topbar.html.twig:72
 #: templates/config_shell.html.twig:8 templates/typephases.html.twig:62
 msgid "Configurações"
 msgstr "Configurações"
@@ -636,7 +657,7 @@ msgstr "Criar modelo"
 msgid "Criar modelo do zero"
 msgstr "Criar modelo do zero"
 
-#: templates/dashboard.html.twig:523 templates/projecttemplates.html.twig:57
+#: templates/dashboard.html.twig:525 templates/projecttemplates.html.twig:57
 #: templates/projecttemplates.html.twig:169
 msgid "Criar projeto"
 msgstr "Criar projeto"
@@ -661,7 +682,7 @@ msgstr "Crie projetos prontos a partir de uma estrutura de tarefas e subprojetos
 msgid "Cron projectplusalerts"
 msgstr "Cron projectplusalerts"
 
-#: templates/dashboard.html.twig:483
+#: templates/dashboard.html.twig:485
 msgid "Crítica"
 msgstr "Crítica"
 
@@ -747,7 +768,7 @@ msgstr "Dependência criada"
 msgid "Dependência removida"
 msgstr "Dependência removida"
 
-#: src/I18nJs.php:136 templates/dashboard.html.twig:388
+#: src/I18nJs.php:136 templates/dashboard.html.twig:389
 msgid "Dependências"
 msgstr "Dependências"
 
@@ -760,7 +781,7 @@ msgid "Descer"
 msgstr "Descer"
 
 #: src/ProjectCost.php:134 src/Reports.php:553 src/TaskCost.php:166
-#: templates/costs.html.twig:70 templates/dashboard.html.twig:514
+#: templates/costs.html.twig:70 templates/dashboard.html.twig:516
 msgid "Descrição"
 msgstr "Descrição"
 
@@ -841,17 +862,13 @@ msgstr "Editar fase (nome, cor e finalizadora — vale para todos os tipos)"
 msgid "Editar modelo de projeto"
 msgstr "Editar modelo de projeto"
 
-#: src/I18nJs.php:180 templates/dashboard.html.twig:126
+#: src/I18nJs.php:180
 msgid "Em andamento"
 msgstr "Em andamento"
 
 #: templates/timeline.html.twig:76
 msgid "Em atraso"
 msgstr "Em atraso"
-
-#: templates/dashboard.html.twig:117
-msgid "Em risco"
-msgstr "Em risco"
 
 #: src/Notification.php:920
 #, php-format
@@ -886,6 +903,10 @@ msgstr "Erro ao carregar tarefas."
 msgid "Escolha um tipo de origem diferente para copiar as fases"
 msgstr "Escolha um tipo de origem diferente para copiar as fases"
 
+#: templates/dashboard.html.twig:53
+msgid "Escopo"
+msgstr "Escopo"
+
 #: src/Profile.php:62
 msgid "Escopo: ver projetos que gerencia"
 msgstr "Escopo: ver projetos que gerencia"
@@ -909,10 +930,6 @@ msgstr "Esta tarefa BLOQUEIA"
 #: src/TaskDep.php:683
 msgid "Esta tarefa é BLOQUEADA por"
 msgstr "Esta tarefa é BLOQUEADA por"
-
-#: templates/dashboard.html.twig:151
-msgid "Este mês"
-msgstr "Este mês"
 
 #: src/I18nJs.php:195
 msgid "Este projeto (e seus subprojetos) não tem tarefas."
@@ -1019,8 +1036,8 @@ msgid "Falhas de envio ficam registradas em files/_log/projectplus.log; o cron p
 msgstr "Falhas de envio ficam registradas em files/_log/projectplus.log; o cron projectplusalerts anota quantos e-mails saíram no próprio log da tarefa."
 
 #: src/I18nJs.php:63 src/Reports.php:218 src/Reports.php:358
-#: templates/dashboard.html.twig:211 templates/dashboard.html.twig:324
-#: templates/dashboard.html.twig:466 templates/reports.html.twig:39
+#: templates/dashboard.html.twig:216 templates/dashboard.html.twig:324
+#: templates/dashboard.html.twig:468 templates/reports.html.twig:39
 #: templates/typephases.html.twig:112
 msgid "Fase"
 msgstr "Fase"
@@ -1070,7 +1087,7 @@ msgstr "Fases cadastradas na instância: %1$d · tipos com conjunto próprio: %2
 msgid "Fases de"
 msgstr "Fases de"
 
-#: templates/_topbar.html.twig:48 templates/typephases.html.twig:8
+#: templates/_topbar.html.twig:73 templates/typephases.html.twig:8
 msgid "Fases por tipo"
 msgstr "Fases por tipo"
 
@@ -1094,12 +1111,12 @@ msgstr "Filtros favoritos"
 msgid "Fim"
 msgstr "Fim"
 
-#: templates/dashboard.html.twig:34
+#: templates/dashboard.html.twig:37
 msgid "Fim do período"
 msgstr "Fim do período"
 
 #: src/I18nJs.php:105 src/Reports.php:220 src/Reports.php:360
-#: templates/dashboard.html.twig:502
+#: templates/dashboard.html.twig:504
 msgid "Fim planejado"
 msgstr "Fim planejado"
 
@@ -1127,7 +1144,7 @@ msgstr "Gasto nos subprojetos"
 msgid "Gerado em"
 msgstr "Gerado em"
 
-#: src/I18nJs.php:57 src/Reports.php:218 templates/dashboard.html.twig:488
+#: src/I18nJs.php:57 src/Reports.php:218 templates/dashboard.html.twig:490
 msgid "Gestor"
 msgstr "Gestor"
 
@@ -1171,7 +1188,7 @@ msgstr "Importação dos custos nativos"
 msgid "Imprimir"
 msgstr "Imprimir"
 
-#: templates/costs.html.twig:29 templates/dashboard.html.twig:67
+#: templates/costs.html.twig:29 templates/dashboard.html.twig:58
 #: templates/kanban.html.twig:59 templates/projectkanban.html.twig:55
 #: templates/reports.html.twig:81 templates/timeline.html.twig:54
 msgid "Incluir todos os projetos que você pode ver"
@@ -1217,12 +1234,12 @@ msgstr "Interagir"
 msgid "Início"
 msgstr "Início"
 
-#: templates/dashboard.html.twig:32
+#: templates/dashboard.html.twig:35
 msgid "Início do período"
 msgstr "Início do período"
 
 #: src/I18nJs.php:104 src/Reports.php:219 src/Reports.php:360
-#: templates/dashboard.html.twig:497
+#: templates/dashboard.html.twig:499
 msgid "Início planejado"
 msgstr "Início planejado"
 
@@ -1251,7 +1268,7 @@ msgstr "Já existe uma fase chamada \"%s\""
 
 #. #-#-#-#-#  php.pot (ProjectPlus 1.1.0-beta)  #-#-#-#-#
 #. TRANSLATORS: rótulo da aba "Kanban" do NÚCLEO do GLPI.
-#: front/kanban.php:84 src/I18nJs.php:228 templates/_topbar.html.twig:27
+#: front/kanban.php:84 src/I18nJs.php:228 templates/_topbar.html.twig:34
 #: templates/kanban.html.twig:8 templates/typephases.html.twig:66
 msgid "Kanban"
 msgstr "Kanban"
@@ -1293,7 +1310,7 @@ msgstr "Lidas recentemente"
 msgid "Limpar"
 msgstr "Limpar"
 
-#: templates/dashboard.html.twig:47
+#: templates/dashboard.html.twig:49
 msgid "Limpar filtro"
 msgstr "Limpar filtro"
 
@@ -1305,7 +1322,7 @@ msgstr "Linha do tempo de projetos e tarefas"
 msgid "Link nos e-mails (URL da base)"
 msgstr "Link nos e-mails (URL da base)"
 
-#: templates/dashboard.html.twig:96
+#: templates/dashboard.html.twig:78
 msgid "Lista nativa"
 msgstr "Lista nativa"
 
@@ -1313,7 +1330,7 @@ msgstr "Lista nativa"
 msgid "Marcar como lida"
 msgstr "Marcar como lida"
 
-#: templates/dashboard.html.twig:83 templates/mytasks.html.twig:67
+#: templates/_topbar.html.twig:58 templates/mytasks.html.twig:67
 msgid "Marcar todas como lidas"
 msgstr "Marcar todas como lidas"
 
@@ -1325,12 +1342,12 @@ msgstr "Marco (só uma data planejada)"
 msgid "Marque as fases que pertencem a este conjunto e use as setas para definir a ordem das colunas no Kanban. A ordem é a de cima para baixo."
 msgstr "Marque as fases que pertencem a este conjunto e use as setas para definir a ordem das colunas no Kanban. A ordem é a de cima para baixo."
 
-#: front/mytasks.php:30 templates/_topbar.html.twig:24
+#: front/mytasks.php:30 templates/_topbar.html.twig:31
 #: templates/mytasks.html.twig:16
 msgid "Minhas tarefas"
 msgstr "Minhas tarefas"
 
-#: templates/dashboard.html.twig:430 templates/projecttemplates.html.twig:33
+#: templates/dashboard.html.twig:432 templates/projecttemplates.html.twig:33
 #: templates/projecttemplates.html.twig:147
 msgid "Modelo"
 msgstr "Modelo"
@@ -1358,7 +1375,7 @@ msgid "Modelo não encontrado"
 msgstr "Modelo não encontrado"
 
 #: front/projecttemplate_edit.php:40 front/projecttemplates.php:30
-#: src/Profile.php:109 templates/_topbar.html.twig:39
+#: src/Profile.php:109 templates/_topbar.html.twig:46
 msgid "Modelos"
 msgstr "Modelos"
 
@@ -1409,15 +1426,15 @@ msgstr "Mover para baixo"
 msgid "Mover para cima"
 msgstr "Mover para cima"
 
-#: templates/dashboard.html.twig:482
+#: templates/dashboard.html.twig:484
 msgid "Muito alta"
 msgstr "Muito alta"
 
-#: templates/dashboard.html.twig:478
+#: templates/dashboard.html.twig:480
 msgid "Muito baixa"
 msgstr "Muito baixa"
 
-#: templates/dashboard.html.twig:480
+#: templates/dashboard.html.twig:482
 msgid "Média"
 msgstr "Média"
 
@@ -1477,7 +1494,7 @@ msgstr "Nenhum projeto encontrado"
 msgid "Nenhum projeto encontrado com os filtros atuais."
 msgstr "Nenhum projeto encontrado com os filtros atuais."
 
-#: templates/dashboard.html.twig:297
+#: templates/dashboard.html.twig:166 templates/dashboard.html.twig:296
 msgid "Nenhum projeto no período"
 msgstr "Nenhum projeto no período"
 
@@ -1521,11 +1538,11 @@ msgstr "Nenhuma tarefa encontrada com os filtros atuais."
 msgid "Nenhuma tarefa neste projeto ainda."
 msgstr "Nenhuma tarefa neste projeto ainda."
 
-#: templates/dashboard.html.twig:396
+#: templates/dashboard.html.twig:183 templates/dashboard.html.twig:397
 msgid "Nenhuma tarefa no período"
 msgstr "Nenhuma tarefa no período"
 
-#: src/I18nJs.php:118 templates/dashboard.html.twig:258
+#: front/dashboard.php:208 src/I18nJs.php:118 templates/dashboard.html.twig:270
 msgid "No prazo"
 msgstr "No prazo"
 
@@ -1550,7 +1567,7 @@ msgstr "Nome do novo projeto"
 msgid "Nome do novo tipo…"
 msgstr "Nome do novo tipo…"
 
-#: templates/dashboard.html.twig:421
+#: templates/dashboard.html.twig:423
 msgid "Nome do projeto"
 msgstr "Nome do projeto"
 
@@ -1578,7 +1595,7 @@ msgstr "Novo comentário"
 msgid "Novo modelo de projeto"
 msgstr "Novo modelo de projeto"
 
-#: templates/dashboard.html.twig:91 templates/dashboard.html.twig:413
+#: templates/_topbar.html.twig:78 templates/dashboard.html.twig:415
 msgid "Novo projeto"
 msgstr "Novo projeto"
 
@@ -1678,7 +1695,7 @@ msgstr "Ordem"
 msgid "Origem"
 msgstr "Origem"
 
-#: templates/_topbar.html.twig:36 templates/dashboard.html.twig:215
+#: templates/_topbar.html.twig:43 templates/dashboard.html.twig:222
 msgid "Orçamento"
 msgstr "Orçamento"
 
@@ -1694,6 +1711,10 @@ msgstr "Orçamento (R$)"
 #, php-format
 msgid "Orçamento ESTOURADO no projeto \"%s\": %d%% consumido"
 msgstr "Orçamento ESTOURADO no projeto \"%s\": %d%% consumido"
+
+#: front/dashboard.php:253
+msgid "Orçamento acima do alerta"
+msgstr "Orçamento acima do alerta"
 
 #: front/budget.form.php:34
 msgid "Orçamento atualizado"
@@ -1728,7 +1749,7 @@ msgstr "Outros"
 msgid "PRAZO ESTOURADO"
 msgstr "PRAZO ESTOURADO"
 
-#: templates/_topbar.html.twig:21 templates/dashboard.html.twig:22
+#: templates/_topbar.html.twig:28 templates/dashboard.html.twig:22
 msgid "Painel"
 msgstr "Painel"
 
@@ -1737,17 +1758,13 @@ msgid "Painel (Visão geral)"
 msgstr "Painel (Visão geral)"
 
 #: src/I18nJs.php:117 src/ProjectTracking.php:71
-#: templates/dashboard.html.twig:256
+#: templates/dashboard.html.twig:268
 msgid "Parado"
 msgstr "Parado"
 
 #: src/I18nJs.php:182
 msgid "Pendentes"
 msgstr "Pendentes"
-
-#: templates/dashboard.html.twig:143
-msgid "Percentual finalizado"
-msgstr "Percentual finalizado"
 
 #: src/Config.php:381
 msgid "Perfil administrador"
@@ -1761,7 +1778,7 @@ msgstr "Perfis com a linha"
 msgid "Perfis com acesso"
 msgstr "Perfis com acesso"
 
-#: templates/reports.html.twig:64
+#: templates/dashboard.html.twig:34 templates/reports.html.twig:64
 msgid "Período"
 msgstr "Período"
 
@@ -1776,6 +1793,14 @@ msgstr "Planejado"
 #: templates/mytasks.html.twig:99
 msgid "Planejamento a corrigir"
 msgstr "Planejamento a corrigir"
+
+#: templates/dashboard.html.twig:145 templates/dashboard.html.twig:149
+msgid "Por fase"
+msgstr "Por fase"
+
+#: templates/dashboard.html.twig:145 templates/dashboard.html.twig:149
+msgid "Por tipo"
+msgstr "Por tipo"
 
 #: src/I18nJs.php:64
 msgid "Prazo"
@@ -1793,11 +1818,11 @@ msgstr "Prazo consumido: 75%"
 msgid "Prazo consumido: 90%"
 msgstr "Prazo consumido: 90%"
 
-#: templates/dashboard.html.twig:216 templates/dashboard.html.twig:325
+#: templates/dashboard.html.twig:218 templates/dashboard.html.twig:326
 msgid "Prazo decorrido"
 msgstr "Prazo decorrido"
 
-#: templates/dashboard.html.twig:217 templates/dashboard.html.twig:326
+#: templates/dashboard.html.twig:219 templates/dashboard.html.twig:327
 msgid "Prazo final"
 msgstr "Prazo final"
 
@@ -1809,20 +1834,20 @@ msgstr "Prazo final vencido"
 msgid "Prazo se aproximando"
 msgstr "Prazo se aproximando"
 
-#: templates/dashboard.html.twig:134
-msgid "Prazo vencido"
-msgstr "Prazo vencido"
+#: templates/dashboard.html.twig:189
+msgid "Precisa de atenção"
+msgstr "Precisa de atenção"
 
-#: templates/dashboard.html.twig:476
+#: templates/dashboard.html.twig:478
 msgid "Prioridade"
 msgstr "Prioridade"
 
-#: src/I18nJs.php:98 templates/dashboard.html.twig:212
-#: templates/dashboard.html.twig:323
+#: src/I18nJs.php:98 templates/dashboard.html.twig:217
+#: templates/dashboard.html.twig:325
 msgid "Progresso"
 msgstr "Progresso"
 
-#: templates/dashboard.html.twig:142
+#: templates/dashboard.html.twig:107
 msgid "Progresso médio"
 msgstr "Progresso médio"
 
@@ -1845,8 +1870,8 @@ msgstr "ProjectPlus: atrasos, pendências e projetos parados"
 
 #: front/costs.php:117 src/I18nJs.php:97 src/KanbanTab.php:80
 #: src/Reports.php:217 src/Reports.php:357 src/Reports.php:585
-#: templates/dashboard.html.twig:52 templates/dashboard.html.twig:210
-#: templates/dashboard.html.twig:321 templates/kanban.html.twig:44
+#: templates/dashboard.html.twig:65 templates/dashboard.html.twig:215
+#: templates/dashboard.html.twig:322 templates/kanban.html.twig:44
 #: templates/mytasks.html.twig:48 templates/reports.html.twig:16
 msgid "Projeto"
 msgstr "Projeto"
@@ -1874,7 +1899,7 @@ msgstr "Projeto (aplicado ao criar)"
 msgid "Projeto / tarefa"
 msgstr "Projeto / tarefa"
 
-#: src/I18nJs.php:111 templates/dashboard.html.twig:232
+#: src/I18nJs.php:111 templates/dashboard.html.twig:237
 msgid "Projeto com tarefas/subprojetos abertos — não pode ir para fase concluída"
 msgstr "Projeto com tarefas/subprojetos abertos — não pode ir para fase concluída"
 
@@ -1893,7 +1918,7 @@ msgstr "Projeto de origem"
 msgid "Projeto não encontrado"
 msgstr "Projeto não encontrado"
 
-#: templates/dashboard.html.twig:60
+#: templates/dashboard.html.twig:73
 msgid "Projeto não encontrado ou fora do seu escopo"
 msgstr "Projeto não encontrado ou fora do seu escopo"
 
@@ -1901,7 +1926,7 @@ msgstr "Projeto não encontrado ou fora do seu escopo"
 msgid "Projeto não encontrado."
 msgstr "Projeto não encontrado."
 
-#: src/Reports.php:217 templates/dashboard.html.twig:444
+#: src/Reports.php:217 templates/dashboard.html.twig:446
 msgid "Projeto pai"
 msgstr "Projeto pai"
 
@@ -1913,36 +1938,32 @@ msgstr "Projeto parado"
 msgid "Projeto raiz"
 msgstr "Projeto raiz"
 
-#: src/Profile.php:72 templates/dashboard.html.twig:108
-#: templates/reports.html.twig:105 templates/typephases.html.twig:229
+#: src/Profile.php:72 templates/reports.html.twig:105
+#: templates/typephases.html.twig:229
 msgid "Projetos"
 msgstr "Projetos"
 
-#: templates/dashboard.html.twig:150
-msgid "Projetos concluídos"
-msgstr "Projetos concluídos"
+#: templates/dashboard.html.twig:85
+msgid "Projetos ativos"
+msgstr "Projetos ativos"
 
-#: templates/dashboard.html.twig:201
+#: front/dashboard.php:250
+msgid "Projetos atrasados"
+msgstr "Projetos atrasados"
+
+#: templates/dashboard.html.twig:205
 msgid "Projetos em andamento"
 msgstr "Projetos em andamento"
 
-#: templates/dashboard.html.twig:116
+#: templates/dashboard.html.twig:90
 msgid "Projetos em atraso"
 msgstr "Projetos em atraso"
 
-#: templates/dashboard.html.twig:159
-msgid "Projetos por Status"
-msgstr "Projetos por Status"
+#: front/dashboard.php:251
+msgid "Projetos sem prazo final"
+msgstr "Projetos sem prazo final"
 
-#: templates/dashboard.html.twig:175
-msgid "Projetos por fase"
-msgstr "Projetos por fase"
-
-#: templates/dashboard.html.twig:171
-msgid "Projetos por tipo"
-msgstr "Projetos por tipo"
-
-#: templates/_topbar.html.twig:15
+#: templates/_topbar.html.twig:22
 msgid "Projetos, tarefas e prazos"
 msgstr "Projetos, tarefas e prazos"
 
@@ -1982,7 +2003,7 @@ msgstr "Regra geral: subtarefas abertas bloqueiam a tarefa mãe automaticamente 
 msgid "Relatório de custos consolidados"
 msgstr "Relatório de custos consolidados"
 
-#: front/reports.php:39 src/Profile.php:104 templates/_topbar.html.twig:33
+#: front/reports.php:39 src/Profile.php:104 templates/_topbar.html.twig:40
 #: templates/reports.html.twig:95
 msgid "Relatórios"
 msgstr "Relatórios"
@@ -2011,7 +2032,7 @@ msgstr "Remover responsável"
 msgid "Remover vínculo"
 msgstr "Remover vínculo"
 
-#: src/I18nJs.php:58 templates/dashboard.html.twig:322
+#: src/I18nJs.php:58 templates/dashboard.html.twig:323
 msgid "Responsáveis"
 msgstr "Responsáveis"
 
@@ -2080,16 +2101,16 @@ msgstr "Sem dados para exibir"
 msgid "Sem datas"
 msgstr "Sem datas"
 
-#: src/I18nJs.php:114 templates/dashboard.html.twig:279
-#: templates/dashboard.html.twig:369
+#: src/I18nJs.php:114 templates/dashboard.html.twig:255
+#: templates/dashboard.html.twig:370
 msgid "Sem datas planejadas — corrija o planejamento"
 msgstr "Sem datas planejadas — corrija o planejamento"
 
-#: src/Dashboard.php:445
+#: src/Dashboard.php:480
 msgid "Sem estado"
 msgstr "Sem estado"
 
-#: src/Dashboard.php:406 src/Kanban.php:431 src/ProjectKanban.php:217
+#: src/Dashboard.php:441 src/Kanban.php:431 src/ProjectKanban.php:217
 msgid "Sem fase"
 msgstr "Sem fase"
 
@@ -2150,7 +2171,7 @@ msgstr "Sem tarefa pai"
 msgid "Sem teto de orçamento definido"
 msgstr "Sem teto de orçamento definido"
 
-#: src/Dashboard.php:467 src/TypePhase.php:339
+#: src/Dashboard.php:502 src/TypePhase.php:339
 msgid "Sem tipo"
 msgstr "Sem tipo"
 
@@ -2175,9 +2196,13 @@ msgid "Sim (expurgo completo)"
 msgstr "Sim (expurgo completo)"
 
 #: src/Config.php:278 src/ProjectTracking.php:68
-#: templates/dashboard.html.twig:214
+#: templates/dashboard.html.twig:220
 msgid "Situação"
 msgstr "Situação"
+
+#: templates/dashboard.html.twig:122 templates/dashboard.html.twig:125
+msgid "Situação dos projetos"
+msgstr "Situação dos projetos"
 
 #: templates/projectkanban.html.twig:83
 msgid "Somente leitura — cada cartão é um projeto ou subprojeto na coluna da fase atual."
@@ -2230,6 +2255,10 @@ msgstr "Só o autor pode editar este comentário"
 msgid "Só o autor pode excluir este comentário"
 msgstr "Só o autor pode excluir este comentário"
 
+#: templates/dashboard.html.twig:56 templates/dashboard.html.twig:59
+msgid "Só os meus"
+msgstr "Só os meus"
+
 #: src/Config.php:276
 msgid "Tabela"
 msgstr "Tabela"
@@ -2238,7 +2267,7 @@ msgstr "Tabela"
 msgid "Tabela de mapeamento AUSENTE — reexecute a instalação."
 msgstr "Tabela de mapeamento AUSENTE — reexecute a instalação."
 
-#: src/I18nJs.php:61 src/Reports.php:357 templates/dashboard.html.twig:320
+#: src/I18nJs.php:61 src/Reports.php:357 templates/dashboard.html.twig:321
 #: templates/reports.html.twig:25
 msgid "Tarefa"
 msgstr "Tarefa"
@@ -2299,14 +2328,18 @@ msgstr "Tarefa não encontrada"
 msgid "Tarefa sem datas planejadas"
 msgstr "Tarefa sem datas planejadas"
 
-#: src/I18nJs.php:62 src/Profile.php:77 templates/dashboard.html.twig:125
-#: templates/dashboard.html.twig:235 templates/reports.html.twig:134
+#: src/I18nJs.php:62 src/Profile.php:77 templates/dashboard.html.twig:290
+#: templates/reports.html.twig:134
 msgid "Tarefas"
 msgstr "Tarefas"
 
-#: templates/mytasks.html.twig:82
+#: templates/dashboard.html.twig:96 templates/mytasks.html.twig:82
 msgid "Tarefas abertas"
 msgstr "Tarefas abertas"
+
+#: front/dashboard.php:248 templates/dashboard.html.twig:101
+msgid "Tarefas atrasadas"
+msgstr "Tarefas atrasadas"
 
 #: templates/projecttemplate_edit.html.twig:54
 msgid "Tarefas do projeto"
@@ -2316,23 +2349,15 @@ msgstr "Tarefas do projeto"
 msgid "Tarefas em andamento"
 msgstr "Tarefas em andamento"
 
-#: templates/dashboard.html.twig:133
-msgid "Tarefas em atraso"
-msgstr "Tarefas em atraso"
-
 #: src/TaskDep.php:382
 msgid "Tarefas inválidas para o vínculo"
 msgstr "Tarefas inválidas para o vínculo"
 
-#: templates/dashboard.html.twig:190
+#: templates/dashboard.html.twig:172
 msgid "Tarefas por fase"
 msgstr "Tarefas por fase"
 
-#: templates/dashboard.html.twig:182
-msgid "Tarefas por status"
-msgstr "Tarefas por status"
-
-#: templates/dashboard.html.twig:438
+#: templates/dashboard.html.twig:440
 msgid "Tarefas, subprojetos e o fim planejado vêm do modelo; os demais campos foram preenchidos com o modelo e podem ser ajustados."
 msgstr "Tarefas, subprojetos e o fim planejado vêm do modelo; os demais campos foram preenchidos com o modelo e podem ser ajustados."
 
@@ -2345,7 +2370,7 @@ msgstr "Tela cheia"
 msgid "Teto"
 msgstr "Teto"
 
-#: templates/dashboard.html.twig:508
+#: templates/dashboard.html.twig:510
 msgid "Teto de orçamento"
 msgstr "Teto de orçamento"
 
@@ -2353,15 +2378,16 @@ msgstr "Teto de orçamento"
 msgid "Teto planejado"
 msgstr "Teto planejado"
 
-#: front/timeline.php:66 src/Profile.php:91 templates/_topbar.html.twig:30
+#: front/timeline.php:66 src/Profile.php:91 templates/_topbar.html.twig:37
 #: templates/timeline.html.twig:8
 msgid "Timeline"
 msgstr "Timeline"
 
 #: src/I18nJs.php:56 src/Reports.php:218 src/Reports.php:358
-#: templates/dashboard.html.twig:454 templates/kanban.html.twig:27
-#: templates/mytasks.html.twig:38 templates/projectkanban.html.twig:27
-#: templates/reports.html.twig:48 templates/timeline.html.twig:20
+#: templates/dashboard.html.twig:39 templates/dashboard.html.twig:456
+#: templates/kanban.html.twig:27 templates/mytasks.html.twig:38
+#: templates/projectkanban.html.twig:27 templates/reports.html.twig:48
+#: templates/timeline.html.twig:20
 msgid "Tipo"
 msgstr "Tipo"
 
@@ -2375,7 +2401,7 @@ msgstr "Tipo \"%s\" criado — ele herda o conjunto padrão até você salvar um
 msgid "Tipo de arquivo não permitido: \"%s\" (aceitos: imagens, PDF, DOC/DOCX, XLS/XLSX)"
 msgstr "Tipo de arquivo não permitido: \"%s\" (aceitos: imagens, PDF, DOC/DOCX, XLS/XLSX)"
 
-#: templates/dashboard.html.twig:36 templates/mytasks.html.twig:39
+#: templates/dashboard.html.twig:40 templates/mytasks.html.twig:39
 #: templates/reports.html.twig:51 templates/typephases.html.twig:228
 msgid "Tipo de projeto"
 msgstr "Tipo de projeto"
@@ -2388,11 +2414,15 @@ msgstr "Tipo de relatório inválido"
 msgid "Tipo de tarefa"
 msgstr "Tipo de tarefa"
 
+#: templates/dashboard.html.twig:55 templates/dashboard.html.twig:58
+msgid "Todos"
+msgstr "Todos"
+
 #: templates/mytasks.html.twig:50
 msgid "Todos os projetos"
 msgstr "Todos os projetos"
 
-#: templates/dashboard.html.twig:37 templates/kanban.html.twig:31
+#: templates/dashboard.html.twig:41 templates/kanban.html.twig:31
 #: templates/mytasks.html.twig:40 templates/projectkanban.html.twig:31
 #: templates/timeline.html.twig:23
 msgid "Todos os tipos"
@@ -2440,19 +2470,19 @@ msgstr "Valor"
 msgid "Ver"
 msgstr "Ver"
 
-#: templates/costs.html.twig:31 templates/dashboard.html.twig:69
-#: templates/kanban.html.twig:61 templates/projectkanban.html.twig:57
-#: templates/reports.html.twig:83 templates/timeline.html.twig:56
+#: templates/costs.html.twig:31 templates/kanban.html.twig:61
+#: templates/projectkanban.html.twig:57 templates/reports.html.twig:83
+#: templates/timeline.html.twig:56
 msgid "Ver só os meus"
 msgstr "Ver só os meus"
 
-#: templates/dashboard.html.twig:56
+#: templates/dashboard.html.twig:69
 msgid "Ver todos os projetos"
 msgstr "Ver todos os projetos"
 
-#: templates/costs.html.twig:33 templates/dashboard.html.twig:71
-#: templates/kanban.html.twig:63 templates/projectkanban.html.twig:59
-#: templates/reports.html.twig:85 templates/timeline.html.twig:58
+#: templates/costs.html.twig:33 templates/kanban.html.twig:63
+#: templates/projectkanban.html.twig:59 templates/reports.html.twig:85
+#: templates/timeline.html.twig:58
 msgid "Ver tudo"
 msgstr "Ver tudo"
 
@@ -2464,10 +2494,6 @@ msgstr "Visão do cliente"
 msgid "Visão geral dos conjuntos"
 msgstr "Visão geral dos conjuntos"
 
-#: templates/dashboard.html.twig:22
-msgid "Visão geral dos projetos e seu andamento"
-msgstr "Visão geral dos projetos e seu andamento"
-
 #: templates/projecttemplate_edit.html.twig:23
 msgid "Voltar"
 msgstr "Voltar"
@@ -2476,7 +2502,7 @@ msgstr "Voltar"
 msgid "Voltar a herdar o padrão"
 msgstr "Voltar a herdar o padrão"
 
-#: templates/costs.html.twig:29 templates/dashboard.html.twig:67
+#: templates/costs.html.twig:29 templates/dashboard.html.twig:56
 #: templates/kanban.html.twig:59 templates/projectkanban.html.twig:55
 #: templates/reports.html.twig:81 templates/timeline.html.twig:54
 msgid "Voltar ao escopo pessoal"
@@ -2512,7 +2538,7 @@ msgstr "aberta (%d%%)"
 msgid "as notificações estão desativadas no GLPI"
 msgstr "as notificações estão desativadas no GLPI"
 
-#: templates/reports.html.twig:67
+#: templates/dashboard.html.twig:36 templates/reports.html.twig:67
 msgid "até"
 msgstr "até"
 
@@ -2570,6 +2596,20 @@ msgstr "duração (d)"
 msgid "editado"
 msgstr "editado"
 
+#: templates/dashboard.html.twig:87
+msgid "em %d tipo"
+msgid_plural "em %d tipos"
+msgstr[0] "em %d tipo"
+msgstr[1] "em %d tipos"
+
+#: templates/dashboard.html.twig:98
+msgid "em andamento"
+msgstr "em andamento"
+
+#: templates/dashboard.html.twig:92
+msgid "em risco"
+msgstr "em risco"
+
 #: src/Config.php:286
 msgid "faltando:"
 msgstr "faltando:"
@@ -2613,6 +2653,10 @@ msgstr "motivo não informado"
 msgid "nenhum tipo com conjunto próprio: todos usam o padrão"
 msgstr "nenhum tipo com conjunto próprio: todos usam o padrão"
 
+#: templates/dashboard.html.twig:133
+msgid "no prazo"
+msgstr "no prazo"
+
 #: src/Config.php:416
 msgid "nunca"
 msgstr "nunca"
@@ -2633,9 +2677,23 @@ msgstr "o canal de e-mail está desativado no GLPI"
 msgid "pendente (roda na próxima instalação)"
 msgstr "pendente (roda na próxima instalação)"
 
+#: templates/dashboard.html.twig:109
+msgid "percentual finalizado"
+msgstr "percentual finalizado"
+
+#: templates/dashboard.html.twig:103
+msgid "prazo vencido"
+msgstr "prazo vencido"
+
 #: src/Config.php:434
 msgid "preserva dados e direitos"
 msgstr "preserva dados e direitos"
+
+#: templates/dashboard.html.twig:157
+msgid "projeto"
+msgid_plural "projetos"
+msgstr[0] "projeto"
+msgstr[1] "projetos"
 
 #: templates/typephases.html.twig:243
 msgid "próprio"
@@ -2649,7 +2707,7 @@ msgstr "registrado"
 msgid "restantes"
 msgstr "restantes"
 
-#: src/I18nJs.php:115
+#: src/I18nJs.php:115 templates/dashboard.html.twig:255
 msgid "sem datas"
 msgstr "sem datas"
 
@@ -2677,7 +2735,7 @@ msgstr "vale para todo tipo sem conjunto próprio, e para projeto sem tipo"
 msgid "É bloqueada por"
 msgstr "É bloqueada por"
 
-#: src/ProjectTracking.php:62 templates/dashboard.html.twig:213
+#: src/ProjectTracking.php:62 templates/dashboard.html.twig:221
 msgid "Última atividade"
 msgstr "Última atividade"
 
@@ -2689,11 +2747,11 @@ msgstr "órfã de versão antiga — não é mais usada; a purga remove"
 msgid "última execução:"
 msgstr "última execução:"
 
-#: templates/dashboard.html.twig:432
+#: templates/dashboard.html.twig:434
 msgid "— Em branco (sem modelo) —"
 msgstr "— Em branco (sem modelo) —"
 
-#: templates/dashboard.html.twig:446
+#: templates/dashboard.html.twig:448
 msgid "— Nenhum (projeto raiz) —"
 msgstr "— Nenhum (projeto raiz) —"
 
@@ -2721,6 +2779,33 @@ msgstr "— Todos —"
 #: src/I18nJs.php:149
 msgid "— sem outras tarefas neste projeto —"
 msgstr "— sem outras tarefas neste projeto —"
+
+#~ msgid "Ativos"
+#~ msgstr "Ativos"
+
+#~ msgid "Este mês"
+#~ msgstr "Este mês"
+
+#~ msgid "Projetos concluídos"
+#~ msgstr "Projetos concluídos"
+
+#~ msgid "Projetos por Status"
+#~ msgstr "Projetos por Status"
+
+#~ msgid "Projetos por fase"
+#~ msgstr "Projetos por fase"
+
+#~ msgid "Projetos por tipo"
+#~ msgstr "Projetos por tipo"
+
+#~ msgid "Tarefas em atraso"
+#~ msgstr "Tarefas em atraso"
+
+#~ msgid "Tarefas por status"
+#~ msgstr "Tarefas por status"
+
+#~ msgid "Visão geral dos projetos e seu andamento"
+#~ msgstr "Visão geral dos projetos e seu andamento"
 
 #~ msgid "Custos consolidados por projeto"
 #~ msgstr "Custos consolidados por projeto"
