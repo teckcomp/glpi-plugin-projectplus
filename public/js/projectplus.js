@@ -115,6 +115,86 @@
         apply(); // ja abre coerente com o tipo pre-selecionado
     }
 
+    /**
+     * Bloco J (21/10/2026): modal "Novo projeto" a partir de um MODELO.
+     * Escolher um modelo pré-preenche gestor/tipo/fase/orçamento/descrição
+     * com os atributos do projeto raiz do modelo (ppData.templates[].meta) —
+     * o usuário vê e ajusta; o servidor trata o que ficou no formulário
+     * como sobreposição. Início vira obrigatório (ancora os offsets do
+     * modelo); Fim é calculado (início + duração do modelo) e fica
+     * desabilitado — tarefas e subprojetos vêm do modelo. Voltar para
+     * "Em branco" reabilita o Fim sem apagar o que foi digitado.
+     */
+    function initNewProjectTemplate(root) {
+        const sel = root.querySelector('[data-pp-role="np-template"]');
+        if (!sel) {
+            return;
+        }
+        const form     = sel.closest('form');
+        const hint     = root.querySelector('[data-pp-role="np-template-hint"]');
+        const startEl  = form.querySelector('[data-pp-role="np-start"]');
+        const startLbl = root.querySelector('[data-pp-role="np-start-label"]');
+        const endEl    = form.querySelector('[data-pp-role="np-end"]');
+        const typeSel  = form.querySelector('[data-pp-role="np-type"]');
+        const stateSel = form.querySelector('[data-pp-role="np-state"]');
+        const userSel  = form.querySelector('select[name="users_id"]');
+        const budgetEl = form.querySelector('input[name="budget_planned"]');
+        const contentEl = form.querySelector('textarea[name="content"]');
+        const startText = startLbl ? startLbl.textContent : '';
+        const list = (ppData && Array.isArray(ppData.templates)) ? ppData.templates : [];
+
+        function current() {
+            const id = parseInt(sel.value, 10) || 0;
+            for (let i = 0; i < list.length; i++) {
+                if (parseInt(list[i].id, 10) === id) { return list[i]; }
+            }
+            return null;
+        }
+        // Fim = início + offset do modelo + (duração - 1), em texto (sem
+        // new Date('Y-m-d'), que é UTC e volta um dia no Brasil — lição 4c).
+        function computeEnd(startIso, meta) {
+            if (!startIso || !meta || !meta.duration_days) { return ''; }
+            const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(startIso);
+            if (!m) { return ''; }
+            const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+            d.setUTCDate(d.getUTCDate() + (meta.offset_start_days || 0) + (meta.duration_days - 1));
+            return d.toISOString().slice(0, 10);
+        }
+        function setSelect(el, value) {
+            if (!el || !value) { return; }
+            el.value = String(value);
+            el.dispatchEvent(new Event('change', { bubbles: true })); // pp-search / fases por tipo
+        }
+        function applyEnd() {
+            const t = current();
+            if (t && endEl) {
+                endEl.value = computeEnd(startEl ? startEl.value : '', t.meta);
+            }
+        }
+        function apply() {
+            const t = current();
+            const on = !!t;
+            if (hint) { hint.hidden = !on; }
+            if (startEl) { startEl.required = on; }
+            if (startLbl) { startLbl.textContent = on ? startText + ' *' : startText; }
+            if (endEl) { endEl.disabled = on; }
+            if (!on) { return; }
+            const meta = t.meta || {};
+            if (startEl && !startEl.value) {
+                startEl.value = (ppData && ppData.today) ? ppData.today : new Date().toISOString().slice(0, 10);
+            }
+            setSelect(typeSel, meta.projecttypes_id);     // refaz a lista de fases
+            setSelect(stateSel, meta.projectstates_id);
+            setSelect(userSel, meta.users_id);
+            if (budgetEl && meta.budget > 0) { budgetEl.value = String(meta.budget); }
+            if (contentEl && meta.content) { contentEl.value = meta.content; }
+            applyEnd();
+        }
+        sel.addEventListener('change', apply);
+        if (startEl) { startEl.addEventListener('change', applyEnd); }
+        apply();
+    }
+
 
     // ------------------------------------------------------------------
     // Busca em dropdowns (rodada 31/07/2026).
@@ -251,6 +331,7 @@
         enhanceSearchSelects(document); // busca nos dropdowns do modal
         initTaskPanels(root);
         initNewProjectPhases(root); // Etapa 9: Estado segue o Tipo no modal
+        initNewProjectTemplate(root); // Bloco J: Novo projeto a partir de modelo
         initOpenTaskPanels(root);  // 💬/🔗 em "Tarefas em andamento" (Bloco 4)
         initTableSearch(root);     // busca nas tabelas (Bloco 4)
         initBell(root); // depois de initTaskPanels (que inicializa o ppCsrf)
@@ -3232,6 +3313,8 @@
     // Exposto só para os testes isolados (jsdom) — mesmo padrão de
     // ProjectPlusKanban._test (Etapa 7, Bloco 2a).
     ProjectPlus._test = {
+        initNewProjectTemplate: initNewProjectTemplate, // Bloco J
+        initNewProjectPhases: initNewProjectPhases,
         taskTableHtml: function (tasks, collapsible) { return taskTableHtml(tasks, collapsible); },
         bindSubtaskCollapse: bindSubtaskCollapse,
         openSubtasksSet: openSubtasksSet,

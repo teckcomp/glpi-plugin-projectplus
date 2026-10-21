@@ -477,6 +477,24 @@
                 <input type="text" name="name" required maxlength="255" autofocus>
             </label>
 
+            {# Bloco J (21/10/2026): criar a partir de um modelo do plugin. Escolhendo
+               um, o JS pré-preenche gestor/tipo/fase/orçamento/descrição a partir do
+               modelo (o usuário ajusta); tarefas, subprojetos e o fim vêm do modelo. #}
+            {% if templates is not empty %}
+            <label class="projectplus-form__full">
+                {{ __('Modelo', 'projectplus') }}
+                <select name="template_id" data-pp-role="np-template">
+                    <option value="0">{{ __('— Em branco (sem modelo) —', 'projectplus') }}</option>
+                    {% for t in templates %}
+                        <option value="{{ t.id }}">{{ t.name }} ({{ _n('%d tarefa', '%d tarefas', t.count, 'projectplus')|format(t.count) }}{% if t.subcount > 0 %}, {{ _n('%d subprojeto', '%d subprojetos', t.subcount, 'projectplus')|format(t.subcount) }}{% endif %})</option>
+                    {% endfor %}
+                </select>
+                <small class="projectplus-muted pp-np-tplhint" data-pp-role="np-template-hint" hidden>
+                    {{ __('Tarefas, subprojetos e o fim planejado vêm do modelo; os demais campos foram preenchidos com o modelo e podem ser ajustados.', 'projectplus') }}
+                </small>
+            </label>
+            {% endif %}
+
             <label>
                 {{ __('Projeto pai', 'projectplus') }}
                 <select name="projects_id" class="pp-search">
@@ -531,13 +549,13 @@
             </label>
 
             <label>
-                {{ __('Início planejado', 'projectplus') }}
-                <input type="date" name="plan_start_date">
+                <span data-pp-role="np-start-label">{{ __('Início planejado', 'projectplus') }}</span>
+                <input type="date" name="plan_start_date" data-pp-role="np-start">
             </label>
 
             <label>
                 {{ __('Fim planejado', 'projectplus') }}
-                <input type="date" name="plan_end_date">
+                <input type="date" name="plan_end_date" data-pp-role="np-end">
             </label>
 
             {% if can_costs %}
@@ -573,8 +591,10 @@
     'can_team': can_team,
     'can_edit_project': can_edit_project,
     'scope_mine': filter_scope == 'mine',
-    'tasks_mine': tasks_mine
-}|json_encode|raw }}</script>
+    'tasks_mine': tasks_mine,
+    'templates': templates,
+    'today': today
+}|json_encode(constant('JSON_HEX_TAG') b-or constant('JSON_HEX_AMP') b-or constant('JSON_HEX_APOS') b-or constant('JSON_HEX_QUOT'))|raw }}</script>
 
 <script src="{{ plugin_web_dir }}/js/projectplus.js"></script>
 <script>

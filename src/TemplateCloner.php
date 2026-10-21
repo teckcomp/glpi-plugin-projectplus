@@ -3,6 +3,7 @@
 namespace GlpiPlugin\Projectplus;
 
 use Project;
+use ProjectTeam;
 use ProjectTask;
 use ProjectTaskTeam;
 use Session;
@@ -96,6 +97,13 @@ class TemplateCloner
         if (!empty($meta['users_id'])) {
             $managerId = (int) $meta['users_id'];
         }
+        // Bloco J (21/10/2026): sobreposições vindas do modal "Novo projeto"
+        // (o formulário é pré-preenchido com o modelo e o usuário ajusta).
+        // Só valor preenchido sobrepõe; vazio/0 mantém o que o modelo diz.
+        $ov = (!empty($extra['overrides']) && is_array($extra['overrides'])) ? $extra['overrides'] : [];
+        if (!empty($ov['users_id'])) {
+            $managerId = (int) $ov['users_id'];
+        }
 
         // Datas do projeto raiz: início = data escolhida + offset do modelo;
         // fim = início + (duração-1). Se o modelo não trouxer duração
@@ -127,6 +135,23 @@ class TemplateCloner
         if (!empty($meta['auto_percent_done'])) {
             $rootInput['auto_percent_done'] = 1;
         }
+        // Bloco J: projeto pai (o modal permite criar o projeto do modelo
+        // como subprojeto) e sobreposições de fase/tipo/prioridade/descrição.
+        if (!empty($extra['projects_id'])) {
+            $rootInput['projects_id'] = (int) $extra['projects_id'];
+        }
+        if (!empty($ov['projectstates_id'])) {
+            $rootInput['projectstates_id'] = (int) $ov['projectstates_id'];
+        }
+        if (!empty($ov['projecttypes_id'])) {
+            $rootInput['projecttypes_id'] = (int) $ov['projecttypes_id'];
+        }
+        if (!empty($ov['priority'])) {
+            $rootInput['priority'] = min(6, max(1, (int) $ov['priority']));
+        }
+        if (isset($ov['content']) && trim((string) $ov['content']) !== '') {
+            $rootInput['content'] = (string) $ov['content'];
+        }
 
         $project   = new Project();
         $projectId = $project->add($rootInput);
@@ -135,9 +160,13 @@ class TemplateCloner
             return ['ok' => false, 'message' => __('Falha ao criar o projeto', 'projectplus')];
         }
 
-        // Orçamento (teto do plugin) do projeto raiz
-        if (!empty($meta['budget']) && (float) $meta['budget'] > 0) {
-            Budget::setPlanned((int) $projectId, (float) $meta['budget']);
+        // Orçamento (teto do plugin) do projeto raiz — Bloco J: o valor do
+        // modal (quando preenchido) sobrepõe o do modelo.
+        $budget = (isset($ov['budget']) && (float) $ov['budget'] > 0)
+            ? (float) $ov['budget']
+            : (float) ($meta['budget'] ?? 0);
+        if ($budget > 0) {
+            Budget::setPlanned((int) $projectId, $budget);
         }
 
         // --- Tarefas da raiz (controle anti-duplicação por projeto) ---
@@ -389,6 +418,38 @@ class TemplateCloner
      *
      * @return array{valid: bool, errors: string[]}
      */
+    /**
+     * Bloco A (28/09/2026) / Bloco J: quem cria o projeto entra na EQUIPE
+     * dele, a menos que já seja o gestor. Sem isso o gestor vem do modelo e
+     * quem criou perde o projeto de vista no primeiro clique (perfil
+     * Supervisor). Extraído de front/projecttemplate.form.php para servir
+     * também ao modal "Novo projeto". Idempotente.
+     */
+    public static function ensureCreatorInTeam(int $projectId): void
+    {
+        $uid = (int) Session::getLoginUserID();
+        if ($uid <= 0 || $projectId <= 0) {
+            return;
+        }
+        $proj = new Project();
+        if (!$proj->getFromDB($projectId) || (int) $proj->fields['users_id'] === $uid) {
+            return;
+        }
+        $team  = new ProjectTeam();
+        $found = $team->getFromDBByCrit([
+            'projects_id' => $projectId,
+            'itemtype'    => 'User',
+            'items_id'    => $uid,
+        ]);
+        if (!$found) {
+            $team->add([
+                'projects_id' => $projectId,
+                'itemtype'    => 'User',
+                'items_id'    => $uid,
+            ]);
+        }
+    }
+
     public static function validateStructure(string $json): array
     {
         $errors = [];

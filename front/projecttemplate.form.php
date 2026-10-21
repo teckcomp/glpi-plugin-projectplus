@@ -76,27 +76,8 @@ if (isset($_POST['save'])) {
     if (!empty($result['ok']) && !empty($result['projects_id'])) {
         $newId = (int) $result['projects_id'];
 
-        // Bloco A (28/09/2026): quem cria o projeto entra na EQUIPE dele,
-        // a menos que já seja o gestor. Sem isso, o gestor definido no
-        // modelo é outra pessoa e quem criou perde o projeto de vista no
-        // primeiro clique — foi o que aconteceu com o perfil Supervisor.
-        $uid  = (int) Session::getLoginUserID();
-        $proj = new Project();
-        if ($uid > 0 && $proj->getFromDB($newId) && (int) $proj->fields['users_id'] !== $uid) {
-            $team  = new ProjectTeam();
-            $found = $team->getFromDBByCrit([
-                'projects_id' => $newId,
-                'itemtype'    => 'User',
-                'items_id'    => $uid,
-            ]);
-            if (!$found) {
-                $team->add([
-                    'projects_id' => $newId,
-                    'itemtype'    => 'User',
-                    'items_id'    => $uid,
-                ]);
-            }
-        }
+        // Bloco A / Bloco J: quem cria entra na equipe (helper único).
+        TemplateCloner::ensureCreatorInTeam($newId);
 
         Session::addMessageAfterRedirect($result['message'], true, INFO);
         // Antes ia para a tela NATIVA do projeto, que exige direito nativo

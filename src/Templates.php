@@ -45,6 +45,51 @@ class Templates
     }
 
     /**
+     * Bloco J (21/10/2026): opções do campo "Modelo" do modal "Novo projeto"
+     * da Visão geral. Cada item traz os atributos do projeto raiz do modelo
+     * (`meta`) para o JS pré-preencher o formulário — o usuário vê e pode
+     * ajustar antes de criar; o que ele deixar no formulário vira
+     * sobreposição ao modelo em TemplateCloner::instantiate().
+     *
+     * @return array<array{id:int, name:string, count:int, subcount:int, meta:array}>
+     */
+    public static function pickerOptions(): array
+    {
+        $out = [];
+        foreach (self::listAll() as $row) {
+            $out[] = [
+                'id'       => (int) $row['id'],
+                'name'     => (string) $row['name'],
+                'count'    => (int) $row['count'],
+                'subcount' => (int) $row['subcount'],
+                'meta'     => self::projectMeta((int) $row['id']),
+            ];
+        }
+        return $out;
+    }
+
+    /** Atributos do projeto raiz guardados no JSON do modelo (só os que o modal usa). */
+    private static function projectMeta(int $id): array
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+        $meta = [];
+        foreach ($DB->request(['SELECT' => ['structure'], 'FROM' => 'glpi_plugin_projectplus_templates', 'WHERE' => ['id' => $id], 'LIMIT' => 1]) as $r) {
+            $st   = json_decode($r['structure'] ?? '', true);
+            $meta = (is_array($st) && !empty($st['project']) && is_array($st['project'])) ? $st['project'] : [];
+        }
+        return [
+            'users_id'          => (int) ($meta['users_id'] ?? 0),
+            'projecttypes_id'   => (int) ($meta['projecttypes_id'] ?? 0),
+            'projectstates_id'  => (int) ($meta['projectstates_id'] ?? 0),
+            'budget'            => (float) ($meta['budget'] ?? 0),
+            'content'           => (string) ($meta['content'] ?? ''),
+            'offset_start_days' => max(0, (int) ($meta['offset_start_days'] ?? 0)),
+            'duration_days'     => isset($meta['duration_days']) ? max(1, (int) $meta['duration_days']) : null,
+        ];
+    }
+
+    /**
      * Lista os modelos cadastrados, com contagem de tarefas e de
      * subprojetos calculada a partir do JSON (não há colunas próprias).
      *
@@ -584,12 +629,21 @@ class Templates
             $ttypes[] = ['id' => (int) $r['id'], 'name' => (string) $r['name']];
         }
 
-        // Bloco H (21/10/2026): mesma lista de usuários do painel e de Minhas
-        // tarefas (Dashboard::userOptions — porta única). Aqui havia uma
-        // consulta própria com `LIMIT 500` ordenada por sobrenome: em base
-        // grande os últimos do alfabeto ficavam fora do editor de Modelos
-        // (mesma classe de bug do LIMIT 300 do painel).
-        $users = Dashboard::userOptions();
+        $users = [];
+        foreach (
+            $DB->request([
+                'SELECT' => ['id', 'name', 'realname', 'firstname'],
+                'FROM'   => 'glpi_users',
+                'WHERE'  => ['is_active' => 1, 'is_deleted' => 0],
+                'ORDER'  => 'realname',
+                'LIMIT'  => 500,
+            ]) as $r
+        ) {
+            // Respeita a ordem de nome configurada no GLPI (config ou
+            // preferência da sessão), em vez de fixar "Sobrenome Nome".
+            $label   = \formatUserName((int) $r['id'], (string) $r['name'], $r['realname'] ?? '', $r['firstname'] ?? '');
+            $users[] = ['id' => (int) $r['id'], 'name' => $label !== '' ? $label : (string) $r['name']];
+        }
 
         return [
             'states' => $states,

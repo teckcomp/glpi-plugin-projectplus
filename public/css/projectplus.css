@@ -969,16 +969,6 @@ tr.pp-focus-task > td {
     display: flex; gap: 16px; flex-wrap: wrap; align-items: center;
 }
 .pp-kb-scroll { overflow: auto; max-height: 74vh; border-top: 1px solid #e3e7eb; }
-/* Bloco H (21/10/2026): barras de rolagem SEMPRE visíveis no board. Com a
-   barra de sobreposição do Windows (some quando o mouse sai) e a borda de
-   baixo do contêiner colada ao fim da janela, a barra horizontal "não
-   existia". Estilizar a barra desliga a sobreposição no Chrome/Edge; a
-   altura do contêiner é ajustada à janela pelo JS (fitHeight). */
-.pp-kb-scroll { scrollbar-width: auto; scrollbar-color: #9aa5b1 #eef1f4; }
-.pp-kb-scroll::-webkit-scrollbar { width: 12px; height: 12px; }
-.pp-kb-scroll::-webkit-scrollbar-track { background: #eef1f4; }
-.pp-kb-scroll::-webkit-scrollbar-thumb { background: #9aa5b1; border-radius: 6px; border: 2px solid #eef1f4; }
-.pp-kb-scroll::-webkit-scrollbar-thumb:hover { background: #7b8794; }
 .pp-kb-board { display: inline-block; min-width: 100%; }
 .pp-kb-row {
     display: grid;
@@ -1278,19 +1268,6 @@ a.pp-kb-lane-head__name:hover { color: #065a82; text-decoration: underline; }
 .pp-projcmt { margin: -6px 0 10px; border-left: 3px solid #065a82; background: #f7fbfe; }
 .pp-projstrip .pp-cmt-btn { margin-left: auto; }
 
-/* ===== Bloco I (21/10/2026) — Kanban em "tela cheia" do plugin ===== */
-/* O widget (toolbar + board) cobre a janela por cima do GLPI. Não é a
-   Fullscreen API (ver kanban.js). z-index acima da navbar do GLPI (1030) e
-   abaixo do modal do plugin (2000). */
-.pp-kb-fsbtn i { margin-right: 4px; }
-.pp-kb-fs {
-    position: fixed; inset: 0; z-index: 1500; margin: 0;
-    background: #f5f7f9; padding: 12px 16px; box-sizing: border-box; overflow: auto;
-}
-.pp-kb-fs .projectplus-header { margin-top: 0; }
-html.pp-kb-fs-page, html.pp-kb-fs-page body { overflow: hidden; }
-/* Enquanto o modo está ligado, o resto da página fica invisível — cobre o
-   intervalo entre o parse (script inline do Twig) e o mount do JS, e qualquer
-   borda do GLPI que a caixa fixa não alcance. O widget volta a ser visível. */
-html.pp-kb-fs-page body { visibility: hidden; }
-html.pp-kb-fs-page .pp-kb-fs { visibility: visible; }
+/* ===== Bloco J (21/10/2026) — Novo projeto a partir de modelo ===== */
+.pp-np-tplhint { display: block; margin-top: 4px; font-size: 0.8rem; }
+.projectplus-form input[data-pp-role="np-end"]:disabled { background: #f1f3f5; color: #6b7785; }

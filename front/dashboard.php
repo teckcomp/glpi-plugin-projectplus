@@ -11,6 +11,7 @@ use GlpiPlugin\Projectplus\Dashboard;
 use GlpiPlugin\Projectplus\I18nJs;
 use GlpiPlugin\Projectplus\Scope;
 use GlpiPlugin\Projectplus\TypePhase;
+use GlpiPlugin\Projectplus\Templates;
 use GlpiPlugin\Projectplus\Url;
 
 include('../../../inc/includes.php');
@@ -205,6 +206,9 @@ TemplateRenderer::getInstance()->display(
         // coluna/campo de Orçamento sem o direito de Custos (Cliente e
         // Colaborador) e bloco de Tarefas sem o direito de Tarefas (Cliente).
         'can_costs'       => Access::can('costs'),
+        // Bloco J: modelos para o campo "Modelo" do modal Novo projeto
+        'templates'       => Access::can('templates') ? Templates::pickerOptions() : [],
+        'today'           => date('Y-m-d'), // Bloco J: início padrão no modal (fuso do servidor, não UTC do navegador)
         'can_tasks'       => Access::can('tasks'),
         'nav'             => Access::sidebar(),
         'scope_can_expand'  => $scopeCanExpand,
