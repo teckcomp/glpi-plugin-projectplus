@@ -90,6 +90,61 @@ if (isset($_POST['create_type'])) {
     Html::redirect(Url::to('front/typephases.php') . '?type=' . (int) $newId);
 }
 
+// --- update_state (Bloco K, 21/10/2026): editar nome, cor e finalizadora
+//     de uma fase direto na tabela. A fase é a NATIVA glpi_projectstates
+//     (lista global da instância — lição 59): a alteração vale para todos
+//     os tipos e para a ficha nativa. Não mexe no conjunto nem na ordem. ---
+if (isset($_POST['update_state'])) {
+    $stateId = (int) ($_POST['state_id'] ?? 0);
+    $name    = trim((string) ($_POST['state_name'] ?? ''));
+    if ($stateId <= 0) {
+        Session::addMessageAfterRedirect(__('Fase não encontrada', 'projectplus'), true, ERROR);
+        Html::redirect($back);
+    }
+    if ($name === '' || mb_strlen($name) > 255) {
+        Session::addMessageAfterRedirect(__('Informe o nome da fase', 'projectplus'), true, ERROR);
+        Html::redirect($back);
+    }
+    $color = (string) ($_POST['state_color'] ?? '');
+    if (!preg_match('/^#[0-9a-fA-F]{6}$/', $color)) {
+        $color = '#065a82';
+    }
+    $dup = $DB->request([
+        'COUNT' => 'cpt',
+        'FROM'  => 'glpi_projectstates',
+        'WHERE' => ['name' => $name, 'NOT' => ['id' => $stateId]],
+    ])->current();
+    if ((int) ($dup['cpt'] ?? 0) > 0) {
+        Session::addMessageAfterRedirect(
+            sprintf(__('Já existe uma fase chamada "%s"', 'projectplus'), $name),
+            true,
+            ERROR
+        );
+        Html::redirect($back);
+    }
+    $state = new ProjectState();
+    if (!$state->getFromDB($stateId)) {
+        Session::addMessageAfterRedirect(__('Fase não encontrada', 'projectplus'), true, ERROR);
+        Html::redirect($back);
+    }
+    $ok = $state->update([
+        'id'          => $stateId,
+        'name'        => $name,
+        'color'       => $color,
+        'is_finished' => empty($_POST['state_finished']) ? 0 : 1,
+    ]);
+    if (!$ok) {
+        Session::addMessageAfterRedirect(__('Falha ao atualizar a fase', 'projectplus'), true, ERROR);
+        Html::redirect($back);
+    }
+    Session::addMessageAfterRedirect(
+        sprintf(__('Fase "%s" atualizada — vale para todos os tipos e para a ficha nativa', 'projectplus'), $name),
+        true,
+        INFO
+    );
+    Html::redirect($back);
+}
+
 if (isset($_POST['create_state'])) {
     $name = trim((string) ($_POST['new_state_name'] ?? ''));
     if ($name === '' || mb_strlen($name) > 255) {

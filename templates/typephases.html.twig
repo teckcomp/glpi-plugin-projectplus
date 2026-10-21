@@ -178,22 +178,48 @@
                                            {{ r.selected ? 'checked' : '' }}
                                            aria-label="{{ r.name }}">
                                 </td>
-                                <td>
-                                    <span class="pp-phase-dot" style="background:{{ r.color }}"></span>
-                                    {{ r.name }}
+                                {# Bloco K (21/10/2026): edição inline de nome/cor/finalizadora. Os campos
+                                   pertencem ao form #pp-tp-editform (atributo form=), que fica FORA deste
+                                   form, e nascem desabilitados — só a linha em edição é enviada. #}
+                                <td class="pp-tp-name">
+                                    <span class="pp-tp-view">
+                                        <span class="pp-phase-dot" style="background:{{ r.color }}"></span>
+                                        {{ r.name }}
+                                    </span>
+                                    <span class="pp-tp-editing" hidden>
+                                        <input type="color" name="state_color" form="pp-tp-editform" value="{{ r.color }}" disabled
+                                               title="{{ __('Cor', 'projectplus') }}">
+                                        <input type="text" name="state_name" form="pp-tp-editform" value="{{ r.name }}" maxlength="255" disabled required>
+                                    </span>
                                 </td>
                                 <td class="center">
+                                    <span class="pp-tp-view">
                                     {% if r.is_finished %}
                                         <i class="ti ti-flag-check" title="{{ __('Fase finalizadora', 'projectplus') }}"></i>
                                     {% else %}
                                         —
                                     {% endif %}
+                                    </span>
+                                    <span class="pp-tp-editing" hidden>
+                                        <input type="checkbox" name="state_finished" value="1" form="pp-tp-editform" disabled
+                                               {{ r.is_finished ? 'checked' : '' }} title="{{ __('Fase finalizadora', 'projectplus') }}">
+                                    </span>
                                 </td>
                                 <td class="center pp-tp-move">
-                                    <button type="button" class="projectplus-btn projectplus-btn--ghost pp-tp-mini"
-                                            data-pp-move="up" title="{{ __('Subir', 'projectplus') }}">&uarr;</button>
-                                    <button type="button" class="projectplus-btn projectplus-btn--ghost pp-tp-mini"
-                                            data-pp-move="down" title="{{ __('Descer', 'projectplus') }}">&darr;</button>
+                                    <span class="pp-tp-view">
+                                        <button type="button" class="projectplus-btn projectplus-btn--ghost pp-tp-mini"
+                                                data-pp-move="up" title="{{ __('Subir', 'projectplus') }}">&uarr;</button>
+                                        <button type="button" class="projectplus-btn projectplus-btn--ghost pp-tp-mini"
+                                                data-pp-move="down" title="{{ __('Descer', 'projectplus') }}">&darr;</button>
+                                        <button type="button" class="projectplus-btn projectplus-btn--ghost pp-tp-mini"
+                                                data-pp-edit="{{ r.id }}" title="{{ __('Editar fase (nome, cor e finalizadora — vale para todos os tipos)', 'projectplus') }}"><i class="ti ti-pencil"></i></button>
+                                    </span>
+                                    <span class="pp-tp-editing" hidden>
+                                        <button type="submit" form="pp-tp-editform" name="update_state" value="1"
+                                                class="projectplus-btn pp-tp-mini" title="{{ __('Salvar fase', 'projectplus') }}"><i class="ti ti-check"></i></button>
+                                        <button type="button" class="projectplus-btn projectplus-btn--ghost pp-tp-mini"
+                                                data-pp-edit-cancel="1" title="{{ __('Cancelar', 'projectplus') }}">&times;</button>
+                                    </span>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -210,6 +236,12 @@
                             {{ __('Salvar conjunto', 'projectplus') }}
                         </button>
                     </div>
+                </form>
+                {# Bloco K: form da edição inline (fora do form do conjunto — form aninhado não existe) #}
+                <form method="post" action="{{ form_action }}" id="pp-tp-editform">
+                    <input type="hidden" name="_glpi_csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="projecttypes_id" value="{{ edit_id }}">
+                    <input type="hidden" name="state_id" value="0" data-pp-role="edit-id">
                 </form>
                 {% endif %}
             </div>

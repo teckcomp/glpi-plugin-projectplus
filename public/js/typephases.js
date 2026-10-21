@@ -54,6 +54,40 @@
         }
     }
 
+    /**
+     * Bloco K (21/10/2026): edição inline de uma fase (nome, cor, finalizadora).
+     * Uma linha por vez. Os campos pertencem ao form #pp-tp-editform (atributo
+     * form=) e nascem disabled; abrir a edição habilita só os da linha e grava
+     * o id no hidden do form. Cancelar restaura os valores originais e
+     * desabilita de novo. Sem JS a tela segue como antes (só o lápis não age).
+     */
+    function editRow(tr, on) {
+        const idEl = document.querySelector('[data-pp-role="edit-id"]');
+        tr.querySelectorAll('.pp-tp-view').forEach(function (el) { el.hidden = on; });
+        tr.querySelectorAll('.pp-tp-editing').forEach(function (el) { el.hidden = !on; });
+        tr.querySelectorAll('.pp-tp-editing input').forEach(function (inp) {
+            if (!on) {
+                if (inp.type === 'checkbox') {
+                    inp.checked = inp.defaultChecked;
+                } else {
+                    inp.value = inp.defaultValue;
+                }
+            }
+            inp.disabled = !on;
+        });
+        tr.classList.toggle('pp-tp-row--editing', on);
+        if (idEl) {
+            idEl.value = on ? (tr.getAttribute('data-pp-state') || '0') : '0';
+        }
+        if (on) {
+            const name = tr.querySelector('.pp-tp-editing input[type="text"]');
+            if (name) { name.focus(); name.select(); }
+        }
+    }
+    function closeAllEdits(body) {
+        body.querySelectorAll('tr.pp-tp-row--editing').forEach(function (tr) { editRow(tr, false); });
+    }
+
     ProjectPlusTypePhases.init = function () {
         const root = document.getElementById('projectplus-typephases');
         if (!root) {
@@ -69,6 +103,21 @@
 
         // Delegação: um listener só, e continua valendo para linha movida.
         body.addEventListener('click', function (ev) {
+            const editBtn = ev.target.closest('[data-pp-edit]');
+            if (editBtn) {
+                ev.preventDefault();
+                closeAllEdits(body);
+                const tr = editBtn.closest('tr');
+                if (tr) { editRow(tr, true); }
+                return;
+            }
+            const cancelBtn = ev.target.closest('[data-pp-edit-cancel]');
+            if (cancelBtn) {
+                ev.preventDefault();
+                const tr = cancelBtn.closest('tr');
+                if (tr) { editRow(tr, false); }
+                return;
+            }
             const btn = ev.target.closest('[data-pp-move]');
             if (!btn) {
                 return;
@@ -80,9 +129,16 @@
             }
         });
 
+        body.addEventListener('keydown', function (ev) {
+            if (ev.key === 'Escape') {
+                const tr = ev.target.closest('tr.pp-tp-row--editing');
+                if (tr) { ev.preventDefault(); editRow(tr, false); }
+            }
+        });
+
         body.addEventListener('change', function (ev) {
             const box = ev.target;
-            if (box && box.type === 'checkbox') {
+            if (box && box.type === 'checkbox' && box.name === 'states[]') {
                 const tr = box.closest('tr');
                 if (tr) {
                     paintRow(tr);
@@ -92,7 +148,7 @@
     };
 
     // Exposto só para os testes isolados (jsdom).
-    ProjectPlusTypePhases._test = { move: move, paintRow: paintRow };
+    ProjectPlusTypePhases._test = { move: move, paintRow: paintRow, editRow: editRow };
 
     window.ProjectPlusTypePhases = ProjectPlusTypePhases;
 })();
