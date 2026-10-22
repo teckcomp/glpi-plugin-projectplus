@@ -1728,3 +1728,36 @@ th.pp-actions-cell { text-align: right; }
 .projectplus-tasktable tr.pp-dl-red > td:first-child,
 .projectplus-tasktable tr.pp-dl-dark > td:first-child { box-shadow: inset 3px 0 0 var(--pp-danger); }
 .projectplus-tasktable tr.pp-task-done > td:first-child { box-shadow: inset 3px 0 0 var(--pp-muted); }
+
+/* ===== Bloco N-4 — Timeline: faixa de filtros e o dia de hoje bem visível =====
+   A linha "hoje" ficava ATRÁS do fundo das linhas (z-index 5 x 10) e só
+   aparecia em pedaços. Agora: faixa da largura do dia + linha sólida por cima
+   das linhas (abaixo só da coluna de nomes, que é sticky) + etiqueta "Hoje"
+   no cabeçalho. Nada disso captura clique. */
+.pp-filterbar__btn {
+    height: 34px; padding: 0 12px; border-radius: 7px; border: 1px solid var(--pp-border-strong);
+    background: var(--pp-surface-3); color: var(--pp-text-strong); font-weight: 600; font-size: 0.85rem;
+    display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+}
+.pp-filterbar__btn:hover { border-color: var(--pp-accent); background: var(--pp-accent-soft); }
+.pp-filterbar__search {
+    height: 34px; width: 240px; padding: 0 10px; border-radius: 7px; border: 1px solid var(--pp-border-strong);
+    background: var(--pp-page, transparent); color: var(--pp-text); box-sizing: border-box;
+}
+.pp-seg--links button.pp-seg__btn { border: 0; cursor: pointer; font-family: inherit; }
+.pp-tl-zoom .pp-tl-zoom__btn--active { background: var(--pp-accent-soft); color: var(--pp-text-strong); font-weight: 700; }
+.pp-tl-card { background: var(--pp-surface); border: 1px solid var(--pp-border); border-radius: 10px; }
+
+.pp-tl-todayline {
+    border-left: 2px solid var(--pp-danger); opacity: 1; z-index: 15; pointer-events: none;
+    box-shadow: 0 0 6px color-mix(in srgb, var(--pp-danger) 70%, transparent);
+}
+.pp-tl-todayband {
+    position: absolute; top: 0; bottom: 0; z-index: 14; pointer-events: none;
+    background: color-mix(in srgb, var(--pp-danger) 12%, transparent);
+}
+.pp-tl-todaytag {
+    position: absolute; bottom: 2px; transform: translateX(-50%); z-index: 16; pointer-events: none;
+    background: var(--pp-danger); color: #fff; font-size: 10.5px; font-weight: 700; line-height: 1;
+    padding: 3px 7px; border-radius: 999px; white-space: nowrap;
+}

@@ -106,6 +106,7 @@ class I18nJs
                 'Criar tarefa'             => __('Criar tarefa', 'projectplus'),
                 'Tarefa mãe'               => __('Tarefa mãe', 'projectplus'),
                 'Abrir projeto'            => __('Abrir projeto', 'projectplus'), // Bloco N-3
+                'Hoje'                     => __('Hoje', 'projectplus'), // Bloco N-4 (etiqueta na Timeline)
                 'Cálculo automático a partir das subtarefas' => __('Cálculo automático a partir das subtarefas', 'projectplus'),
                 'Calcular automaticamente a partir das subtarefas' => __('Calcular automaticamente a partir das subtarefas', 'projectplus'),
                 'Bloqueada por outra(s) tarefa(s) — veja 🔗' => __('Bloqueada por outra(s) tarefa(s) — veja 🔗', 'projectplus'),

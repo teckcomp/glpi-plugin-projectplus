@@ -260,6 +260,10 @@
             '<div class="pp-tl-head__track" style="width:' + trackW + 'px">' +
             '<div class="pp-tl-months">' + months + '</div>' +
             '<div class="pp-tl-ticks' + (state.zoom === 'month' ? ' pp-tl-ticks--empty' : '') + '">' + ticks + '</div>' +
+            // Bloco N-4: etiqueta "Hoje" no cabeçalho, sobre a linha do dia
+            '<span class="pp-tl-todaytag" style="left:' +
+                (dayIndex(state.data.range.today) * ppd + Math.round(ppd / 2)) + 'px">' +
+                escapeHtml(__('Hoje')) + '</span>' +
             '</div></div>';
     }
 
@@ -276,7 +280,12 @@
             cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
         }
 
+        // Bloco N-4: o dia de hoje bem visível — faixa da largura do dia e linha
+        // por CIMA das linhas (antes ficava por baixo do fundo das linhas e
+        // aparecia só em pedaços). Não captura clique (pointer-events: none).
         const todayLeft = LABEL_W + dayIndex(state.data.range.today) * ppd + Math.round(ppd / 2);
+        html += '<div class="pp-tl-todayband" style="left:' + (LABEL_W + dayIndex(state.data.range.today) * ppd) +
+            'px;width:' + Math.max(ppd, 2) + 'px"></div>';
         html += '<div class="pp-tl-todayline" style="left:' + todayLeft + 'px"></div>';
 
         return html;

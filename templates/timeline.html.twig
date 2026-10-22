@@ -10,56 +10,57 @@
     {# ================= ÁREA PRINCIPAL ================= #}
     <div class="projectplus-main">
 
-        <div class="projectplus-header">
-            <div class="pp-tl-controls">
-                {# Bloco F-2a: escondido na Visão do cliente #}
-                {% if not nav.client %}
-                <form method="get" class="pp-type-pick" action="{{ plugin_web_dir }}/front/timeline.php">
-                    {% if type_scope %}<input type="hidden" name="scope" value="{{ type_scope }}">{% endif %}
-                    <label>
-                        <i class="ti ti-category"></i>{{ __('Tipo', 'projectplus') }}
-                        <select name="type" onchange="this.form.submit()"
-                                title="{{ __('Mostrar apenas os projetos deste tipo', 'projectplus') }}">
-                            <option value="">{{ __('Todos os tipos', 'projectplus') }}</option>
-                            {% for t in type_options %}
-                            <option value="{{ t.id }}" {{ (type_selected is not null and type_selected == t.id) ? 'selected' : '' }}>{{ t.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </label>
-                    <noscript>
-                        <button type="submit" class="projectplus-btn projectplus-btn--ghost">{{ __('Abrir', 'projectplus') }}</button>
-                    </noscript>
-                </form>
-                {% endif %}
-                <div class="pp-tl-zoom" role="group" aria-label="{{ __('Zoom', 'projectplus') }}">
-                    <button type="button" class="pp-tl-zoom__btn" data-pp-zoom="day">{{ __('Dia', 'projectplus') }}</button>
-                    <button type="button" class="pp-tl-zoom__btn pp-tl-zoom__btn--active" data-pp-zoom="week">{{ __('Semana', 'projectplus') }}</button>
-                    <button type="button" class="pp-tl-zoom__btn" data-pp-zoom="month">{{ __('Mês', 'projectplus') }}</button>
-                </div>
-                <button type="button" class="projectplus-btn projectplus-btn--ghost" id="pp-tl-today">
-                    {{ __('Hoje', 'projectplus') }}
-                </button>
-                <label class="pp-mt-toggle">
-                    <input type="checkbox" id="pp-tl-done">
-                    {{ __('Mostrar tarefas concluídas', 'projectplus') }}
-                </label>
+        {# ===== Bloco N-4: faixa de filtros no padrão das outras telas =====
+           Mesmos ids/classes que o timeline.js usa (pp-tl-zoom__btn, pp-tl-today,
+           pp-tl-done, pp-tl-search); só a aparência mudou. #}
+        <div class="pp-filterbar">
+            {% include '@projectplus/_favorite.html.twig' %}
+            <span class="pp-filterbar__sep"></span>
+            {# Bloco F-2a: escondido na Visão do cliente #}
+            {% if not nav.client %}
+            <form method="get" class="pp-filterbar__form" action="{{ plugin_web_dir }}/front/timeline.php">
+                {% if type_scope %}<input type="hidden" name="scope" value="{{ type_scope }}">{% endif %}
+                <span class="pp-filterbar__label">{{ __('Tipo', 'projectplus') }}</span>
+                <select name="type" onchange="this.form.submit()"
+                        title="{{ __('Mostrar apenas os projetos deste tipo', 'projectplus') }}">
+                    <option value="">{{ __('Todos os tipos', 'projectplus') }}</option>
+                    {% for t in type_options %}
+                    <option value="{{ t.id }}" {{ (type_selected is not null and type_selected == t.id) ? 'selected' : '' }}>{{ t.name }}</option>
+                    {% endfor %}
+                </select>
+                <noscript>
+                    <button type="submit" class="projectplus-btn projectplus-btn--ghost">{{ __('Abrir', 'projectplus') }}</button>
+                </noscript>
+            </form>
+            {% endif %}
+            <div class="pp-seg pp-seg--links pp-tl-zoom" role="group" aria-label="{{ __('Zoom', 'projectplus') }}">
+                <button type="button" class="pp-seg__btn pp-tl-zoom__btn" data-pp-zoom="day">{{ __('Dia', 'projectplus') }}</button>
+                <button type="button" class="pp-seg__btn pp-tl-zoom__btn pp-tl-zoom__btn--active" data-pp-zoom="week">{{ __('Semana', 'projectplus') }}</button>
+                <button type="button" class="pp-seg__btn pp-tl-zoom__btn" data-pp-zoom="month">{{ __('Mês', 'projectplus') }}</button>
             </div>
-            <div class="projectplus-actions">
-                {% include '@projectplus/_favorite.html.twig' %}
-                <input type="search" class="pp-tablesearch" id="pp-tl-search"
-                       placeholder="{{ __('Buscar projeto ou tarefa…', 'projectplus') }}"
-                       aria-label="{{ __('Buscar projeto ou tarefa', 'projectplus') }}">
-                {% if scope_can_expand and not nav.client %}
-                <a class="projectplus-btn projectplus-btn--ghost pp-scope-toggle" href="{{ scope_toggle_url }}"
-                   title="{{ scope_is_expanded ? __('Voltar ao escopo pessoal', 'projectplus') : __('Incluir todos os projetos que você pode ver', 'projectplus') }}">
-                    {% if scope_is_expanded %}
-                    <i class="ti ti-user"></i>{{ __('Ver só os meus', 'projectplus') }}
-                    {% else %}
-                    <i class="ti ti-eye"></i>{{ __('Ver tudo', 'projectplus') }}
-                    {% endif %}
-                </a>
+            <button type="button" class="pp-filterbar__btn" id="pp-tl-today">
+                <i class="ti ti-calendar-event"></i>{{ __('Hoje', 'projectplus') }}
+            </button>
+            {% if scope_can_expand and not nav.client %}
+            <div class="pp-seg pp-seg--links" role="group" aria-label="{{ __('Escopo', 'projectplus') }}">
+                {% if scope_is_expanded %}
+                <span class="pp-seg__btn pp-seg__btn--active" aria-current="true">{{ __('Todos', 'projectplus') }}</span>
+                <a class="pp-seg__btn" href="{{ scope_toggle_url }}" title="{{ __('Voltar ao escopo pessoal', 'projectplus') }}">{{ __('Só os meus', 'projectplus') }}</a>
+                {% else %}
+                <a class="pp-seg__btn" href="{{ scope_toggle_url }}" title="{{ __('Incluir todos os projetos que você pode ver', 'projectplus') }}">{{ __('Todos', 'projectplus') }}</a>
+                <span class="pp-seg__btn pp-seg__btn--active" aria-current="true">{{ __('Só os meus', 'projectplus') }}</span>
                 {% endif %}
             </div>
+            {% endif %}
+            <span class="pp-filterbar__spacer"></span>
+            <input type="search" class="pp-filterbar__search" id="pp-tl-search"
+                   placeholder="{{ __('Buscar projeto ou tarefa…', 'projectplus') }}"
+                   aria-label="{{ __('Buscar projeto ou tarefa', 'projectplus') }}">
+            <label class="pp-switch">
+                <input type="checkbox" id="pp-tl-done">
+                <span class="pp-switch__track" aria-hidden="true"></span>
+                {{ __('Mostrar tarefas concluídas', 'projectplus') }}
+            </label>
         </div>
 
         <div class="projectplus-card projectplus-card--full pp-tl-card">
