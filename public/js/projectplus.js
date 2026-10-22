@@ -721,15 +721,29 @@
                 return;
             }
 
+            // Bloco N-3: cabeçalho do grupo no layout do mockup — tag do tipo,
+            // "Pai › Projeto", contagem e "Abrir projeto"; a tabela de tarefas
+            // (com toda a edição inline) segue a mesma, dentro da caixa.
             groupsEl.innerHTML = groups.map(function (g) {
                 const n = g.tasks.length;
-                return '<div class="projectplus-card pp-mt-group">' +
-                    '<div class="pp-report-projhead">' +
-                        '<h3><a href="' + escapeHtml(g.project_url) + '">' + escapeHtml(g.project_name) + '</a></h3>' +
-                        '<span class="projectplus-muted">' +
+                return '<div class="pp-mt-group">' +
+                    '<div class="pp-mt-group__head">' +
+                        (g.type_name
+                            ? '<span class="pp-typetag" style="--pp-type-color:' + escapeHtml(g.type_color || '') + '">' +
+                              escapeHtml(g.type_name) + '</span>'
+                            : '') +
+                        (g.parent_name
+                            ? '<span class="pp-mt-group__parent">' + escapeHtml(g.parent_name) + '</span>' +
+                              '<span class="pp-mt-group__sep">›</span>'
+                            : '') +
+                        '<a class="pp-mt-group__name" href="' + escapeHtml(g.project_url) + '">' + escapeHtml(g.project_name) + '</a>' +
+                        '<span class="pp-mt-group__count">· ' +
                             escapeHtml(_n('%d tarefa', '%d tarefas', n, n)) + '</span>' +
+                        '<span class="pp-mt-group__spacer"></span>' +
+                        '<a class="pp-mt-group__open" href="' + escapeHtml(g.project_url) + '">' +
+                            escapeHtml(__('Abrir projeto')) + '</a>' +
                     '</div>' +
-                    taskTableHtml(g.tasks) +
+                    '<div class="pp-tablewrap">' + taskTableHtml(g.tasks) + '</div>' +
                     '</div>';
             }).join('');
 
@@ -1668,7 +1682,9 @@
                     '</tr>';
                 return;
             }
-            html += '<tr data-task-id="' + t.id + '" data-depth="' + t.depth + '" class="' + (t.percent >= 100 ? 'pp-task-done' : '') + '">' +
+            // Bloco N-3: pp-dl-<estado do prazo> pinta a borda esquerda da linha
+            html += '<tr data-task-id="' + t.id + '" data-depth="' + t.depth + '" class="' + (t.percent >= 100 ? 'pp-task-done ' : '') +
+                'pp-dl-' + escapeHtml((t.deadline && t.deadline.state) || 'none') + '">' +
                 '<td style="padding-left:' + (10 + t.depth * 22) + 'px">' +
                     (kids > 0
                         ? '<button type="button" class="projectplus-expand__btn pp-subexp" title="' +

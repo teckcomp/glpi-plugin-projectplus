@@ -170,30 +170,8 @@ foreach (
 
 // ---- Bloco N-2: dados de apresentação do Painel (cabeçalho, painéis, atenção) ----
 // Linha do título: data por extenso no idioma do usuário · projetos ativos · entidade.
-$lang = (string) ($_SESSION['glpilanguage'] ?? 'pt_BR');
-$todayLabel = DateFmt::date(date('Y-m-d'));
-$monthName  = '';
-if (class_exists('IntlDateFormatter')) {
-    $fmt = new IntlDateFormatter($lang, IntlDateFormatter::FULL, IntlDateFormatter::NONE);
-    // Padrão do idioma ("quarta-feira, 21 de outubro" / "Wednesday 21 October")
-    $pattern = 'EEEE, d MMMM';
-    if (class_exists('IntlDatePatternGenerator')) {
-        $gen = IntlDatePatternGenerator::create($lang);
-        $best = $gen ? $gen->getBestPattern('EEEEdMMMM') : false;
-        if (is_string($best) && $best !== '') {
-            $pattern = $best;
-        }
-    }
-    $fmt->setPattern($pattern);
-    $f = $fmt->format(time());
-    if (is_string($f) && $f !== '') {
-        $todayLabel = mb_strtoupper(mb_substr($f, 0, 1)) . mb_substr($f, 1);
-    }
-    $fmtMonth = new IntlDateFormatter($lang, IntlDateFormatter::NONE, IntlDateFormatter::NONE);
-    $fmtMonth->setPattern('LLLL');
-    $m = $fmtMonth->format(time());
-    $monthName = is_string($m) ? $m : '';
-}
+$todayLabel = DateFmt::longToday(); // Bloco N-3: extraído para o DateFmt
+$monthName  = DateFmt::monthName();
 $entityName = Dropdown::getDropdownName('glpi_entities', (int) Session::getActiveEntity());
 $activeCount = (int) ($data['kpis']['active'] ?? 0);
 $headSub = $todayLabel . ' · '

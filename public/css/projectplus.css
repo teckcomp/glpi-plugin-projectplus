@@ -1653,3 +1653,78 @@ th.pp-actions-cell { text-align: right; }
     font-size: 11.5px; font-weight: 600; background: var(--pp-surface-3); border: 1px solid var(--pp-border-strong);
     color: var(--pp-text-strong); white-space: nowrap;
 }
+
+/* ===== Bloco N-3 — Minhas tarefas no padrão do mockup =====
+   Faixa de filtros (mesma do Painel), contadores em linha, grupos com tag do
+   tipo e "Pai › Projeto", tabela de tarefas dentro da caixa e borda esquerda
+   da linha na cor do prazo (pp-dl-<estado>, posto pelo taskTableHtml). */
+.pp-filterbar .pp-mt-project { display: inline-flex; align-items: center; gap: 8px; }
+.pp-filterbar .pp-search, .pp-filterbar .pp-ss__input {
+    height: 34px; padding: 0 10px; border-radius: 7px; border: 1px solid var(--pp-border-strong);
+    background: var(--pp-page, transparent); color: var(--pp-text); min-width: 230px; box-sizing: border-box;
+}
+.pp-switch { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; color: var(--pp-text); margin: 0; font-weight: 500; }
+.pp-switch input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+.pp-switch__track {
+    position: relative; width: 34px; height: 20px; border-radius: 10px; background: var(--pp-border-strong);
+    flex: 0 0 auto; transition: background .15s;
+}
+.pp-switch__track::after {
+    content: ""; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%;
+    background: var(--pp-muted); transition: left .15s, background .15s;
+}
+.pp-switch input:checked + .pp-switch__track { background: var(--pp-accent); }
+.pp-switch input:checked + .pp-switch__track::after { left: 17px; background: var(--pp-on-color); }
+.pp-switch input:focus-visible + .pp-switch__track { outline: 2px solid var(--pp-accent); outline-offset: 2px; }
+
+.pp-counts { display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap; margin: 2px 2px 16px; color: var(--pp-muted); }
+.pp-counts__item { display: inline-flex; align-items: baseline; gap: 6px; font-size: 12.5px; }
+.pp-counts__n { font-size: 24px; font-weight: 700; color: var(--pp-text-strong); }
+.pp-counts__n--danger { color: var(--pp-danger-text); }
+.pp-counts__n--warn { color: var(--pp-warn-text); }
+.pp-counts__n--ok { color: var(--pp-ok-text); }
+.pp-counts__sep { width: 1px; height: 22px; background: var(--pp-border); align-self: center; }
+
+.pp-mt-group { margin-bottom: 16px; border: 1px solid var(--pp-border); border-radius: 10px; overflow: hidden; background: var(--pp-surface); }
+.pp-mt-group__head {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 12px 14px;
+    background: var(--pp-surface-2); border-bottom: 1px solid var(--pp-border);
+}
+.pp-mt-group__parent { font-weight: 700; color: var(--pp-text-strong); }
+.pp-mt-group__sep { color: var(--pp-muted); }
+.pp-mt-group__name { font-weight: 700; color: var(--pp-text-strong) !important; text-decoration: none; }
+.pp-mt-group__parent + .pp-mt-group__sep + .pp-mt-group__name { font-weight: 600; color: var(--pp-text) !important; }
+.pp-mt-group__name:hover { color: var(--pp-link) !important; text-decoration: underline; }
+.pp-mt-group__count { color: var(--pp-muted); font-size: 12.5px; }
+.pp-mt-group__spacer { flex: 1 1 auto; }
+.pp-mt-group__open { color: var(--pp-accent); font-weight: 600; text-decoration: none; }
+.pp-mt-group__open:hover { color: var(--pp-accent-hover); text-decoration: underline; }
+.pp-mt-group .pp-tablewrap { border: 0; border-radius: 0; }
+.pp-typetag {
+    display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px;
+    font-size: 11.5px; font-weight: 600; background: var(--pp-surface-3); border: 1px solid var(--pp-border-strong);
+    color: var(--pp-text); white-space: nowrap;
+}
+.pp-typetag::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--pp-type-color, var(--pp-muted)); }
+
+/* tabela de tarefas (Minhas tarefas e painel de tarefas do Painel) no visual novo */
+.projectplus-tasktable th {
+    background: var(--pp-surface-2); color: var(--pp-muted); font-size: 11px; text-transform: uppercase;
+    letter-spacing: .06em; font-weight: 600; padding: 10px 10px; white-space: nowrap; border-bottom: 1px solid var(--pp-border);
+}
+.projectplus-tasktable td { padding: 9px 10px; color: var(--pp-text); vertical-align: middle; }
+.projectplus-tasktable tbody tr:last-child > td { border-bottom: 0; }
+.projectplus-tasktable td a { color: var(--pp-text-strong); font-weight: 600; text-decoration: none; }
+.projectplus-tasktable td a:hover { color: var(--pp-link); text-decoration: underline; }
+.projectplus-tasktable :is(.pp-task-percent, .pp-task-state, .pp-task-start, .pp-task-end) {
+    height: 30px; border-radius: 6px; border: 1px solid var(--pp-border-strong);
+    background: var(--pp-page, var(--pp-surface)); color: var(--pp-text);
+}
+.projectplus-tasktable tr[class*="pp-dl-"] > td:first-child { box-shadow: inset 3px 0 0 var(--pp-border-strong); }
+.projectplus-tasktable tr.pp-dl-green > td:first-child,
+.projectplus-tasktable tr.pp-dl-blue > td:first-child { box-shadow: inset 3px 0 0 var(--pp-ok); }
+.projectplus-tasktable tr.pp-dl-yellow > td:first-child,
+.projectplus-tasktable tr.pp-dl-orange > td:first-child { box-shadow: inset 3px 0 0 var(--pp-warn); }
+.projectplus-tasktable tr.pp-dl-red > td:first-child,
+.projectplus-tasktable tr.pp-dl-dark > td:first-child { box-shadow: inset 3px 0 0 var(--pp-danger); }
+.projectplus-tasktable tr.pp-task-done > td:first-child { box-shadow: inset 3px 0 0 var(--pp-muted); }

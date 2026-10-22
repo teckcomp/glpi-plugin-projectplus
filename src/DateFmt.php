@@ -148,4 +148,46 @@ final class DateFmt
 
         return $value;
     }
+
+    /**
+     * Bloco N-3 (extraído do N-2): hoje por extenso no idioma do usuário —
+     * "Quarta-feira, 21 de outubro" / "Wednesday 21 October" — para a linha
+     * de título das telas. Sem a extensão intl, cai na data curta.
+     */
+    public static function longToday(): string
+    {
+        $label = self::date(date('Y-m-d'));
+        if (!class_exists('IntlDateFormatter')) {
+            return $label;
+        }
+        $lang    = (string) ($_SESSION['glpilanguage'] ?? 'pt_BR');
+        $pattern = 'EEEE, d MMMM';
+        if (class_exists('IntlDatePatternGenerator')) {
+            $gen  = \IntlDatePatternGenerator::create($lang);
+            $best = $gen ? $gen->getBestPattern('EEEEdMMMM') : false;
+            if (is_string($best) && $best !== '') {
+                $pattern = $best;
+            }
+        }
+        $fmt = new \IntlDateFormatter($lang, \IntlDateFormatter::FULL, \IntlDateFormatter::NONE);
+        $fmt->setPattern($pattern);
+        $f = $fmt->format(time());
+        if (!is_string($f) || $f === '') {
+            return $label;
+        }
+        return mb_strtoupper(mb_substr($f, 0, 1)) . mb_substr($f, 1);
+    }
+
+    /** Bloco N-3: nome do mês corrente no idioma do usuário ("outubro"). */
+    public static function monthName(): string
+    {
+        if (!class_exists('IntlDateFormatter')) {
+            return '';
+        }
+        $lang = (string) ($_SESSION['glpilanguage'] ?? 'pt_BR');
+        $fmt  = new \IntlDateFormatter($lang, \IntlDateFormatter::NONE, \IntlDateFormatter::NONE);
+        $fmt->setPattern('LLLL');
+        $m = $fmt->format(time());
+        return is_string($m) ? $m : '';
+    }
 }

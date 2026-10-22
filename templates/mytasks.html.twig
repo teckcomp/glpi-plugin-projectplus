@@ -13,100 +13,57 @@
      data-csrf="{{ csrf_token }}">
 
     {# Bloco N-1a: barra superior no lugar da coluna lateral #}
-    {% include '@projectplus/_topbar.html.twig' with {pp_active: 'minhas', pp_title: __('Minhas tarefas', 'projectplus'), pp_sub: __('Suas tarefas em todos os projetos', 'projectplus')} %}
+    {% include '@projectplus/_topbar.html.twig' with {pp_active: 'minhas', pp_title: __('Minhas tarefas', 'projectplus'), pp_sub: head_sub, pp_bell: nav.alerts} %}
 
     {# ================= ÁREA PRINCIPAL ================= #}
     <div class="projectplus-main">
 
-        <div class="projectplus-header">
-            <div class="pp-mt-filters">
-                <label class="pp-mt-toggle">
-                    <input type="checkbox" id="pp-mt-done" data-pp-fav-ui="done"{{ initial_done ? ' checked' : '' }}>
-                    {{ __('Mostrar tarefas concluídas', 'projectplus') }}
-                </label>
-                {# Filtros de TIPO e de PROJETO (Bloco C, 30/09/2026). Tipo:
-                   mesma lista da Visão geral. Projeto: opções montadas pelo JS
-                   a partir do payload (projetos em que o usuário tem tarefa),
-                   restritas ao tipo escolhido. Os dois recortam lista E KPIs,
-                   no cliente — sem mexer em escopo. Não são <label>: o
-                   combobox de busca põe um input ao lado do select escondido. #}
-                {# Bloco F-2a: na Visão do cliente os dois filtros ficam ocultos
-                   (o select de Projeto continua no DOM: o link de projeto
-                   ?project=ID ainda recorta a lista) #}
-                {% if type_options is not empty and not nav.client %}
-                <div class="pp-mt-project">
-                    <span class="pp-mt-project__label">{{ __('Tipo', 'projectplus') }}</span>
-                    <select id="pp-mt-type" class="pp-mt-type" data-pp-fav-ui="type" title="{{ __('Tipo de projeto', 'projectplus') }}">
-                        <option value="">{{ __('Todos os tipos', 'projectplus') }}</option>
-                        {% for t in type_options %}
-                        <option value="{{ t.id }}"{{ initial_type is not empty and initial_type == t.id ~ '' ? ' selected' : '' }}>{{ t.name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                {% endif %}
-                <div class="pp-mt-project"{% if nav.client %} hidden{% endif %}>
-                    <span class="pp-mt-project__label">{{ __('Projeto', 'projectplus') }}</span>
-                    <select id="pp-mt-project" class="pp-search" data-pp-fav-ui="project">
-                        <option value="0">{{ __('Todos os projetos', 'projectplus') }}</option>
-                    </select>
-                </div>
+        {# ===== Bloco N-3: faixa de filtros (favorito, tipo, projeto, concluídas) =====
+           Mesmos ids de antes (pp-mt-type, pp-mt-project, pp-mt-done): o JS e o
+           favorito (data-pp-fav-ui) seguem iguais. O sino foi para a barra. #}
+        <div class="pp-filterbar">
+            {% include '@projectplus/_favorite.html.twig' %}
+            <span class="pp-filterbar__sep"></span>
+            {# Bloco C (30/09/2026): Tipo = mesma lista da Visão geral; Projeto =
+               opções montadas pelo JS (projetos que o usuário enxerga + onde
+               tem tarefa), restritas ao tipo. Os dois recortam lista E
+               contadores no cliente. Bloco F-2a: na Visão do cliente os dois
+               ficam ocultos (o select de Projeto continua no DOM: o link
+               ?project=ID ainda recorta a lista). #}
+            {% if type_options is not empty and not nav.client %}
+            <div class="pp-mt-project">
+                <span class="pp-filterbar__label">{{ __('Tipo', 'projectplus') }}</span>
+                <select id="pp-mt-type" class="pp-mt-type" data-pp-fav-ui="type" title="{{ __('Tipo de projeto', 'projectplus') }}">
+                    <option value="">{{ __('Todos os tipos', 'projectplus') }}</option>
+                    {% for t in type_options %}
+                    <option value="{{ t.id }}"{{ initial_type is not empty and initial_type == t.id ~ '' ? ' selected' : '' }}>{{ t.name }}</option>
+                    {% endfor %}
+                </select>
             </div>
-            <div class="projectplus-actions">
-                {% include '@projectplus/_favorite.html.twig' %}
-                {# Sino de alertas — mesma estrutura da Visão geral; o
-                   endpoint já devolve só os alertas do usuário logado
-                   (tarefas em que está na equipe / projetos que gerencia) #}
-                {% if nav.alerts %}
-                <div class="pp-bell-wrap">
-                    <button type="button" id="pp-bell" class="pp-bell" title="{{ __('Alertas', 'projectplus') }}">
-                        <i class="ti ti-bell"></i><span class="pp-bell__badge" hidden>0</span>
-                    </button>
-                    <div id="pp-bell-panel" class="pp-bell__panel" hidden>
-                        <div class="pp-bell__head">
-                            <strong>{{ __('Alertas', 'projectplus') }}</strong>
-                            <button type="button" class="pp-bell__readall">{{ __('Marcar todas como lidas', 'projectplus') }}</button>
-                        </div>
-                        <ul class="pp-bell__list"></ul>
-                    </div>
-                </div>
-                {% endif %}
+            {% endif %}
+            <div class="pp-mt-project"{% if nav.client %} hidden{% endif %}>
+                <span class="pp-filterbar__label">{{ __('Projeto', 'projectplus') }}</span>
+                <select id="pp-mt-project" class="pp-search" data-pp-fav-ui="project">
+                    <option value="0">{{ __('Todos os projetos', 'projectplus') }}</option>
+                </select>
             </div>
+            <span class="pp-filterbar__spacer"></span>
+            <label class="pp-switch">
+                <input type="checkbox" id="pp-mt-done" data-pp-fav-ui="done"{{ initial_done ? ' checked' : '' }}>
+                <span class="pp-switch__track" aria-hidden="true"></span>
+                {{ __('Mostrar tarefas concluídas', 'projectplus') }}
+            </label>
         </div>
 
-        {# ================= KPIs pessoais ================= #}
-        <div class="projectplus-kpis">
-            <div class="projectplus-kpi">
-                <span class="projectplus-kpi__icon projectplus-kpi__icon--blue"><i class="ti ti-list-check"></i></span>
-                <div>
-                    <span class="projectplus-kpi__value" id="pp-mt-kpi-open">—</span>
-                    <span class="projectplus-kpi__label">{{ __('Tarefas abertas', 'projectplus') }}</span>
-                    <span class="projectplus-kpi__sub">{{ __('Atribuídas a você', 'projectplus') }}</span>
-                </div>
-            </div>
-            <div class="projectplus-kpi">
-                <span class="projectplus-kpi__icon projectplus-kpi__icon--teal"><i class="ti ti-alert-circle"></i></span>
-                <div>
-                    <span class="projectplus-kpi__value" id="pp-mt-kpi-overdue">—</span>
-                    <span class="projectplus-kpi__label">{{ __('Atrasadas', 'projectplus') }}</span>
-                    <span class="projectplus-kpi__sub">{{ __('Prazo final vencido', 'projectplus') }}</span>
-                </div>
-            </div>
-            <div class="projectplus-kpi">
-                <span class="projectplus-kpi__icon projectplus-kpi__icon--amber"><i class="ti ti-calendar-off"></i></span>
-                <div>
-                    <span class="projectplus-kpi__value" id="pp-mt-kpi-nodates">—</span>
-                    <span class="projectplus-kpi__label">{{ __('Sem datas', 'projectplus') }}</span>
-                    <span class="projectplus-kpi__sub">{{ __('Planejamento a corrigir', 'projectplus') }}</span>
-                </div>
-            </div>
-            <div class="projectplus-kpi">
-                <span class="projectplus-kpi__icon projectplus-kpi__icon--green"><i class="ti ti-circle-check"></i></span>
-                <div>
-                    <span class="projectplus-kpi__value" id="pp-mt-kpi-done">—</span>
-                    <span class="projectplus-kpi__label">{{ __('Concluídas', 'projectplus') }}</span>
-                    <span class="projectplus-kpi__sub">{{ __('Total histórico', 'projectplus') }}</span>
-                </div>
-            </div>
+        {# ===== Bloco N-3: contadores em linha (mesmos ids; o JS preenche) ===== #}
+        <div class="pp-counts">
+            <span class="pp-counts__item"><b id="pp-mt-kpi-overdue" class="pp-counts__n pp-counts__n--danger">—</b>{{ __('atrasadas', 'projectplus') }}</span>
+            <span class="pp-counts__sep"></span>
+            <span class="pp-counts__item"><b id="pp-mt-kpi-open" class="pp-counts__n">—</b>{{ __('abertas', 'projectplus') }}</span>
+            <span class="pp-counts__sep"></span>
+            <span class="pp-counts__item" title="{{ __('Planejamento a corrigir', 'projectplus') }}"><b id="pp-mt-kpi-nodates" class="pp-counts__n pp-counts__n--warn">—</b>{{ __('sem datas', 'projectplus') }}</span>
+            <span class="pp-counts__sep"></span>
+            <span class="pp-counts__item" title="{{ __('Total histórico', 'projectplus') }}"><b id="pp-mt-kpi-done" class="pp-counts__n pp-counts__n--ok">—</b>{{ __('concluídas', 'projectplus') }}</span>
         </div>
 
         {# ================= Grupos por projeto (renderizados pelo JS) ================= #}

@@ -868,6 +868,7 @@ class Dashboard extends CommonGLPI
                     'glpi_projects.id AS project_id',
                     'glpi_projects.name AS project_name',
                     'glpi_projects.projecttypes_id AS project_type_id',
+                    'glpi_projects.projects_id AS parent_project_id', // Bloco N-3: "Pai › Projeto"
                 ],
                 'FROM'       => 'glpi_projecttaskteams',
                 'INNER JOIN' => [
@@ -938,6 +939,7 @@ class Dashboard extends CommonGLPI
                     'project_name' => $row['project_name'],
                     'project_url'  => Url::project($pid),
                     'project_type_id' => (int) ($row['project_type_id'] ?? 0),
+                    'parent_project_id' => (int) ($row['parent_project_id'] ?? 0),
                     'tasks'        => [],
                 ];
             }
@@ -1031,6 +1033,35 @@ class Dashboard extends CommonGLPI
             }
             unset($g);
         }
+
+        // Bloco N-3: cabeçalho do grupo no layout novo — nome do projeto pai
+        // (consulta única) e tipo do projeto com a cor do tipo (tag).
+        $parentIds = [];
+        foreach ($groups as $g) {
+            if ($g['parent_project_id'] > 0) {
+                $parentIds[$g['parent_project_id']] = true;
+            }
+        }
+        $parentNames = [];
+        if (!empty($parentIds)) {
+            foreach (
+                $DB->request([
+                    'SELECT' => ['id', 'name'],
+                    'FROM'   => 'glpi_projects',
+                    'WHERE'  => ['id' => array_keys($parentIds)],
+                ]) as $prow
+            ) {
+                $parentNames[(int) $prow['id']] = (string) $prow['name'];
+            }
+        }
+        $typeNames = TypePhase::projectTypes();
+        foreach ($groups as &$g) {
+            $tid = (int) $g['project_type_id'];
+            $g['parent_name'] = $parentNames[$g['parent_project_id']] ?? '';
+            $g['type_name']   = $tid > 0 ? (string) ($typeNames[$tid] ?? '') : '';
+            $g['type_color']  = $tid > 0 ? TypePhase::typeColor($tid) : '';
+        }
+        unset($g);
 
         return [
             'kpis'     => $kpis,

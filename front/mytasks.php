@@ -11,6 +11,7 @@
 use Glpi\Application\View\TemplateRenderer;
 use GlpiPlugin\Projectplus\Access;
 use GlpiPlugin\Projectplus\Dashboard;
+use GlpiPlugin\Projectplus\DateFmt;
 use GlpiPlugin\Projectplus\I18nJs;
 use GlpiPlugin\Projectplus\TypePhase;
 use GlpiPlugin\Projectplus\Url;
@@ -66,6 +67,9 @@ TemplateRenderer::getInstance()->display(
         'csrf_token'      => Session::getNewCSRFToken(),
         'can_templates'   => Session::haveRight('config', UPDATE),
         'nav'             => Access::sidebar(),
+        // Bloco N-3: linha do título — hoje por extenso · nome do usuário
+        'head_sub'        => DateFmt::longToday() . ' · '
+            . (string) ($_SESSION['glpifriendlyname'] ?? ($_SESSION['glpiname'] ?? '')),
         'fav'            => Favorite::payload('mytasks'), // Bloco L
         // Bloco C: mesmos tipos do seletor da Visão geral (filtro no cliente)
         'type_options'    => TypePhase::selectorTypes(),
