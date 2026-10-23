@@ -14,9 +14,11 @@
 
 use Glpi\Application\View\TemplateRenderer;
 use GlpiPlugin\Projectplus\Access;
+use GlpiPlugin\Projectplus\DateFmt;
 use GlpiPlugin\Projectplus\Dashboard;
 use GlpiPlugin\Projectplus\I18nJs;
 use GlpiPlugin\Projectplus\Templates;
+use GlpiPlugin\Projectplus\TypePhase;
 use GlpiPlugin\Projectplus\Url;
 
 include('../../../inc/includes.php');
@@ -39,12 +41,40 @@ Html::header(
 // dos <script> das telas.
 I18nJs::render();
 
+// Bloco N-8b-1: cada linha ganha o nome/cor do tipo que aplica ao projeto e a
+// data já formatada (DateFmt — porta única de data); a lista de tipos que
+// aparecem alimenta o filtro de Tipo (só os que algum modelo usa).
+$types     = TypePhase::projectTypes();
+$templates = [];
+$usedTypes = [];
+foreach (Templates::listAll() as $t) {
+    $tid = (int) $t['type_id'];
+    $t['type_name']  = $tid > 0 ? (string) ($types[$tid] ?? ('#' . $tid)) : '';
+    $t['type_color'] = $tid > 0 ? TypePhase::typeColor($tid) : '';
+    $t['date_label'] = DateFmt::dateTime($t['date_mod']);
+    if ($tid > 0) {
+        $usedTypes[$tid] = $t['type_name'];
+    }
+    $templates[] = $t;
+}
+asort($usedTypes, SORT_NATURAL | SORT_FLAG_CASE);
+$typeOptions = [];
+foreach ($usedTypes as $tid => $tname) {
+    $typeOptions[] = ['id' => $tid, 'name' => $tname];
+}
+$summary = Templates::summary($templates);
+$summary['last_label'] = $summary['last'] !== null
+    ? $summary['last']['name'] . ' · ' . DateFmt::date($summary['last']['date_mod'])
+    : '';
+
 TemplateRenderer::getInstance()->display(
     '@projectplus/projecttemplates.html.twig',
     [
         'plugin_web_dir' => Url::base(),
         'glpi_root'      => $CFG_GLPI['root_doc'] ?? '',
-        'templates'      => Templates::listAll(),
+        'templates'      => $templates,
+        'type_options'   => $typeOptions,
+        'summary'        => $summary,
         'projects'       => Templates::getProjectsForSelect(),
         'can_templates'  => true,
         'nav'             => Access::sidebar(),

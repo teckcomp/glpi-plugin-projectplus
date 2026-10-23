@@ -8,78 +8,102 @@
     {% include '@projectplus/_topbar.html.twig' with {pp_active: 'modelos'} %}
 
     {# ================= ÁREA PRINCIPAL ================= #}
-    <div class="projectplus-main">
+    {# Bloco N-8b-1: layout do mockup — título com as duas ações, indicadores,
+       faixa de busca/Tipo (filtra no cliente) e tabela em caixa. Modais, nomes
+       de campo e o form de exclusão são os mesmos de antes. #}
+    <div class="projectplus-main pp-tl">
 
-        <div class="projectplus-header">
-            <div class="projectplus-pagetitle" style="padding:0">
-                <h2 style="font-size:1.25rem;color:var(--pp-text-strong);margin:0">{{ __('Modelos de projeto', 'projectplus') }}</h2>
-                <span class="projectplus-subtitle">{{ __('Crie projetos prontos a partir de uma estrutura de tarefas e subprojetos salva', 'projectplus') }}</span>
-            </div>
-            <div class="projectplus-actions">
-                <a class="projectplus-btn projectplus-btn--ghost" href="{{ plugin_web_dir }}/front/projecttemplate_edit.php">
-                    + {{ __('Criar modelo do zero', 'projectplus') }}
-                </a>
-                <button type="button" class="projectplus-btn" data-pp-modal-open="pp-modal-savetemplate">
-                    + {{ __('Salvar projeto como modelo', 'projectplus') }}
-                </button>
-            </div>
+        <div class="pp-cfg-head">
+            <h1>{{ __('Modelos de projeto', 'projectplus') }}</h1>
+            <span class="pp-cfg-head__sub">{{ __('Crie projetos prontos a partir de uma estrutura de tarefas e subprojetos salva', 'projectplus') }}</span>
+            <span class="pp-tp-headbtns">
+                <a class="pp-filterbar__btn" href="{{ plugin_web_dir }}/front/projecttemplate_edit.php"><i class="ti ti-plus" aria-hidden="true"></i>{{ __('Criar modelo do zero', 'projectplus') }}</a>
+                <button type="button" class="pp-cfg-save" data-pp-modal-open="pp-modal-savetemplate"><i class="ti ti-device-floppy" aria-hidden="true"></i>{{ __('Salvar projeto como modelo', 'projectplus') }}</button>
+            </span>
         </div>
 
-        <div class="projectplus-card">
-            {% if templates %}
-            <table class="projectplus-table">
+        <div class="pp-tl-kpis">
+            <div class="pp-tl-kpi"><span class="pp-cfg-card__title">{{ __('Modelos', 'projectplus') }}</span><b>{{ summary.templates }}</b></div>
+            <div class="pp-tl-kpi"><span class="pp-cfg-card__title">{{ __('Tarefas nos modelos', 'projectplus') }}</span><b>{{ summary.tasks }}</b></div>
+            <div class="pp-tl-kpi"><span class="pp-cfg-card__title">{{ __('Com subprojetos', 'projectplus') }}</span><b>{{ summary.with_subs }}</b></div>
+            <div class="pp-tl-kpi"><span class="pp-cfg-card__title">{{ __('Atualizado por último', 'projectplus') }}</span><b class="pp-tl-kpi__txt">{{ summary.last_label ?: '—' }}</b></div>
+        </div>
+
+        {% if templates %}
+        <div class="pp-tl-filter" data-pp-role="tl-filter"
+             data-label-one="{{ _n('%d modelo', '%d modelos', 1, 'projectplus') }}" data-label-many="{{ _n('%d modelo', '%d modelos', 2, 'projectplus') }}">
+            <input type="search" class="pp-tp-input pp-tl-search" data-pp-role="tl-search"
+                   placeholder="{{ __('Buscar modelo…', 'projectplus') }}" aria-label="{{ __('Buscar modelo…', 'projectplus') }}">
+            {% if type_options %}
+            <label class="pp-cfg-row__hint" for="pp-tl-type">{{ __('Tipo', 'projectplus') }}</label>
+            <select id="pp-tl-type" class="pp-tp-input" data-pp-role="tl-type">
+                <option value="">{{ __('Todos os tipos', 'projectplus') }}</option>
+                {% for o in type_options %}<option value="{{ o.id }}">{{ o.name }}</option>{% endfor %}
+                <option value="0">{{ __('Sem tipo', 'projectplus') }}</option>
+            </select>
+            {% endif %}
+            <span class="pp-filterbar__spacer"></span>
+            <span class="pp-cfg-row__hint" data-pp-role="tl-count">{{ _n('%d modelo', '%d modelos', templates|length, 'projectplus')|format(templates|length) }}</span>
+        </div>
+
+        <div class="pp-tablewrap">
+            <table class="projectplus-table pp-tl-table">
                 <thead>
                     <tr>
                         <th>{{ __('Modelo', 'projectplus') }}</th>
-                        <th>{{ _n('Comentário', 'Comentários', 1, 'projectplus') }}</th>
-                        <th>{{ __('Estrutura', 'projectplus') }}</th>
-                        <th>{{ __('Atualizado em', 'projectplus') }}</th>
-                        <th></th>
+                        <th class="pp-tl-th-type">{{ __('Aplica ao projeto', 'projectplus') }}</th>
+                        <th class="pp-tl-th-struct">{{ __('Estrutura', 'projectplus') }}</th>
+                        <th class="pp-tl-th-date">{{ __('Atualizado em', 'projectplus') }}</th>
+                        <th class="pp-actions-cell">{{ __('Ações', 'projectplus') }}</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody data-pp-role="tl-rows">
                 {% for t in templates %}
-                    <tr>
-                        <td><strong>{{ t.name }}</strong></td>
-                        <td class="projectplus-muted">{{ t.comment ?: '—' }}</td>
+                    <tr data-pp-name="{{ (t.name ~ ' ' ~ t.comment)|lower }}" data-pp-type="{{ t.type_id }}">
                         <td>
-                            {{ t.count }} {{ t.count == 1 ? 'tarefa' : 'tarefas' }}
-                            {% if t.subcount > 0 %}
-                                <span class="projectplus-muted">· {{ t.subcount }} {{ t.subcount == 1 ? 'subprojeto' : 'subprojetos' }}</span>
-                            {% endif %}
+                            <div class="pp-tl-name">{{ t.name }}</div>
+                            {% if t.comment %}<div class="pp-tl-comment">{{ t.comment }}</div>{% endif %}
                         </td>
-                        <td>{{ t.date_mod ? t.date_mod|formatted_datetime : '—' }}</td>
-                        <td style="white-space:nowrap">
+                        <td>
+                            {% if t.type_id %}<span class="pp-typetag" style="--pp-type-color: {{ t.type_color }}">{{ t.type_name }}</span>
+                            {% else %}<span class="pp-rp-none">{{ __('Sem tipo', 'projectplus') }}</span>{% endif %}
+                        </td>
+                        <td>
+                            <span class="pp-tl-chips">
+                                <span class="pp-tl-chip">{{ _n('%d tarefa', '%d tarefas', t.count, 'projectplus')|format(t.count) }}</span>
+                                {% if t.subcount > 0 %}<span class="pp-tl-chip">{{ _n('%d subprojeto', '%d subprojetos', t.subcount, 'projectplus')|format(t.subcount) }}</span>{% endif %}
+                            </span>
+                        </td>
+                        <td class="pp-muted-cell">{{ t.date_label }}</td>
+                        <td class="pp-actions-cell">
+                            <span class="pp-tl-actions">
                             {% if can_create %}
-                            <button type="button" class="projectplus-btn pp-tpl-instantiate-btn"
+                            <button type="button" class="pp-cfg-save pp-tl-btn pp-tpl-instantiate-btn"
                                     data-pp-modal-open="pp-modal-instantiate"
-                                    data-tpl-id="{{ t.id }}" data-tpl-name="{{ t.name }}">
-                                {{ __('Criar projeto', 'projectplus') }}
-                            </button>
+                                    data-tpl-id="{{ t.id }}" data-tpl-name="{{ t.name }}">{{ __('Criar projeto', 'projectplus') }}</button>
                             {% endif %}
-                            <a class="projectplus-btn projectplus-btn--ghost"
-                               href="{{ plugin_web_dir }}/front/projecttemplate_edit.php?id={{ t.id }}">
-                                {{ __('Editar', 'projectplus') }}
-                            </a>
-                            <form method="post" action="{{ plugin_web_dir }}/front/projecttemplate.form.php"
-                                  style="display:inline" onsubmit="return confirm('{{ __('Excluir este modelo?', 'projectplus') }}');">
+                            <a class="pp-filterbar__btn pp-tl-btn" href="{{ plugin_web_dir }}/front/projecttemplate_edit.php?id={{ t.id }}">{{ __('Editar', 'projectplus') }}</a>
+                            <form method="post" action="{{ plugin_web_dir }}/front/projecttemplate.form.php" class="pp-tl-del"
+                                  data-pp-confirm="{{ __('Excluir este modelo?', 'projectplus') }}">
                                 <input type="hidden" name="_glpi_csrf_token" value="{{ csrf_token }}">
                                 <input type="hidden" name="id" value="{{ t.id }}">
-                                <button type="submit" name="delete" value="1"
-                                        class="btn btn-sm btn-outline-danger" title="{{ __('Excluir', 'projectplus') }}">&times;</button>
+                                <button type="submit" name="delete" value="1" class="pp-filterbar__btn pp-tp-ib pp-tl-delbtn"
+                                        title="{{ __('Excluir', 'projectplus') }}" aria-label="{{ __('Excluir', 'projectplus') }}: {{ t.name }}"><i class="ti ti-trash" aria-hidden="true"></i></button>
                             </form>
+                            </span>
                         </td>
                     </tr>
                 {% endfor %}
+                    <tr data-pp-role="tl-empty" hidden><td colspan="5" class="pp-rp-none">{{ __('Nenhum modelo com esse filtro.', 'projectplus') }}</td></tr>
                 </tbody>
             </table>
-            {% else %}
-                <p class="projectplus-muted">
-                    {{ __('Nenhum modelo cadastrado ainda.', 'projectplus') }}
-                    {{ __('Use "Criar modelo do zero" ou "Salvar projeto como modelo" para criar o primeiro.', 'projectplus') }}
-                </p>
-            {% endif %}
         </div>
+        {% else %}
+            <p class="pp-rp-empty">
+                {{ __('Nenhum modelo cadastrado ainda.', 'projectplus') }}
+                {{ __('Use "Criar modelo do zero" ou "Salvar projeto como modelo" para criar o primeiro.', 'projectplus') }}
+            </p>
+        {% endif %}
     </div>
 </div>
 

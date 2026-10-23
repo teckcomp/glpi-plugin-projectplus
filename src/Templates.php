@@ -128,9 +128,40 @@ class Templates
                 'count'    => $count,
                 'subcount' => $subcount,
                 'date_mod' => $row['date_mod'] ?? null,
+                // Bloco N-8b-1: tipo que o modelo dá ao projeto raiz (0 = sem tipo)
+                'type_id'  => is_array($structure) && isset($structure['project']['projecttypes_id'])
+                    ? (int) $structure['project']['projecttypes_id'] : 0,
             ];
         }
         return $out;
+    }
+
+    /**
+     * Bloco N-8b-1 — indicadores da lista de Modelos. Parte pura: recebe o
+     * listAll() e devolve total de modelos, tarefas somadas, quantos têm
+     * subprojeto e o modelo atualizado por último (`last` = linha ou null).
+     */
+    public static function summary(array $list): array
+    {
+        $tasks = 0;
+        $withSubs = 0;
+        $last = null;
+        foreach ($list as $t) {
+            $tasks += (int) ($t['count'] ?? 0);
+            if ((int) ($t['subcount'] ?? 0) > 0) {
+                $withSubs++;
+            }
+            $d = (string) ($t['date_mod'] ?? '');
+            if ($d !== '' && ($last === null || strcmp($d, (string) $last['date_mod']) > 0)) {
+                $last = $t;
+            }
+        }
+        return [
+            'templates' => count($list),
+            'tasks'     => $tasks,
+            'with_subs' => $withSubs,
+            'last'      => $last,
+        ];
     }
 
     private static function countTasks(array $tasks): int

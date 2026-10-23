@@ -2162,3 +2162,33 @@ label.pp-cfg-row__label { cursor: pointer; }
     background: var(--pp-page, transparent); cursor: pointer;
 }
 .pp-tp-newstate .pp-tp-newfinal { margin: 0 4px 0 -4px; font-size: 12.5px; }
+
+/* ===== Bloco N-8b-1 — lista de Modelos no padrão do mockup =====
+   Cabeçalho .pp-cfg-head (N-7) com as duas ações, indicadores, faixa de
+   busca/Tipo e tabela .pp-tablewrap. */
+.pp-tl-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 14px; }
+.pp-tl-kpi { background: var(--pp-surface); border: 1px solid var(--pp-border); border-radius: 10px; padding: 14px 16px; min-width: 0; }
+.pp-tl-kpi .pp-cfg-card__title { margin: 0; }
+.pp-tl-kpi b { display: block; margin-top: 4px; font-size: 24px; font-weight: 700; color: var(--pp-text-strong); }
+.pp-tl-kpi b.pp-tl-kpi__txt { font-size: 15px; margin-top: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pp-tl-filter {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; padding: 10px 12px;
+    background: var(--pp-surface); border: 1px solid var(--pp-border); border-radius: 10px;
+}
+.pp-tl-search { width: 280px; max-width: 100%; }
+.pp-tl-table .pp-tl-th-type { width: 180px; }
+.pp-tl-table .pp-tl-th-struct { width: 240px; }
+.pp-tl-table .pp-tl-th-date { width: 160px; }
+.pp-tl-name { font-weight: 600; color: var(--pp-text-strong); }
+.pp-tl-comment { margin-top: 3px; color: var(--pp-muted); font-size: 12px; max-width: 460px; }
+.pp-tl-chips { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+.pp-tl-chip {
+    display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px; font-size: 12px;
+    background: var(--pp-surface-3); border: 1px solid var(--pp-border-strong); color: var(--pp-text);
+}
+.pp-tl-actions { display: inline-flex; align-items: center; gap: 6px; justify-content: flex-end; }
+.pp-tl-btn { height: 32px; text-decoration: none; }
+.pp-tl-del { display: inline; margin: 0; }
+.pp-tl-delbtn { color: var(--pp-danger-text) !important; border-color: var(--pp-danger-border) !important; background: transparent !important; }
+.pp-tl-delbtn:hover { background: var(--pp-danger-soft) !important; }
+.pp-tl-table tr[hidden] { display: none; }

@@ -813,7 +813,53 @@
                 if (nameField) { nameField.textContent = btn.dataset.tplName || ''; }
             });
         });
+
+        // Bloco N-8b-1: confirmação da exclusão (o texto vem traduzido do Twig).
+        root.querySelectorAll('form[data-pp-confirm]').forEach(function (f) {
+            f.addEventListener('submit', function (ev) {
+                if (!window.confirm(f.getAttribute('data-pp-confirm') || '')) {
+                    ev.preventDefault();
+                }
+            });
+        });
+
+        initTemplateListFilter(root);
     };
+
+    // Bloco N-8b-1: busca (nome + comentário) e Tipo na lista de Modelos, no
+    // cliente — a lista já vem inteira. Rótulos da contagem em data-label-*.
+    function initTemplateListFilter(root) {
+        const bar = root.querySelector('[data-pp-role="tl-filter"]');
+        const body = root.querySelector('[data-pp-role="tl-rows"]');
+        if (!bar || !body) {
+            return;
+        }
+        const search = bar.querySelector('[data-pp-role="tl-search"]');
+        const type   = bar.querySelector('[data-pp-role="tl-type"]');
+        const count  = bar.querySelector('[data-pp-role="tl-count"]');
+        const empty  = body.querySelector('[data-pp-role="tl-empty"]');
+        const rows   = Array.prototype.slice.call(body.querySelectorAll('tr[data-pp-name]'));
+
+        function apply() {
+            const q = String(search ? search.value : '').trim().toLowerCase();
+            const t = type ? type.value : '';
+            let n = 0;
+            rows.forEach(function (tr) {
+                const ok = (q === '' || (tr.getAttribute('data-pp-name') || '').indexOf(q) >= 0) &&
+                           (t === '' || tr.getAttribute('data-pp-type') === t);
+                tr.hidden = !ok;
+                if (ok) { n++; }
+            });
+            if (empty) { empty.hidden = n > 0; }
+            if (count) {
+                const lbl = bar.getAttribute(n === 1 ? 'data-label-one' : 'data-label-many') || '%d';
+                count.textContent = lbl.replace('%d', String(n));
+            }
+        }
+        if (search) { search.addEventListener('input', apply); }
+        if (type) { type.addEventListener('change', apply); }
+        apply();
+    }
 
     // ------------------------------------------------------------------
     // Modelos de projeto — EDITOR VISUAL (Etapa 4, itens 1 e 2)
@@ -3519,6 +3565,7 @@
         bindProjectRowComments: bindProjectRowComments,
         projectRowCells: projectRowCells,
         initReportTabs: initReportTabs, // Bloco N-6 (N-7: também a Configuração)
+        initTemplateListFilter: initTemplateListFilter, // Bloco N-8b-1
     };
 
     window.ProjectPlus = ProjectPlus;
