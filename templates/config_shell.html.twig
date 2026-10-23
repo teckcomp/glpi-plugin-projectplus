@@ -1,9 +1,429 @@
-{# ProjectPlus — Bloco N-1a: barra superior na tela de Configuração (front/config.form.php).
-   A tela continua sendo o formulário do PluginConfig::showForm(); a barra dá o caminho de
-   volta para as telas do plugin, que antes não existia. #}
+{# ProjectPlus — tela de Configuração (front/config.form.php).
+   Bloco N-1a: só a barra superior acima do formulário antigo.
+   Bloco N-7: a tela inteira no layout do mockup — abas Geral / Fases por tipo /
+   Diagnóstico, ajustes em cartões com interruptores, "Voltar ao Painel".
+   Recebe: plugin_web_dir, nav, cfg (Config::viewData()), form_action, csrf_token,
+   back_url, back_is_panel, phases_url.
+   Os campos mantêm os NOMES de antes (Config::set lê os mesmos): interruptor =
+   hidden 0 + checkbox 1 (o PHP fica com o último valor do mesmo nome). #}
+
+{% macro switch_row(name, value, label, hint, confirm_msg) %}
+    <div class="pp-cfg-row">
+        <div class="pp-cfg-row__text">
+            <label class="pp-cfg-row__label" for="pp-cfg-{{ name }}">{{ label }}</label>
+            {% if hint %}<div class="pp-cfg-row__hint">{{ hint }}</div>{% endif %}
+        </div>
+        <span class="pp-switch pp-cfg-switch">
+            <input type="hidden" name="{{ name }}" value="0">
+            <input type="checkbox" id="pp-cfg-{{ name }}" name="{{ name }}" value="1"{{ value ? ' checked' : '' }}{% if confirm_msg %} data-pp-confirm-on="{{ confirm_msg }}"{% endif %}>
+            <label class="pp-switch__track" for="pp-cfg-{{ name }}" aria-hidden="true"></label>
+        </span>
+    </div>
+{% endmacro %}
+
+{% macro number_row(name, value, min, max, label, hint, suffix) %}
+    <div class="pp-cfg-row">
+        <div class="pp-cfg-row__text">
+            <label class="pp-cfg-row__label" for="pp-cfg-{{ name }}">{{ label }}</label>
+            {% if hint %}<div class="pp-cfg-row__hint">{{ hint }}</div>{% endif %}
+        </div>
+        <span class="pp-cfg-num">
+            <input type="number" id="pp-cfg-{{ name }}" name="{{ name }}" min="{{ min }}" max="{{ max }}" value="{{ value }}" required>
+            {% if suffix %}<span class="pp-cfg-num__suffix">{{ suffix }}</span>{% endif %}
+        </span>
+    </div>
+{% endmacro %}
+{% import _self as cf %}
+
+{% set v = cfg.values %}
+{% set h = cfg.health %}
+{% set ph = h.phases %}
+{% set mail = cfg.mail %}
 
 <link rel="stylesheet" href="{{ plugin_web_dir }}/css/projectplus.css">
 
-<div class="projectplus-app pp-app--config">
-    {% include '@projectplus/_topbar.html.twig' with {pp_active: 'config', pp_title: __('Configurações', 'projectplus')} %}
+<div class="projectplus-app pp-app--config" id="projectplus-config">
+    {% include '@projectplus/_topbar.html.twig' with {pp_active: 'config'} %}
+
+    <div class="projectplus-main pp-cfg">
+
+        <div class="pp-cfg-head">
+            {% if back_url %}
+            <a class="pp-filterbar__btn pp-cfg-back" href="{{ back_url }}">
+                <i class="ti ti-chevron-left" aria-hidden="true"></i>{{ back_is_panel ? __('Voltar ao Painel', 'projectplus') : __('Voltar ao Project+', 'projectplus') }}
+            </a>
+            {% endif %}
+            <h1>{{ __('Configuração', 'projectplus') }}</h1>
+            <span class="pp-cfg-head__sub">{{ __('Somente administradores', 'projectplus') }} · v{{ cfg.version }}</span>
+            <button type="submit" form="pp-cfg-form" name="update" value="1" class="pp-cfg-save" data-pp-tab-only="general">
+                <i class="ti ti-device-floppy" aria-hidden="true"></i>{{ __('Salvar alterações', 'projectplus') }}
+            </button>
+        </div>
+
+        {# Abas (troca no cliente — ProjectPlus.initConfig, o mesmo componente dos
+           Relatórios). Sem JavaScript as três seções aparecem uma embaixo da outra. #}
+        <div class="pp-rp-tabbar pp-cfg-tabbar">
+            <div class="pp-tabs" role="tablist" aria-label="{{ __('Configuração', 'projectplus') }}" data-pp-tabs>
+                <button type="button" role="tab" class="pp-tabs__tab pp-tabs__tab--active" id="pp-cfg-tab-general"
+                        data-pp-tab="general" aria-controls="pp-cfg-panel-general" aria-selected="true">
+                    <i class="ti ti-adjustments" aria-hidden="true"></i>{{ __('Geral', 'projectplus') }}
+                </button>
+                <button type="button" role="tab" class="pp-tabs__tab" id="pp-cfg-tab-phases"
+                        data-pp-tab="phases" aria-controls="pp-cfg-panel-phases" aria-selected="false" tabindex="-1">
+                    <i class="ti ti-columns-3" aria-hidden="true"></i>{{ __('Fases por tipo', 'projectplus') }}
+                </button>
+                <button type="button" role="tab" class="pp-tabs__tab" id="pp-cfg-tab-diagnostic"
+                        data-pp-tab="diagnostic" aria-controls="pp-cfg-panel-diagnostic" aria-selected="false" tabindex="-1">
+                    <i class="ti ti-stethoscope" aria-hidden="true"></i>{{ __('Diagnóstico', 'projectplus') }}
+                    {% if cfg.summary.status != 'ok' %}<span class="pp-tabs__n pp-cfg-tabflag pp-cfg-tabflag--{{ cfg.summary.status }}">!</span>{% endif %}
+                </button>
+            </div>
+        </div>
+
+        {# ================= GERAL ================= #}
+        <section class="pp-rp-panel" id="pp-cfg-panel-general" role="tabpanel" data-pp-tabpanel="general" aria-labelledby="pp-cfg-tab-general">
+            <h3 class="pp-rp-paneltitle">{{ __('Geral', 'projectplus') }}</h3>
+            <div class="pp-cfg-grid">
+                <form method="post" action="{{ form_action }}" id="pp-cfg-form" class="pp-cfg-col">
+                    <input type="hidden" name="_glpi_csrf_token" value="{{ csrf_token }}">
+
+                    <div class="pp-cfg-card">
+                        <h2 class="pp-cfg-card__title">{{ __('Prazos e alertas', 'projectplus') }}</h2>
+                        {{ cf.number_row('stalled_days', v.stalled_days, 1, 90,
+                            __('Dias sem atividade para marcar projeto como "parado"', 'projectplus'), '', '') }}
+                        {{ cf.number_row('pending_days', v.pending_days, 0, 30,
+                            __('Antecedência para alertar prazo se aproximando', 'projectplus'), __('Em dias', 'projectplus'), '') }}
+                        {{ cf.number_row('budget_warn_percent', v.budget_warn_percent, 1, 100,
+                            __('Alerta de orçamento ao atingir', 'projectplus'), __('Percentual do teto do projeto', 'projectplus'), '%') }}
+                    </div>
+
+                    <div class="pp-cfg-card">
+                        <h2 class="pp-cfg-card__title">{{ __('E-mail', 'projectplus') }}</h2>
+                        {{ cf.switch_row('email_enabled', v.email_enabled,
+                            __('Enviar e-mails além do sino', 'projectplus'), __('Usa o canal de notificações do GLPI', 'projectplus'), '') }}
+                        <div class="pp-cfg-row">
+                            <div class="pp-cfg-row__text">
+                                <div class="pp-cfg-row__label">{{ __('E-mail de teste', 'projectplus') }}</div>
+                                <div class="pp-cfg-row__hint">{{ __('Salva as alterações e envia para o seu próprio usuário — não depende da opção acima', 'projectplus') }}</div>
+                            </div>
+                            <button type="submit" name="test_mail" value="1" class="pp-filterbar__btn pp-cfg-test">
+                                <i class="ti ti-send" aria-hidden="true"></i>{{ __('Enviar teste', 'projectplus') }}
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="pp-cfg-card">
+                        <h2 class="pp-cfg-card__title">{{ __('Menu e abas do GLPI', 'projectplus') }}</h2>
+                        {{ cf.switch_row('menu_first', v.menu_first,
+                            __('Project+ como primeiro item do menu Ferramentas', 'projectplus'), '', '') }}
+                        {{ cf.switch_row('hide_native_costs', v.hide_native_costs,
+                            __('Ocultar a aba "Custos" nativa do projeto', 'projectplus'), __('Fonte única: abas do Project+', 'projectplus'), '') }}
+                        {{ cf.switch_row('hide_native_kanban', v.hide_native_kanban,
+                            __('Ocultar a aba "Kanban" nativa do projeto', 'projectplus'), __('Fonte única: aba Kanban do Project+', 'projectplus'), '') }}
+                    </div>
+
+                    <div class="pp-cfg-card pp-cfg-card--danger">
+                        <h2 class="pp-cfg-card__title">{{ __('Desinstalação', 'projectplus') }}</h2>
+                        {{ cf.switch_row('purge_on_uninstall', v.purge_on_uninstall,
+                            __('Apagar tabelas, dados e direitos ao desinstalar', 'projectplus'),
+                            __('Desligado: desinstalar preserva os dados e os direitos por perfil; reinstalar devolve tudo como estava', 'projectplus'),
+                            __('Com esta opção ligada, desinstalar o plugin APAGA as tabelas do Project+ (custos, comentários e anexos, modelos, alertas, fases por tipo, favoritos), os direitos por perfil e esta configuração. Projetos e tarefas do GLPI não são apagados. Ligar mesmo assim?', 'projectplus')) }}
+                    </div>
+                </form>
+
+                <div class="pp-cfg-col">
+                    <div class="pp-cfg-card">
+                        <h2 class="pp-cfg-card__title">{{ __('Diagnóstico', 'projectplus') }}</h2>
+                        <div class="pp-cfg-health pp-cfg-health--{{ cfg.summary.status }}">
+                            <span class="pp-cfg-health__ico" aria-hidden="true"><i class="ti {{ cfg.summary.status == 'ok' ? 'ti-check' : 'ti-alert-triangle' }}"></i></span>
+                            <div>
+                                <div class="pp-cfg-health__title">{{ cfg.summary.title }}</div>
+                                <div class="pp-cfg-row__hint">{{ cfg.summary.sub }}</div>
+                            </div>
+                        </div>
+                        <ul class="pp-cfg-checks">
+                            {% for it in cfg.summary.items %}
+                            <li><span>{{ it.label }}</span><span class="pp-cfg-st pp-cfg-st--{{ it.status }}">{{ it.value }}</span></li>
+                            {% endfor %}
+                        </ul>
+                        <a class="pp-cfg-link" href="#diagnostic" data-pp-tab-go="diagnostic">{{ __('Ver diagnóstico completo', 'projectplus') }}</a>
+                    </div>
+
+                    <div class="pp-cfg-card">
+                        <h2 class="pp-cfg-card__title">{{ __('Fases por tipo', 'projectplus') }}</h2>
+                        <p class="pp-cfg-row__hint pp-cfg-card__text">
+                            {{ __('Fases cadastradas na instância: %1$d · tipos com conjunto próprio: %2$d', 'projectplus')|format(cfg.phases.states, cfg.phases.custom) }}.
+                            {{ __('Tipo sem configuração usa o conjunto padrão.', 'projectplus') }}
+                        </p>
+                        <a class="pp-filterbar__btn" href="{{ phases_url }}"><i class="ti ti-columns-3" aria-hidden="true"></i>{{ __('Configurar fases por tipo', 'projectplus') }}</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        {# ================= FASES POR TIPO ================= #}
+        <section class="pp-rp-panel" id="pp-cfg-panel-phases" role="tabpanel" data-pp-tabpanel="phases" aria-labelledby="pp-cfg-tab-phases">
+            <h3 class="pp-rp-paneltitle">{{ __('Fases por tipo', 'projectplus') }}</h3>
+            <div class="pp-cfg-card pp-cfg-intro">
+                <p class="pp-cfg-card__text">
+                    {{ __('Cada tipo de projeto pode ter seu próprio conjunto de fases e sua própria ordem de colunas no Kanban. Tipo sem configuração usa o conjunto padrão.', 'projectplus') }}
+                    <br><span class="pp-cfg-row__hint">{{ __('Fases cadastradas na instância: %1$d · tipos com conjunto próprio: %2$d', 'projectplus')|format(cfg.phases.states, cfg.phases.custom) }}</span>
+                </p>
+                <a class="pp-cfg-save" href="{{ phases_url }}"><i class="ti ti-columns-3" aria-hidden="true"></i>{{ __('Configurar fases por tipo', 'projectplus') }}</a>
+            </div>
+            {% if cfg.phases.sets %}
+            <div class="pp-tablewrap">
+                <table class="projectplus-table pp-cfg-table">
+                    <thead>
+                        <tr>
+                            <th>{{ __('Conjunto', 'projectplus') }}</th>
+                            <th class="pp-cfg-num-col">{{ __('Projetos', 'projectplus') }}</th>
+                            <th>{{ __('Fases, na ordem do Kanban', 'projectplus') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for s in cfg.phases.sets %}
+                        <tr>
+                            <td class="pp-cfg-setname">
+                                {{ s.name }}
+                                {% if s.is_default %}<span class="pp-cfg-st pp-cfg-st--info">{{ __('padrão', 'projectplus') }}</span>{% endif %}
+                            </td>
+                            <td class="pp-cfg-num-col">{{ s.projects }}</td>
+                            <td>
+                                {% if s.inherits %}
+                                    <span class="pp-rp-none">{{ __('Usa o conjunto padrão', 'projectplus') }}</span>
+                                {% else %}
+                                    <span class="pp-cfg-phases">
+                                    {% for p in s.phases %}
+                                        <span class="pp-phase"{% if p.color %} style="--pp-phase-color: {{ p.color }}"{% endif %}>{{ p.name }}{% if p.is_finished %}<i class="ti ti-flag-check pp-cfg-finish" title="{{ __('Finalizadora', 'projectplus') }}" aria-label="{{ __('Finalizadora', 'projectplus') }}"></i>{% endif %}</span>
+                                    {% endfor %}
+                                    </span>
+                                    {% if not s.has_finished %}<div class="pp-cfg-st pp-cfg-st--danger pp-cfg-nofinish">{{ __('Conjunto sem fase finalizadora', 'projectplus') }}</div>{% endif %}
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+        </section>
+
+        {# ================= DIAGNÓSTICO ================= #}
+        <section class="pp-rp-panel" id="pp-cfg-panel-diagnostic" role="tabpanel" data-pp-tabpanel="diagnostic" aria-labelledby="pp-cfg-tab-diagnostic">
+            <h3 class="pp-rp-paneltitle">{{ __('Diagnóstico', 'projectplus') }}</h3>
+
+            <div class="pp-cfg-card pp-cfg-health pp-cfg-health--{{ cfg.summary.status }} pp-cfg-health--wide">
+                <span class="pp-cfg-health__ico" aria-hidden="true"><i class="ti {{ cfg.summary.status == 'ok' ? 'ti-check' : 'ti-alert-triangle' }}"></i></span>
+                <div>
+                    <div class="pp-cfg-health__title">{{ __('Diagnóstico da instalação', 'projectplus') }} — v{{ cfg.version }}</div>
+                    {% if h.issues == 0 %}
+                        <div class="pp-cfg-row__hint">{{ __('Tudo certo: tabelas, direitos e cron no lugar.', 'projectplus') }}</div>
+                    {% else %}
+                        <div class="pp-cfg-row__hint">{{ __('%d ponto(s) de atenção — ver as linhas marcadas abaixo.', 'projectplus')|format(h.issues) }}</div>
+                        <div class="pp-cfg-row__hint">{{ __('Reexecutar a instalação costuma resolver: php bin/console plugin:install --force projectplus e depois plugin:activate projectplus.', 'projectplus') }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="pp-cfg-diag">
+                {# --- Tabelas --- #}
+                <div class="pp-cfg-diag__block">
+                    <h4 class="pp-cfg-card__title">{{ __('Tabelas', 'projectplus') }}</h4>
+                    <div class="pp-tablewrap">
+                        <table class="projectplus-table pp-cfg-table">
+                            <thead><tr>
+                                <th>{{ __('Tabela', 'projectplus') }}</th>
+                                <th class="pp-cfg-num-col">{{ __('Registros', 'projectplus') }}</th>
+                                <th>{{ __('Situação', 'projectplus') }}</th>
+                            </tr></thead>
+                            <tbody>
+                            {% for t in h.tables %}
+                                <tr>
+                                    <td><code>{{ t.name }}</code></td>
+                                    <td class="pp-cfg-num-col">{{ t.exists ? t.rows : '-' }}</td>
+                                    <td>
+                                        {% if not t.exists %}<span class="pp-cfg-st pp-cfg-st--danger">{{ __('AUSENTE', 'projectplus') }}</span>
+                                        {% elseif t.missing %}<span class="pp-cfg-st pp-cfg-st--warn">{{ __('faltando:', 'projectplus') }} {{ t.missing|join(', ') }}</span>
+                                        {% else %}<span class="pp-cfg-st pp-cfg-st--ok">OK</span>{% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            {% for t in h.legacy_tables %}
+                                <tr>
+                                    <td><code>{{ t.name }}</code></td>
+                                    <td class="pp-cfg-num-col">{{ t.rows }}</td>
+                                    <td><span class="pp-cfg-st pp-cfg-st--muted">{{ __('órfã de versão antiga — não é mais usada; a purga remove', 'projectplus') }}</span></td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {# --- Direitos --- #}
+                <div class="pp-cfg-diag__block">
+                    <h4 class="pp-cfg-card__title">{{ __('Direitos', 'projectplus') }}</h4>
+                    <div class="pp-tablewrap">
+                        <table class="projectplus-table pp-cfg-table">
+                            <thead><tr>
+                                <th>{{ __('Direito', 'projectplus') }}</th>
+                                <th class="pp-cfg-num-col">{{ __('Perfis com a linha', 'projectplus') }}</th>
+                                <th class="pp-cfg-num-col">{{ __('Perfis com acesso', 'projectplus') }}</th>
+                            </tr></thead>
+                            <tbody>
+                            {% for r in h.rights %}
+                                <tr>
+                                    <td><code>{{ r.name }}</code></td>
+                                    <td class="pp-cfg-num-col"><span class="pp-cfg-st pp-cfg-st--{{ r.profiles == 0 ? 'danger' : 'ok' }}">{{ r.profiles }}</span></td>
+                                    <td class="pp-cfg-num-col">{{ r.granted }}</td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {# --- Administradores --- #}
+                <div class="pp-cfg-diag__block">
+                    <h4 class="pp-cfg-card__title">{{ __('Perfil administrador', 'projectplus') }}</h4>
+                    <div class="pp-tablewrap">
+                        <table class="projectplus-table pp-cfg-table">
+                            <thead><tr>
+                                <th>{{ __('Perfil administrador', 'projectplus') }}</th>
+                                <th>{{ __('Direitos do plugin no nível máximo', 'projectplus') }}</th>
+                            </tr></thead>
+                            <tbody>
+                            {% for a in h.admins %}
+                                <tr>
+                                    <td>{{ a.name }}</td>
+                                    <td>
+                                        {% if a.missing %}
+                                            <span class="pp-cfg-st pp-cfg-st--danger">{{ __('abaixo do máximo em %d direito(s)', 'projectplus')|format(a.missing|length) }}</span>
+                                            <code>{{ a.missing|join(', ') }}</code>
+                                        {% else %}
+                                            <span class="pp-cfg-st pp-cfg-st--ok">{{ __('completo', 'projectplus') }}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr><td colspan="2"><span class="pp-cfg-st pp-cfg-st--danger">{{ __('Nenhum perfil com o direito Configuração (atualizar).', 'projectplus') }}</span></td></tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {# --- Fases, cron, marcas e e-mail --- #}
+                <div class="pp-cfg-diag__block">
+                    <h4 class="pp-cfg-card__title">{{ __('Outros', 'projectplus') }}</h4>
+                    <div class="pp-tablewrap">
+                        <table class="projectplus-table pp-cfg-table pp-cfg-kv">
+                            <tbody>
+                                <tr>
+                                    <td>{{ __('Fases por tipo de projeto', 'projectplus') }}</td>
+                                    <td>
+                                        {% if not ph.table %}
+                                            <span class="pp-cfg-st pp-cfg-st--danger">{{ __('Tabela de mapeamento AUSENTE — reexecute a instalação.', 'projectplus') }}</span>
+                                        {% else %}
+                                            {{ __('%1$d conjunto(s) para %2$d fase(s) cadastrada(s)', 'projectplus')|format(ph.sets, ph.total_states) }}
+                                            {% if not ph.custom %}<span class="pp-cfg-st pp-cfg-st--muted">— {{ __('nenhum tipo com conjunto próprio: todos usam o padrão', 'projectplus') }}</span>{% endif %}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% if ph.table %}
+                                <tr>
+                                    <td>{{ __('Conjunto padrão semeado na instalação', 'projectplus') }}</td>
+                                    <td>{{ ph.seeded ? __('já realizada (não repete)', 'projectplus') : __('pendente (roda na próxima instalação)', 'projectplus') }}</td>
+                                </tr>
+                                <tr>
+                                    <td>{{ __('Fase finalizadora em cada conjunto', 'projectplus') }}</td>
+                                    <td>
+                                        {% if ph.no_finished %}
+                                            {% for set in ph.no_finished %}
+                                                <div><span class="pp-cfg-st pp-cfg-st--danger">{{ __('Conjunto sem fase finalizadora', 'projectplus') }}: {{ set.name }}</span></div>
+                                            {% endfor %}
+                                            <div class="pp-cfg-row__hint">{{ __('sem uma fase marcada como "finalizada" em Configurar > Listas suspensas > Estados de projeto, a trava "projeto com tarefa ou subprojeto aberto não vai para fase finalizada" nunca dispara nesse conjunto.', 'projectplus') }}</div>
+                                        {% else %}
+                                            <span class="pp-cfg-st pp-cfg-st--ok">{{ __('todos os conjuntos têm ao menos uma fase marcada como finalizada', 'projectplus') }}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                <tr>
+                                    <td>{{ __('Cron projectplusalerts', 'projectplus') }}</td>
+                                    <td>
+                                        {% if h.cron.registered %}
+                                            <span class="pp-cfg-st pp-cfg-st--{{ h.cron.state == 0 ? 'warn' : 'ok' }}">{{ h.cron.state == 0 ? __('desativado', 'projectplus') : __('registrado', 'projectplus') }}</span>
+                                            — {{ __('última execução:', 'projectplus') }} {{ h.cron.lastrun ?: __('nunca', 'projectplus') }}
+                                        {% else %}
+                                            <span class="pp-cfg-st pp-cfg-st--danger">{{ __('NÃO registrado', 'projectplus') }}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>{{ __('Importação dos custos nativos', 'projectplus') }}</td>
+                                    <td>{{ h.costs_migrated ? __('já realizada (não repete)', 'projectplus') : __('pendente (roda na próxima instalação)', 'projectplus') }}</td>
+                                </tr>
+                                <tr>
+                                    <td>{{ __('Ao desinstalar', 'projectplus') }}</td>
+                                    <td>
+                                        {% if h.purge_on_uninstall %}<span class="pp-cfg-st pp-cfg-st--danger">{{ __('APAGA tabelas, dados e direitos', 'projectplus') }}</span>
+                                        {% else %}{{ __('preserva dados e direitos', 'projectplus') }}{% endif %}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="pp-cfg-diag__block">
+                    <h4 class="pp-cfg-card__title">{{ __('E-mail', 'projectplus') }}</h4>
+                    <div class="pp-tablewrap">
+                        <table class="projectplus-table pp-cfg-table pp-cfg-kv">
+                            <tbody>
+                                <tr>
+                                    <td>{{ __('Alertas por e-mail (opção do plugin)', 'projectplus') }}</td>
+                                    <td>{% if mail.plugin_enabled %}{{ __('ligados', 'projectplus') }}{% else %}<span class="pp-cfg-st pp-cfg-st--warn">{{ __('desligados (só o sino)', 'projectplus') }}</span>{% endif %}</td>
+                                </tr>
+                                <tr>
+                                    <td>{{ __('Canal de e-mail do GLPI', 'projectplus') }}</td>
+                                    <td>{% if mail.blocked is null %}<span class="pp-cfg-st pp-cfg-st--ok">{{ __('liberado', 'projectplus') }}</span>{% else %}<span class="pp-cfg-st pp-cfg-st--danger">{{ __('BLOQUEADO:', 'projectplus') }} {{ mail.blocked }}</span>{% endif %}</td>
+                                </tr>
+                                <tr>
+                                    <td>{{ __('Remetente que será usado', 'projectplus') }}</td>
+                                    <td>{% if not mail.sender_email %}<span class="pp-cfg-st pp-cfg-st--danger">{{ __('NENHUM — preencha "E-mail do remetente" em Configurar > Notificações ou "E-mail do administrador" em Configurar > Geral', 'projectplus') }}</span>{% else %}{{ mail.sender_email }}{% if mail.sender_name %} ({{ mail.sender_name }}){% endif %}{% endif %}</td>
+                                </tr>
+                                <tr>
+                                    <td>{{ __('Transporte (DSN, senha oculta)', 'projectplus') }}</td>
+                                    <td><code>{{ mail.dsn }}</code></td>
+                                </tr>
+                                <tr>
+                                    <td>{{ __('Link nos e-mails (URL da base)', 'projectplus') }}</td>
+                                    <td>{% if not mail.url_base %}<span class="pp-cfg-st pp-cfg-st--warn">{{ __('não configurada — os e-mails saem sem link', 'projectplus') }}</span>{% else %}{{ mail.url_base }}{% endif %}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="pp-cfg-row__hint pp-cfg-foot">{{ __('Falhas de envio ficam registradas em files/_log/projectplus.log; o cron projectplusalerts anota quantos e-mails saíram no próprio log da tarefa.', 'projectplus') }}</p>
+                </div>
+            </div>
+        </section>
+    </div>
 </div>
+
+<script src="{{ plugin_web_dir }}/js/projectplus.js"></script>
+<script>
+    (function () {
+        function ppBoot() {
+            if (window.ProjectPlus && typeof window.ProjectPlus.initConfig === 'function') {
+                window.ProjectPlus.initConfig();
+            }
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', ppBoot);
+        } else {
+            ppBoot();
+        }
+    })();
+</script>

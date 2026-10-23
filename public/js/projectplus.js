@@ -3119,6 +3119,10 @@
     // desenhado pelo servidor; aqui só se mostra uma seção por vez. A aba
     // fica no #hash da URL (fora da query: favorito, CSV e filtros não
     // mudam) e é levada junto no Aplicar, no Limpar e no Todos | Só os meus.
+    // Bloco N-7: o mesmo componente serve à Configuração — `data-pp-tab-only`
+    // mostra um elemento só numa aba (o "Salvar alterações" só no Geral),
+    // `data-pp-tab-go` é um link que troca de aba ("Ver diagnóstico completo")
+    // e o #hash digitado/voltado no navegador também troca (hashchange).
     function initReportTabs() {
         const bar = document.querySelector('[data-pp-tabs]');
         if (!bar) {
@@ -3165,6 +3169,9 @@
             root.querySelectorAll('[data-pp-keep-tab]').forEach(function (a) {
                 a.setAttribute('href', (a.getAttribute('href') || '').split('#')[0] + hashOf(key));
             });
+            root.querySelectorAll('[data-pp-tab-only]').forEach(function (el) {
+                el.hidden = el.getAttribute('data-pp-tab-only') !== key;
+            });
             if (updateUrl && window.history && typeof window.history.replaceState === 'function') {
                 try {
                     window.history.replaceState(null, '',
@@ -3199,9 +3206,42 @@
             });
         }
 
+        root.addEventListener('click', function (e) {
+            const go = e.target.closest('[data-pp-tab-go]');
+            if (go && root.contains(go)) {
+                e.preventDefault();
+                show(go.getAttribute('data-pp-tab-go'), true);
+                const btn = tabs[keys.indexOf(current)];
+                if (btn) {
+                    btn.focus();
+                }
+            }
+        });
+        window.addEventListener('hashchange', function () {
+            show(String(window.location.hash || '').replace(/^#/, ''), false);
+        });
+
         root.classList.add('pp-rp--tabs');
         show(String(window.location.hash || '').replace(/^#/, ''), false);
     }
+
+    // Bloco N-7: tela de Configuração. Abas pelo componente dos Relatórios e
+    // confirmação ao LIGAR um interruptor perigoso (`data-pp-confirm-on` traz a
+    // pergunta já traduzida pelo Twig — o "Apagar ao desinstalar").
+    ProjectPlus.initConfig = function () {
+        initReportTabs();
+        const root = document.getElementById('projectplus-config');
+        if (!root) {
+            return;
+        }
+        root.querySelectorAll('input[type="checkbox"][data-pp-confirm-on]').forEach(function (cb) {
+            cb.addEventListener('change', function () {
+                if (cb.checked && !window.confirm(cb.getAttribute('data-pp-confirm-on'))) {
+                    cb.checked = false;
+                }
+            });
+        });
+    };
 
     ProjectPlus.initReports = function () {
         initReportTabs();
@@ -3478,7 +3518,7 @@
         insertChildren: function (row, children) { insertChildren(row, children); },
         bindProjectRowComments: bindProjectRowComments,
         projectRowCells: projectRowCells,
-        initReportTabs: initReportTabs, // Bloco N-6
+        initReportTabs: initReportTabs, // Bloco N-6 (N-7: também a Configuração)
     };
 
     window.ProjectPlus = ProjectPlus;
