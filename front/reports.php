@@ -10,6 +10,10 @@
  * Tipo — valem só para Projetos e Tarefas (Custos é lista de lançamentos,
  * sem essas colunas próprias).
  *
+ * Bloco N-6: layout do mockup — filtros em cartão, Projetos/Tarefas/Custos/
+ * Burndown em abas (troca no cliente; a aba fica no #hash da URL, fora da
+ * query, para não mexer no favorito nem no CSV).
+ *
  * O filtro "Tipo" é um único campo na tela, mas guarda o tipo de PROJETO
  * ou o tipo de TAREFA (listas diferentes) — codificado em ?typefilter=
  * como "p:<id>" (tipo de projeto) ou "t:<id>" (tipo de tarefa).
@@ -100,9 +104,11 @@ $scopeToggleUrl = Url::to('front/reports.php')
     . ('?' . http_build_query(Favorite::markAll($scopeQuery))); // Bloco L: Ver tudo nunca vai com URL vazia
 
 // Lista de fases (mesma tabela glpi_projectstates para Projetos e Tarefas)
-$states = [];
+$states      = [];
+$phaseColors = []; // Bloco N-6: nome da fase => cor (chip na tabela; a cor já vem validada #rrggbb)
 foreach (Dashboard::getStatesMap() as $sid => $s) {
     $states[] = ['id' => $sid, 'name' => $s['name']];
+    $phaseColors[$s['name']] = $s['color'];
 }
 
 TemplateRenderer::getInstance()->display(
@@ -133,6 +139,7 @@ TemplateRenderer::getInstance()->display(
         'projects_report'   => $projects,
         'tasks_report'      => $tasks,
         'costs_report'      => $costs,
+        'phase_colors'      => $phaseColors, // Bloco N-6
     ]
 );
 

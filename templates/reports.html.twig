@@ -1,19 +1,92 @@
-{# ProjectPlus — tela "Relatórios" (Etapa 5, Bloco 1) #}
+{# ProjectPlus — tela "Relatórios" (Etapa 5, Bloco 1; layout do mockup no Bloco N-6) #}
+
+{# Bloco N-6: uma tabela de relatório no visual novo. `report` = Reports::*Data()
+   (header + rows + kinds); kinds diz como cada coluna é desenhada na tela —
+   o CSV continua saindo de header + rows, sem mudança. #}
+{% macro report_table(report, phase_colors, empty_msg) %}
+    {% set yes = __('Sim', 'projectplus') %}
+    {% if report.rows %}
+    <div class="pp-tablewrap pp-rp-tablewrap">
+        <table class="projectplus-table pp-rp-table">
+            <thead>
+                <tr>
+                    {% for h in report.header %}
+                        {% set k = report.kinds[loop.index0] ?? 'text' %}
+                        <th class="{{ k in ['num', 'money'] ? 'pp-rp-num' : '' }}">{{ k == 'late' ? __('Situação', 'projectplus') : h }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+            {% for row in report.rows %}
+                <tr>
+                {% for cell in row %}
+                    {% set k = report.kinds[loop.index0] ?? 'text' %}
+                    {% set h = report.header[loop.index0] ?? '' %}
+                    {% if k == 'id' %}
+                        <td class="pp-muted-cell">{{ cell }}</td>
+                    {% elseif k == 'name' %}
+                        <td class="pp-rp-name">{{ cell }}</td>
+                    {% elseif k == 'phase' %}
+                        <td class="pp-phase-cell">{% if cell is not same as('') %}<span class="pp-phase"{% if phase_colors[cell] is defined %} style="--pp-phase-color: {{ phase_colors[cell] }}"{% endif %}>{{ cell }}</span>{% else %}<span class="pp-rp-none">—</span>{% endif %}</td>
+                    {% elseif k == 'late' %}
+                        <td>{% if cell == yes %}<span class="projectplus-badge projectplus-badge--overdue">{{ h }}</span>{% else %}<span class="projectplus-badge projectplus-badge--ok">{{ __('No prazo', 'projectplus') }}</span>{% endif %}</td>
+                    {% elseif k == 'flag' %}
+                        <td>{% if cell == yes %}<span class="projectplus-badge projectplus-badge--stalled"><i class="ti ti-lock"></i>{{ h }}</span>{% else %}<span class="pp-rp-none">—</span>{% endif %}</td>
+                    {% elseif k in ['num', 'money'] %}
+                        <td class="pp-rp-num">{% if cell is not same as('') %}{{ cell }}{% else %}<span class="pp-rp-none">—</span>{% endif %}</td>
+                    {% elseif k == 'origin' %}
+                        <td class="pp-report-origin">{{ cell }}</td>
+                    {% else %}
+                        <td>{% if cell is not same as('') %}{{ cell }}{% else %}<span class="pp-rp-none">—</span>{% endif %}</td>
+                    {% endif %}
+                {% endfor %}
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <p class="pp-rp-empty">{{ empty_msg }}</p>
+    {% endif %}
+{% endmacro %}
+{% import _self as rp %}
 
 <link rel="stylesheet" href="{{ plugin_web_dir }}/css/projectplus.css">
 
 <div class="projectplus-app" id="projectplus-reports">
 
-    {# Bloco N-1a: barra superior no lugar da coluna lateral #}
+    {# Bloco N-1a: barra superior no lugar da coluna lateral. Sem pp_title: o título
+       mora na área principal, para o seletor Todos | Só os meus ficar à direita dele. #}
     {% include '@projectplus/_topbar.html.twig' with {pp_active: 'relatorios'} %}
 
     {# ================= ÁREA PRINCIPAL ================= #}
     <div class="projectplus-main">
 
-        <div class="projectplus-header projectplus-noprint">
-            <form method="get" class="pp-filters" action="">
-                <div class="pp-filter-field">
-                    <label for="pp-f-project">{{ __('Projeto', 'projectplus') }}</label>
+        {% set pp_qs = '&task=' ~ filter_task|url_encode ~ '&user=' ~ filter_user ~ '&state=' ~ filter_state ~ '&typefilter=' ~ filter_typefilter|url_encode ~ '&from=' ~ filter_from ~ '&until=' ~ filter_until ~ (filter_scope ? '&scope=' ~ filter_scope : '') %}
+        {% set csv_base = plugin_web_dir ~ '/front/reports_export.php?project=' ~ filter_project %}
+
+        <div class="pp-pagehead pp-rp-head">
+            <h1>{{ __('Relatórios', 'projectplus') }}</h1>
+            <span>{{ __('Gerado em', 'projectplus') }} {{ generated_at }}</span>
+            {% if scope_can_expand %}
+            <div class="pp-seg pp-seg--links pp-rp-scope projectplus-noprint" role="group" aria-label="{{ __('Escopo', 'projectplus') }}">
+                {% if scope_is_expanded %}
+                <span class="pp-seg__btn pp-seg__btn--active" aria-current="true">{{ __('Todos', 'projectplus') }}</span>
+                <a class="pp-seg__btn" href="{{ scope_toggle_url }}" data-pp-keep-tab title="{{ __('Voltar ao escopo pessoal', 'projectplus') }}">{{ __('Só os meus', 'projectplus') }}</a>
+                {% else %}
+                <a class="pp-seg__btn" href="{{ scope_toggle_url }}" data-pp-keep-tab title="{{ __('Incluir todos os projetos que você pode ver', 'projectplus') }}">{{ __('Todos', 'projectplus') }}</a>
+                <span class="pp-seg__btn pp-seg__btn--active" aria-current="true">{{ __('Só os meus', 'projectplus') }}</span>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+
+        {# ===== Bloco N-6: filtros em cartão (mesmos nomes de campo de antes —
+           favorito, export e links continuam iguais) ===== #}
+        <form method="get" class="pp-rp-filters projectplus-noprint" id="pp-rp-form" action="">
+            <div class="pp-rp-grid">
+                <div class="pp-rp-field">
+                    <label class="pp-rp-label" for="pp-f-project">{{ __('Projeto', 'projectplus') }}</label>
                     <select name="project" id="pp-f-project">
                         <option value="0">{{ __('— Todos —', 'projectplus') }}</option>
                         {% for p in projects_list %}
@@ -21,13 +94,13 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="pp-filter-field">
-                    <label for="pp-f-task">{{ __('Tarefa', 'projectplus') }}</label>
+                <div class="pp-rp-field">
+                    <label class="pp-rp-label" for="pp-f-task">{{ __('Tarefa', 'projectplus') }}</label>
                     <input type="text" id="pp-f-task" name="task" value="{{ filter_task }}"
                            placeholder="{{ __('buscar por nome…', 'projectplus') }}">
                 </div>
-                <div class="pp-filter-field">
-                    <label for="pp-f-user">{{ __('Gestor / Responsável', 'projectplus') }}</label>
+                <div class="pp-rp-field">
+                    <label class="pp-rp-label" for="pp-f-user">{{ __('Gestor / Responsável', 'projectplus') }}</label>
                     <select name="user" id="pp-f-user">
                         <option value="0">{{ __('— Todos —', 'projectplus') }}</option>
                         {% for u in users_list %}
@@ -35,8 +108,8 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="pp-filter-field">
-                    <label for="pp-f-state">{{ __('Fase', 'projectplus') }}</label>
+                <div class="pp-rp-field">
+                    <label class="pp-rp-label" for="pp-f-state">{{ __('Fase', 'projectplus') }}</label>
                     <select name="state" id="pp-f-state">
                         <option value="0">{{ __('— Todas —', 'projectplus') }}</option>
                         {% for s in states_list %}
@@ -44,8 +117,8 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="pp-filter-field">
-                    <label for="pp-f-type">{{ __('Tipo', 'projectplus') }}</label>
+                <div class="pp-rp-field">
+                    <label class="pp-rp-label" for="pp-f-type">{{ __('Tipo', 'projectplus') }}</label>
                     <select name="typefilter" id="pp-f-type">
                         <option value="">{{ __('— Todos —', 'projectplus') }}</option>
                         <optgroup label="{{ __('Tipo de projeto', 'projectplus') }}">
@@ -60,120 +133,88 @@
                         </optgroup>
                     </select>
                 </div>
-                <div class="pp-filter-field">
-                    <label for="pp-f-from">{{ __('Período', 'projectplus') }}</label>
-                    <div class="pp-filter-daterange">
+                <div class="pp-rp-field pp-rp-field--period">
+                    <label class="pp-rp-label" for="pp-f-from">{{ __('Período', 'projectplus') }}</label>
+                    <div class="pp-rp-period">
                         <input type="date" id="pp-f-from" name="from" value="{{ filter_from }}">
                         <span>{{ __('até', 'projectplus') }}</span>
-                        <input type="date" name="until" value="{{ filter_until }}">
+                        <input type="date" name="until" value="{{ filter_until }}" aria-label="{{ __('até', 'projectplus') }}">
                     </div>
                 </div>
-                <div class="pp-filter-field pp-filter-actions">
-                    <label>&nbsp;</label>
-                    <div>
-                        {# Escopo (Bloco 4): preserva o modo atual ao aplicar os filtros #}
-                        {% if filter_scope %}<input type="hidden" name="scope" value="{{ filter_scope }}">{% endif %}
-                        <button type="submit" class="projectplus-btn">{{ __('Aplicar', 'projectplus') }}</button>
-                        <a class="projectplus-btn projectplus-btn--ghost" href="{{ plugin_web_dir }}/front/reports.php?scope=all">{{ __('Limpar', 'projectplus') }}</a>
-                        {% include '@projectplus/_favorite.html.twig' %}
-                        {% if scope_can_expand %}
-                        <a class="projectplus-btn projectplus-btn--ghost pp-scope-toggle" href="{{ scope_toggle_url }}"
-                           title="{{ scope_is_expanded ? __('Voltar ao escopo pessoal', 'projectplus') : __('Incluir todos os projetos que você pode ver', 'projectplus') }}">
-                            {% if scope_is_expanded %}
-                            <i class="ti ti-user"></i>{{ __('Ver só os meus', 'projectplus') }}
-                            {% else %}
-                            <i class="ti ti-eye"></i>{{ __('Ver tudo', 'projectplus') }}
-                            {% endif %}
-                        </a>
-                        {% endif %}
-                    </div>
-                </div>
-            </form>
-        </div>
-
-        <div class="pp-report-title">
-            <h2>{{ __('Relatórios', 'projectplus') }}</h2>
-            <span class="projectplus-muted">{{ __('Gerado em', 'projectplus') }} {{ generated_at }}</span>
-            <span class="projectplus-muted">{{ __('Fase/Tipo/Gestor/Período filtram só Projetos e Tarefas — Custos usa apenas o filtro de Projeto', 'projectplus') }}</span>
-        </div>
-
-        {% set pp_qs = '&task=' ~ filter_task|url_encode ~ '&user=' ~ filter_user ~ '&state=' ~ filter_state ~ '&typefilter=' ~ filter_typefilter|url_encode ~ '&from=' ~ filter_from ~ '&until=' ~ filter_until ~ (filter_scope ? '&scope=' ~ filter_scope : '') %}
-
-        {# -------- Projetos -------- #}
-        <div class="projectplus-card pp-report-card">
-            <div class="pp-report-projhead">
-                <h3>{{ __('Projetos', 'projectplus') }} <span class="projectplus-muted">({{ projects_report.rows|length }})</span></h3>
-                <a class="projectplus-btn projectplus-btn--ghost"
-                   href="{{ plugin_web_dir }}/front/reports_export.php?type=projects&project={{ filter_project }}{{ pp_qs }}">
-                    <i class="ti ti-download"></i> {{ __('Baixar CSV', 'projectplus') }}
-                </a>
             </div>
-            {% if projects_report.rows %}
-            <div class="pp-report-scroll">
-                <table class="projectplus-table pp-report-table">
-                    <thead>
-                        <tr>
-                            {% for h in projects_report.header %}<th>{{ h }}</th>{% endfor %}
-                        </tr>
-                    </thead>
-                    <tbody>
-                    {% for row in projects_report.rows %}
-                        <tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>
+            <div class="pp-rp-actions">
+                {# Escopo (Bloco 4): preserva o modo atual ao aplicar os filtros #}
+                {% if filter_scope %}<input type="hidden" name="scope" value="{{ filter_scope }}">{% endif %}
+                <button type="submit" class="projectplus-btn pp-rp-apply">{{ __('Aplicar', 'projectplus') }}</button>
+                <a class="pp-rp-clear" href="{{ plugin_web_dir }}/front/reports.php?scope=all" data-pp-keep-tab>{{ __('Limpar', 'projectplus') }}</a>
+                {% if fav is defined and fav.available %}<span class="pp-filterbar__sep"></span>{% endif %}
+                {% include '@projectplus/_favorite.html.twig' %}
+                <span class="pp-filterbar__spacer"></span>
+                <span class="pp-rp-hint">{{ __('Fase/Tipo/Gestor/Período filtram só Projetos e Tarefas — Custos usa apenas o filtro de Projeto', 'projectplus') }}</span>
+            </div>
+        </form>
+
+        {# ===== Bloco N-6: abas (troca no cliente — ProjectPlus.initReports) =====
+           Sem JavaScript as quatro seções aparecem uma embaixo da outra. #}
+        <div class="pp-rp-tabbar">
+            <div class="pp-tabs" role="tablist" aria-label="{{ __('Relatórios', 'projectplus') }}" data-pp-tabs>
+                <button type="button" role="tab" class="pp-tabs__tab pp-tabs__tab--active" id="pp-rp-tab-projects"
+                        data-pp-tab="projects" aria-controls="pp-rp-panel-projects" aria-selected="true">
+                    <i class="ti ti-folders" aria-hidden="true"></i>{{ __('Projetos', 'projectplus') }}<span class="pp-tabs__n">{{ projects_report.rows|length }}</span>
+                </button>
+                <button type="button" role="tab" class="pp-tabs__tab" id="pp-rp-tab-tasks"
+                        data-pp-tab="tasks" aria-controls="pp-rp-panel-tasks" aria-selected="false" tabindex="-1">
+                    <i class="ti ti-list-check" aria-hidden="true"></i>{{ __('Tarefas', 'projectplus') }}<span class="pp-tabs__n">{{ tasks_report.rows|length }}</span>
+                </button>
+                <button type="button" role="tab" class="pp-tabs__tab" id="pp-rp-tab-costs"
+                        data-pp-tab="costs" aria-controls="pp-rp-panel-costs" aria-selected="false" tabindex="-1">
+                    <i class="ti ti-coin" aria-hidden="true"></i>{{ __('Custos', 'projectplus') }}<span class="pp-tabs__n">{{ costs_report.rows|length }}</span>
+                </button>
+                <button type="button" role="tab" class="pp-tabs__tab" id="pp-rp-tab-burndown"
+                        data-pp-tab="burndown" aria-controls="pp-burndown" aria-selected="false" tabindex="-1">
+                    <i class="ti ti-chart-line" aria-hidden="true"></i>{{ __('Burndown', 'projectplus') }}
+                </button>
+            </div>
+            <a class="pp-filterbar__btn pp-rp-csv projectplus-noprint" id="pp-rp-csv"
+               href="{{ csv_base }}&type=projects{{ pp_qs }}"
+               data-csv-projects="{{ csv_base }}&type=projects{{ pp_qs }}"
+               data-csv-tasks="{{ csv_base }}&type=tasks{{ pp_qs }}"
+               data-csv-costs="{{ csv_base }}&type=costs{{ filter_scope ? '&scope=' ~ filter_scope : '' }}">
+                <i class="ti ti-download"></i>{{ __('Baixar CSV', 'projectplus') }}
+            </a>
+        </div>
+
+        <section class="pp-rp-panel" id="pp-rp-panel-projects" role="tabpanel" data-pp-tabpanel="projects" aria-labelledby="pp-rp-tab-projects">
+            <h3 class="pp-rp-paneltitle">{{ __('Projetos', 'projectplus') }}</h3>
+            {{ rp.report_table(projects_report, phase_colors, __('Nenhum projeto encontrado', 'projectplus')) }}
+        </section>
+
+        <section class="pp-rp-panel" id="pp-rp-panel-tasks" role="tabpanel" data-pp-tabpanel="tasks" aria-labelledby="pp-rp-tab-tasks">
+            <h3 class="pp-rp-paneltitle">{{ __('Tarefas', 'projectplus') }}</h3>
+            {{ rp.report_table(tasks_report, phase_colors, __('Nenhuma tarefa encontrada', 'projectplus')) }}
+        </section>
+
+        <section class="pp-rp-panel" id="pp-rp-panel-costs" role="tabpanel" data-pp-tabpanel="costs" aria-labelledby="pp-rp-tab-costs">
+            <h3 class="pp-rp-paneltitle">{{ __('Custos', 'projectplus') }}</h3>
+            {{ rp.report_table(costs_report, phase_colors, __('Nenhum lançamento de custo encontrado', 'projectplus')) }}
+        </section>
+
+        {# -------- Burndown (Etapa 5, Bloco 2) — mesmos ids que o JS usa -------- #}
+        <section class="pp-rp-panel pp-rp-panel--box" id="pp-burndown" role="tabpanel" data-pp-tabpanel="burndown"
+                 aria-labelledby="pp-rp-tab-burndown" data-ajax-url="{{ plugin_web_dir }}/ajax/reports_data.php">
+            <h3 class="pp-rp-paneltitle">{{ __('Burndown', 'projectplus') }}</h3>
+            <div class="pp-rp-bdbar">
+                <label class="pp-rp-label" for="pp-burndown-project">{{ __('Projeto', 'projectplus') }}</label>
+                <select id="pp-burndown-project" class="pp-burndown-project">
+                    <option value="0">{{ __('— Selecione um projeto —', 'projectplus') }}</option>
+                    {% for p in projects_list %}
+                        <option value="{{ p.id }}" {{ p.id == filter_project ? 'selected' : '' }}>{{ p.name }}</option>
                     {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-                <p class="projectplus-muted">{{ __('Nenhum projeto encontrado', 'projectplus') }}</p>
-            {% endif %}
-        </div>
-
-        {# -------- Tarefas -------- #}
-        <div class="projectplus-card pp-report-card">
-            <div class="pp-report-projhead">
-                <h3>{{ __('Tarefas', 'projectplus') }} <span class="projectplus-muted">({{ tasks_report.rows|length }})</span></h3>
-                <a class="projectplus-btn projectplus-btn--ghost"
-                   href="{{ plugin_web_dir }}/front/reports_export.php?type=tasks&project={{ filter_project }}{{ pp_qs }}">
-                    <i class="ti ti-download"></i> {{ __('Baixar CSV', 'projectplus') }}
-                </a>
-            </div>
-            {% if tasks_report.rows %}
-            <div class="pp-report-scroll">
-                <table class="projectplus-table pp-report-table">
-                    <thead>
-                        <tr>
-                            {% for h in tasks_report.header %}<th>{{ h }}</th>{% endfor %}
-                        </tr>
-                    </thead>
-                    <tbody>
-                    {% for row in tasks_report.rows %}
-                        <tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-                <p class="projectplus-muted">{{ __('Nenhuma tarefa encontrada', 'projectplus') }}</p>
-            {% endif %}
-        </div>
-
-        {# -------- Burndown (Etapa 5, Bloco 2) -------- #}
-        <div class="projectplus-card pp-report-card" id="pp-burndown"
-             data-ajax-url="{{ plugin_web_dir }}/ajax/reports_data.php">
-            <div class="pp-report-projhead">
-                <h3>{{ __('Burndown', 'projectplus') }}</h3>
-                <div class="pp-burndown-controls">
-                    <select id="pp-burndown-project" class="pp-burndown-project">
-                        <option value="0">{{ __('— Selecione um projeto —', 'projectplus') }}</option>
-                        {% for p in projects_list %}
-                            <option value="{{ p.id }}" {{ p.id == filter_project ? 'selected' : '' }}>{{ p.name }}</option>
-                        {% endfor %}
-                    </select>
-                    <div class="pp-seg" role="group" aria-label="{{ __('Granularidade do gráfico', 'projectplus') }}">
-                        <button type="button" class="pp-seg__btn pp-seg__btn--active" data-granularity="week">{{ __('Semana', 'projectplus') }}</button>
-                        <button type="button" class="pp-seg__btn" data-granularity="day">{{ __('Dia', 'projectplus') }}</button>
-                        <button type="button" class="pp-seg__btn" data-granularity="month">{{ __('Mês', 'projectplus') }}</button>
-                    </div>
+                </select>
+                <div class="pp-seg pp-seg--links" role="group" aria-label="{{ __('Granularidade do gráfico', 'projectplus') }}">
+                    <button type="button" class="pp-seg__btn pp-seg__btn--active" data-granularity="week">{{ __('Semana', 'projectplus') }}</button>
+                    <button type="button" class="pp-seg__btn" data-granularity="day">{{ __('Dia', 'projectplus') }}</button>
+                    <button type="button" class="pp-seg__btn" data-granularity="month">{{ __('Mês', 'projectplus') }}</button>
                 </div>
             </div>
             <div class="pp-burndown-kpis" id="pp-burndown-kpis"></div>
@@ -183,36 +224,7 @@
             <p class="projectplus-muted pp-burndown-note">
                 {{ __('Aproximação: conclusão de cada tarefa estimada pela data da última atualização (percent_done = 100%) — não há histórico diário de progresso.', 'projectplus') }}
             </p>
-        </div>
-
-        {# -------- Custos -------- #}
-        <div class="projectplus-card pp-report-card">
-            <div class="pp-report-projhead">
-                <h3>{{ __('Custos', 'projectplus') }} <span class="projectplus-muted">({{ costs_report.rows|length }})</span></h3>
-                <a class="projectplus-btn projectplus-btn--ghost"
-                   href="{{ plugin_web_dir }}/front/reports_export.php?type=costs&project={{ filter_project }}{{ filter_scope ? '&scope=' ~ filter_scope : '' }}">
-                    <i class="ti ti-download"></i> {{ __('Baixar CSV', 'projectplus') }}
-                </a>
-            </div>
-            {% if costs_report.rows %}
-            <div class="pp-report-scroll">
-                <table class="projectplus-table pp-report-table">
-                    <thead>
-                        <tr>
-                            {% for h in costs_report.header %}<th>{{ h }}</th>{% endfor %}
-                        </tr>
-                    </thead>
-                    <tbody>
-                    {% for row in costs_report.rows %}
-                        <tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-                <p class="projectplus-muted">{{ __('Nenhum lançamento de custo encontrado', 'projectplus') }}</p>
-            {% endif %}
-        </div>
+        </section>
 
     </div>
 </div>

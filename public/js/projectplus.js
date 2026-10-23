@@ -3115,7 +3115,96 @@
     // sem nova requisição ao servidor.
     // ------------------------------------------------------------------
 
+    // Bloco N-6: abas Projetos | Tarefas | Custos | Burndown. Tudo já vem
+    // desenhado pelo servidor; aqui só se mostra uma seção por vez. A aba
+    // fica no #hash da URL (fora da query: favorito, CSV e filtros não
+    // mudam) e é levada junto no Aplicar, no Limpar e no Todos | Só os meus.
+    function initReportTabs() {
+        const bar = document.querySelector('[data-pp-tabs]');
+        if (!bar) {
+            return;
+        }
+        const root   = bar.closest('.projectplus-app') || document.body;
+        const tabs   = Array.prototype.slice.call(bar.querySelectorAll('[data-pp-tab]'));
+        const panels = Array.prototype.slice.call(root.querySelectorAll('[data-pp-tabpanel]'));
+        const csv    = document.getElementById('pp-rp-csv');
+        const form   = document.getElementById('pp-rp-form');
+        const keys   = tabs.map(function (t) { return t.dataset.ppTab; });
+        if (!keys.length) {
+            return;
+        }
+        let current = keys[0];
+
+        function hashOf(key) {
+            return key === keys[0] ? '' : '#' + key;
+        }
+
+        function show(key, updateUrl) {
+            if (keys.indexOf(key) < 0) {
+                key = keys[0];
+            }
+            current = key;
+            tabs.forEach(function (t) {
+                const on = t.dataset.ppTab === key;
+                t.classList.toggle('pp-tabs__tab--active', on);
+                t.setAttribute('aria-selected', on ? 'true' : 'false');
+                t.tabIndex = on ? 0 : -1;
+            });
+            panels.forEach(function (p) {
+                p.hidden = p.dataset.ppTabpanel !== key;
+            });
+            if (csv) {
+                const href = csv.getAttribute('data-csv-' + key);
+                if (href) {
+                    csv.setAttribute('href', href);
+                    csv.hidden = false;
+                } else {
+                    csv.hidden = true;
+                }
+            }
+            root.querySelectorAll('[data-pp-keep-tab]').forEach(function (a) {
+                a.setAttribute('href', (a.getAttribute('href') || '').split('#')[0] + hashOf(key));
+            });
+            if (updateUrl && window.history && typeof window.history.replaceState === 'function') {
+                try {
+                    window.history.replaceState(null, '',
+                        window.location.pathname + window.location.search + hashOf(key));
+                } catch (e) { /* URL não alterável: segue só na tela */ }
+            }
+        }
+
+        bar.addEventListener('click', function (e) {
+            const t = e.target.closest('[data-pp-tab]');
+            if (t && bar.contains(t)) {
+                show(t.dataset.ppTab, true);
+            }
+        });
+        bar.addEventListener('keydown', function (e) {
+            if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') {
+                return;
+            }
+            const i = keys.indexOf(current);
+            const next = keys[(i + (e.key === 'ArrowRight' ? 1 : keys.length - 1)) % keys.length];
+            show(next, true);
+            const btn = tabs[keys.indexOf(next)];
+            if (btn) {
+                btn.focus();
+            }
+            e.preventDefault();
+        });
+        if (form) {
+            // GET troca só a query da action: o #aba sobrevive ao Aplicar.
+            form.addEventListener('submit', function () {
+                form.setAttribute('action', window.location.pathname + hashOf(current));
+            });
+        }
+
+        root.classList.add('pp-rp--tabs');
+        show(String(window.location.hash || '').replace(/^#/, ''), false);
+    }
+
     ProjectPlus.initReports = function () {
+        initReportTabs();
         const section = document.getElementById('pp-burndown');
         if (!section) {
             return;
@@ -3251,9 +3340,9 @@
             [0, 0.5, 1].forEach(function (f) {
                 const y = padT + innerH * (1 - f);
                 gridLines += '<line x1="' + padL + '" y1="' + y + '" x2="' + (W - padR) + '" y2="' + y +
-                    '" stroke="#e7ebf0" stroke-width="1"/>';
+                    '" class="pp-bd-grid" stroke="#e7ebf0" stroke-width="1"/>';
                 gridLines += '<text x="' + (padL - 6) + '" y="' + (y + 4) +
-                    '" font-size="10" fill="#8a97a5" text-anchor="end">' + Math.round(maxY * f) + '</text>';
+                    '" class="pp-bd-axis" font-size="10" fill="#8a97a5" text-anchor="end">' + Math.round(maxY * f) + '</text>';
             });
 
             const labelStep = Math.max(1, Math.ceil(n / 8));
@@ -3263,13 +3352,13 @@
                     return;
                 }
                 xLabels += '<text x="' + xAt(i).toFixed(1) + '" y="' + (H - padB + 16) +
-                    '" font-size="10" fill="#8a97a5" text-anchor="middle">' + shortLabel(d) + '</text>';
+                    '" class="pp-bd-axis" font-size="10" fill="#8a97a5" text-anchor="middle">' + shortLabel(d) + '</text>';
             });
 
             const realDots = realSeries.map(function (v, i) {
                 const rest = Math.round(v);
                 return '<circle cx="' + xAt(i).toFixed(1) + '" cy="' + yAt(v).toFixed(1) +
-                    '" r="2.6" fill="#4a9fd4"><title>' + shortLabel(dates[i]) + ': ' +
+                    '" r="2.6" class="pp-bd-dot" fill="#4a9fd4"><title>' + shortLabel(dates[i]) + ': ' +
                     escapeHtml(_n('%d restante', '%d restantes', rest, rest)) + '</title></circle>';
             }).join('');
 
@@ -3277,8 +3366,8 @@
                 '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" height="' + H +
                 '" role="img" aria-label="' + escapeHtml(__('Gráfico de burndown')) + '">' +
                 gridLines +
-                '<path d="' + pathFor(idealSeries) + '" fill="none" stroke="#c3ccd4" stroke-width="2" stroke-dasharray="5 4"/>' +
-                '<path d="' + pathFor(realSeries) + '" fill="none" stroke="#4a9fd4" stroke-width="2.5"/>' +
+                '<path d="' + pathFor(idealSeries) + '" class="pp-bd-ideal" fill="none" stroke="#c3ccd4" stroke-width="2" stroke-dasharray="5 4"/>' +
+                '<path d="' + pathFor(realSeries) + '" class="pp-bd-real" fill="none" stroke="#4a9fd4" stroke-width="2.5"/>' +
                 realDots + xLabels +
                 '</svg>' +
                 '<ul class="pp-burndown-legend">' +
@@ -3389,6 +3478,7 @@
         insertChildren: function (row, children) { insertChildren(row, children); },
         bindProjectRowComments: bindProjectRowComments,
         projectRowCells: projectRowCells,
+        initReportTabs: initReportTabs, // Bloco N-6
     };
 
     window.ProjectPlus = ProjectPlus;

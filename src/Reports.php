@@ -16,6 +16,7 @@ use Session;
  * READ) — não é uma área administrativa como "Modelos".
  *
  * Cada método de dados devolve ['header' => [...], 'rows' => [[...]]],
+ * mais 'kinds' (Bloco N-6: tipo de cada coluna para o desenho na tela),
  * já pronto tanto para a tabela em tela quanto para o CSV (front/
  * reports_export.php só serializa 'header'+'rows' com fputcsv).
  */
@@ -221,6 +222,9 @@ class Reports
             __('Orçamento previsto', 'projectplus'), __('Orçamento gasto', 'projectplus'),
             __('Saldo', 'projectplus'), __('% orçamento consumido', 'projectplus'),
         ];
+        // Bloco N-6: como cada coluna é desenhada na TELA (chip de fase,
+        // selo de situação, número alinhado à direita). O CSV ignora.
+        $kinds = ['id', 'name', 'text', 'phase', 'text', 'text', 'num', 'date', 'date', 'late', 'money', 'money', 'money', 'num'];
 
         // Nomes de coluna QUALIFICADOS com a tabela: esta consulta tem
         // LEFT JOIN com glpi_users, que também tem is_deleted/id — sem o
@@ -338,7 +342,7 @@ class Reports
             ];
         }
 
-        return ['header' => $header, 'rows' => $rows];
+        return ['header' => $header, 'rows' => $rows, 'kinds' => $kinds];
     }
 
     // ------------------------------------------------------------------
@@ -360,6 +364,7 @@ class Reports
             __('Início planejado', 'projectplus'), __('Fim planejado', 'projectplus'),
             __('Atrasada', 'projectplus'), __('Bloqueada', 'projectplus'),
         ];
+        $kinds = ['id', 'text', 'name', 'text', 'phase', 'text', 'text', 'num', 'date', 'date', 'late', 'flag'];
 
         $where = [];
 
@@ -536,7 +541,7 @@ class Reports
             ];
         }
 
-        return ['header' => $header, 'rows' => $rows];
+        return ['header' => $header, 'rows' => $rows, 'kinds' => $kinds];
     }
 
     // ------------------------------------------------------------------
@@ -553,6 +558,7 @@ class Reports
             __('Descrição', 'projectplus'), __('Data', 'projectplus'),
             __('Autor', 'projectplus'), __('Valor', 'projectplus'),
         ];
+        $kinds = ['name', 'origin', 'text', 'date', 'text', 'money'];
 
         // Escopo do perfil (Etapa 8, Bloco 4): sem restrição, mantém o
         // comportamento histórico (projetos RAIZ + descendentes). Com
@@ -608,7 +614,7 @@ class Reports
             }
         }
 
-        return ['header' => $header, 'rows' => $rows];
+        return ['header' => $header, 'rows' => $rows, 'kinds' => $kinds];
     }
 
     /**
