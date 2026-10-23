@@ -1053,6 +1053,21 @@
         tplRefreshAllStateSelects(root);
         tplRefreshMoves(treeEl); // Bloco E
 
+        // Bloco N-8b-2: resumo lateral recontado a cada mudança na árvore
+        // (nó criado, removido ou movido) e a cada digitação de início/duração.
+        const refreshSummary = function () { tplSummary(root); };
+        refreshSummary();
+        // Observa SÓ as duas listas (os contadores do título moram no mesmo
+        // cartão #pp-tpl-tree: observar o cartão inteiro faria o próprio
+        // resumo disparar o observador sem fim).
+        if (typeof MutationObserver === 'function') {
+            const mo = new MutationObserver(refreshSummary);
+            mo.observe(rootTasksEl, { childList: true, subtree: true });
+            mo.observe(rootSubsEl, { childList: true, subtree: true });
+        }
+        root.addEventListener('input', refreshSummary);
+        root.addEventListener('change', refreshSummary);
+
         // Botões de topo (raiz)
         const addRootTask = root.querySelector('[data-add-roottask]');
         const addRootSub  = root.querySelector('[data-add-rootsub]');
@@ -1141,6 +1156,65 @@
     };
 
     // Bloco de atributos do projeto raiz (aplicados ao clonar)
+    /**
+     * Bloco N-8b-2 — números do cartão "Resumo" do editor de Modelos, lidos do
+     * DOM (a fonte da verdade do editor). Tarefas = itens de tarefa fora de
+     * uma tarefa-mãe (no projeto ou num subprojeto); Subtarefas = dentro de
+     * uma; Duração total = maior (início + duração) entre o projeto e os itens;
+     * Responsáveis = usuários distintos nos chips. Rótulo de dias em
+     * data-label-day-one/-many (o JS não tem strings próprias aqui).
+     */
+    function tplSummary(root) {
+        const box = root.querySelector('[data-pp-role="tpl-summary"]');
+        const tree = document.getElementById('pp-tpl-tree');
+        if (!box || !tree) {
+            return null;
+        }
+        const tasks = tree.querySelectorAll('.pp-tpl-node--task');
+        let sub = 0;
+        tasks.forEach(function (n) {
+            if (n.parentElement && n.parentElement.classList.contains('pp-tpl-children')) { sub++; }
+        });
+        const num = function (el, sel, min) {
+            const i = el ? el.querySelector(sel) : null;
+            return Math.max(min, parseInt(i ? i.value : '', 10) || 0);
+        };
+        const meta = document.getElementById('pp-tpl-projectmeta');
+        let end = meta && meta.querySelector('.pp-pm-dur')
+            ? num(meta, '.pp-pm-offset', 0) + num(meta, '.pp-pm-dur', 1) : 0;
+        tree.querySelectorAll('.pp-tpl-node').forEach(function (n) {
+            const row = n.querySelector(':scope > .pp-tpl-row');
+            end = Math.max(end, num(row, '.pp-tpl-offset', 0) + num(row, '.pp-tpl-dur', 1));
+        });
+        const users = {};
+        tree.querySelectorAll('.pp-tpl-team .pp-team__chip').forEach(function (c) {
+            const id = parseInt(c.dataset.uid, 10);
+            if (id > 0) { users[id] = true; }
+        });
+        const rootTasks = document.getElementById('pp-tpl-roottasks');
+        const out = {
+            tasks: tasks.length - sub,
+            subtasks: sub,
+            subprojects: tree.querySelectorAll('.pp-tpl-node--project').length,
+            days: end,
+            users: Object.keys(users).length,
+            roottasks: rootTasks ? rootTasks.children.length : 0
+        };
+        Object.keys(out).forEach(function (k) {
+            root.querySelectorAll('[data-pp-sum="' + k + '"]').forEach(function (el) {
+                let txt = String(out[k]);
+                if (k === 'days') {
+                    const lbl = box.getAttribute(out.days === 1 ? 'data-label-day-one' : 'data-label-day-many') || '%d';
+                    txt = lbl.replace('%d', txt);
+                }
+                if (el.textContent !== txt) { // só escreve se mudou (não gera mutação à toa)
+                    el.textContent = txt;
+                }
+            });
+        });
+        return out;
+    }
+
     function buildProjectMeta(container, data) {
         data = data || {};
         const offset  = parseInt(data.offset_start_days, 10) || 0;
@@ -1159,7 +1233,7 @@
                 '<label class="pp-tpl-field">' + escapeHtml(__('Tipo')) + '<select class="pp-pm-ptype">' + tplOptions(ppTplRef.ptypes, ptypeId) + '</select></label>' +
                 tplUserField(__('Gestor'), 'pp-pm-user', userId) +
                 '<label class="pp-tpl-field">' + escapeHtml(__('Orçamento (R$)')) + '<input type="number" class="pp-pm-budget" min="0" step="0.01" value="' + budget + '"></label>' +
-                '<label class="pp-tpl-check"><input type="checkbox" class="pp-pm-auto"' + (auto ? ' checked' : '') + '> ' + escapeHtml(__('calcular automaticamente o %')) + '</label>' +
+                '<label class="pp-tpl-check pp-switch"><input type="checkbox" class="pp-pm-auto"' + (auto ? ' checked' : '') + '><span class="pp-switch__track" aria-hidden="true"></span>' + escapeHtml(__('calcular automaticamente o %')) + '</label>' +
             '</div>' +
             '<textarea class="pp-pm-content" rows="2" placeholder="' + escapeHtml(__('Descrição do projeto (opcional)')) + '"></textarea>';
         container.querySelector('.pp-pm-content').value = data.content || '';
@@ -1327,7 +1401,7 @@
                 '<label class="pp-tpl-field">' + escapeHtml(__('Fase')) + '<select class="pp-tpl-state">' + tplOptions(ppTplRef.states, stateId) + '</select></label>' +
                 '<label class="pp-tpl-field">' + escapeHtml(__('Tipo')) + '<select class="pp-tpl-ttype">' + tplOptions(ppTplRef.ttypes, ttypeId) + '</select></label>' +
                 tplTeamField(tplTaskUserIds(data)) +
-                '<label class="pp-tpl-check"><input type="checkbox" class="pp-tpl-auto"' + (auto ? ' checked' : '') + '> ' + escapeHtml(__('calcular automaticamente o %')) + '</label>' +
+                '<label class="pp-tpl-check pp-switch"><input type="checkbox" class="pp-tpl-auto"' + (auto ? ' checked' : '') + '><span class="pp-switch__track" aria-hidden="true"></span>' + escapeHtml(__('calcular automaticamente o %')) + '</label>' +
             '</div>' +
             '<textarea class="pp-tpl-content" rows="1" placeholder="' + escapeHtml(__('Descrição (opcional)')) + '"></textarea>' +
             '<div class="pp-tpl-children"></div>';
@@ -1376,7 +1450,7 @@
                 '<label class="pp-tpl-field">' + escapeHtml(__('Tipo')) + '<select class="pp-tpl-ptype">' + tplOptions(ppTplRef.ptypes, ptypeId) + '</select></label>' +
                 tplUserField(__('Gestor'), 'pp-tpl-user', userId) +
                 '<label class="pp-tpl-field">' + escapeHtml(__('Orçamento (R$)')) + '<input type="number" class="pp-tpl-budget" min="0" step="0.01" value="' + budget + '"></label>' +
-                '<label class="pp-tpl-check"><input type="checkbox" class="pp-tpl-auto"' + (auto ? ' checked' : '') + '> ' + escapeHtml(__('calcular automaticamente o %')) + '</label>' +
+                '<label class="pp-tpl-check pp-switch"><input type="checkbox" class="pp-tpl-auto"' + (auto ? ' checked' : '') + '><span class="pp-switch__track" aria-hidden="true"></span>' + escapeHtml(__('calcular automaticamente o %')) + '</label>' +
             '</div>' +
             '<textarea class="pp-tpl-content" rows="1" placeholder="' + escapeHtml(__('Descrição (opcional)')) + '"></textarea>' +
             '<div class="pp-tpl-psection"><div class="pp-tpl-plabel">' + escapeHtml(__('Tarefas')) + '</div><div class="pp-tpl-ptasks pp-tpl-list"></div></div>' +
@@ -3566,6 +3640,7 @@
         projectRowCells: projectRowCells,
         initReportTabs: initReportTabs, // Bloco N-6 (N-7: também a Configuração)
         initTemplateListFilter: initTemplateListFilter, // Bloco N-8b-1
+        tplSummary: tplSummary, // Bloco N-8b-2
     };
 
     window.ProjectPlus = ProjectPlus;

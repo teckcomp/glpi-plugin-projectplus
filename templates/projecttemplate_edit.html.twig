@@ -9,69 +9,93 @@
     {% include '@projectplus/_topbar.html.twig' with {pp_active: 'modelos'} %}
 
     {# ================= ÁREA PRINCIPAL ================= #}
-    <div class="projectplus-main">
+    {# Bloco N-8b-2: layout do mockup — cabeçalho com Cancelar/Salvar (o Salvar usa
+       form= e, vindo antes no documento, é também o Enter do form — mesma ação),
+       dados do modelo lado a lado, Projeto em grade, árvore em cartões e coluna
+       lateral com Resumo. Ids, nomes de campo e a serialização NÃO mudaram. #}
+    <div class="projectplus-main pp-te">
 
-        <div class="projectplus-header">
-            <div class="projectplus-pagetitle" style="padding:0">
-                <h2 style="font-size:1.25rem;color:var(--pp-text-strong);margin:0">
-                    {{ is_new ? __('Novo modelo de projeto', 'projectplus') : __('Editar modelo de projeto', 'projectplus') }}
-                </h2>
-                <span class="projectplus-subtitle">{{ __('Monte a árvore de tarefas e subprojetos. Os prazos são em dias a partir do início do projeto.', 'projectplus') }}</span>
-            </div>
-            <div class="projectplus-actions">
-                <a class="projectplus-btn projectplus-btn--ghost" href="{{ plugin_web_dir }}/front/projecttemplates.php">
-                    {{ __('Voltar', 'projectplus') }}
-                </a>
-            </div>
+        <div class="pp-cfg-head">
+            <a class="pp-filterbar__btn pp-cfg-back" href="{{ plugin_web_dir }}/front/projecttemplates.php">
+                <i class="ti ti-chevron-left" aria-hidden="true"></i>{{ __('Voltar aos Modelos', 'projectplus') }}
+            </a>
+            <h1>{{ is_new ? __('Novo modelo de projeto', 'projectplus') : __('Editar modelo de projeto', 'projectplus') }}</h1>
+            <span class="pp-cfg-head__sub">{{ __('Prazos em dias a partir da data de início escolhida ao criar o projeto', 'projectplus') }}</span>
+            <span class="pp-tp-headbtns">
+                <a class="pp-filterbar__btn" href="{{ plugin_web_dir }}/front/projecttemplates.php">{{ __('Cancelar', 'projectplus') }}</a>
+                <button type="submit" form="pp-tpl-form" class="pp-cfg-save">
+                    <i class="ti ti-device-floppy" aria-hidden="true"></i>{{ is_new ? __('Criar modelo', 'projectplus') : __('Salvar alterações', 'projectplus') }}
+                </button>
+            </span>
         </div>
 
-        <form id="pp-tpl-form" method="post" action="{{ plugin_web_dir }}/front/projecttemplate.form.php">
+        <form id="pp-tpl-form" method="post" action="{{ plugin_web_dir }}/front/projecttemplate.form.php" class="pp-te-grid">
             <input type="hidden" name="_glpi_csrf_token" value="{{ csrf_token }}">
             <input type="hidden" name="savejson" value="1">
             <input type="hidden" name="id" value="{{ tpl_id }}">
             <input type="hidden" name="structure" id="pp-tpl-structure-out" value="">
 
-            <div class="projectplus-card">
-                <div class="projectplus-form" style="display:grid">
-                    <label class="projectplus-form__full">
-                        {{ __('Nome do modelo', 'projectplus') }} *
-                        <input type="text" name="name" id="pp-tpl-name" required maxlength="255" value="{{ tpl_name }}">
-                    </label>
-                    <label class="projectplus-form__full">
-                        {{ _n('Comentário', 'Comentários', 1, 'projectplus') }}
-                        <textarea name="comment" rows="2">{{ tpl_comment }}</textarea>
-                    </label>
+            <div class="pp-cfg-col">
+                <div class="pp-cfg-card pp-te-basic">
+                    <div class="pp-te-field">
+                        <label class="pp-rp-label" for="pp-tpl-name">{{ __('Nome do modelo', 'projectplus') }} *</label>
+                        <input type="text" name="name" id="pp-tpl-name" class="pp-tp-input" required maxlength="255" value="{{ tpl_name }}">
+                    </div>
+                    <div class="pp-te-field">
+                        <label class="pp-rp-label" for="pp-tpl-comment">{{ _n('Comentário', 'Comentários', 1, 'projectplus') }}</label>
+                        <textarea name="comment" id="pp-tpl-comment" class="pp-tp-input pp-te-comment" rows="1">{{ tpl_comment }}</textarea>
+                    </div>
+                </div>
+
+                <div class="pp-cfg-card">
+                    <div class="pp-te-cardhead">
+                        <h2 class="pp-cfg-card__title">{{ __('Projeto (aplicado ao criar)', 'projectplus') }}</h2>
+                        <span class="pp-cfg-row__hint">{{ __('Fase, tipo, gestor e orçamento que o projeto raiz recebe ao ser criado a partir do modelo.', 'projectplus') }}</span>
+                    </div>
+                    <div id="pp-tpl-projectmeta" class="pp-tpl-projmeta"></div>
+                </div>
+
+                <div class="pp-cfg-card" id="pp-tpl-tree">
+                    {# N-8b-2 (-2): o "+ Adicionar" mora no cabeçalho da seção a que pertence, e a
+                       lista vazia mostra um aviso tracejado (CSS :empty + data-empty) — antes os
+                       botões ficavam soltos entre as seções. #}
+                    <div class="pp-te-cardhead">
+                        <h2 class="pp-cfg-card__title">{{ __('Tarefas do projeto', 'projectplus') }} <span class="pp-te-count" data-pp-sum="roottasks">0</span></h2>
+                        <button type="button" class="pp-filterbar__btn pp-tpl-add" data-add-roottask>
+                            <i class="ti ti-plus" aria-hidden="true"></i>{{ __('Adicionar tarefa', 'projectplus') }}
+                        </button>
+                    </div>
+                    <p class="pp-cfg-row__hint pp-te-movehint">{{ __('↑↓ mover · ← promover · → rebaixar (para dentro do item de cima)', 'projectplus') }}</p>
+                    <div id="pp-tpl-roottasks" class="pp-tpl-list" data-empty="{{ __('Nenhuma tarefa direto no projeto.', 'projectplus') }}"></div>
+
+                    <div class="pp-te-cardhead pp-te-subshead">
+                        <h2 class="pp-cfg-card__title">{{ __('Subprojetos', 'projectplus') }} <span class="pp-te-count" data-pp-sum="subprojects">0</span></h2>
+                        <button type="button" class="pp-filterbar__btn pp-tpl-add" data-add-rootsub>
+                            <i class="ti ti-plus" aria-hidden="true"></i>{{ __('Adicionar subprojeto', 'projectplus') }}
+                        </button>
+                    </div>
+                    <div id="pp-tpl-rootsubs" class="pp-tpl-list" data-empty="{{ __('Nenhum subprojeto.', 'projectplus') }}"></div>
                 </div>
             </div>
 
-            <div class="projectplus-card">
-                <h3>{{ __('Projeto (aplicado ao criar)', 'projectplus') }}</h3>
-                <p class="projectplus-subtitle" style="margin:0 0 8px">{{ __('Fase, tipo, gestor e orçamento que o projeto raiz recebe ao ser criado a partir do modelo.', 'projectplus') }}</p>
-                <div id="pp-tpl-projectmeta" class="pp-tpl-projmeta"></div>
-            </div>
-
-            <div class="projectplus-card" id="pp-tpl-tree">
-                <h3>{{ __('Tarefas do projeto', 'projectplus') }}</h3>
-                <div id="pp-tpl-roottasks" class="pp-tpl-list"></div>
-                <button type="button" class="projectplus-btn projectplus-btn--ghost pp-tpl-add" data-add-roottask>
-                    + {{ __('Adicionar tarefa', 'projectplus') }}
-                </button>
-
-                <h3 style="margin-top:22px">{{ __('Subprojetos', 'projectplus') }}</h3>
-                <div id="pp-tpl-rootsubs" class="pp-tpl-list"></div>
-                <button type="button" class="projectplus-btn projectplus-btn--ghost pp-tpl-add" data-add-rootsub>
-                    + {{ __('Adicionar subprojeto', 'projectplus') }}
-                </button>
-            </div>
-
-            <div class="projectplus-form__footer" style="border:0;padding:0;margin-top:6px">
-                <a class="projectplus-btn projectplus-btn--ghost" href="{{ plugin_web_dir }}/front/projecttemplates.php">
-                    {{ __('Cancelar', 'projectplus') }}
-                </a>
-                <button type="submit" class="projectplus-btn">
-                    {{ is_new ? __('Criar modelo', 'projectplus') : __('Salvar alterações', 'projectplus') }}
-                </button>
-            </div>
+            <aside class="pp-cfg-col pp-te-aside">
+                <div class="pp-cfg-card" data-pp-role="tpl-summary"
+                     data-label-day-one="{{ _n('%d dia', '%d dias', 1, 'projectplus') }}"
+                     data-label-day-many="{{ _n('%d dia', '%d dias', 2, 'projectplus') }}">
+                    <h2 class="pp-cfg-card__title">{{ __('Resumo', 'projectplus') }}</h2>
+                    <ul class="pp-cfg-checks pp-te-sum">
+                        <li><span>{{ __('Tarefas, com as dos subprojetos', 'projectplus') }}</span><b data-pp-sum="tasks">0</b></li>
+                        <li><span>{{ __('Subtarefas', 'projectplus') }}</span><b data-pp-sum="subtasks">0</b></li>
+                        <li><span>{{ __('Subprojetos', 'projectplus') }}</span><b data-pp-sum="subprojects">0</b></li>
+                        <li><span>{{ __('Duração total', 'projectplus') }}</span><b data-pp-sum="days">—</b></li>
+                        <li><span>{{ __('Responsáveis distintos', 'projectplus') }}</span><b data-pp-sum="users">0</b></li>
+                    </ul>
+                </div>
+                <div class="pp-cfg-card">
+                    <h2 class="pp-cfg-card__title">{{ __('Ao salvar', 'projectplus') }}</h2>
+                    <p class="pp-cfg-row__hint pp-te-note">{{ __('Projetos já criados a partir deste modelo não mudam. Itens com o mesmo nome no mesmo nível são recusados ao mover.', 'projectplus') }}</p>
+                </div>
+            </aside>
         </form>
     </div>
 </div>

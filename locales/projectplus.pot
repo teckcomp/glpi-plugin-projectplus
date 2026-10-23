@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ProjectPlus 1.1.0-beta\n"
 "Report-Msgid-Bugs-To: https://github.com/teckcomp/glpi-plugin-projectplus/issues\n"
-"POT-Creation-Date: 2026-10-23 14:48+0000\n"
+"POT-Creation-Date: 2026-10-23 15:08+0000\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -71,6 +71,13 @@ msgstr[1] ""
 #, php-format
 msgid "%d conjunto sem finalizadora"
 msgid_plural "%d conjuntos sem finalizadora"
+msgstr[0] ""
+msgstr[1] ""
+
+#: templates/projecttemplate_edit.html.twig:83
+#: templates/projecttemplate_edit.html.twig:84
+msgid "%d dia"
+msgid_plural "%d dias"
 msgstr[0] ""
 msgstr[1] ""
 
@@ -254,11 +261,11 @@ msgstr ""
 msgid "Adicionar responsável"
 msgstr ""
 
-#: templates/projecttemplate_edit.html.twig:63
+#: templates/projecttemplate_edit.html.twig:74
 msgid "Adicionar subprojeto"
 msgstr ""
 
-#: templates/projecttemplate_edit.html.twig:57
+#: templates/projecttemplate_edit.html.twig:65
 msgid "Adicionar tarefa"
 msgstr ""
 
@@ -316,6 +323,10 @@ msgstr ""
 
 #: templates/config_shell.html.twig:369
 msgid "Ao desinstalar"
+msgstr ""
+
+#: templates/projecttemplate_edit.html.twig:95
+msgid "Ao salvar"
 msgstr ""
 
 #: templates/config_shell.html.twig:128
@@ -503,7 +514,7 @@ msgid "Canal de e-mail do GLPI"
 msgstr ""
 
 #: src/I18nJs.php:68 templates/dashboard.html.twig:522
-#: templates/projecttemplate_edit.html.twig:69
+#: templates/projecttemplate_edit.html.twig:25
 #: templates/projecttemplates.html.twig:147
 #: templates/projecttemplates.html.twig:190 templates/typephases.html.twig:221
 msgid "Cancelar"
@@ -564,7 +575,7 @@ msgstr ""
 
 #: src/ProjectCost.php:138 src/TaskComment.php:42 src/TaskComment.php:563
 #: src/TaskCost.php:170 templates/costs.html.twig:74
-#: templates/projecttemplate_edit.html.twig:41
+#: templates/projecttemplate_edit.html.twig:45
 #: templates/projecttemplates.html.twig:137
 msgid "Comentário"
 msgid_plural "Comentários"
@@ -718,7 +729,7 @@ msgstr ""
 msgid "Criar fase"
 msgstr ""
 
-#: templates/projecttemplate_edit.html.twig:72
+#: templates/projecttemplate_edit.html.twig:27
 msgid "Criar modelo"
 msgstr ""
 
@@ -936,6 +947,10 @@ msgstr ""
 msgid "Duração do projeto em dias (define a data de fim)"
 msgstr ""
 
+#: templates/projecttemplate_edit.html.twig:90
+msgid "Duração total"
+msgstr ""
+
 #: templates/config_shell.html.twig:101 templates/config_shell.html.twig:381
 msgid "E-mail"
 msgstr ""
@@ -957,7 +972,7 @@ msgstr ""
 msgid "Editar fase (nome, cor e finalizadora — vale para todos os tipos)"
 msgstr ""
 
-#: templates/projecttemplate_edit.html.twig:17
+#: templates/projecttemplate_edit.html.twig:22
 msgid "Editar modelo de projeto"
 msgstr ""
 
@@ -1188,7 +1203,7 @@ msgstr ""
 msgid "Fase não encontrada"
 msgstr ""
 
-#: templates/projecttemplate_edit.html.twig:49
+#: templates/projecttemplate_edit.html.twig:53
 msgid ""
 "Fase, tipo, gestor e orçamento que o projeto raiz recebe ao ser criado a "
 "partir do modelo."
@@ -1513,12 +1528,6 @@ msgstr ""
 msgid "Modelos de projeto"
 msgstr ""
 
-#: templates/projecttemplate_edit.html.twig:19
-msgid ""
-"Monte a árvore de tarefas e subprojetos. Os prazos são em dias a partir do "
-"início do projeto."
-msgstr ""
-
 #: templates/timeline.html.twig:25
 msgid "Mostrar apenas os projetos deste tipo"
 msgstr ""
@@ -1654,6 +1663,10 @@ msgstr ""
 msgid "Nenhum resultado"
 msgstr ""
 
+#: templates/projecttemplate_edit.html.twig:77
+msgid "Nenhum subprojeto."
+msgstr ""
+
 #: src/I18nJs.php:80 src/TaskDep.php:715
 msgid "Nenhuma"
 msgstr ""
@@ -1674,6 +1687,10 @@ msgstr ""
 
 #: src/I18nJs.php:89
 msgid "Nenhuma tarefa atribuída a você."
+msgstr ""
+
+#: templates/projecttemplate_edit.html.twig:69
+msgid "Nenhuma tarefa direto no projeto."
 msgstr ""
 
 #: templates/reports.html.twig:194
@@ -1705,7 +1722,7 @@ msgstr ""
 msgid "Nome da tarefa"
 msgstr ""
 
-#: templates/projecttemplate_edit.html.twig:37
+#: templates/projecttemplate_edit.html.twig:41
 #: templates/projecttemplates.html.twig:132
 msgid "Nome do modelo"
 msgstr ""
@@ -1752,7 +1769,7 @@ msgstr ""
 msgid "Novo comentário"
 msgstr ""
 
-#: templates/projecttemplate_edit.html.twig:17
+#: templates/projecttemplate_edit.html.twig:22
 msgid "Novo modelo de projeto"
 msgstr ""
 
@@ -1998,6 +2015,10 @@ msgstr ""
 msgid "Prazos e alertas"
 msgstr ""
 
+#: templates/projecttemplate_edit.html.twig:23
+msgid "Prazos em dias a partir da data de início escolhida ao criar o projeto"
+msgstr ""
+
 #: templates/dashboard.html.twig:189
 msgid "Precisa de atenção"
 msgstr ""
@@ -2060,7 +2081,7 @@ msgstr ""
 msgid "Projeto \"%s\" está sem atividade (parado)"
 msgstr ""
 
-#: templates/projecttemplate_edit.html.twig:48
+#: templates/projecttemplate_edit.html.twig:52
 msgid "Projeto (aplicado ao criar)"
 msgstr ""
 
@@ -2128,6 +2149,12 @@ msgstr ""
 
 #: templates/dashboard.html.twig:90
 msgid "Projetos em atraso"
+msgstr ""
+
+#: templates/projecttemplate_edit.html.twig:96
+msgid ""
+"Projetos já criados a partir deste modelo não mudam. Itens com o mesmo nome "
+"no mesmo nível são recusados ao mover."
 msgstr ""
 
 #: front/dashboard.php:229
@@ -2221,12 +2248,20 @@ msgstr ""
 msgid "Responsáveis"
 msgstr ""
 
+#: templates/projecttemplate_edit.html.twig:91
+msgid "Responsáveis distintos"
+msgstr ""
+
 #: src/KanbanTab.php:81 templates/kanban.html.twig:67
 msgid "Responsável"
 msgstr ""
 
 #: src/Reports.php:363
 msgid "Responsável(is)"
+msgstr ""
+
+#: templates/projecttemplate_edit.html.twig:85
+msgid "Resumo"
 msgstr ""
 
 #: templates/kanban.html.twig:90 templates/projectkanban.html.twig:83
@@ -2248,7 +2283,7 @@ msgid "Salvar"
 msgstr ""
 
 #: templates/config_shell.html.twig:59
-#: templates/projecttemplate_edit.html.twig:72
+#: templates/projecttemplate_edit.html.twig:27
 msgid "Salvar alterações"
 msgstr ""
 
@@ -2423,7 +2458,8 @@ msgstr ""
 msgid "Subprojeto de: %s"
 msgstr ""
 
-#: src/I18nJs.php:60 templates/projecttemplate_edit.html.twig:60
+#: src/I18nJs.php:60 templates/projecttemplate_edit.html.twig:72
+#: templates/projecttemplate_edit.html.twig:89
 msgid "Subprojetos"
 msgstr ""
 
@@ -2436,6 +2472,10 @@ msgstr ""
 #: src/I18nJs.php:207
 #, php-format
 msgid "Subtarefa da tarefa: %s"
+msgstr ""
+
+#: templates/projecttemplate_edit.html.twig:88
+msgid "Subtarefas"
 msgstr ""
 
 #: ajax/comment.php:120
@@ -2545,7 +2585,7 @@ msgstr ""
 msgid "Tarefas atrasadas"
 msgstr ""
 
-#: templates/projecttemplate_edit.html.twig:54
+#: templates/projecttemplate_edit.html.twig:63
 msgid "Tarefas do projeto"
 msgstr ""
 
@@ -2563,6 +2603,10 @@ msgstr ""
 
 #: templates/dashboard.html.twig:172
 msgid "Tarefas por fase"
+msgstr ""
+
+#: templates/projecttemplate_edit.html.twig:87
+msgid "Tarefas, com as dos subprojetos"
 msgstr ""
 
 #: templates/dashboard.html.twig:440
@@ -2726,10 +2770,6 @@ msgstr ""
 msgid "Visão do cliente"
 msgstr ""
 
-#: templates/projecttemplate_edit.html.twig:23
-msgid "Voltar"
-msgstr ""
-
 #: templates/typephases.html.twig:104
 msgid "Voltar a herdar o padrão"
 msgstr ""
@@ -2746,6 +2786,10 @@ msgstr ""
 #: templates/kanban.html.twig:73 templates/projectkanban.html.twig:66
 #: templates/reports.html.twig:75 templates/timeline.html.twig:48
 msgid "Voltar ao escopo pessoal"
+msgstr ""
+
+#: templates/projecttemplate_edit.html.twig:20
+msgid "Voltar aos Modelos"
 msgstr ""
 
 #: templates/typephases.html.twig:19
@@ -3072,4 +3116,8 @@ msgstr ""
 
 #: src/I18nJs.php:151
 msgid "— sem outras tarefas neste projeto —"
+msgstr ""
+
+#: templates/projecttemplate_edit.html.twig:68
+msgid "↑↓ mover · ← promover · → rebaixar (para dentro do item de cima)"
 msgstr ""

@@ -2192,3 +2192,87 @@ label.pp-cfg-row__label { cursor: pointer; }
 .pp-tl-delbtn { color: var(--pp-danger-text) !important; border-color: var(--pp-danger-border) !important; background: transparent !important; }
 .pp-tl-delbtn:hover { background: var(--pp-danger-soft) !important; }
 .pp-tl-table tr[hidden] { display: none; }
+
+/* ===== Bloco N-8b-2 — editor de Modelos no padrão do mockup =====
+   Cabeçalho .pp-cfg-head com Cancelar/Salvar, grade principal + coluna lateral
+   (Resumo), cartões .pp-cfg-card e a árvore restilizada SÓ por CSS — o HTML dos
+   nós continua o do Etapa 4/Bloco E/D-2b (classes .pp-tpl-*). Escopo .pp-te. */
+.pp-te-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 14px; align-items: start; margin: 0; }
+@media (max-width: 1100px) { .pp-te-grid { grid-template-columns: minmax(0, 1fr); } }
+.pp-te-aside { position: sticky; top: 16px; }
+.pp-te-basic { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 14px; }
+@media (max-width: 800px) { .pp-te-basic { grid-template-columns: minmax(0, 1fr); } }
+.pp-te-field { display: flex; flex-direction: column; min-width: 0; }
+.pp-te-field .pp-tp-input { width: 100%; }
+.pp-te .pp-te-comment { height: auto; min-height: 34px; padding: 7px 10px; resize: vertical; line-height: 1.4; }
+.pp-te-cardhead { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.pp-te-cardhead .pp-cfg-card__title { margin: 0; display: inline-flex; align-items: center; gap: 8px; }
+.pp-te-count { color: var(--pp-muted); font-weight: 600; letter-spacing: 0; }
+.pp-te-subshead { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--pp-border); }
+.pp-te-sum b { color: var(--pp-text-strong); font-weight: 700; }
+.pp-te-note { margin: 0; }
+
+/* campos do projeto e dos itens */
+.pp-te .pp-tpl-projmeta .pp-tpl-meta {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; align-items: end;
+}
+.pp-te :is(.pp-tpl-num, .pp-tpl-field) {
+    font-size: 11px; letter-spacing: .06em; text-transform: uppercase; font-weight: 600; color: var(--pp-muted); gap: 6px;
+}
+.pp-te .pp-tpl-projmeta :is(.pp-tpl-num input, .pp-tpl-field select, .pp-tpl-field input) { width: 100%; min-width: 0; }
+.pp-te :is(.pp-tpl-num input, .pp-tpl-field select, .pp-tpl-field input, .pp-tpl-row .pp-tpl-name, .pp-tpl-content, .pp-pm-content) {
+    height: 34px; padding: 0 10px; border-radius: 7px; border: 1px solid var(--pp-border-strong);
+    background: var(--pp-page, transparent); color: var(--pp-text); font-size: 12.5px; font-weight: 500;
+    text-transform: none; letter-spacing: 0; box-sizing: border-box;
+}
+.pp-te :is(.pp-tpl-content, .pp-pm-content) { height: auto; min-height: 34px; padding: 7px 10px; width: 100%; }
+.pp-te .pp-tpl-num input { width: 70px; text-align: right; }
+.pp-te .pp-tpl-row .pp-tpl-name { font-weight: 600; color: var(--pp-text-strong); }
+.pp-te :is(input, select, textarea):focus { outline: none; border-color: var(--pp-accent); }
+
+/* interruptor "calcular automaticamente o %" (o checkbox mantém a classe) */
+.pp-te .pp-tpl-check.pp-switch { position: relative; text-transform: none; letter-spacing: 0; font-size: 12.5px; font-weight: 500; color: var(--pp-text); padding-bottom: 0; height: 34px; }
+.pp-te .pp-tpl-check.pp-switch .pp-switch__track { width: 38px; height: 22px; border-radius: 11px; }
+.pp-te .pp-tpl-check.pp-switch .pp-switch__track::after { width: 16px; height: 16px; }
+.pp-te .pp-tpl-check.pp-switch input:checked + .pp-switch__track::after { left: 19px; }
+
+/* nós da árvore em cartões */
+.pp-te .pp-tpl-list { gap: 8px; margin: 0; }
+.pp-te .pp-tpl-node {
+    border: 1px solid var(--pp-border); border-left: 3px solid var(--pp-border-strong); border-radius: 8px;
+    background: var(--pp-surface); padding: 10px 12px;
+}
+.pp-te .pp-tpl-node--project { border-left-color: var(--pp-accent); background: var(--pp-surface-2); }
+.pp-te .pp-tpl-row { gap: 8px; align-items: flex-end; }
+.pp-te .pp-tpl-handle { align-self: center; font-size: 1.05rem; }
+.pp-te .pp-tpl-node--task > .pp-tpl-row > .pp-tpl-handle { color: var(--pp-muted); }
+.pp-te .pp-tpl-meta { gap: 14px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--pp-border); align-items: flex-end; }
+.pp-te .pp-tpl-content { margin-top: 10px; }
+.pp-te .pp-tpl-children, .pp-te .pp-tpl-psection { margin: 10px 0 0 28px; gap: 8px; }
+.pp-te .pp-tpl-children:empty { margin: 0; }
+.pp-te .pp-tpl-mv, .pp-te .pp-tpl-mini {
+    height: 30px; border-radius: 7px; border: 1px solid var(--pp-border-strong); background: var(--pp-surface-3);
+    color: var(--pp-text-strong); font-size: 12.5px; font-weight: 600; align-self: flex-end;
+}
+.pp-te .pp-tpl-mv { width: 30px; }
+.pp-te .pp-tpl-mini { padding: 0 10px; }
+.pp-te .pp-tpl-mv:hover:not(:disabled), .pp-te .pp-tpl-mini:hover { border-color: var(--pp-accent); background: var(--pp-accent-soft); color: var(--pp-link); }
+.pp-te .pp-tpl-mini--danger { width: 30px; padding: 0; color: var(--pp-danger-text); border-color: var(--pp-danger-border); background: transparent; font-size: 1rem; }
+.pp-te .pp-tpl-mini--danger:hover { background: var(--pp-danger-soft); color: var(--pp-danger-text); border-color: var(--pp-danger-border); }
+.pp-te .pp-tpl-plabel { font-size: 11px; letter-spacing: .07em; }
+
+/* N-8b-1 (acabamento visto na validação): chip sem quebra e select no tamanho da busca */
+.pp-tl-chip { white-space: nowrap; }
+.projectplus-app select.pp-tp-input { font-size: 12.5px !important; height: 34px !important; padding: 0 28px 0 10px; line-height: 32px; }
+
+/* N-8b-2 (-2): "+ Adicionar" no cabeçalho da seção, aviso de lista vazia e
+   seções vazias de dentro do subprojeto escondidas (aparecem com "+ tarefa" /
+   "+ subprojeto" do próprio subprojeto). */
+.pp-te .pp-te-cardhead { align-items: center; }
+.pp-te .pp-te-cardhead .pp-tpl-add { margin-top: 0; }
+.pp-te-movehint { margin: -6px 0 10px; }
+.pp-te #pp-tpl-roottasks:empty::before, .pp-te #pp-tpl-rootsubs:empty::before {
+    content: attr(data-empty); display: block; padding: 14px; text-align: center;
+    border: 1px dashed var(--pp-border-strong); border-radius: 8px; color: var(--pp-muted); font-size: 12.5px;
+}
+.pp-te .pp-tpl-psection:has(> .pp-tpl-list:empty) { display: none; }
