@@ -310,13 +310,9 @@
         const headRow = document.createElement('div');
         headRow.className = 'pp-kb-row pp-kb-row--head';
         columns.forEach(function (col) {
-            const h = document.createElement('div');
-            h.className = 'pp-kb-col-head';
-            h.style.setProperty('--pp-kb-color', col.color);
             // Bloco G: conta TODOS os cartões visíveis da coluna, inclusive os
             // de raia fechada e de subprojeto recolhido.
-            h.textContent = col.name + ' (' + countInColumn(grouped, Object.keys(grouped).map(function (k) { return { id: k }; }), col.id) + ')';
-            headRow.appendChild(h);
+            headRow.appendChild(colHeadEl(col, countInColumn(grouped, Object.keys(grouped).map(function (k) { return { id: k }; }), col.id)));
         });
         board.appendChild(headRow);
 
@@ -565,6 +561,25 @@
         });
     }
 
+    // Bloco N-5: cabeçalho da fase = nome + contador em selo (antes "Nome (3)"),
+    // borda inferior na cor da fase. Compartilhado com o Kanban de projetos.
+    function colHeadEl(col, count) {
+        const h = document.createElement('div');
+        h.className = 'pp-kb-col-head';
+        h.style.setProperty('--pp-kb-color', col.color);
+        h.title = col.name;
+        const name = document.createElement('span');
+        name.className = 'pp-kb-col-head__name';
+        name.textContent = col.name;
+        const cnt = document.createElement('span');
+        cnt.className = 'pp-kb-col-head__count';
+        cnt.textContent = String(count);
+        h.appendChild(name);
+        h.appendChild(cnt);
+        return h;
+    }
+    ProjectPlusKanban.colHeadEl = colHeadEl;
+
     function countInColumn(grouped, lanes, colId) {
         let n = 0;
         lanes.forEach(function (l) {
@@ -579,6 +594,7 @@
         wrap.className = 'pp-kb-card-item'
             + (isSub ? ' pp-kb-card-item--sub' : '')
             + (c.blocked ? ' pp-kb-card-item--blocked' : '')
+            + (isLate(c.deadline) ? ' pp-kb-card-item--late' : '')
             + (c.is_done ? ' pp-kb-card-item--done' : '');
 
         // Bloco 2a: TODO cartão (tarefa de topo E subtarefa) é arrastável
@@ -607,9 +623,13 @@
         // cartão não virar "arrastar o link".
         a.draggable = false;
 
+        // Bloco N-5: bloqueio por dependência = cadeado (ícone) antes do nome.
         const name = document.createElement('span');
         name.className = 'pp-kb-card-item__name';
-        name.textContent = (c.blocked ? '🔒 ' : '') + c.name;
+        if (c.blocked) {
+            name.appendChild(lockEl());
+        }
+        name.appendChild(document.createTextNode(c.name));
         a.appendChild(name);
 
         // Linha de meta: no agrupamento por Projeto mostra o responsável;
@@ -621,22 +641,19 @@
 
         a.appendChild(deadlineEl(c.deadline));
 
-        const badges = document.createElement('span');
-        badges.className = 'pp-kb-card-item__badges';
-        let html = c.percent + '%';
+        let html = escapeText(c.percent + '% ' + __('concluído'));
         if (c.is_done) {
             // Selo de conclusão (pedido de 31/07/2026): além da cor do cartão,
             // um check textual explícito. Só texto TRADUZIDO passa por aqui.
             html += ' <span class="pp-kb-donebadge">✓ ' + escapeText(__('Concluída')) + '</span>';
         }
         if (c.comments > 0) {
-            html += ' &nbsp;💬' + c.comments;
+            html += ' &nbsp;💬' + Number(c.comments);
         }
         if (c.deps > 0) {
-            html += ' &nbsp;🔗' + c.deps;
+            html += ' &nbsp;🔗' + Number(c.deps);
         }
-        badges.innerHTML = html;
-        a.appendChild(badges);
+        a.appendChild(footEl(html, c.end_label));
 
         wrap.appendChild(a);
 
@@ -654,6 +671,43 @@
         return wrap;
     }
 
+    // Bloco N-5: cartão em atraso (prazo estourado) ganha a borda vermelha.
+    function isLate(d) {
+        return !!d && d.state === 'dark';
+    }
+
+    function lockEl() {
+        const i = document.createElement('i');
+        i.className = 'ti ti-lock pp-kb-card-item__lock';
+        i.title = __('Bloqueada — veja as dependências');
+        i.setAttribute('aria-label', i.title);
+        return i;
+    }
+
+    // Rodapé do cartão: à esquerda o % (e selos, HTML já escapado); à
+    // direita o prazo final (texto do servidor, no formato do usuário).
+    function footEl(leftHtml, endLabel) {
+        const foot = document.createElement('span');
+        foot.className = 'pp-kb-card-item__meta';
+        const left = document.createElement('span');
+        left.className = 'pp-kb-card-item__badges';
+        left.innerHTML = leftHtml;
+        foot.appendChild(left);
+        if (endLabel) {
+            const end = document.createElement('span');
+            end.className = 'pp-kb-card-item__end';
+            end.title = __('Prazo');
+            const ico = document.createElement('i');
+            ico.className = 'ti ti-calendar-due';
+            end.appendChild(ico);
+            end.appendChild(document.createTextNode(String(endLabel)));
+            foot.appendChild(end);
+        }
+        return foot;
+    }
+    ProjectPlusKanban.isLate = isLate;
+    ProjectPlusKanban.footEl = footEl;
+
     // Escapa texto que entra em HTML/atributo montado por concatenacao.
     // So e usado com texto TRADUZIDO (o resto do cartao usa textContent).
     function escapeText(str) {
@@ -664,25 +718,27 @@
 
     // Mesmo markup/classes do painel PHP (dashboard.html.twig), aqui
     // montado no cliente a partir do objeto Deadline::compute() embutido.
+    // Bloco N-5: barra e rótulo lado a lado (a barra ocupa o resto da linha).
     function deadlineEl(d) {
         const wrap = document.createElement('span');
-        wrap.style.display = 'block';
-        wrap.style.margin = '6px 0';
+        wrap.className = 'pp-kb-card-item__dl';
 
         if (!d || d.state === 'done') {
+            wrap.classList.add('pp-kb-card-item__dl--empty');
             return wrap;
         }
         if (d.state === 'none') {
-            wrap.innerHTML = '<div class="pp-deadline pp-deadline--none" '
+            wrap.innerHTML = '<span class="pp-deadline pp-deadline--none" '
                 + 'title="' + escapeText(__('Sem datas planejadas — corrija o planejamento')) + '">'
-                + '<div class="pp-deadline__fill" style="width:0%"></div></div>';
+                + '<span class="pp-deadline__fill" style="width:0%"></span></span>';
             return wrap;
         }
-        wrap.innerHTML = '<div class="pp-deadline"><div class="pp-deadline__fill pp-deadline__fill--'
-            + d.state + '" style="width:' + d.display + '%"></div></div>'
-            + '<span class="pp-deadline__label pp-deadline__label--' + d.state + '">' + d.label + '</span>';
+        wrap.innerHTML = '<span class="pp-deadline"><span class="pp-deadline__fill pp-deadline__fill--'
+            + escapeText(d.state) + '" style="width:' + Number(d.display) + '%"></span></span>'
+            + '<span class="pp-deadline__label pp-deadline__label--' + escapeText(d.state) + '">' + escapeText(d.label) + '</span>';
         return wrap;
     }
+    ProjectPlusKanban.deadlineEl = deadlineEl;
 
     // Bloco H (21/10/2026): o board rola DENTRO de .pp-kb-scroll, então a
     // barra horizontal fica na borda de baixo dele. Com `max-height: 74vh`
@@ -749,6 +805,11 @@
         const marker = document.createComment('pp-kb-fs-marker');
         const apply = function (on) {
             root.classList.toggle('pp-kb-fs', on);
+            // N-5 (ajuste -3): fora do .projectplus-app o widget perde o data-bs-theme
+            // herdado — os campos do GLPI (busca) voltavam a ser claros na tela cheia.
+            if (on) {
+                root.setAttribute('data-bs-theme', document.documentElement.getAttribute('data-pp-theme') || 'light');
+            }
             document.documentElement.classList.toggle('pp-kb-fs-page', on);
             if (on && root.parentNode !== document.body) {
                 root.parentNode.insertBefore(marker, root);
@@ -781,7 +842,7 @@
 
     // Exposto só para os testes isolados (jsdom) do Bloco 2a.
     ProjectPlusKanban._test = { applyCardState: applyCardState, laneZebra: laneZebra, laneCount: laneCount,
-        laneOpenDefaultFor: laneOpenDefaultFor, subtreeIds: subtreeIds };
+        laneOpenDefaultFor: laneOpenDefaultFor, subtreeIds: subtreeIds, cardEl: cardEl, isLate: isLate };
 
     window.ProjectPlusKanban = ProjectPlusKanban;
 })();

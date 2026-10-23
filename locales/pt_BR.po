@@ -12,7 +12,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ProjectPlus\n"
 "Report-Msgid-Bugs-To: https://github.com/teckcomp/glpi-plugin-projectplus/issues\n"
-"POT-Creation-Date: 2026-10-22 13:10+0000\n"
+"POT-Creation-Date: 2026-10-22 13:40+0000\n"
 "PO-Revision-Date: 2026-07-25 00:00+0000\n"
 "Last-Translator: Teckcomp I.T. Services\n"
 "Language-Team: Portugues do Brasil\n"
@@ -178,7 +178,7 @@ msgstr "APAGA tabelas, dados e direitos"
 msgid "AUSENTE"
 msgstr "AUSENTE"
 
-#: templates/kanban.html.twig:39 templates/projectkanban.html.twig:39
+#: templates/kanban.html.twig:60 templates/projectkanban.html.twig:58
 #: templates/timeline.html.twig:32 templates/typephases.html.twig:26
 msgid "Abrir"
 msgstr "Abrir"
@@ -227,7 +227,7 @@ msgstr "Adicione ao menos uma tarefa ou subprojeto"
 msgid "Adicione ao menos uma tarefa ou subprojeto."
 msgstr "Adicione ao menos uma tarefa ou subprojeto."
 
-#: src/KanbanTab.php:79 templates/kanban.html.twig:43
+#: src/KanbanTab.php:79 templates/kanban.html.twig:65
 msgid "Agrupar por"
 msgstr "Agrupar por"
 
@@ -285,15 +285,15 @@ msgstr "Aplicar"
 msgid "Aproximação: conclusão de cada tarefa estimada pela data da última atualização (percent_done = 100%) — não há histórico diário de progresso."
 msgstr "Aproximação: conclusão de cada tarefa estimada pela data da última atualização (percent_done = 100%) — não há histórico diário de progresso."
 
-#: templates/kanban.html.twig:86
+#: templates/kanban.html.twig:26
 msgid "Arraste um cartão entre as colunas para mudar a fase da tarefa."
 msgstr "Arraste um cartão entre as colunas para mudar a fase da tarefa."
 
-#: templates/projectkanban.html.twig:81
+#: templates/projectkanban.html.twig:26
 msgid "Arraste um cartão entre as colunas para mudar a fase do projeto. Projeto com tarefa ou subprojeto aberto não vai para fase finalizada."
 msgstr "Arraste um cartão entre as colunas para mudar a fase do projeto. Projeto com tarefa ou subprojeto aberto não vai para fase finalizada."
 
-#: templates/kanban.html.twig:29 templates/projectkanban.html.twig:29
+#: templates/kanban.html.twig:51 templates/projectkanban.html.twig:49
 msgid "As colunas são as fases do tipo de projeto escolhido"
 msgstr "As colunas são as fases do tipo de projeto escolhido"
 
@@ -376,7 +376,7 @@ msgstr "Bloqueia"
 msgid "Bloqueia (só concluem depois desta)"
 msgstr "Bloqueia (só concluem depois desta)"
 
-#: templates/kanban.html.twig:69
+#: templates/kanban.html.twig:35
 msgid "Board com os PROJETOS nas colunas de fase"
 msgstr "Board com os PROJETOS nas colunas de fase"
 
@@ -384,7 +384,7 @@ msgstr "Board com os PROJETOS nas colunas de fase"
 msgid "Burndown"
 msgstr "Burndown"
 
-#: templates/dashboard.html.twig:208 templates/projectkanban.html.twig:52
+#: templates/dashboard.html.twig:208 templates/projectkanban.html.twig:76
 msgid "Buscar projeto"
 msgstr "Buscar projeto"
 
@@ -396,7 +396,7 @@ msgstr "Buscar projeto ou tarefa"
 msgid "Buscar projeto ou tarefa…"
 msgstr "Buscar projeto ou tarefa…"
 
-#: templates/dashboard.html.twig:207 templates/projectkanban.html.twig:51
+#: templates/dashboard.html.twig:207 templates/projectkanban.html.twig:75
 msgid "Buscar projeto…"
 msgstr "Buscar projeto…"
 
@@ -404,11 +404,11 @@ msgstr "Buscar projeto…"
 msgid "Buscar tarefa"
 msgstr "Buscar tarefa"
 
-#: templates/kanban.html.twig:56
+#: templates/kanban.html.twig:83
 msgid "Buscar tarefa ou projeto"
 msgstr "Buscar tarefa ou projeto"
 
-#: src/KanbanTab.php:86 templates/kanban.html.twig:55
+#: src/KanbanTab.php:86 templates/kanban.html.twig:82
 msgid "Buscar tarefa ou projeto…"
 msgstr "Buscar tarefa ou projeto…"
 
@@ -451,8 +451,8 @@ msgstr "Carregando comentários…"
 msgid "Carregando dependências…"
 msgstr "Carregando dependências…"
 
-#: src/KanbanTab.php:89 templates/kanban.html.twig:92
-#: templates/projectkanban.html.twig:87
+#: src/KanbanTab.php:89 templates/kanban.html.twig:99
+#: templates/projectkanban.html.twig:92
 msgid "Carregando o Kanban…"
 msgstr "Carregando o Kanban…"
 
@@ -902,7 +902,8 @@ msgstr "Erro ao carregar tarefas."
 msgid "Escolha um tipo de origem diferente para copiar as fases"
 msgstr "Escolha um tipo de origem diferente para copiar as fases"
 
-#: templates/dashboard.html.twig:53 templates/timeline.html.twig:45
+#: templates/dashboard.html.twig:53 templates/kanban.html.twig:70
+#: templates/projectkanban.html.twig:63 templates/timeline.html.twig:45
 msgid "Escopo"
 msgstr "Escopo"
 
@@ -1189,7 +1190,7 @@ msgid "Imprimir"
 msgstr "Imprimir"
 
 #: templates/costs.html.twig:29 templates/dashboard.html.twig:58
-#: templates/kanban.html.twig:59 templates/projectkanban.html.twig:55
+#: templates/kanban.html.twig:75 templates/projectkanban.html.twig:68
 #: templates/reports.html.twig:81 templates/timeline.html.twig:50
 msgid "Incluir todos os projetos que você pode ver"
 msgstr "Incluir todos os projetos que você pode ver"
@@ -1269,7 +1270,9 @@ msgstr "Já existe uma fase chamada \"%s\""
 #. #-#-#-#-#  php.pot (ProjectPlus 1.1.0-beta)  #-#-#-#-#
 #. TRANSLATORS: rótulo da aba "Kanban" do NÚCLEO do GLPI.
 #: front/kanban.php:84 src/I18nJs.php:230 templates/_topbar.html.twig:34
-#: templates/kanban.html.twig:8 templates/typephases.html.twig:66
+#: templates/kanban.html.twig:23 templates/kanban.html.twig:32
+#: templates/projectkanban.html.twig:23 templates/projectkanban.html.twig:32
+#: templates/typephases.html.twig:66
 msgid "Kanban"
 msgstr "Kanban"
 
@@ -1281,22 +1284,9 @@ msgstr "Kanban (ProjectPlus)"
 msgid "Kanban (tarefas)"
 msgstr "Kanban (tarefas)"
 
-#: front/projectkanban.php:63 templates/kanban.html.twig:70
-#: templates/projectkanban.html.twig:8
+#: front/projectkanban.php:63
 msgid "Kanban de projetos"
 msgstr "Kanban de projetos"
-
-#: templates/projectkanban.html.twig:8
-msgid "Kanban de projetos por fase"
-msgstr "Kanban de projetos por fase"
-
-#: templates/projectkanban.html.twig:65
-msgid "Kanban de tarefas"
-msgstr "Kanban de tarefas"
-
-#: templates/kanban.html.twig:8
-msgid "Kanban por fase, com swimlanes"
-msgstr "Kanban por fase, com swimlanes"
 
 #: src/ProjectCost.php:137 src/TaskCost.php:169 templates/costs.html.twig:73
 msgid "Lançado por"
@@ -1391,15 +1381,15 @@ msgstr "Monte a árvore de tarefas e subprojetos. Os prazos são em dias a parti
 msgid "Mostrar apenas os projetos deste tipo"
 msgstr "Mostrar apenas os projetos deste tipo"
 
-#: templates/kanban.html.twig:76 templates/projectkanban.html.twig:71
+#: templates/kanban.html.twig:92 templates/projectkanban.html.twig:85
 msgid "Mostrar o quadro em tela cheia, por cima do menu do GLPI"
 msgstr "Mostrar o quadro em tela cheia, por cima do menu do GLPI"
 
-#: templates/projectkanban.html.twig:45
+#: templates/projectkanban.html.twig:80
 msgid "Mostrar projetos concluídos"
 msgstr "Mostrar projetos concluídos"
 
-#: src/KanbanTab.php:84 templates/kanban.html.twig:49
+#: src/KanbanTab.php:84 templates/kanban.html.twig:87
 #: templates/mytasks.html.twig:54 templates/timeline.html.twig:62
 msgid "Mostrar tarefas concluídas"
 msgstr "Mostrar tarefas concluídas"
@@ -1867,7 +1857,7 @@ msgstr "ProjectPlus: atrasos, pendências e projetos parados"
 #: front/costs.php:117 src/I18nJs.php:97 src/KanbanTab.php:80
 #: src/Reports.php:217 src/Reports.php:357 src/Reports.php:585
 #: templates/dashboard.html.twig:65 templates/dashboard.html.twig:215
-#: templates/dashboard.html.twig:322 templates/kanban.html.twig:44
+#: templates/dashboard.html.twig:322 templates/kanban.html.twig:66
 #: templates/mytasks.html.twig:45 templates/reports.html.twig:16
 msgid "Projeto"
 msgstr "Projeto"
@@ -1934,7 +1924,8 @@ msgstr "Projeto parado"
 msgid "Projeto raiz"
 msgstr "Projeto raiz"
 
-#: src/Profile.php:72 templates/reports.html.twig:105
+#: src/Profile.php:72 templates/kanban.html.twig:35
+#: templates/projectkanban.html.twig:34 templates/reports.html.twig:105
 #: templates/typephases.html.twig:229
 msgid "Projetos"
 msgstr "Projetos"
@@ -1966,6 +1957,10 @@ msgstr "Projetos, tarefas e prazos"
 #: src/I18nJs.php:172
 msgid "Promover (subir um nível)"
 msgstr "Promover (subir um nível)"
+
+#: templates/kanban.html.twig:64
+msgid "Raias"
+msgstr "Raias"
 
 #: src/I18nJs.php:192
 msgid "Real (tarefas restantes)"
@@ -2032,7 +2027,7 @@ msgstr "Remover vínculo"
 msgid "Responsáveis"
 msgstr "Responsáveis"
 
-#: src/KanbanTab.php:81 templates/kanban.html.twig:45
+#: src/KanbanTab.php:81 templates/kanban.html.twig:67
 msgid "Responsável"
 msgstr "Responsável"
 
@@ -2040,7 +2035,7 @@ msgstr "Responsável"
 msgid "Responsável(is)"
 msgstr "Responsável(is)"
 
-#: templates/kanban.html.twig:74 templates/projectkanban.html.twig:69
+#: templates/kanban.html.twig:90 templates/projectkanban.html.twig:83
 msgid "Sair da tela cheia"
 msgstr "Sair da tela cheia"
 
@@ -2102,7 +2097,7 @@ msgstr "Sem datas planejadas — corrija o planejamento"
 msgid "Sem estado"
 msgstr "Sem estado"
 
-#: src/Dashboard.php:441 src/Kanban.php:431 src/ProjectKanban.php:217
+#: src/Dashboard.php:441 src/Kanban.php:433 src/ProjectKanban.php:219
 msgid "Sem fase"
 msgstr "Sem fase"
 
@@ -2196,11 +2191,11 @@ msgstr "Situação"
 msgid "Situação dos projetos"
 msgstr "Situação dos projetos"
 
-#: templates/projectkanban.html.twig:83
+#: templates/projectkanban.html.twig:28
 msgid "Somente leitura — cada cartão é um projeto ou subprojeto na coluna da fase atual."
 msgstr "Somente leitura — cada cartão é um projeto ou subprojeto na coluna da fase atual."
 
-#: templates/kanban.html.twig:88
+#: templates/kanban.html.twig:28
 msgid "Somente leitura — você não tem permissão para alterar tarefas."
 msgstr "Somente leitura — você não tem permissão para alterar tarefas."
 
@@ -2244,6 +2239,8 @@ msgid "Só o autor pode excluir este comentário"
 msgstr "Só o autor pode excluir este comentário"
 
 #: templates/dashboard.html.twig:56 templates/dashboard.html.twig:59
+#: templates/kanban.html.twig:73 templates/kanban.html.twig:76
+#: templates/projectkanban.html.twig:66 templates/projectkanban.html.twig:69
 #: templates/timeline.html.twig:48 templates/timeline.html.twig:51
 msgid "Só os meus"
 msgstr "Só os meus"
@@ -2318,6 +2315,7 @@ msgid "Tarefa sem datas planejadas"
 msgstr "Tarefa sem datas planejadas"
 
 #: src/I18nJs.php:62 src/Profile.php:77 templates/dashboard.html.twig:290
+#: templates/kanban.html.twig:33 templates/projectkanban.html.twig:33
 #: templates/reports.html.twig:134
 msgid "Tarefas"
 msgstr "Tarefas"
@@ -2350,8 +2348,8 @@ msgstr "Tarefas por fase"
 msgid "Tarefas, subprojetos e o fim planejado vêm do modelo; os demais campos foram preenchidos com o modelo e podem ser ajustados."
 msgstr "Tarefas, subprojetos e o fim planejado vêm do modelo; os demais campos foram preenchidos com o modelo e podem ser ajustados."
 
-#: templates/kanban.html.twig:75 templates/kanban.html.twig:77
-#: templates/projectkanban.html.twig:70 templates/projectkanban.html.twig:72
+#: templates/kanban.html.twig:91 templates/kanban.html.twig:93
+#: templates/projectkanban.html.twig:84 templates/projectkanban.html.twig:86
 msgid "Tela cheia"
 msgstr "Tela cheia"
 
@@ -2374,8 +2372,8 @@ msgstr "Timeline"
 
 #: src/I18nJs.php:56 src/Reports.php:218 src/Reports.php:358
 #: templates/dashboard.html.twig:39 templates/dashboard.html.twig:456
-#: templates/kanban.html.twig:27 templates/mytasks.html.twig:35
-#: templates/projectkanban.html.twig:27 templates/reports.html.twig:48
+#: templates/kanban.html.twig:49 templates/mytasks.html.twig:35
+#: templates/projectkanban.html.twig:47 templates/reports.html.twig:48
 #: templates/timeline.html.twig:23
 msgid "Tipo"
 msgstr "Tipo"
@@ -2404,6 +2402,8 @@ msgid "Tipo de tarefa"
 msgstr "Tipo de tarefa"
 
 #: templates/dashboard.html.twig:55 templates/dashboard.html.twig:58
+#: templates/kanban.html.twig:72 templates/kanban.html.twig:75
+#: templates/projectkanban.html.twig:65 templates/projectkanban.html.twig:68
 #: templates/timeline.html.twig:47 templates/timeline.html.twig:50
 msgid "Todos"
 msgstr "Todos"
@@ -2412,8 +2412,8 @@ msgstr "Todos"
 msgid "Todos os projetos"
 msgstr "Todos os projetos"
 
-#: templates/dashboard.html.twig:41 templates/kanban.html.twig:31
-#: templates/mytasks.html.twig:37 templates/projectkanban.html.twig:31
+#: templates/dashboard.html.twig:41 templates/kanban.html.twig:53
+#: templates/mytasks.html.twig:37 templates/projectkanban.html.twig:51
 #: templates/timeline.html.twig:26
 msgid "Todos os tipos"
 msgstr "Todos os tipos"
@@ -2460,8 +2460,7 @@ msgstr "Valor"
 msgid "Ver"
 msgstr "Ver"
 
-#: templates/costs.html.twig:31 templates/kanban.html.twig:61
-#: templates/projectkanban.html.twig:57 templates/reports.html.twig:83
+#: templates/costs.html.twig:31 templates/reports.html.twig:83
 msgid "Ver só os meus"
 msgstr "Ver só os meus"
 
@@ -2469,8 +2468,7 @@ msgstr "Ver só os meus"
 msgid "Ver todos os projetos"
 msgstr "Ver todos os projetos"
 
-#: templates/costs.html.twig:33 templates/kanban.html.twig:63
-#: templates/projectkanban.html.twig:59 templates/reports.html.twig:85
+#: templates/costs.html.twig:33 templates/reports.html.twig:85
 msgid "Ver tudo"
 msgstr "Ver tudo"
 
@@ -2491,7 +2489,7 @@ msgid "Voltar a herdar o padrão"
 msgstr "Voltar a herdar o padrão"
 
 #: templates/costs.html.twig:29 templates/dashboard.html.twig:56
-#: templates/kanban.html.twig:59 templates/projectkanban.html.twig:55
+#: templates/kanban.html.twig:73 templates/projectkanban.html.twig:66
 #: templates/reports.html.twig:81 templates/timeline.html.twig:48
 msgid "Voltar ao escopo pessoal"
 msgstr "Voltar ao escopo pessoal"
@@ -2776,6 +2774,15 @@ msgstr "— Todos —"
 #: src/I18nJs.php:151
 msgid "— sem outras tarefas neste projeto —"
 msgstr "— sem outras tarefas neste projeto —"
+
+#~ msgid "Kanban de projetos por fase"
+#~ msgstr "Kanban de projetos por fase"
+
+#~ msgid "Kanban de tarefas"
+#~ msgstr "Kanban de tarefas"
+
+#~ msgid "Kanban por fase, com swimlanes"
+#~ msgstr "Kanban por fase, com swimlanes"
 
 #~ msgid "Atribuídas a você"
 #~ msgstr "Atribuídas a você"

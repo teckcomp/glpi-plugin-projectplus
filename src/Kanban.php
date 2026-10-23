@@ -307,6 +307,8 @@ class Kanban
                 'blocked'           => $deps[$id]['blocked'] ?? false,
                 'deps'              => $deps[$id]['deps'] ?? 0,
                 'comments'          => $comments[$id] ?? 0,
+                // Bloco N-5: prazo final no rodapé do cartão (formato do usuário)
+                'end_label'         => DateFmt::date($row['plan_end_date'], ''),
                 'deadline'          => Deadline::compute(
                     $row['plan_start_date'],
                     $row['real_start_date'],

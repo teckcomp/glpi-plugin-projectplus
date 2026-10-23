@@ -162,10 +162,19 @@
         const headRow = document.createElement('div');
         headRow.className = 'pp-kb-row pp-kb-row--head';
         columns.forEach(function (col) {
+            // Bloco N-5: nome + contador em selo (mesmo markup do board de tarefas).
             const h = document.createElement('div');
             h.className = 'pp-kb-col-head';
             h.style.setProperty('--pp-kb-color', col.color);
-            h.textContent = col.name + ' (' + ((grouped[col.id] || []).length) + ')';
+            h.title = col.name;
+            const hn = document.createElement('span');
+            hn.className = 'pp-kb-col-head__name';
+            hn.textContent = col.name;
+            const hc = document.createElement('span');
+            hc.className = 'pp-kb-col-head__count';
+            hc.textContent = String((grouped[col.id] || []).length);
+            h.appendChild(hn);
+            h.appendChild(hc);
             headRow.appendChild(h);
         });
         board.appendChild(headRow);
@@ -216,6 +225,7 @@
         const wrap = document.createElement('div');
         wrap.className = 'pp-kb-card-item'
             + (isSub ? ' pp-kb-card-item--sub' : '')
+            + ((c.deadline && c.deadline.state === 'dark') ? ' pp-kb-card-item--late' : '')
             + (c.is_done ? ' pp-kb-card-item--done' : '');
 
         if (state && state.canEdit) {
@@ -251,14 +261,28 @@
 
         a.appendChild(deadlineEl(c.deadline));
 
+        // Bloco N-5: rodapé — % concluído e tarefas à esquerda, prazo final à direita.
+        const foot = document.createElement('span');
+        foot.className = 'pp-kb-card-item__meta';
         const badges = document.createElement('span');
         badges.className = 'pp-kb-card-item__badges';
-        let text = c.percent + '%';
+        let text = c.percent + '% ' + __('concluído');
         if (c.tasks_total > 0) {
             text += '  •  ' + c.tasks_done + '/' + c.tasks_total + ' ' + __('tarefas');
         }
         badges.textContent = text;
-        a.appendChild(badges);
+        foot.appendChild(badges);
+        if (c.end_label) {
+            const end = document.createElement('span');
+            end.className = 'pp-kb-card-item__end';
+            end.title = __('Prazo');
+            const ico = document.createElement('i');
+            ico.className = 'ti ti-calendar-due';
+            end.appendChild(ico);
+            end.appendChild(document.createTextNode(String(c.end_label)));
+            foot.appendChild(end);
+        }
+        a.appendChild(foot);
 
         wrap.appendChild(a);
 
@@ -339,28 +363,29 @@
 
     // Mesmo markup/classes da barra de prazo do painel (dashboard.html.twig),
     // montado no cliente a partir do objeto Deadline::compute() embutido.
+    // Bloco N-5: barra e rótulo lado a lado (igual ao board de tarefas).
     function deadlineEl(d) {
         const wrap = document.createElement('span');
-        wrap.style.display = 'block';
-        wrap.style.margin = '6px 0';
+        wrap.className = 'pp-kb-card-item__dl';
 
         if (!d || d.state === 'done') {
+            wrap.classList.add('pp-kb-card-item__dl--empty');
             return wrap;
         }
         if (d.state === 'none') {
-            wrap.innerHTML = '<div class="pp-deadline pp-deadline--none" '
+            wrap.innerHTML = '<span class="pp-deadline pp-deadline--none" '
                 + 'title="' + escapeText(__('Sem datas planejadas — corrija o planejamento')) + '">'
-                + '<div class="pp-deadline__fill" style="width:0%"></div></div>';
+                + '<span class="pp-deadline__fill" style="width:0%"></span></span>';
             return wrap;
         }
-        wrap.innerHTML = '<div class="pp-deadline"><div class="pp-deadline__fill pp-deadline__fill--'
-            + d.state + '" style="width:' + d.display + '%"></div></div>'
-            + '<span class="pp-deadline__label pp-deadline__label--' + d.state + '">' + d.label + '</span>';
+        wrap.innerHTML = '<span class="pp-deadline"><span class="pp-deadline__fill pp-deadline__fill--'
+            + escapeText(d.state) + '" style="width:' + Number(d.display) + '%"></span></span>'
+            + '<span class="pp-deadline__label pp-deadline__label--' + escapeText(d.state) + '">' + escapeText(d.label) + '</span>';
         return wrap;
     }
 
     // Exposto só para os testes isolados (jsdom).
-    ProjectPlusProjectKanban._test = { visibleCards: visibleCards, applyCardState: applyCardState };
+    ProjectPlusProjectKanban._test = { visibleCards: visibleCards, applyCardState: applyCardState, cardEl: cardEl };
 
     window.ProjectPlusProjectKanban = ProjectPlusProjectKanban;
 })();

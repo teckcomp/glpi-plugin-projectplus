@@ -187,6 +187,8 @@ class ProjectKanban
                 'manager'     => $manager !== '' ? $manager : __('Sem gestor', 'projectplus'),
                 'tasks_total' => $taskTotal[$id] ?? 0,
                 'tasks_done'  => $taskDone[$id] ?? 0,
+                // Bloco N-5: prazo final no rodapé do cartão (formato do usuário)
+                'end_label'   => DateFmt::date($row['plan_end_date'], ''),
                 'deadline'    => Deadline::compute(
                     $row['plan_start_date'],
                     $row['real_start_date'],

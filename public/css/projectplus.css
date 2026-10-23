@@ -44,6 +44,8 @@
     --pp-glass: rgba(255, 255, 255, .7);
     --pp-scroll-thumb: #9aa5b1;
     --pp-scroll-track: #eef1f4;
+    --pp-card: #fff;
+    --pp-card-border: #e1e5ea;
 }
 html[data-pp-theme="dark"] {
     --pp-page: #0C1F24;
@@ -82,6 +84,8 @@ html[data-pp-theme="dark"] {
     --pp-glass: rgba(12, 31, 36, .55);
     --pp-scroll-thumb: #3E6A72;
     --pp-scroll-track: #122A30;
+    --pp-card: #193840;
+    --pp-card-border: #2A5059;
 }
 
 .projectplus-dashboard { padding: 12px 18px; }
@@ -1761,3 +1765,79 @@ th.pp-actions-cell { text-align: right; }
     background: var(--pp-danger); color: #fff; font-size: 10.5px; font-weight: 700; line-height: 1;
     padding: 3px 7px; border-radius: 999px; white-space: nowrap;
 }
+
+/* ===== Bloco N-5 — Kanban (tarefas e projetos) no padrão do mockup =====
+   Título com o seletor Tarefas | Projetos dentro do widget (vai junto na tela
+   cheia), faixa de filtros, board em caixa, cabeçalho de fase com contador em
+   selo e borda na cor da fase, cartões na cor de cartão do tema (borda
+   vermelha quando o prazo estourou, cadeado quando bloqueada) e rodapé com
+   % concluído e prazo final. No claro as cores ficam as de antes. */
+.pp-kb-head { margin-bottom: 12px; }
+.pp-kb-head .pp-kb-boards { margin-left: auto; align-self: center; }
+.pp-kb-filterbar select { min-width: 160px; }
+
+.pp-kb-card { border: 1px solid var(--pp-border); border-radius: 10px; overflow: hidden; background: var(--pp-surface); }
+html[data-pp-theme="dark"] .pp-kb-card { background: var(--pp-page); }
+.pp-kb-card .pp-kb-scroll { border-top: 0; }
+
+.pp-kb-board { --pp-kb-head-h: 44px; }
+.pp-kb-col-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 0 14px; background: var(--pp-surface); font-size: 12.5px; color: var(--pp-text-strong);
+}
+.pp-kb-col-head__name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pp-kb-col-head__count {
+    flex: 0 0 auto; font-weight: 600; font-size: 11.5px; color: var(--pp-muted);
+    background: var(--pp-surface-3); border-radius: 10px; padding: 1px 8px; line-height: 16px;
+}
+html[data-pp-theme="dark"] .pp-kb-col-head__count { background: var(--pp-page); }
+
+.pp-kb-lane-head { border-top: 1px solid var(--pp-border); }
+.pp-kb-lane-head__in { padding-top: 9px; padding-bottom: 9px; gap: 10px; }
+.pp-kb-lane-toggle {
+    width: 24px; height: 24px; line-height: 22px; border-radius: 6px;
+    background: var(--pp-card); border-color: var(--pp-card-border); color: var(--pp-text);
+}
+.pp-kb-col { padding: 10px; gap: 10px; min-height: 90px; }
+.pp-pkb-board .pp-kb-col { background: var(--pp-surface); }
+html[data-pp-theme="dark"] .pp-kb-col { border-right-color: var(--pp-page); border-bottom-color: var(--pp-page); }
+.pp-kb-col--closed { min-height: 42px; }
+.pp-kb-col-count {
+    min-width: 26px; height: 22px; line-height: 20px; border-radius: 11px; box-sizing: border-box;
+    background: var(--pp-card); border-color: var(--pp-card-border); color: var(--pp-text-strong); font-size: 11.5px;
+}
+
+.pp-kb-card-item {
+    background: var(--pp-card); border-color: var(--pp-card-border); padding: 11px 12px; font-size: 12.5px;
+}
+html[data-pp-theme="dark"] .pp-kb-card-item { box-shadow: none; }
+.pp-kb-card-item__link { display: flex; flex-direction: column; gap: 8px; }
+.pp-kb-card-item__name { margin: 0; color: var(--pp-text-strong); }
+.pp-kb-card-item__lock { color: var(--pp-warn-text); margin-right: 5px; }
+.pp-kb-card-item__project { margin: 0; font-size: 12px; color: var(--pp-muted); }
+.pp-kb-card-item__dl { display: flex; align-items: center; gap: 8px; }
+.pp-kb-card-item__dl--empty { display: none; }
+.pp-kb-card-item__dl .pp-deadline { display: block; flex: 1 1 auto; width: auto; background: var(--pp-border); }
+/* N-5 (ajuste -2): no cartão a barra é <span> — o preenchimento precisa de display:block,
+   senão largura/altura são ignoradas e a barra some (só o rótulo aparecia). */
+.pp-kb-card-item__dl .pp-deadline__fill { display: block; }
+.pp-kb-card-item__dl .pp-deadline__label { font-size: 11.5px; white-space: nowrap; }
+.pp-kb-card-item__meta {
+    display: flex; justify-content: space-between; align-items: center; gap: 8px;
+    font-size: 11.5px; color: var(--pp-text-2);
+}
+.pp-kb-card-item__meta .pp-kb-card-item__badges { display: inline; font-size: 11.5px; }
+.pp-kb-card-item__end { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.pp-kb-card-item--sub { background: var(--pp-card); border-left-width: 1px; border-left-color: var(--pp-card-border); }
+.pp-kb-card-item--blocked { border-color: var(--pp-card-border); }
+.pp-kb-card-item--late { border-color: color-mix(in srgb, var(--pp-danger) 65%, transparent); }
+.pp-kb-card-item--done { opacity: .85; border-left: 3px solid var(--pp-ok); background: var(--pp-ok-soft); }
+.pp-kb-card-item:hover { border-color: var(--pp-accent); }
+.pp-kb-card-item__subtag {
+    margin-top: 8px; padding-top: 7px; border-top: 1px solid var(--pp-border);
+    font-size: 11.5px; font-weight: 500; color: var(--pp-accent);
+}
+
+/* tela cheia: o widget sai do .projectplus-app — leva fonte, cor e fundo do tema */
+.pp-kb-fs { font-size: 13px; color: var(--pp-text); }
+html[data-pp-theme="dark"] .pp-kb-fs { background: var(--pp-page); }
