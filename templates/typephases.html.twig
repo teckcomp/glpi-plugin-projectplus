@@ -1,263 +1,267 @@
-{# ProjectPlus — "Fases por tipo de projeto" (Etapa 9): administra o mapeamento tipo -> fases -> ordem das colunas #}
+{# ProjectPlus — "Fases por tipo de projeto" (Etapa 9): administra o mapeamento tipo -> fases -> ordem das colunas.
+   Bloco N-8c: layout do mockup — conjuntos numa lista à esquerda, editor à direita com prévia das colunas,
+   tabela com as fases do conjunto (numeradas, ↑↓) e, abaixo de um separador, as fases fora dele;
+   "Usar" é interruptor. Os NOMES dos campos e as ações do typephase.form.php não mudaram:
+   states[] na ordem do DOM (save), clear, copy/source_type, create_type, create_state, update_state. #}
 
 <link rel="stylesheet" href="{{ plugin_web_dir }}/css/projectplus.css">
 
+{% set pen %}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"></path></svg>{% endset %}
+
 <div class="projectplus-app" id="projectplus-typephases">
 
-    {# Bloco N-1a: barra superior no lugar da coluna lateral #}
-    {% include '@projectplus/_topbar.html.twig' with {pp_active: 'config', pp_title: __('Fases por tipo', 'projectplus'), pp_sub: __('Conjunto de fases por tipo de projeto', 'projectplus')} %}
+    {% include '@projectplus/_topbar.html.twig' with {pp_active: 'config'} %}
 
-    {# ================= ÁREA PRINCIPAL ================= #}
-    <div class="projectplus-main">
+    <div class="projectplus-main pp-tp">
 
-        <div class="projectplus-header">
-            <form method="get" class="projectplus-period" action="{{ self_url }}">
-                <label class="pp-tp-pick">
-                    {{ __('Conjunto', 'projectplus') }}
-                    <select name="type" onchange="this.form.submit()">
-                        {% for s in sets %}
-                            <option value="{{ s.id }}" {{ s.id == edit_id ? 'selected' : '' }}>
-                                {{ s.name }}{% if s.mapped %} ✔{% endif %} ({{ s.phases|length }})
-                            </option>
-                        {% endfor %}
-                    </select>
-                </label>
-                <noscript>
-                    <button type="submit" class="projectplus-btn projectplus-btn--ghost">{{ __('Abrir', 'projectplus') }}</button>
-                </noscript>
-            </form>
-
-            {# Rodada 3 — criação de TIPO e de FASE direto nesta tela. O tipo é
-               vocabulário nativo (glpi_projecttypes); a fase idem
-               (glpi_projectstates, lista global e única da instância — lição 59). #}
-            <form method="post" action="{{ form_action }}" class="projectplus-period pp-tp-new">
-                <input type="hidden" name="_glpi_csrf_token" value="{{ csrf_token }}">
-                <input type="hidden" name="projecttypes_id" value="{{ edit_id }}">
-                <input type="text" name="new_type_name" maxlength="255"
-                       placeholder="{{ __('Nome do novo tipo…', 'projectplus') }}"
-                       aria-label="{{ __('Nome do novo tipo…', 'projectplus') }}">
-                <button type="submit" name="create_type" value="1" class="projectplus-btn projectplus-btn--ghost">
-                    <i class="ti ti-plus"></i>{{ __('Criar tipo', 'projectplus') }}
-                </button>
-            </form>
-            <form method="post" action="{{ form_action }}" class="projectplus-period pp-tp-new">
-                <input type="hidden" name="_glpi_csrf_token" value="{{ csrf_token }}">
-                <input type="hidden" name="projecttypes_id" value="{{ edit_id }}">
-                <input type="text" name="new_state_name" maxlength="255"
-                       placeholder="{{ __('Nome da nova fase…', 'projectplus') }}"
-                       aria-label="{{ __('Nome da nova fase…', 'projectplus') }}">
-                <input type="color" name="new_state_color" value="#065a82"
-                       title="{{ __('Cor da fase', 'projectplus') }}">
-                <label class="pp-tp-newfinal" title="{{ __('Fase finalizadora', 'projectplus') }}">
-                    <input type="checkbox" name="new_state_finished" value="1">
-                    {{ __('Finalizadora', 'projectplus') }}
-                </label>
-                <button type="submit" name="create_state" value="1" class="projectplus-btn projectplus-btn--ghost">
-                    <i class="ti ti-plus"></i>{{ __('Criar fase', 'projectplus') }}
-                </button>
-            </form>
-
-            <div class="projectplus-actions">
-                <a class="projectplus-btn projectplus-btn--ghost" href="{{ plugin_web_dir }}/front/config.form.php">
-                    <i class="ti ti-settings"></i>{{ __('Configurações', 'projectplus') }}
-                </a>
-                {% if nav.kanban %}
-                <a class="projectplus-btn projectplus-btn--ghost" href="{{ plugin_web_dir }}/front/kanban.php">
-                    <i class="ti ti-layout-kanban"></i>{{ __('Kanban', 'projectplus') }}
-                </a>
-                {% endif %}
-            </div>
+        <div class="pp-cfg-head">
+            <a class="pp-filterbar__btn pp-cfg-back" href="{{ config_url }}">
+                <i class="ti ti-chevron-left" aria-hidden="true"></i>{{ __('Voltar à Configuração', 'projectplus') }}
+            </a>
+            <h1>{{ __('Fases por tipo', 'projectplus') }}</h1>
+            <span class="pp-cfg-head__sub">{{ __('As fases são da instância; cada tipo de projeto escolhe quais usa e em que ordem aparecem no Kanban', 'projectplus') }}</span>
+            <span class="pp-tp-headbtns">
+                <a class="pp-filterbar__btn" href="#pp-tp-newtype" data-pp-focus="pp-tp-newtype"><i class="ti ti-plus" aria-hidden="true"></i>{{ __('Novo tipo', 'projectplus') }}</a>
+                <a class="pp-filterbar__btn" href="#pp-tp-newstate" data-pp-focus="pp-tp-newstate"><i class="ti ti-plus" aria-hidden="true"></i>{{ __('Nova fase', 'projectplus') }}</a>
+            </span>
         </div>
 
         {% if no_finished is not empty %}
-        <div class="projectplus-card projectplus-card--full pp-tp-warn">
-            <p>
-                <i class="ti ti-alert-triangle"></i>
-                <strong>{{ __('Conjunto sem fase finalizadora:', 'projectplus') }}</strong>
-                {{ no_finished|join(', ') }}.
+        <div class="pp-tp-alert" role="alert">
+            <i class="ti ti-alert-triangle" aria-hidden="true"></i>
+            <div>
+                <strong>{{ __('Conjunto sem fase finalizadora:', 'projectplus') }} {{ no_finished|join(', ') }}.</strong>
                 {{ __('Sem uma fase marcada como "finalizada", a trava que impede fechar projeto com tarefa ou subprojeto aberto nunca dispara nesse conjunto.', 'projectplus') }}
-            </p>
+            </div>
         </div>
         {% endif %}
 
-        <div class="projectplus-row">
-            <div class="projectplus-card projectplus-card--full">
-                <h3>
-                    {{ __('Fases de', 'projectplus') }} <strong>{{ edit_name }}</strong>
-                    {% if edit_is_default %}
-                        <span class="projectplus-muted">— {{ __('vale para todo tipo sem conjunto próprio, e para projeto sem tipo', 'projectplus') }}</span>
-                    {% elseif not edit_is_mapped %}
-                        <span class="projectplus-muted">— {{ __('hoje herda o conjunto padrão; salvar cria um conjunto próprio', 'projectplus') }}</span>
-                    {% endif %}
-                </h3>
+        <div class="pp-tp-grid">
 
-                {% if not has_states %}
-                <p class="projectplus-muted">
-                    {{ __('Nenhuma fase cadastrada na instância. Cadastre em Configurar > Listas suspensas > Estados de projeto.', 'projectplus') }}
-                </p>
-                {% else %}
-                <p class="projectplus-muted">
-                    <i class="ti ti-info-circle"></i>
-                    {{ __('Marque as fases que pertencem a este conjunto e use as setas para definir a ordem das colunas no Kanban. A ordem é a de cima para baixo.', 'projectplus') }}
-                </p>
-
-                <form method="post" action="{{ form_action }}" id="pp-tp-form">
+            {# ================= CONJUNTOS ================= #}
+            <nav class="pp-cfg-card pp-tp-sets" aria-label="{{ __('Conjuntos', 'projectplus') }}">
+                <div class="pp-tp-sets__head">
+                    <h2 class="pp-cfg-card__title">{{ __('Conjuntos', 'projectplus') }}</h2>
+                    <span class="pp-cfg-row__hint">{{ _n('%d tipo', '%d tipos', types_count, 'projectplus')|format(types_count) }} · {{ _n('%d fase', '%d fases', states_count, 'projectplus')|format(states_count) }}</span>
+                </div>
+                {% for s in set_list %}
+                <a class="pp-tp-set{{ s.id == edit_id ? ' pp-tp-set--on' : '' }}" href="{{ self_url }}?type={{ s.id }}"{{ s.id == edit_id ? ' aria-current="page"' : '' }}>
+                    <span class="pp-tp-set__top">
+                        <span class="pp-tp-set__name">{{ s.name }}</span>
+                        {% if s.is_default %}<span class="pp-tp-tag pp-tp-tag--default">{{ __('padrão', 'projectplus') }}</span>
+                        {% elseif s.inherits %}<span class="pp-tp-tag">{{ __('herda o padrão', 'projectplus') }}</span>
+                        {% elseif not s.has_finished %}<span class="pp-tp-tag pp-tp-tag--bad">{{ __('sem finalizadora', 'projectplus') }}</span>
+                        {% else %}<span class="pp-tp-tag pp-tp-tag--own">{{ __('próprio', 'projectplus') }}</span>{% endif %}
+                    </span>
+                    <span class="pp-tp-set__meta">
+                        {% if not s.inherits %}{{ _n('%d fase', '%d fases', s.phases|length, 'projectplus')|format(s.phases|length) }} · {% endif %}{{ _n('%d projeto', '%d projetos', s.projects, 'projectplus')|format(s.projects) }}
+                    </span>
+                </a>
+                {% endfor %}
+                {# Rodada 3: criação de TIPO (glpi_projecttypes, vocabulário nativo) #}
+                <form method="post" action="{{ form_action }}" class="pp-tp-sets__new">
                     <input type="hidden" name="_glpi_csrf_token" value="{{ csrf_token }}">
                     <input type="hidden" name="projecttypes_id" value="{{ edit_id }}">
+                    <input type="text" id="pp-tp-newtype" name="new_type_name" maxlength="255" class="pp-tp-input"
+                           placeholder="{{ __('Nome do novo tipo…', 'projectplus') }}"
+                           aria-label="{{ __('Nome do novo tipo…', 'projectplus') }}">
+                    <button type="submit" name="create_type" value="1" class="pp-filterbar__btn">{{ __('Criar tipo', 'projectplus') }}</button>
+                </form>
+            </nav>
 
-                    <table class="projectplus-table pp-tp-table">
-                        <thead>
-                            <tr>
-                                <th style="width:70px">{{ __('Usar', 'projectplus') }}</th>
-                                <th>{{ __('Fase', 'projectplus') }}</th>
-                                <th style="width:120px">{{ __('Finalizadora', 'projectplus') }}</th>
-                                <th style="width:110px">{{ __('Ordem', 'projectplus') }}</th>
-                            </tr>
-                        </thead>
-                        <tbody data-pp-role="tp-rows">
-                            {% for r in rows %}
-                            <tr data-pp-state="{{ r.id }}">
-                                <td class="center">
-                                    <input type="checkbox" name="states[]" value="{{ r.id }}"
-                                           {{ r.selected ? 'checked' : '' }}
-                                           aria-label="{{ r.name }}">
-                                </td>
-                                {# Bloco K (21/10/2026): edição inline de nome/cor/finalizadora. Os campos
-                                   pertencem ao form #pp-tp-editform (atributo form=), que fica FORA deste
-                                   form, e nascem desabilitados — só a linha em edição é enviada. #}
-                                <td class="pp-tp-name">
-                                    <span class="pp-tp-view">
-                                        <span class="pp-phase-dot" style="background:{{ r.color }}"></span>
-                                        {{ r.name }}
-                                    </span>
-                                    <span class="pp-tp-editing" hidden>
-                                        <input type="color" name="state_color" form="pp-tp-editform" value="{{ r.color }}" disabled
-                                               title="{{ __('Cor', 'projectplus') }}">
-                                        <input type="text" name="state_name" form="pp-tp-editform" value="{{ r.name }}" maxlength="255" disabled required>
-                                    </span>
-                                </td>
-                                <td class="center">
-                                    <span class="pp-tp-view">
-                                    {% if r.is_finished %}
-                                        <i class="ti ti-flag-check" title="{{ __('Fase finalizadora', 'projectplus') }}"></i>
-                                    {% else %}
-                                        —
-                                    {% endif %}
-                                    </span>
-                                    <span class="pp-tp-editing" hidden>
-                                        <input type="checkbox" name="state_finished" value="1" form="pp-tp-editform" disabled
-                                               {{ r.is_finished ? 'checked' : '' }} title="{{ __('Fase finalizadora', 'projectplus') }}">
-                                    </span>
-                                </td>
-                                <td class="center pp-tp-move">
-                                    <span class="pp-tp-view">
-                                        <button type="button" class="projectplus-btn projectplus-btn--ghost pp-tp-mini"
-                                                data-pp-move="up" title="{{ __('Subir', 'projectplus') }}">&uarr;</button>
-                                        <button type="button" class="projectplus-btn projectplus-btn--ghost pp-tp-mini"
-                                                data-pp-move="down" title="{{ __('Descer', 'projectplus') }}">&darr;</button>
-                                        <button type="button" class="projectplus-btn projectplus-btn--ghost pp-tp-mini"
-                                                data-pp-edit="{{ r.id }}" title="{{ __('Editar fase (nome, cor e finalizadora — vale para todos os tipos)', 'projectplus') }}"><i class="ti ti-pencil"></i></button>
-                                    </span>
-                                    <span class="pp-tp-editing" hidden>
-                                        <button type="submit" form="pp-tp-editform" name="update_state" value="1"
-                                                class="projectplus-btn pp-tp-mini" title="{{ __('Salvar fase', 'projectplus') }}"><i class="ti ti-check"></i></button>
-                                        <button type="button" class="projectplus-btn projectplus-btn--ghost pp-tp-mini"
-                                                data-pp-edit-cancel="1" title="{{ __('Cancelar', 'projectplus') }}">&times;</button>
-                                    </span>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-
-                    <div class="projectplus-form__footer">
-                        {% if edit_is_mapped and not edit_is_default %}
-                        <button type="submit" name="clear" value="1" class="projectplus-btn projectplus-btn--ghost">
-                            {{ __('Voltar a herdar o padrão', 'projectplus') }}
-                        </button>
+            {# ================= EDITOR ================= #}
+            <div class="pp-cfg-col">
+                <section class="pp-cfg-card pp-tp-editor">
+                    <div class="pp-tp-editor__head">
+                        <div class="pp-tp-editor__title">
+                            <h2>{{ __('Fases de', 'projectplus') }} {{ edit_name }}</h2>
+                            {% if edit_is_default %}<span class="pp-tp-tag pp-tp-tag--default">{{ __('padrão', 'projectplus') }}</span>
+                            {% elseif edit_is_mapped %}<span class="pp-tp-tag pp-tp-tag--own">{{ __('conjunto próprio', 'projectplus') }}</span>
+                            {% else %}<span class="pp-tp-tag">{{ __('herda o padrão', 'projectplus') }}</span>{% endif %}
+                        </div>
+                        {% if has_states %}
+                        <div class="pp-tp-editor__actions">
+                            {% if copy_sources is not empty %}
+                            <form method="post" action="{{ form_action }}" class="pp-tp-copy">
+                                <input type="hidden" name="_glpi_csrf_token" value="{{ csrf_token }}">
+                                <input type="hidden" name="projecttypes_id" value="{{ edit_id }}">
+                                <label class="pp-cfg-row__hint" for="pp-tp-copyfrom">{{ __('Copiar de', 'projectplus') }}</label>
+                                <select id="pp-tp-copyfrom" name="source_type" class="pp-tp-input">
+                                    {% for c in copy_sources %}
+                                        <option value="{{ c.id }}">{{ c.name }} ({{ c.phases }})</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" name="copy" value="1" class="pp-filterbar__btn"
+                                        title="{{ __('Substitui o conjunto atual pelo do tipo escolhido, na mesma ordem. Útil quando dois tipos seguem o mesmo fluxo.', 'projectplus') }}">{{ __('Copiar', 'projectplus') }}</button>
+                            </form>
+                            {% endif %}
+                            {% if edit_is_mapped and not edit_is_default %}
+                            {# Form próprio: um submit com form="pp-tp-form" no cabeçalho viraria o botão
+                               padrão do Enter desse form (vem antes no documento) — lição 183. #}
+                            <form method="post" action="{{ form_action }}" class="pp-tp-copy">
+                                <input type="hidden" name="_glpi_csrf_token" value="{{ csrf_token }}">
+                                <input type="hidden" name="projecttypes_id" value="{{ edit_id }}">
+                                <button type="submit" name="clear" value="1" class="pp-tp-linkbtn">{{ __('Voltar a herdar o padrão', 'projectplus') }}</button>
+                            </form>
+                            {% endif %}
+                        </div>
                         {% endif %}
-                        <button type="submit" class="projectplus-btn">
-                            {{ __('Salvar conjunto', 'projectplus') }}
-                        </button>
                     </div>
-                </form>
-                {# Bloco K: form da edição inline (fora do form do conjunto — form aninhado não existe) #}
-                <form method="post" action="{{ form_action }}" id="pp-tp-editform">
-                    <input type="hidden" name="_glpi_csrf_token" value="{{ csrf_token }}">
-                    <input type="hidden" name="projecttypes_id" value="{{ edit_id }}">
-                    <input type="hidden" name="state_id" value="0" data-pp-role="edit-id">
-                </form>
-                {% endif %}
-            </div>
-        </div>
+                    {% if edit_is_default %}
+                        <p class="pp-cfg-row__hint pp-tp-editor__note">{{ __('vale para todo tipo sem conjunto próprio, e para projeto sem tipo', 'projectplus') }}</p>
+                    {% elseif not edit_is_mapped %}
+                        <p class="pp-cfg-row__hint pp-tp-editor__note">{{ __('hoje herda o conjunto padrão; salvar cria um conjunto próprio', 'projectplus') }}</p>
+                    {% endif %}
 
-        {% if copy_sources is not empty and has_states %}
-        <div class="projectplus-row">
-            <div class="projectplus-card projectplus-card--full">
-                <h3>{{ __('Copiar fases de outro tipo', 'projectplus') }}</h3>
-                <p class="projectplus-muted">
-                    {{ __('Substitui o conjunto atual pelo do tipo escolhido, na mesma ordem. Útil quando dois tipos seguem o mesmo fluxo.', 'projectplus') }}
-                </p>
-                <form method="post" action="{{ form_action }}" class="projectplus-form">
-                    <input type="hidden" name="_glpi_csrf_token" value="{{ csrf_token }}">
-                    <input type="hidden" name="projecttypes_id" value="{{ edit_id }}">
-                    <label>
-                        {{ __('Copiar de', 'projectplus') }}
-                        <select name="source_type">
-                            {% for c in copy_sources %}
-                                <option value="{{ c.id }}">{{ c.name }} ({{ c.phases }})</option>
+                    {% if not has_states %}
+                    <p class="pp-rp-empty">
+                        {{ __('Nenhuma fase cadastrada na instância. Cadastre em Configurar > Listas suspensas > Estados de projeto.', 'projectplus') }}
+                    </p>
+                    {% else %}
+
+                    {# Prévia das colunas: o servidor desenha a inicial; o typephases.js redesenha a cada mudança. #}
+                    <div class="pp-tp-preview">
+                        <span class="pp-cfg-card__title">{{ __('Prévia das colunas do Kanban', 'projectplus') }}</span>
+                        <div class="pp-tp-cols" data-pp-role="tp-preview"
+                             data-label-col="{{ __('coluna %d', 'projectplus') }}"
+                             data-label-fin="{{ __('finalizadora', 'projectplus') }}"
+                             data-label-empty="{{ __('Nenhuma fase ligada neste conjunto', 'projectplus') }}">
+                            {% set n = 0 %}
+                            {% for r in rows|filter(r => r.selected) %}
+                                {% set n = n + 1 %}
+                                <div class="pp-tp-col" style="--pp-phase-color: {{ r.color ?: 'var(--pp-muted)' }}">
+                                    <b>{{ r.name }}</b>
+                                    <span>{{ r.is_finished ? __('finalizadora', 'projectplus') : __('coluna %d', 'projectplus')|format(n) }}</span>
+                                </div>
+                            {% else %}
+                                <span class="pp-rp-none">{{ __('Nenhuma fase ligada neste conjunto', 'projectplus') }}</span>
                             {% endfor %}
-                        </select>
-                    </label>
-                    <div class="projectplus-form__footer">
-                        <button type="submit" name="copy" value="1" class="projectplus-btn projectplus-btn--ghost">
-                            {{ __('Copiar fases', 'projectplus') }}
-                        </button>
+                        </div>
                     </div>
-                </form>
-            </div>
-        </div>
-        {% endif %}
 
-        <div class="projectplus-row">
-            <div class="projectplus-card projectplus-card--full">
-                <h3>{{ __('Visão geral dos conjuntos', 'projectplus') }}</h3>
-                <table class="projectplus-table">
-                    <thead>
-                        <tr>
-                            <th>{{ __('Tipo de projeto', 'projectplus') }}</th>
-                            <th style="width:130px">{{ __('Projetos', 'projectplus') }}</th>
-                            <th style="width:150px">{{ __('Conjunto', 'projectplus') }}</th>
-                            <th>{{ __('Fases, na ordem das colunas', 'projectplus') }}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for s in sets %}
-                        <tr>
-                            <td>
-                                <a href="{{ self_url }}?type={{ s.id }}">{{ s.name }}</a>
-                            </td>
-                            <td>{{ s.projects }}</td>
-                            <td>
-                                {% if s.mapped %}
-                                    {{ __('próprio', 'projectplus') }}
-                                {% else %}
-                                    <span class="projectplus-muted">{{ __('herda o padrão', 'projectplus') }}</span>
+                    <form method="post" action="{{ form_action }}" id="pp-tp-form">
+                        <input type="hidden" name="_glpi_csrf_token" value="{{ csrf_token }}">
+                        <input type="hidden" name="projecttypes_id" value="{{ edit_id }}">
+
+                        <div class="pp-tablewrap">
+                        <table class="projectplus-table pp-tp-table">
+                            <thead>
+                                <tr>
+                                    <th class="pp-tp-th-order">{{ __('Ordem', 'projectplus') }}</th>
+                                    <th>{{ __('Fase', 'projectplus') }}</th>
+                                    <th class="pp-tp-th-fin">{{ __('Finalizadora', 'projectplus') }}</th>
+                                    <th class="pp-tp-th-use">{{ __('Usar', 'projectplus') }}</th>
+                                    <th class="pp-tp-th-act"><span class="visually-hidden">{{ __('Ações', 'projectplus') }}</span></th>
+                                </tr>
+                            </thead>
+                            {# Ordem do DOM = ordem gravada (só as ligadas vão no POST). As fases do conjunto
+                               vêm antes do separador; o JS move a linha ao ligar/desligar. #}
+                            <tbody data-pp-role="tp-rows">
+                                {% set n = 0 %}
+                                {% set sep_done = false %}
+                                {% for r in rows %}
+                                {% if not r.selected and not sep_done %}
+                                    {% set sep_done = true %}
+                                    <tr class="pp-tp-sep" data-pp-role="tp-sep"><td colspan="5">{{ __('Fora deste conjunto — ligue para incluir no fim da fila', 'projectplus') }}</td></tr>
                                 {% endif %}
-                            </td>
-                            <td>
-                                {% for p in s.phases %}
-                                    <span class="pp-phase-tag">
-                                        <span class="pp-phase-dot" style="background:{{ p.color }}"></span>{{ p.name }}
-                                    </span>
-                                {% else %}
-                                    <span class="projectplus-muted">—</span>
+                                {% if r.selected %}{% set n = n + 1 %}{% endif %}
+                                <tr data-pp-state="{{ r.id }}" data-pp-name="{{ r.name }}" data-pp-color="{{ r.color }}" data-pp-finished="{{ r.is_finished ? 1 : 0 }}"{{ r.selected ? '' : ' class="pp-tp-row--off"' }}>
+                                    <td class="pp-tp-order">
+                                        <span class="pp-tp-num" data-pp-role="tp-num">{{ r.selected ? n : '—' }}</span>
+                                        <button type="button" class="pp-filterbar__btn pp-tp-ib" data-pp-move="up"
+                                                title="{{ __('Subir', 'projectplus') }}" aria-label="{{ __('Subir', 'projectplus') }}">&uarr;</button>
+                                        <button type="button" class="pp-filterbar__btn pp-tp-ib" data-pp-move="down"
+                                                title="{{ __('Descer', 'projectplus') }}" aria-label="{{ __('Descer', 'projectplus') }}">&darr;</button>
+                                    </td>
+                                    {# Bloco K: edição inline de nome/cor/finalizadora. Campos do form #pp-tp-editform
+                                       (atributo form=), nascem desabilitados — só a linha em edição é enviada. #}
+                                    <td class="pp-tp-name">
+                                        <span class="pp-tp-view">
+                                            <span class="pp-phase-dot" style="background:{{ r.color }}"></span>{{ r.name }}
+                                        </span>
+                                        <span class="pp-tp-editing" hidden>
+                                            <input type="color" name="state_color" form="pp-tp-editform" value="{{ r.color }}" disabled
+                                                   title="{{ __('Cor', 'projectplus') }}" aria-label="{{ __('Cor', 'projectplus') }}">
+                                            <input type="text" name="state_name" form="pp-tp-editform" value="{{ r.name }}" maxlength="255" disabled required
+                                                   aria-label="{{ __('Fase', 'projectplus') }}">
+                                            <span class="pp-cfg-row__hint">{{ __('vale para todos os tipos', 'projectplus') }}</span>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="pp-tp-view">
+                                        {% if r.is_finished %}
+                                            <span class="pp-tp-fin"><i class="ti ti-flag-check" aria-hidden="true"></i>{{ __('finalizadora', 'projectplus') }}</span>
+                                        {% else %}
+                                            <span class="pp-rp-none">—</span>
+                                        {% endif %}
+                                        </span>
+                                        <label class="pp-tp-editing pp-cfg-row__hint" hidden>
+                                            <input type="checkbox" name="state_finished" value="1" form="pp-tp-editform" disabled
+                                                   {{ r.is_finished ? 'checked' : '' }}>
+                                            {{ __('finalizadora', 'projectplus') }}
+                                        </label>
+                                    </td>
+                                    <td>
+                                        <span class="pp-switch pp-cfg-switch">
+                                            <input type="checkbox" id="pp-tp-use-{{ r.id }}" name="states[]" value="{{ r.id }}"
+                                                   {{ r.selected ? 'checked' : '' }} aria-label="{{ __('Usar', 'projectplus') }}: {{ r.name }}">
+                                            <label class="pp-switch__track" for="pp-tp-use-{{ r.id }}" aria-hidden="true"></label>
+                                        </span>
+                                    </td>
+                                    <td class="pp-tp-act">
+                                        <span class="pp-tp-view">
+                                            <button type="button" class="pp-filterbar__btn pp-tp-ib" data-pp-edit="{{ r.id }}"
+                                                    title="{{ __('Editar fase (nome, cor e finalizadora — vale para todos os tipos)', 'projectplus') }}"
+                                                    aria-label="{{ __('Editar fase (nome, cor e finalizadora — vale para todos os tipos)', 'projectplus') }}">{{ pen }}</button>
+                                        </span>
+                                        <span class="pp-tp-editing" hidden>
+                                            <button type="submit" form="pp-tp-editform" name="update_state" value="1"
+                                                    class="pp-cfg-save pp-tp-ib" title="{{ __('Salvar fase', 'projectplus') }}" aria-label="{{ __('Salvar fase', 'projectplus') }}"><i class="ti ti-check" aria-hidden="true"></i></button>
+                                            <button type="button" class="pp-filterbar__btn pp-tp-ib" data-pp-edit-cancel="1"
+                                                    title="{{ __('Cancelar', 'projectplus') }}" aria-label="{{ __('Cancelar', 'projectplus') }}">&times;</button>
+                                        </span>
+                                    </td>
+                                </tr>
                                 {% endfor %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                                {% if not sep_done %}
+                                    <tr class="pp-tp-sep" data-pp-role="tp-sep"><td colspan="5">{{ __('Fora deste conjunto — ligue para incluir no fim da fila', 'projectplus') }}</td></tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                        </div>
+
+                        <div class="pp-tp-foot">
+                            <span class="pp-cfg-row__hint">{{ __('Nome, cor e finalizadora valem para todos os tipos que usam a fase. Ordem e "Usar" valem só para este conjunto.', 'projectplus') }}</span>
+                            <button type="submit" class="pp-cfg-save">{{ __('Salvar conjunto', 'projectplus') }}</button>
+                        </div>
+                    </form>
+                    {# Bloco K: form da edição inline (fora do form do conjunto — form aninhado não existe) #}
+                    <form method="post" action="{{ form_action }}" id="pp-tp-editform">
+                        <input type="hidden" name="_glpi_csrf_token" value="{{ csrf_token }}">
+                        <input type="hidden" name="projecttypes_id" value="{{ edit_id }}">
+                        <input type="hidden" name="state_id" value="0" data-pp-role="edit-id">
+                    </form>
+                    {% endif %}
+                </section>
+
+                {# Rodada 3: criação de FASE (glpi_projectstates — lista global da instância, lição 59) #}
+                <form method="post" action="{{ form_action }}" class="pp-cfg-card pp-tp-newstate">
+                    <input type="hidden" name="_glpi_csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="projecttypes_id" value="{{ edit_id }}">
+                    <h2 class="pp-cfg-card__title">{{ __('Nova fase', 'projectplus') }}</h2>
+                    <input type="color" name="new_state_color" value="#065a82" class="pp-tp-color"
+                           title="{{ __('Cor da fase', 'projectplus') }}" aria-label="{{ __('Cor da fase', 'projectplus') }}">
+                    <input type="text" id="pp-tp-newstate" name="new_state_name" maxlength="255" class="pp-tp-input pp-tp-input--wide"
+                           placeholder="{{ __('Nome da nova fase…', 'projectplus') }}"
+                           aria-label="{{ __('Nome da nova fase…', 'projectplus') }}">
+                    <span class="pp-switch pp-cfg-switch">
+                        <input type="checkbox" id="pp-tp-newfinal" name="new_state_finished" value="1">
+                        <label class="pp-switch__track" for="pp-tp-newfinal" aria-hidden="true"></label>
+                    </span>
+                    <label for="pp-tp-newfinal" class="pp-tp-newfinal">{{ __('Finalizadora', 'projectplus') }}</label>
+                    <button type="submit" name="create_state" value="1" class="pp-filterbar__btn"><i class="ti ti-plus" aria-hidden="true"></i>{{ __('Criar fase', 'projectplus') }}</button>
+                    <span class="pp-cfg-row__hint">{{ __('Entra na instância desligada em todos os conjuntos', 'projectplus') }}</span>
+                </form>
             </div>
         </div>
     </div>
@@ -266,8 +270,7 @@
 <script src="{{ plugin_web_dir }}/js/typephases.js"></script>
 <script>
     // Espera o DOMContentLoaded: os JS do hook do GLPI (i18n.js à frente)
-    // executam ANTES desse evento, então o primeiro desenho já sai com o
-    // dicionário de tradução carregado (correção de 31/07/2026).
+    // executam ANTES desse evento (correção de 31/07/2026).
     (function () {
         function ppBoot() {
             if (window.ProjectPlusTypePhases && typeof window.ProjectPlusTypePhases.init === 'function') {

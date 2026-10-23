@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ProjectPlus\n"
 "Report-Msgid-Bugs-To: https://github.com/teckcomp/glpi-plugin-projectplus/issues\n"
-"POT-Creation-Date: 2026-10-23 14:14+0000\n"
+"POT-Creation-Date: 2026-10-23 14:35+0000\n"
 "PO-Revision-Date: 2026-07-25 00:00+0000\n"
 "Last-Translator: Teckcomp I.T. Services\n"
 "Language-Team: English\n"
@@ -77,6 +77,12 @@ msgid_plural "%d conjuntos sem finalizadora"
 msgstr[0] "%d set without a closing phase"
 msgstr[1] "%d sets without a closing phase"
 
+#: templates/typephases.html.twig:45 templates/typephases.html.twig:57
+msgid "%d fase"
+msgid_plural "%d fases"
+msgstr[0] "%d phase"
+msgstr[1] "%d phases"
+
 #: src/Config.php:176
 #, php-format
 msgid "%d perfil abaixo do máximo"
@@ -94,6 +100,12 @@ msgstr[1] "%d points of attention"
 #: templates/config_shell.html.twig:223
 msgid "%d ponto(s) de atenção — ver as linhas marcadas abaixo."
 msgstr "%d point(s) needing attention — see the highlighted rows below."
+
+#: templates/typephases.html.twig:57
+msgid "%d projeto"
+msgid_plural "%d projetos"
+msgstr[0] "%d project"
+msgstr[1] "%d projects"
 
 #: front/dashboard.php:178
 #, php-format
@@ -135,6 +147,12 @@ msgid "%d tarefa"
 msgid_plural "%d tarefas"
 msgstr[0] "%d task"
 msgstr[1] "%d tasks"
+
+#: templates/typephases.html.twig:45
+msgid "%d tipo"
+msgid_plural "%d tipos"
+msgstr[0] "%d type"
+msgstr[1] "%d types"
 
 #: src/Notification.php:406
 #, php-format
@@ -200,7 +218,7 @@ msgid "AUSENTE"
 msgstr "MISSING"
 
 #: templates/kanban.html.twig:60 templates/projectkanban.html.twig:58
-#: templates/timeline.html.twig:32 templates/typephases.html.twig:26
+#: templates/timeline.html.twig:32
 msgid "Abrir"
 msgstr "Open"
 
@@ -317,6 +335,10 @@ msgstr "Drag a card between columns to change the project phase. A project with 
 msgid "As colunas são as fases do tipo de projeto escolhido"
 msgstr "The columns are the phases of the selected project type"
 
+#: templates/typephases.html.twig:22
+msgid "As fases são da instância; cada tipo de projeto escolhe quais usa e em que ordem aparecem no Kanban"
+msgstr "Phases belong to the instance; each project type picks which ones it uses and in what order they appear on the Kanban"
+
 #: src/TaskDep.php:391
 msgid "As tarefas precisam ser do mesmo projeto"
 msgstr "The tasks must belong to the same project"
@@ -351,7 +373,7 @@ msgstr "Updated at %s"
 msgid "Autor"
 msgstr "Author"
 
-#: templates/dashboard.html.twig:223
+#: templates/dashboard.html.twig:223 templates/typephases.html.twig:154
 msgid "Ações"
 msgstr "Actions"
 
@@ -454,7 +476,7 @@ msgstr "GLPI e-mail channel"
 #: src/I18nJs.php:68 templates/dashboard.html.twig:522
 #: templates/projecttemplate_edit.html.twig:69
 #: templates/projecttemplates.html.twig:123
-#: templates/projecttemplates.html.twig:166 templates/typephases.html.twig:165
+#: templates/projecttemplates.html.twig:166 templates/typephases.html.twig:221
 msgid "Cancelar"
 msgstr "Cancel"
 
@@ -589,12 +611,10 @@ msgid "Configuração salva"
 msgstr "Configuration saved"
 
 #: templates/_topbar.html.twig:70 templates/_topbar.html.twig:72
-#: templates/typephases.html.twig:62
 msgid "Configurações"
 msgstr "Settings"
 
-#: templates/config_shell.html.twig:179 templates/typephases.html.twig:16
-#: templates/typephases.html.twig:230
+#: templates/config_shell.html.twig:179
 msgid "Conjunto"
 msgstr "Set"
 
@@ -603,11 +623,7 @@ msgstr "Set"
 msgid "Conjunto de \"%s\" removido — o tipo volta a usar o conjunto padrão"
 msgstr "Set for \"%s\" removed — the type goes back to the default set"
 
-#: templates/typephases.html.twig:8
-msgid "Conjunto de fases por tipo de projeto"
-msgstr "Set of phases per project type"
-
-#: front/typephase.form.php:33 front/typephases.php:95 src/TypePhase.php:578
+#: front/typephase.form.php:33 front/typephases.php:96 src/TypePhase.php:578
 #: src/TypePhase.php:617
 msgid "Conjunto padrão"
 msgstr "Default set"
@@ -620,9 +636,13 @@ msgstr "Default set seeded during installation"
 msgid "Conjunto sem fase finalizadora"
 msgstr "Set without a finishing phase"
 
-#: templates/typephases.html.twig:76
+#: templates/typephases.html.twig:33
 msgid "Conjunto sem fase finalizadora:"
 msgstr "Set without a finishing phase:"
+
+#: templates/typephases.html.twig:42 templates/typephases.html.twig:44
+msgid "Conjuntos"
+msgstr "Sets"
 
 #: templates/costs.html.twig:53
 msgid "Consumido"
@@ -632,23 +652,19 @@ msgstr "Used"
 msgid "Consumo do teto"
 msgstr "Cap usage"
 
-#: templates/typephases.html.twig:205
+#: templates/typephases.html.twig:95
+msgid "Copiar"
+msgstr "Copy"
+
+#: templates/typephases.html.twig:88
 msgid "Copiar de"
 msgstr "Copy from"
 
-#: templates/typephases.html.twig:214
-msgid "Copiar fases"
-msgstr "Copy phases"
-
-#: templates/typephases.html.twig:197
-msgid "Copiar fases de outro tipo"
-msgstr "Copy phases from another type"
-
-#: templates/typephases.html.twig:135
+#: templates/typephases.html.twig:184
 msgid "Cor"
 msgstr "Colour"
 
-#: templates/typephases.html.twig:50
+#: templates/typephases.html.twig:253
 msgid "Cor da fase"
 msgstr "Phase colour"
 
@@ -660,7 +676,7 @@ msgstr "Creates the project and every task and subproject of the template, with 
 msgid "Criar"
 msgstr "Create"
 
-#: templates/typephases.html.twig:56
+#: templates/typephases.html.twig:262
 msgid "Criar fase"
 msgstr "Create phase"
 
@@ -685,7 +701,7 @@ msgstr "Create project from template"
 msgid "Criar tarefa"
 msgstr "Create task"
 
-#: templates/typephases.html.twig:40
+#: templates/typephases.html.twig:68
 msgid "Criar tipo"
 msgstr "Create type"
 
@@ -796,7 +812,7 @@ msgstr "Dependencies"
 msgid "Dependências (ProjectPlus)"
 msgstr "Dependencies (ProjectPlus)"
 
-#: templates/typephases.html.twig:157
+#: templates/typephases.html.twig:174
 msgid "Descer"
 msgstr "Move down"
 
@@ -895,7 +911,7 @@ msgstr "Test e-mail sent to %s (sender: %s)."
 msgid "Editar"
 msgstr "Edit"
 
-#: templates/typephases.html.twig:159
+#: templates/typephases.html.twig:214 templates/typephases.html.twig:215
 msgid "Editar fase (nome, cor e finalizadora — vale para todos os tipos)"
 msgstr "Edit phase (name, colour and finishing — applies to all types)"
 
@@ -914,6 +930,10 @@ msgstr "Overdue"
 #: templates/config_shell.html.twig:95
 msgid "Em dias"
 msgstr "In days"
+
+#: templates/typephases.html.twig:263
+msgid "Entra na instância desligada em todos os conjuntos"
+msgstr "Joins the instance switched off in every set"
 
 #: src/Notification.php:920
 #, php-format
@@ -1089,7 +1109,7 @@ msgstr "Sending failures are recorded in files/_log/projectplus.log; the project
 #: src/I18nJs.php:63 src/Reports.php:219 src/Reports.php:362
 #: templates/dashboard.html.twig:216 templates/dashboard.html.twig:324
 #: templates/dashboard.html.twig:468 templates/reports.html.twig:112
-#: templates/typephases.html.twig:112
+#: templates/typephases.html.twig:151 templates/typephases.html.twig:186
 msgid "Fase"
 msgstr "Phase"
 
@@ -1102,11 +1122,6 @@ msgstr "Phase \"%s\" updated — applies to all types and to the native form"
 #, php-format
 msgid "Fase \"%s\" criada — ela aparece desmarcada na lista; marque-a e salve o conjunto para usá-la"
 msgstr "Phase \"%s\" created — it appears unchecked in the list; check it and save the set to use it"
-
-#: templates/typephases.html.twig:51 templates/typephases.html.twig:142
-#: templates/typephases.html.twig:149
-msgid "Fase finalizadora"
-msgstr "Finishing phase"
 
 #: templates/config_shell.html.twig:340
 msgid "Fase finalizadora em cada conjunto"
@@ -1133,23 +1148,19 @@ msgstr "Phase/Type/Manager/Period filter Projects and Tasks only — Costs uses 
 msgid "Fases cadastradas na instância: %1$d · tipos com conjunto próprio: %2$d"
 msgstr "Phases registered in this instance: %1$d · types with their own set: %2$d"
 
-#: templates/typephases.html.twig:86
+#: templates/typephases.html.twig:77
 msgid "Fases de"
 msgstr "Phases of"
 
 #: src/Config.php:206 templates/_topbar.html.twig:73
 #: templates/config_shell.html.twig:73 templates/config_shell.html.twig:153
-#: templates/config_shell.html.twig:166 templates/typephases.html.twig:8
+#: templates/config_shell.html.twig:166 templates/typephases.html.twig:21
 msgid "Fases por tipo"
 msgstr "Phases by type"
 
-#: front/typephases.php:99 templates/config_shell.html.twig:324
+#: front/typephases.php:100 templates/config_shell.html.twig:324
 msgid "Fases por tipo de projeto"
 msgstr "Phases by project type"
-
-#: templates/typephases.html.twig:231
-msgid "Fases, na ordem das colunas"
-msgstr "Phases, in column order"
 
 #: templates/config_shell.html.twig:181
 msgid "Fases, na ordem do Kanban"
@@ -1176,8 +1187,8 @@ msgstr "Period end"
 msgid "Fim planejado"
 msgstr "Planned end"
 
-#: templates/config_shell.html.twig:198 templates/typephases.html.twig:53
-#: templates/typephases.html.twig:113
+#: templates/config_shell.html.twig:198 templates/typephases.html.twig:152
+#: templates/typephases.html.twig:261
 msgid "Finalizadora"
 msgstr "Finishing"
 
@@ -1192,6 +1203,10 @@ msgstr "Single source: the Project+ Kanban tab"
 #: templates/config_shell.html.twig:120
 msgid "Fonte única: abas do Project+"
 msgstr "Single source: the Project+ tabs"
+
+#: templates/typephases.html.twig:165 templates/typephases.html.twig:227
+msgid "Fora deste conjunto — ligue para incluir no fim da fila"
+msgstr "Outside this set — switch on to add it at the end"
 
 #: src/ProjectTracking.php:110
 msgid "Gasto consolidado"
@@ -1337,7 +1352,6 @@ msgstr "A phase named \"%s\" already exists"
 #: front/kanban.php:84 src/I18nJs.php:230 templates/_topbar.html.twig:34
 #: templates/kanban.html.twig:23 templates/kanban.html.twig:32
 #: templates/projectkanban.html.twig:23 templates/projectkanban.html.twig:32
-#: templates/typephases.html.twig:66
 msgid "Kanban"
 msgstr "Kanban"
 
@@ -1392,10 +1406,6 @@ msgstr "Mark all as read"
 #: templates/timeline.html.twig:75
 msgid "Marco (só uma data planejada)"
 msgstr "Milestone (a single planned date)"
-
-#: templates/typephases.html.twig:101
-msgid "Marque as fases que pertencem a este conjunto e use as setas para definir a ordem das colunas no Kanban. A ordem é a de cima para baixo."
-msgstr "Tick the phases that belong to this set and use the arrows to define the column order on the Kanban. The order runs from top to bottom."
 
 #: templates/config_shell.html.twig:116
 msgid "Menu e abas do GLPI"
@@ -1573,9 +1583,13 @@ msgstr "No results"
 msgid "Nenhuma"
 msgstr "None"
 
-#: templates/typephases.html.twig:96
+#: templates/typephases.html.twig:118
 msgid "Nenhuma fase cadastrada na instância. Cadastre em Configurar > Listas suspensas > Estados de projeto."
 msgstr "No phase registered in this instance. Add them in Setup > Dropdowns > Project states."
+
+#: templates/typephases.html.twig:128 templates/typephases.html.twig:137
+msgid "Nenhuma fase ligada neste conjunto"
+msgstr "No phase switched on in this set"
 
 #: src/I18nJs.php:90
 msgid "Nenhuma tarefa atribuída a você em aberto."
@@ -1606,7 +1620,7 @@ msgstr "No tasks in this period"
 msgid "No prazo"
 msgstr "On time"
 
-#: templates/typephases.html.twig:47 templates/typephases.html.twig:48
+#: templates/typephases.html.twig:255 templates/typephases.html.twig:256
 msgid "Nome da nova fase…"
 msgstr "Name of the new phase…"
 
@@ -1623,7 +1637,7 @@ msgstr "Template name"
 msgid "Nome do novo projeto"
 msgstr "Name of the new project"
 
-#: templates/typephases.html.twig:37 templates/typephases.html.twig:38
+#: templates/typephases.html.twig:66 templates/typephases.html.twig:67
 msgid "Nome do novo tipo…"
 msgstr "Name of the new type…"
 
@@ -1639,9 +1653,17 @@ msgstr "Subproject name"
 msgid "Nome e projeto são obrigatórios"
 msgstr "Name and project are required"
 
+#: templates/typephases.html.twig:234
+msgid "Nome, cor e finalizadora valem para todos os tipos que usam a fase. Ordem e \"Usar\" valem só para este conjunto."
+msgstr "Name, colour and closing flag apply to every type that uses the phase. Order and \"Use\" apply to this set only."
+
 #: src/TaskDep.php:680
 msgid "Nova dependência"
 msgstr "New dependency"
+
+#: templates/typephases.html.twig:25 templates/typephases.html.twig:251
+msgid "Nova fase"
+msgstr "New phase"
 
 #: src/I18nJs.php:91
 msgid "Nova tarefa…"
@@ -1658,6 +1680,10 @@ msgstr "New project template"
 #: templates/_topbar.html.twig:78 templates/dashboard.html.twig:415
 msgid "Novo projeto"
 msgstr "New project"
+
+#: templates/typephases.html.twig:24
+msgid "Novo tipo"
+msgstr "New type"
 
 #: src/Config.php:149 templates/config_shell.html.twig:360
 msgid "NÃO registrado"
@@ -1739,7 +1765,7 @@ msgstr "Hide the native project \"Costs\" tab"
 msgid "Ocultar a aba \"Kanban\" nativa do projeto"
 msgstr "Hide the native project \"Kanban\" tab"
 
-#: templates/typephases.html.twig:114
+#: templates/typephases.html.twig:150
 msgid "Ordem"
 msgstr "Order"
 
@@ -2003,7 +2029,6 @@ msgstr "Root project"
 #: src/Profile.php:72 templates/config_shell.html.twig:180
 #: templates/kanban.html.twig:35 templates/projectkanban.html.twig:34
 #: templates/reports.html.twig:163 templates/reports.html.twig:188
-#: templates/typephases.html.twig:229
 msgid "Projetos"
 msgstr "Projects"
 
@@ -2034,6 +2059,10 @@ msgstr "Projects, tasks and deadlines"
 #: src/I18nJs.php:172
 msgid "Promover (subir um nível)"
 msgstr "Promote (move up one level)"
+
+#: templates/typephases.html.twig:124
+msgid "Prévia das colunas do Kanban"
+msgstr "Kanban columns preview"
 
 #: templates/kanban.html.twig:64
 msgid "Raias"
@@ -2133,11 +2162,11 @@ msgstr "Save"
 msgid "Salvar alterações"
 msgstr "Save changes"
 
-#: templates/typephases.html.twig:180
+#: templates/typephases.html.twig:235
 msgid "Salvar conjunto"
 msgstr "Save set"
 
-#: templates/typephases.html.twig:163
+#: templates/typephases.html.twig:219
 msgid "Salvar fase"
 msgstr "Save phase"
 
@@ -2240,7 +2269,7 @@ msgstr "No budget cap set"
 msgid "Sem tipo"
 msgstr "No type"
 
-#: templates/typephases.html.twig:78
+#: templates/typephases.html.twig:34
 msgid "Sem uma fase marcada como \"finalizada\", a trava que impede fechar projeto com tarefa ou subprojeto aberto nunca dispara nesse conjunto."
 msgstr "Without a phase marked as \"finished\", the rule that prevents closing a project with an open task or subproject never applies to this set."
 
@@ -2278,7 +2307,7 @@ msgstr "Read-only — each card is a project or subproject in its current phase 
 msgid "Somente leitura — você não tem permissão para alterar tarefas."
 msgstr "Read-only — you are not allowed to change tasks."
 
-#: templates/typephases.html.twig:155
+#: templates/typephases.html.twig:172
 msgid "Subir"
 msgstr "Move up"
 
@@ -2300,7 +2329,7 @@ msgstr "Subproject of: %s"
 msgid "Subprojetos"
 msgstr "Subprojects"
 
-#: templates/typephases.html.twig:199
+#: templates/typephases.html.twig:95
 msgid "Substitui o conjunto atual pelo do tipo escolhido, na mesma ordem. Útil quando dois tipos seguem o mesmo fluxo."
 msgstr "Replaces the current set with the one from the chosen type, in the same order. Useful when two types follow the same workflow."
 
@@ -2477,7 +2506,7 @@ msgid "Tipo de arquivo não permitido: \"%s\" (aceitos: imagens, PDF, DOC/DOCX, 
 msgstr "File type not allowed: \"%s\" (accepted: images, PDF, DOC/DOCX, XLS/XLSX)"
 
 #: templates/dashboard.html.twig:40 templates/mytasks.html.twig:36
-#: templates/reports.html.twig:124 templates/typephases.html.twig:228
+#: templates/reports.html.twig:124
 msgid "Tipo de projeto"
 msgstr "Project type"
 
@@ -2543,7 +2572,7 @@ msgstr "Uses the GLPI notification channel"
 msgid "Usa o conjunto padrão"
 msgstr "Uses the default set"
 
-#: templates/typephases.html.twig:111
+#: templates/typephases.html.twig:153 templates/typephases.html.twig:207
 msgid "Usar"
 msgstr "Use"
 
@@ -2585,15 +2614,11 @@ msgstr "Show everything"
 msgid "Visão do cliente"
 msgstr "Client view"
 
-#: templates/typephases.html.twig:224
-msgid "Visão geral dos conjuntos"
-msgstr "Overview of the sets"
-
 #: templates/projecttemplate_edit.html.twig:23
 msgid "Voltar"
 msgstr "Back"
 
-#: templates/typephases.html.twig:176
+#: templates/typephases.html.twig:104
 msgid "Voltar a herdar o padrão"
 msgstr "Go back to inheriting the default"
 
@@ -2610,6 +2635,10 @@ msgstr "Back to Project+"
 #: templates/reports.html.twig:75 templates/timeline.html.twig:48
 msgid "Voltar ao escopo pessoal"
 msgstr "Back to the personal scope"
+
+#: templates/typephases.html.twig:19
+msgid "Voltar à Configuração"
+msgstr "Back to Configuration"
 
 #: src/TaskDep.php:451
 msgid "Vínculo não encontrado"
@@ -2674,6 +2703,10 @@ msgstr "calculate the % automatically"
 msgid "campo \"name\" obrigatório"
 msgstr "the \"name\" field is required"
 
+#: templates/typephases.html.twig:126 templates/typephases.html.twig:134
+msgid "coluna %d"
+msgstr "column %d"
+
 #: src/Config.php:181 templates/config_shell.html.twig:305
 msgid "completo"
 msgstr "complete"
@@ -2689,6 +2722,10 @@ msgstr "completed"
 #: src/I18nJs.php:196
 msgid "concluído"
 msgstr "complete"
+
+#: templates/typephases.html.twig:79
+msgid "conjunto próprio"
+msgstr "own set"
 
 #: src/Config.php:152 templates/config_shell.html.twig:357
 msgid "desativado"
@@ -2733,11 +2770,16 @@ msgstr "at risk"
 msgid "faltando:"
 msgstr "missing:"
 
-#: templates/typephases.html.twig:245
+#: templates/typephases.html.twig:127 templates/typephases.html.twig:134
+#: templates/typephases.html.twig:193 templates/typephases.html.twig:201
+msgid "finalizadora"
+msgstr "closing"
+
+#: templates/typephases.html.twig:52 templates/typephases.html.twig:80
 msgid "herda o padrão"
 msgstr "inherits the default"
 
-#: templates/typephases.html.twig:90
+#: templates/typephases.html.twig:113
 msgid "hoje herda o conjunto padrão; salvar cria um conjunto próprio"
 msgstr "currently inherits the default set; saving creates its own set"
 
@@ -2796,7 +2838,8 @@ msgstr "could not build the DSN:"
 msgid "o canal de e-mail está desativado no GLPI"
 msgstr "the e-mail channel is disabled in GLPI"
 
-#: templates/config_shell.html.twig:189
+#: templates/config_shell.html.twig:189 templates/typephases.html.twig:51
+#: templates/typephases.html.twig:78
 msgid "padrão"
 msgstr "default"
 
@@ -2822,7 +2865,7 @@ msgid_plural "projetos"
 msgstr[0] "project"
 msgstr[1] "projects"
 
-#: templates/typephases.html.twig:243
+#: templates/typephases.html.twig:54
 msgid "próprio"
 msgstr "own"
 
@@ -2838,6 +2881,10 @@ msgstr "remaining"
 #: templates/mytasks.html.twig:64
 msgid "sem datas"
 msgstr "no dates"
+
+#: templates/typephases.html.twig:53
+msgid "sem finalizadora"
+msgstr "no closing phase"
 
 #: templates/config_shell.html.twig:346
 msgid "sem uma fase marcada como \"finalizada\" em Configurar > Listas suspensas > Estados de projeto, a trava \"projeto com tarefa ou subprojeto aberto não vai para fase finalizada\" nunca dispara nesse conjunto."
@@ -2855,9 +2902,13 @@ msgstr "tasks"
 msgid "todos os conjuntos têm ao menos uma fase marcada como finalizada"
 msgstr "every set has at least one phase marked as finished"
 
-#: templates/typephases.html.twig:88
+#: templates/typephases.html.twig:111
 msgid "vale para todo tipo sem conjunto próprio, e para projeto sem tipo"
 msgstr "applies to every type without its own set, and to projects with no type"
+
+#: templates/typephases.html.twig:187
+msgid "vale para todos os tipos"
+msgstr "applies to every type"
 
 #: src/I18nJs.php:150
 msgid "É bloqueada por"

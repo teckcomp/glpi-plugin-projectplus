@@ -16,6 +16,7 @@
 
 use Glpi\Application\View\TemplateRenderer;
 use GlpiPlugin\Projectplus\Access;
+use GlpiPlugin\Projectplus\Config as PluginConfig;
 use GlpiPlugin\Projectplus\Dashboard;
 use GlpiPlugin\Projectplus\I18nJs;
 use GlpiPlugin\Projectplus\TypePhase;
@@ -125,6 +126,12 @@ TemplateRenderer::getInstance()->display(
         'form_action'     => Url::to('front/typephase.form.php'),
         'self_url'        => Url::to('front/typephases.php'),
         'csrf_token'      => Session::getNewCSRFToken(),
+        // Bloco N-8c: lista de conjuntos da coluna esquerda (mesmo resumo da aba
+        // "Fases por tipo" da Configuração) e os totais do cabeçalho dela.
+        'set_list'        => PluginConfig::phaseSummary($data)['sets'],
+        'types_count'     => count($types),
+        'states_count'    => count($data['states']),
+        'config_url'      => Url::to('front/config.form.php'),
     ]
 );
 
