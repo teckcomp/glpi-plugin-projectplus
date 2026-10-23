@@ -145,30 +145,28 @@ class Access
      * Pode alterar tarefas NESTA TELA? (flag de página — liga os controles
      * de edição; a decisão final é por tarefa, em canUpdateTask()).
      *
-     * CORREÇÃO (22/09/2026): o código antigo testava
-     * `Session::haveRight('projecttask', UPDATE)`, mas o GLPI 11 REMOVE o
-     * bit UPDATE (2) do direito `projecttask` — só existem READMY (1) e
-     * UPDATEMY (1024). O teste era sempre falso, e só quem tinha `project`
-     * UPDATE (gestor) conseguia alterar tarefa; o "Interagir" do plugin
-     * nunca era consultado.
+     * O-1b (23/10/2026): Super-Admin, quem gerencia algum projeto (R2) ou
+     * "Interagir" do módulo. O nativo `project` UPDATE deixou de valer.
      */
     public static function canUpdateTasks(string $module = 'tasks'): bool
     {
-        return (bool) Session::haveRight('project', UPDATE)
+        return self::isSuperAdmin()
+            || Scope::managesAny()
             || self::can($module, UPDATE);
     }
 
     /**
-     * Pode alterar ESTA tarefa (fase, %, datas, concluir, mover no Kanban)?
+     * Pode alterar ESTA tarefa (fase, %, datas, concluir, auto, mover no
+     * Kanban)? O-1b (23/10/2026) — regras R1/R2/R5 do Ciclo O:
      *
-     *   1. `project` UPDATE nativo (gestor) → sim — comportamento anterior
-     *      preservado;
-     *   2. direito do módulo em UPDATE ("Interagir" de Tarefas ou de
-     *      Kanban) E o usuário é ATOR da tarefa: responsável (`users_id`)
-     *      ou está na equipe da tarefa (usuário, ou um grupo dele);
-     *   3. o nativo `projecttask` UPDATEMY + ator (mesma regra do core,
-     *      ProjectTask::canUpdateItem) → sim.
+     *   1. Super-Admin (nativo "Configuração: Atualizar") → sim;
+     *   2. gestor do projeto da tarefa ou de um projeto acima (vínculo, sem
+     *      depender de direito do módulo) → sim;
+     *   3. "Interagir" do módulo (Tarefas ou Kanban) ou o nativo
+     *      `projecttask` UPDATEMY, E o usuário é ATOR da tarefa → sim.
      *
+     * "Ver todos" (`seeall`) é só leitura e NÃO entra. O nativo `project`
+     * UPDATE deixou de liberar tudo (correção de 22/09 mantida no item 3).
      * Sempre exige acesso à entidade da tarefa.
      *
      * @param \ProjectTask $task tarefa já carregada (getFromDB)
@@ -178,7 +176,7 @@ class Access
         if (!Session::haveAccessToEntity((int) $task->getEntityID())) {
             return false;
         }
-        if (Session::haveRight('project', UPDATE)) {
+        if (self::isSuperAdmin() || self::managesTask($task)) {
             return true;
         }
         $viaPlugin = self::can($module, UPDATE);
@@ -187,6 +185,62 @@ class Access
             return false;
         }
         return self::isTaskActor($task);
+    }
+
+    /**
+     * O-1b: o usuário logado é gestor do projeto desta tarefa, ou de um
+     * projeto acima dele (árvore gerenciada, R2)?
+     *
+     * @param \ProjectTask $task
+     */
+    public static function managesTask($task): bool
+    {
+        return Scope::managesProject((int) ($task->fields['projects_id'] ?? 0));
+    }
+
+    /**
+     * O-1b: pode CRIAR tarefa neste projeto? Super-Admin ou gestor da
+     * árvore (R2). O técnico continua sem criar, como antes (o "Criar" do
+     * nativo `projecttask` não existe no GLPI 11).
+     */
+    public static function canCreateTaskIn(int $projectId): bool
+    {
+        $project = new \Project();
+        if ($projectId <= 0 || !$project->getFromDB($projectId)
+            || !empty($project->fields['is_deleted'])
+            || !Session::haveAccessToEntity((int) $project->getEntityID())) {
+            return false;
+        }
+        return self::isSuperAdmin() || Scope::managesProject($projectId);
+    }
+
+    /**
+     * O-1b: pode mandar ESTA tarefa para a lixeira? Super-Admin ou gestor
+     * da árvore (R2, sem depender de Excluir); os demais como antes
+     * ("Interagir" de Tarefas + Excluir nativo) e só se forem ATORES da
+     * tarefa (R5 — antes valia para qualquer tarefa da entidade).
+     *
+     * @param \ProjectTask $task
+     */
+    public static function canDeleteTask($task): bool
+    {
+        if (!Session::haveAccessToEntity((int) $task->getEntityID())) {
+            return false;
+        }
+        if (self::isSuperAdmin() || self::managesTask($task)) {
+            return true;
+        }
+        return self::can('tasks', UPDATE)
+            && (bool) Session::haveRight('projecttask', DELETE)
+            && self::isTaskActor($task);
+    }
+
+    /** Flag de PÁGINA do 🗑 da tarefa; o servidor confere por tarefa. */
+    public static function canDeleteTasks(): bool
+    {
+        return self::isSuperAdmin()
+            || Scope::managesAny()
+            || (self::can('tasks', UPDATE) && (bool) Session::haveRight('projecttask', DELETE));
     }
 
     /**
@@ -208,11 +262,12 @@ class Access
     }
 
     /**
-     * Bloco D-2a (30/09/2026): pode trocar/adicionar RESPONSÁVEIS desta tarefa?
+     * Pode trocar/adicionar RESPONSÁVEIS desta tarefa?
      *
-     * Decisão do Claudio: só o GESTOR — direito nativo `project` UPDATE, na
-     * entidade da tarefa. Técnico "Interagir" (ator da tarefa) continua
-     * alterando %, fase e datas, mas NÃO mexe na equipe.
+     * Bloco D-2a: só o gestor. O-1b (23/10/2026): "gestor" passou a ser o
+     * VÍNCULO (gestor do projeto da tarefa ou de um acima — R2) ou o
+     * Super-Admin, não mais o nativo `project` UPDATE. O técnico ator
+     * continua alterando %, fase e datas, mas NÃO mexe na equipe.
      *
      * @param \ProjectTask $task
      */
@@ -221,13 +276,13 @@ class Access
         if (!Session::haveAccessToEntity((int) $task->getEntityID())) {
             return false;
         }
-        return (bool) Session::haveRight('project', UPDATE);
+        return self::isSuperAdmin() || self::managesTask($task);
     }
 
     /** Flag de PÁGINA (mostra chips com × e o "+"); o servidor confere por tarefa. */
     public static function canManageTaskTeams(): bool
     {
-        return (bool) Session::haveRight('project', UPDATE);
+        return self::isSuperAdmin() || Scope::managesAny();
     }
 
     /**

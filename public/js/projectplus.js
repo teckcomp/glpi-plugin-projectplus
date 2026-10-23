@@ -1712,6 +1712,13 @@
         return (ppData && ppData.scope_mine) ? '&scope=mine' : '';
     }
 
+    // O-1b: o projeto está na árvore que o usuário gerencia (modo gestor)?
+    function isManagedProject(projectId) {
+        const list = Array.isArray(ppData.managed_projects) ? ppData.managed_projects : [];
+        const id = Number(projectId);
+        return list.some(function (p) { return Number(p) === id; });
+    }
+
     function renderTaskPanel(projectId, tasks, meta) {
         let html = '<div class="projectplus-taskspanel">';
 
@@ -1738,9 +1745,11 @@
             '</div>';
 
         if (tasks.length === 0) {
-            // Bloco F-1: fora do "Ver todos" a lista é só das MINHAS tarefas
+            // Bloco F-1: fora do "Ver todos" a lista é só das MINHAS tarefas.
+            // O-1b: na árvore que o usuário GERENCIA a lista é a do projeto
+            // inteiro — ali o vazio usa a frase neutra.
             html += '<p class="projectplus-muted">' +
-                escapeHtml(ppData.tasks_mine
+                escapeHtml(ppData.tasks_mine && !isManagedProject(projectId)
                     ? __('Nenhuma tarefa atribuída a você.')
                     : __('Nenhuma tarefa neste projeto ainda.')) + '</p></div>';
             return html;
@@ -2103,11 +2112,14 @@
 
             const pct = row.querySelector('.pp-task-percent');
             if (pct) {
+                // O-1b: valor gravado, para o campo VOLTAR quando o servidor
+                // recusa (antes ficava mostrando o valor recusado até o F5).
+                pct.dataset.ppPrev = pct.value;
                 pct.addEventListener('change', function () {
                     taskPost(taskUrl, { action: 'percent', task_id: taskId, percent: pct.value }, function (resp) {
                         // Recarrega sempre: atualiza o % automático da tarefa
                         // mãe e a barra de prazo/risco da linha alterada
-                        if (resp.ok) { reload(); }
+                        if (resp.ok) { reload(); } else { pct.value = pct.dataset.ppPrev; }
                     });
                 });
             }
@@ -2131,6 +2143,7 @@
             const de = row.querySelector('.pp-task-end');
             [ds, de].forEach(function (inp) {
                 if (!inp) { return; }
+                inp.dataset.ppPrev = inp.value; // O-1b: volta na recusa
                 inp.addEventListener('change', function () {
                     taskPost(taskUrl, {
                         action: 'dates',
@@ -2143,17 +2156,32 @@
                         // reload, mudar a data gravava no banco mas a coluna
                         // Prazo continuava mostrando o cálculo antigo —
                         // mesmo tratamento que o campo % já fazia.
-                        if (resp.ok) { reload(); }
+                        if (resp.ok) {
+                            reload();
+                        } else {
+                            if (ds) { ds.value = ds.dataset.ppPrev; }
+                            if (de) { de.value = de.dataset.ppPrev; }
+                        }
                     });
                 });
             });
 
             const st = row.querySelector('.pp-task-state');
             if (st) {
+                // O-1b: recusado (sem permissão, trava de dependência), o
+                // campo e a bolinha voltam à fase gravada.
+                st.dataset.ppPrev = st.value;
                 st.addEventListener('change', function () {
                     const dot = row.querySelector('.pp-phase-dot');
                     if (dot) { dot.style.background = stateColor(st.value); }
-                    taskPost(taskUrl, { action: 'state', task_id: taskId, projectstates_id: st.value }, null);
+                    taskPost(taskUrl, { action: 'state', task_id: taskId, projectstates_id: st.value }, function (resp) {
+                        if (resp.ok) {
+                            st.dataset.ppPrev = st.value;
+                            return;
+                        }
+                        st.value = st.dataset.ppPrev;
+                        if (dot) { dot.style.background = stateColor(st.value); }
+                    });
                 });
             }
 

@@ -251,9 +251,9 @@ TemplateRenderer::getInstance()->display(
         'users'           => $users,
         // Bloco D-2a: chips editáveis de responsáveis (só gestor)
         'can_team'        => Access::canManageTaskTeams(),
-        // Bloco M-2: excluir = módulo em Interagir + direito NATIVO de excluir
-        // (o servidor confere de novo por item, com entidade).
-        'can_delete_tasks'   => Access::can('tasks', UPDATE) && Session::haveRight('projecttask', DELETE),
+        // Bloco M-2 / O-1b: 🗑 da tarefa — Super-Admin, gestor de algum
+        // projeto, ou Interagir + Excluir nativo (servidor confere por tarefa).
+        'can_delete_tasks'   => Access::canDeleteTasks(),
         'can_delete_project' => Access::can('projects', UPDATE) && Session::haveRight('project', DELETE),
         // Bloco D-3a: faixa "Projeto" no painel (equipe, datas, fase, %, auto)
         'can_edit_project' => Access::canEditProjects(),
@@ -267,6 +267,10 @@ TemplateRenderer::getInstance()->display(
         // Bloco F-1: painel do projeto só com as MINHAS tarefas (fora do
         // "Ver todos") — o JS escolhe a mensagem de lista vazia por isto.
         'tasks_mine'      => $scopeMyTaskIds !== null,
+        // O-1b: projetos da árvore que o usuário GERENCIA (só no modo gestor;
+        // no "Só os meus" a lista é a pessoal) — nesses o painel lista todas
+        // as tarefas e a mensagem de vazio é a neutra.
+        'managed_projects' => Scope::mode() === 'managed' ? Scope::managedTreeIds() : [],
         // Conjunto de fases por tipo, para o campo Estado do modal seguir o
         // tipo escolhido sem recarregar a página.
         'phases_by_type'  => TypePhase::phasesByType(),

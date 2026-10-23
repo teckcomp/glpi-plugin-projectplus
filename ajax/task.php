@@ -12,7 +12,8 @@
  *                      "Calcular automaticamente" nativo (auto_percent_done)
  * POST action=team_add    task_id, users_id — Bloco D-2a: inclui responsável
  * POST action=team_remove task_id, users_id — Bloco D-2a: retira responsável
- *                      (os dois só para o GESTOR: Access::canManageTaskTeam)
+ *                      (os dois só para o GESTOR — vínculo, O-1b — ou o
+ *                      Super-Admin: Access::canManageTaskTeam)
  *
  * No create, `users_ids` (lista separada por vírgula) traz VÁRIOS
  * responsáveis; `users_id` (um só) segue aceito por compatibilidade.
@@ -104,13 +105,12 @@ function pp_blocked_message(int $taskId): ?string
 
 $action = $_POST['action'] ?? '';
 
-// Criar: o GLPI 11 não tem CREATE em `projecttask` (ProjectTask::canCreate
-// é `project` UPDATE) — o 1º termo nunca é verdadeiro; mantido como estava.
-$canCreate = Session::haveRight('projecttask', CREATE) || Session::haveRight('project', UPDATE);
+// Criar: O-1b (23/10/2026) — decidido POR PROJETO em Access::canCreateTaskIn
+// (Super-Admin ou gestor da árvore). Antes: nativo `project` UPDATE, global.
 
 /**
  * Carrega a tarefa do POST e aplica a regra POR TAREFA de Access::canUpdateTask
- * (gestor, OU "Interagir" do módulo + ator da tarefa). Encerra a requisição
+ * (Super-Admin, gestor da árvore, OU "Interagir" do módulo + ator da tarefa). Encerra a requisição
  * com a mensagem adequada quando não encontra ou não pode.
  * Correção de 22/09/2026: antes o teste era `projecttask` UPDATE, bit que o
  * GLPI 11 não tem — técnico com "Interagir" recebia "Sem permissão".
@@ -208,7 +208,9 @@ switch ($action) {
         if (!$task->getFromDB($tid) || !empty($task->fields['is_deleted'])) {
             pp_reply(['ok' => false, 'message' => __('Tarefa não encontrada', 'projectplus')]);
         }
-        if (!Access::can('tasks', UPDATE) || !$task->can($tid, DELETE)) {
+        // O-1b: Super-Admin/gestor da árvore, ou Interagir + Excluir nativo
+        // sendo ator da tarefa (Access::canDeleteTask).
+        if (!Access::canDeleteTask($task)) {
             pp_reply(['ok' => false, 'message' => __('Sem permissão', 'projectplus')]);
         }
         $pid = (int) $task->fields['projects_id'];
@@ -219,20 +221,28 @@ switch ($action) {
         pp_reply(['ok' => true]);
 
     case 'create':
-        if (!$canCreate) {
-            pp_reply(['ok' => false, 'message' => __('Sem permissão para criar tarefas', 'projectplus')]);
-        }
-
         $name      = trim((string) ($_POST['name'] ?? ''));
         $projectId = (int) ($_POST['projects_id'] ?? 0);
         if ($name === '' || $projectId <= 0) {
             pp_reply(['ok' => false, 'message' => __('Nome e projeto são obrigatórios', 'projectplus')]);
         }
+        if (!Access::canCreateTaskIn($projectId)) {
+            pp_reply(['ok' => false, 'message' => __('Sem permissão para criar tarefas', 'projectplus')]);
+        }
+        // O-1b: a tarefa-mãe (se houver) tem de ser do MESMO projeto — a
+        // permissão foi conferida no projeto informado, não no da mãe.
+        $parentId = (int) ($_POST['projecttasks_id'] ?? 0);
+        if ($parentId > 0) {
+            $parent = new ProjectTask();
+            if (!$parent->getFromDB($parentId) || (int) $parent->fields['projects_id'] !== $projectId) {
+                pp_reply(['ok' => false, 'message' => __('Sem permissão para criar tarefas', 'projectplus')]);
+            }
+        }
 
         $input = [
             'name'             => $name,
             'projects_id'      => $projectId,
-            'projecttasks_id'  => (int) ($_POST['projecttasks_id'] ?? 0),
+            'projecttasks_id'  => $parentId,
             'projectstates_id' => (int) ($_POST['projectstates_id'] ?? 0),
             'percent_done'     => 0,
         ];

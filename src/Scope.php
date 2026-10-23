@@ -43,11 +43,60 @@ class Scope
     /** Cache por requisição: uid => tarefas da árvore que gerencia. */
     private static array $managedTaskCache = [];
 
+    /** Cache por requisição (O-1b): uid => mapa id=>true da árvore gerenciada. */
+    private static array $treeCache = [];
+
     /** Para harness: esquece os caches da requisição. */
     public static function resetCache(): void
     {
         self::$managedCache     = [];
         self::$managedTaskCache = [];
+        self::$treeCache        = [];
+    }
+
+    // ---------------------------------------------------------------
+    // O-1b (23/10/2026) — VÍNCULO para AÇÃO (R2). Independe do modo de
+    // visão: "Só os meus" muda o que a tela lista, não o que o gestor
+    // pode fazer na árvore dele.
+    // ---------------------------------------------------------------
+
+    /** O usuário logado gerencia algum projeto? (cliente nunca — R6) */
+    public static function managesAny(): bool
+    {
+        return self::managedProjects((int) Session::getLoginUserID()) !== [];
+    }
+
+    /**
+     * Projetos da árvore que o usuário logado gerencia (os gerenciados +
+     * todos os descendentes), em lista.
+     *
+     * @return int[]
+     */
+    public static function managedTreeIds(): array
+    {
+        return array_keys(self::managedTreeMap((int) Session::getLoginUserID()));
+    }
+
+    /** O projeto está na árvore que o usuário logado gerencia? */
+    public static function managesProject(int $projectId): bool
+    {
+        if ($projectId <= 0) {
+            return false;
+        }
+        return isset(self::managedTreeMap((int) Session::getLoginUserID())[$projectId]);
+    }
+
+    /** @return array<int, true> */
+    private static function managedTreeMap(int $uid): array
+    {
+        if (!array_key_exists($uid, self::$treeCache)) {
+            $map = [];
+            foreach (self::managedTree($uid) as $pid) {
+                $map[(int) $pid] = true;
+            }
+            self::$treeCache[$uid] = $map;
+        }
+        return self::$treeCache[$uid];
     }
 
     /**
