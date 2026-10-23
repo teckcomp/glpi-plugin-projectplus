@@ -13,6 +13,7 @@ use GlpiPlugin\Projectplus\Dashboard;
 use GlpiPlugin\Projectplus\KanbanTab;
 use GlpiPlugin\Projectplus\Notification;
 use GlpiPlugin\Projectplus\ProjectCost;
+use GlpiPlugin\Projectplus\ProjectManager;
 use GlpiPlugin\Projectplus\ProjectTracking;
 use GlpiPlugin\Projectplus\TaskComment;
 use GlpiPlugin\Projectplus\TaskCost;
@@ -115,12 +116,19 @@ function plugin_init_projectplus(): void
     $PLUGIN_HOOKS[Hooks::ADD_JAVASCRIPT]['projectplus'] = $pluginJs;
 
     // Hook pós-atualização de tarefas: mantém indicadores e alertas coerentes
+    // O-1a: o update de Project passa por ProjectManager, que chama o
+    // ProjectTracking::onProjectUpdate de antes e sincroniza os gestores
+    // (o GLPI aceita um callback por tipo e plugin).
     $PLUGIN_HOOKS[Hooks::ITEM_UPDATE]['projectplus'] = [
         ProjectTask::class => [Notification::class, 'onTaskUpdate'],
-        Project::class     => [ProjectTracking::class, 'onProjectUpdate'],
+        Project::class     => [ProjectManager::class, 'onProjectUpdate'],
     ];
     $PLUGIN_HOOKS[Hooks::ITEM_ADD]['projectplus'] = [
         ProjectTask::class => [ProjectTracking::class, 'onTaskAdd'],
+        Project::class     => [ProjectManager::class, 'onProjectAdd'],
+    ];
+    $PLUGIN_HOOKS[Hooks::ITEM_PURGE]['projectplus'] = [
+        Project::class => [ProjectManager::class, 'onProjectPurge'],
     ];
 
     // Guarda de fase (Etapa 3, Bloco 3 / Fix 1): projeto com filhos

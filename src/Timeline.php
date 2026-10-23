@@ -34,6 +34,10 @@ class Timeline
      *                             projetos daquele tipo. null = todos os
      *                             tipos. Não é permissão — quem vê o quê
      *                             continua sendo `Scope`.
+     * @param ?array   $taskIds    O-1a — ids das tarefas visíveis
+     *                             (`Scope::myTaskIds()`: as minhas + as da
+     *                             árvore que o usuário gerencia). Quando
+     *                             informado, substitui o $onlyUserId.
      *
      * @return array{range: array{min: string, max: string, today: string},
      *               groups: array}
@@ -41,7 +45,8 @@ class Timeline
     public static function getData(
         ?int $onlyUserId = null,
         ?array $taskProjectIds = null,
-        ?int $typeId = null
+        ?int $typeId = null,
+        ?array $taskIds = null
     ): array {
         /** @var \DBmysql $DB */
         global $DB;
@@ -55,7 +60,7 @@ class Timeline
         $scopeProj = ($taskProjectIds !== null)
             ? array_flip(array_map('intval', $taskProjectIds))
             : null;
-        $showEmpty = ($onlyUserId === null && $taskProjectIds === null);
+        $showEmpty = ($onlyUserId === null && $taskProjectIds === null && $taskIds === null);
 
         // ---------- Projetos (todos, em árvore) ----------
         $projByParent = [];
@@ -87,7 +92,13 @@ class Timeline
         // ---------- Escopo por usuário (perfil sem "ver todos") ----------
         // Tarefas em que o usuário está na equipe, em consulta única.
         $mine = null;
-        if ($onlyUserId !== null) {
+        if ($taskIds !== null) {
+            // O-1a: lista pronta do Scope (minhas + árvore gerenciada).
+            $mine = [];
+            foreach ($taskIds as $tid) {
+                $mine[(int) $tid] = true;
+            }
+        } elseif ($onlyUserId !== null) {
             $mine = [];
             foreach (
                 $DB->request([

@@ -37,11 +37,22 @@ class Access
         'reports'       => 'plugin_projectplus_reports',
         'templates'     => 'plugin_projectplus_templates',
         'alerts'        => 'plugin_projectplus_alerts',
-        // Escopos (Bloco 3) — não entram na sidebar; usados por src/Scope.php
-        // para decidir o alcance do botão "Ver tudo".
-        'seemanaged'    => 'plugin_projectplus_seemanaged',
+        // Escopo (Bloco 3) — não entra na sidebar; usado por src/Scope.php.
+        // O-1a (23/10/2026): "ver projetos que gerencia" (`seemanaged`)
+        // saiu — o gestor é reconhecido pelo VÍNCULO (tabela de gestores),
+        // não por direito (R2/R8). A linha fica em Install::LEGACY_RIGHTS.
         'seeall'        => 'plugin_projectplus_seeall',
     ];
+
+    /**
+     * Super-Admin do plugin (R1): direito NATIVO "Configuração: Atualizar"
+     * — o mesmo critério que já guarda a Configuração do plugin. Visão (e,
+     * a partir do O-1b, ação) sobre todos os projetos.
+     */
+    public static function isSuperAdmin(): bool
+    {
+        return (bool) Session::haveRight('config', UPDATE);
+    }
 
     /**
      * O perfil atual tem o direito $module no nível $right?

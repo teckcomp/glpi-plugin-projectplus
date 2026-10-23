@@ -1,32 +1,32 @@
 <?php
 
 /**
- * ProjectPlus — camada de ESCOPO (Etapa 8, Bloco 3).
+ * ProjectPlus — camada de ESCOPO (Etapa 8, Bloco 3; regras por VÍNCULO no
+ * Ciclo O, bloco O-1a, 23/10/2026).
  *
  * Enquanto `Access` responde "o perfil PODE ver este módulo?", `Scope`
- * responde "QUAIS itens este usuário vê agora?". Toda tela global abre no
- * escopo PESSOAL e só amplia via botão "Ver tudo".
+ * responde "QUAIS itens este usuário vê agora?". O PERFIL diz o quê; o
+ * VÍNCULO com o projeto diz onde (ROADMAP, Ciclo O, regras R1–R8).
  *
- * Regras (decididas com o usuário em 21/07/2026):
- *   PROJETOS que aparecem:
- *     - personal : projetos/subprojetos onde o usuário está na EQUIPE DO
- *                  PROJETO (`glpi_projectteams`). Cada um por si — NÃO sobe
- *                  para o projeto-pai, NÃO conta ter tarefa nem gerenciar.
- *     - managed  : personal + projetos onde ele é o gestor
- *                  (`glpi_projects.users_id`). Requer direito `seemanaged`.
- *     - all      : sem filtro. Requer direito `seeall`.
- *   TAREFAS que aparecem (Bloco F-1, 05/10/2026 — decisão do Claudio):
- *     - personal : só as MINHAS tarefas (equipe da tarefa,
- *                  `glpi_projecttaskteams`), independentemente do projeto.
- *     - managed  : IDEM — só as minhas. "Ver projetos que gerencio"
- *                  amplia só a lista de PROJETOS; quem precisa da visão da
- *                  equipe inteira recebe "Ver todos" (seeall).
- *     - all      : sem filtro.
- *   Subprojetos no managed: os DESCENDENTES dos projetos que ele gerencia
- *   entram; os de projeto em que ele é só da equipe, não (cada um por si).
+ * Modos (`mode()`):
+ *   - all      : sem filtro. Super-Admin (nativo "Configuração: Atualizar",
+ *                R1) e quem tem "Ver todos" (`seeall`, visão de LEITURA —
+ *                a ação continua só onde é gestor ou atribuído, O-1b).
+ *   - managed  : quem é GESTOR de algum projeto (tabela própria,
+ *                `ProjectManager`; não depende mais de direito — R2/R8).
+ *                PROJETOS: os da equipe (cada um por si) + os que gerencia,
+ *                com a ÁRVORE inteira (subprojetos). TAREFAS: as minhas +
+ *                TODAS as da árvore que gerencia (R2). Gestor de subprojeto
+ *                não vê o projeto de cima (R7) — ele não entra no escopo.
+ *   - personal : os demais, e qualquer um com `?scope=mine` (R8).
+ *                PROJETOS: os da equipe do projeto (cada um por si);
+ *                TAREFAS: só as minhas (equipe da tarefa) — R5. Inalterado
+ *                desde o Bloco F-1.
+ * Usuário com "Visão do cliente" nunca é gestor para o escopo (R6).
  *
- * O modo vem do `?scope` da URL (sem memória em sessão — a tela sempre
- * reabre no pessoal) cruzado com o direito de escopo do perfil.
+ * O padrão é o MAIOR modo do usuário; `?scope=mine` reduz ao pessoal, sem
+ * memória de sessão. O direito "Escopo: ver projetos que gerencia"
+ * (`seemanaged`) deixou de ser consultado — virou legado (R8).
  *
  * Classe estática, sem extends — autoload PSR-4.
  */
@@ -37,13 +37,24 @@ use Session;
 
 class Scope
 {
+    /** Cache por requisição: uid => projetos que gerencia (ids exatos). */
+    private static array $managedCache = [];
+
+    /** Cache por requisição: uid => tarefas da árvore que gerencia. */
+    private static array $managedTaskCache = [];
+
+    /** Para harness: esquece os caches da requisição. */
+    public static function resetCache(): void
+    {
+        self::$managedCache     = [];
+        self::$managedTaskCache = [];
+    }
+
     /**
      * Modo efetivo: 'personal' | 'managed' | 'all'.
      *
-     * Inversão (decidida com o usuário em 21/07/2026): o PADRÃO é o MAIOR
-     * escopo que o perfil permite (seeall → all; seemanaged → managed; sem
-     * direito → personal). O usuário REDUZ ao pessoal via `?scope=mine`
-     * (sem memória de sessão — recarregar/abrir volta ao padrão).
+     * O PADRÃO é o maior modo do usuário (all → managed → personal); ele
+     * REDUZ ao pessoal via `?scope=mine` (sem memória de sessão).
      */
     public static function mode(): string
     {
@@ -51,19 +62,31 @@ class Scope
         if ($wantsMine) {
             return 'personal';
         }
-        if (Access::can('seeall')) {
+        if (self::seesAll()) {
             return 'all';
         }
-        if (Access::can('seemanaged')) {
+        if (self::managedProjects((int) Session::getLoginUserID()) !== []) {
             return 'managed';
         }
         return 'personal';
     }
 
-    /** O perfil pode ampliar o escopo (botão "Ver tudo" aparece)? */
+    /**
+     * Vê todos os projetos? Super-Admin (R1) ou "Ver todos" (leitura, R1).
+     */
+    public static function seesAll(): bool
+    {
+        return Access::isSuperAdmin() || Access::can('seeall');
+    }
+
+    /**
+     * O usuário pode alternar o escopo (botão "Todos | Só os meus")? Só faz
+     * sentido quando o maior modo dele é diferente do pessoal.
+     */
     public static function canExpand(): bool
     {
-        return Access::can('seemanaged') || Access::can('seeall');
+        return self::seesAll()
+            || self::managedProjects((int) Session::getLoginUserID()) !== [];
     }
 
     /** O escopo atual já está ampliado (diferente do pessoal)? */
@@ -85,8 +108,13 @@ class Scope
     }
 
     /**
-     * IDs EXATOS dos projetos a exibir (cada um por si — raiz OU subprojeto).
+     * IDs dos projetos a LISTAR (cada um por si — raiz OU subprojeto).
      * `null` = sem filtro (modo 'all'); array vazio = não participa de nada.
+     *
+     * No managed: equipe + gerenciados, SEM os que já estão dentro da árvore
+     * de um projeto gerenciado (esses aparecem pela expansão do pai — senão
+     * o mesmo subprojeto viria duas vezes no Painel). O alcance completo é
+     * `reachProjectIds()`.
      */
     public static function projectIds(?string $mode = null): ?array
     {
@@ -97,11 +125,27 @@ class Scope
         $uid = (int) Session::getLoginUserID();
         $ids = self::teamProjects($uid);
         if ($mode === 'managed') {
-            foreach (self::managedProjects($uid) as $p) {
-                $ids[$p] = true;
+            $managed = self::managedProjects($uid);
+            foreach ($managed as $p) {
+                $ids[(int) $p] = true;
+            }
+            foreach (self::managedDescendants($managed) as $d) {
+                unset($ids[(int) $d]);
             }
         }
         return array_map('intval', array_keys($ids));
+    }
+
+    /**
+     * ALCANCE de projetos: tudo o que o usuário enxerga como projeto
+     * (lista + árvore gerenciada). `null` no 'all'. Para telas que listam
+     * projetos soltos, sem expansão (Kanban de projetos, Relatório de
+     * projetos, burndown, seletor de tipo dos Kanbans).
+     */
+    public static function reachProjectIds(?string $mode = null): ?array
+    {
+        $map = self::visibleProjectMap($mode);
+        return $map === null ? null : array_map('intval', array_keys($map));
     }
 
     /**
@@ -144,8 +188,9 @@ class Scope
     }
 
     /**
-     * IDs das MINHAS tarefas (equipe da tarefa) — filtra lista/indicadores
-     * de tarefas no personal E no managed (Bloco F-1). `null` só no 'all'.
+     * IDs das tarefas visíveis — filtra lista/indicadores de tarefas.
+     * personal = as minhas (equipe da tarefa); managed = as minhas + TODAS
+     * as da árvore que gerencia (R2); `null` só no 'all'.
      */
     public static function myTaskIds(?string $mode = null): ?array
     {
@@ -153,7 +198,27 @@ class Scope
         if ($mode === 'all') {
             return null;
         }
-        return self::myTasks((int) Session::getLoginUserID());
+        $uid  = (int) Session::getLoginUserID();
+        $mine = self::myTasks($uid);
+        if ($mode !== 'managed') {
+            return $mine;
+        }
+        return self::mergeIds($mine, self::managedTreeTasks($uid));
+    }
+
+    /** União de listas de ids, sem repetição, só positivos. */
+    public static function mergeIds(array ...$lists): array
+    {
+        $out = [];
+        foreach ($lists as $list) {
+            foreach ($list as $id) {
+                $id = (int) $id;
+                if ($id > 0) {
+                    $out[$id] = true;
+                }
+            }
+        }
+        return array_keys($out);
     }
 
     /**
@@ -164,6 +229,7 @@ class Scope
      * hoje serve a canSeeProject(), às opções de projeto de "Minhas
      * tarefas" e à expansão de subprojetos do painel. Antes somava os
      * descendentes também dos projetos em que ele era só da equipe.
+     * O-1a: "gerencia" = vínculo na tabela de gestores (ProjectManager).
      */
     public static function taskProjectIds(?string $mode = null): ?array
     {
@@ -173,11 +239,8 @@ class Scope
         }
         $uid = (int) Session::getLoginUserID();
         $all = self::teamProjects($uid);
-        foreach (self::managedProjects($uid) as $pid) {
+        foreach (self::managedTree($uid) as $pid) {
             $all[(int) $pid] = true;
-            foreach (Budget::getDescendantIds((int) $pid) as $d) {
-                $all[(int) $d] = true;
-            }
         }
         return array_map('intval', array_keys($all));
     }
@@ -227,34 +290,71 @@ class Scope
         return $ids;
     }
 
-    /** Projetos que o usuário gerencia (users_id). Lista de ids. */
+    /**
+     * Projetos que o usuário GERENCIA (ids exatos) — tabela de gestores
+     * (O-1a; antes `glpi_projects.users_id`). Entidade, lixeira e modelo
+     * filtrados em ProjectManager::projectsOf (achado da auditoria de
+     * 26/07/2026 continua valendo). "Visão do cliente" nunca gerencia (R6).
+     */
     private static function managedProjects(int $uid): array
+    {
+        if ($uid <= 0) {
+            return [];
+        }
+        if (!array_key_exists($uid, self::$managedCache)) {
+            self::$managedCache[$uid] = Access::can('clientview')
+                ? []
+                : ProjectManager::projectsOf($uid);
+        }
+        return self::$managedCache[$uid];
+    }
+
+    /** Descendentes (só os de baixo) dos projetos informados. */
+    private static function managedDescendants(array $roots): array
+    {
+        $out = [];
+        foreach ($roots as $pid) {
+            foreach (Budget::getDescendantIds((int) $pid) as $d) {
+                $out[(int) $d] = true;
+            }
+        }
+        return array_keys($out);
+    }
+
+    /** Árvore gerenciada: os projetos que gerencia + descendentes. */
+    private static function managedTree(int $uid): array
+    {
+        $roots = self::managedProjects($uid);
+        return self::mergeIds($roots, self::managedDescendants($roots));
+    }
+
+    /** Tarefas (fora da lixeira) de todos os projetos da árvore gerenciada. */
+    private static function managedTreeTasks(int $uid): array
     {
         /** @var \DBmysql $DB */
         global $DB;
 
-        $ids = [];
-        foreach (
-            $DB->request([
-                'SELECT' => 'id',
-                'FROM'   => 'glpi_projects',
-                // ACHADO DA AUDITORIA (26/07/2026): faltavam a restrição de
-                // ENTIDADE e o filtro de MODELO. Numa instalação de entidade
-                // única — como a de homologação — isso nunca aparece; numa
-                // multi-entidade, o gestor que administra projeto em outra
-                // entidade trazia esse id para o escopo, e um projeto-MODELO
-                // dele entrava como se fosse projeto real.
-                'WHERE'  => [
-                    'users_id'    => $uid,
-                    'is_deleted'  => 0,
-                    'is_template' => 0,
-                ] + getEntitiesRestrictCriteria('glpi_projects'),
-            ]) as $r
-        ) {
-            $ids[(int) $r['id']] = true;
+        if (array_key_exists($uid, self::$managedTaskCache)) {
+            return self::$managedTaskCache[$uid];
+        }
+        $tree = self::managedTree($uid);
+        $ids  = [];
+        if ($tree !== []) {
+            foreach (
+                $DB->request([
+                    'SELECT' => 'glpi_projecttasks.id',
+                    'FROM'   => 'glpi_projecttasks',
+                    'WHERE'  => array_merge(
+                        ['glpi_projecttasks.projects_id' => $tree],
+                        Trash::liveTasks()
+                    ),
+                ]) as $r
+            ) {
+                $ids[(int) $r['id']] = true;
+            }
         }
         unset($ids[0]);
-        return array_keys($ids);
+        return self::$managedTaskCache[$uid] = array_keys($ids);
     }
 
     /** IDs das tarefas onde o usuário está na equipe da tarefa. Lista. */

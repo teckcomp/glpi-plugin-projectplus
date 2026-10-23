@@ -33,7 +33,8 @@ if (!ProjectKanban::canAccess()) {
 // Escopo (Bloco 3/4): padrão = maior escopo do perfil; ?scope=mine reduz
 // ao pessoal (para o Cliente, os projetos em cuja equipe ele está).
 $scopeMode       = Scope::mode();
-$scopeProjectIds = Scope::projectIds($scopeMode);
+// O-1a: o board lista cada projeto por si — o gestor vê a árvore inteira.
+$scopeProjectIds = Scope::reachProjectIds($scopeMode);
 $scopeCanExpand  = Scope::canExpand();
 $scopeIsExpanded = Scope::isExpanded();
 

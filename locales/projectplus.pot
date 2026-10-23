@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ProjectPlus 1.1.0-beta\n"
 "Report-Msgid-Bugs-To: https://github.com/teckcomp/glpi-plugin-projectplus/issues\n"
-"POT-Creation-Date: 2026-10-23 15:26+0000\n"
+"POT-Creation-Date: 2026-10-23 18:12+0000\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -21,12 +21,12 @@ msgstr ""
 msgid "\"%s\" excede o limite de 10 MB"
 msgstr ""
 
-#: src/Reports.php:220 src/Reports.php:363
+#: src/Reports.php:231 src/Reports.php:374
 #, php-format
 msgid "% concluído"
 msgstr ""
 
-#: src/Reports.php:223
+#: src/Reports.php:234
 #, php-format
 msgid "% orçamento consumido"
 msgstr ""
@@ -318,7 +318,7 @@ msgstr ""
 msgid "Alertas"
 msgstr ""
 
-#: src/Profile.php:114
+#: src/Profile.php:110
 msgid "Alertas (sino)"
 msgstr ""
 
@@ -401,7 +401,7 @@ msgstr ""
 msgid "Ativo"
 msgstr ""
 
-#: src/Reports.php:365
+#: src/Reports.php:376
 msgid "Atrasada"
 msgstr ""
 
@@ -409,7 +409,7 @@ msgstr ""
 msgid "Atrasadas"
 msgstr ""
 
-#: front/dashboard.php:187 src/I18nJs.php:118 src/Reports.php:221
+#: front/dashboard.php:187 src/I18nJs.php:118 src/Reports.php:232
 #: templates/dashboard.html.twig:266
 msgid "Atrasado"
 msgstr ""
@@ -427,7 +427,7 @@ msgstr ""
 msgid "Atualizado às %s"
 msgstr ""
 
-#: src/Reports.php:559 src/TaskComment.php:561
+#: src/Reports.php:570 src/TaskComment.php:561
 msgid "Autor"
 msgstr ""
 
@@ -448,7 +448,7 @@ msgstr ""
 msgid "Baixar CSV"
 msgstr ""
 
-#: src/Reports.php:365
+#: src/Reports.php:376
 msgid "Bloqueada"
 msgstr ""
 
@@ -746,7 +746,7 @@ msgid ""
 "datas deslocadas a partir da data escolhida."
 msgstr ""
 
-#: src/Profile.php:51
+#: src/Profile.php:52
 msgid "Criar"
 msgstr ""
 
@@ -825,7 +825,7 @@ msgstr ""
 msgid "Custos (ProjectPlus)"
 msgstr ""
 
-#: src/Profile.php:96
+#: src/Profile.php:92
 msgid "Custos / Orçamento"
 msgstr ""
 
@@ -849,7 +849,7 @@ msgstr ""
 msgid "Cálculo automático a partir das tarefas e subprojetos"
 msgstr ""
 
-#: src/ProjectCost.php:135 src/Reports.php:558 src/TaskComment.php:562
+#: src/ProjectCost.php:135 src/Reports.php:569 src/TaskComment.php:562
 #: src/TaskCost.php:167 templates/costs.html.twig:118
 msgid "Data"
 msgstr ""
@@ -896,7 +896,7 @@ msgstr ""
 msgid "Descer"
 msgstr ""
 
-#: src/ProjectCost.php:134 src/Reports.php:558 src/TaskCost.php:166
+#: src/ProjectCost.php:134 src/Reports.php:569 src/TaskCost.php:166
 #: templates/costs.html.twig:117 templates/dashboard.html.twig:516
 msgid "Descrição"
 msgstr ""
@@ -1064,11 +1064,7 @@ msgstr ""
 msgid "Escopo"
 msgstr ""
 
-#: src/Profile.php:62
-msgid "Escopo: ver projetos que gerencia"
-msgstr ""
-
-#: src/Profile.php:67
+#: src/Profile.php:63
 msgid "Escopo: ver todos os projetos"
 msgstr ""
 
@@ -1134,7 +1130,7 @@ msgstr ""
 msgid "Estrutura do modelo inválida"
 msgstr ""
 
-#: src/I18nJs.php:72 src/Profile.php:52 templates/projecttemplates.html.twig:91
+#: src/I18nJs.php:72 src/Profile.php:53 templates/projecttemplates.html.twig:91
 msgid "Excluir"
 msgstr ""
 
@@ -1204,7 +1200,7 @@ msgid ""
 "projectplusalerts anota quantos e-mails saíram no próprio log da tarefa."
 msgstr ""
 
-#: src/I18nJs.php:63 src/Reports.php:219 src/Reports.php:362
+#: src/I18nJs.php:63 src/Reports.php:230 src/Reports.php:373
 #: templates/dashboard.html.twig:216 templates/dashboard.html.twig:324
 #: templates/dashboard.html.twig:468 templates/reports.html.twig:112
 #: templates/typephases.html.twig:151 templates/typephases.html.twig:186
@@ -1286,7 +1282,7 @@ msgstr ""
 msgid "Fim do período"
 msgstr ""
 
-#: src/I18nJs.php:105 src/Reports.php:221 src/Reports.php:364
+#: src/I18nJs.php:105 src/Reports.php:232 src/Reports.php:375
 #: templates/dashboard.html.twig:504
 msgid "Fim planejado"
 msgstr ""
@@ -1334,7 +1330,7 @@ msgstr ""
 msgid "Geral"
 msgstr ""
 
-#: src/I18nJs.php:57 src/Reports.php:219 templates/dashboard.html.twig:490
+#: src/I18nJs.php:57 src/Reports.php:230 templates/dashboard.html.twig:490
 msgid "Gestor"
 msgstr ""
 
@@ -1359,7 +1355,7 @@ msgstr ""
 msgid "Hoje"
 msgstr ""
 
-#: src/Reports.php:218 src/Reports.php:361
+#: src/Reports.php:229 src/Reports.php:372
 msgid "ID"
 msgstr ""
 
@@ -1413,7 +1409,7 @@ msgstr ""
 msgid "Informe o nome do projeto e a data de início"
 msgstr ""
 
-#: src/Profile.php:50 src/Profile.php:86 src/Profile.php:100
+#: src/Profile.php:51 src/Profile.php:82 src/Profile.php:96
 msgid "Interagir"
 msgstr ""
 
@@ -1425,7 +1421,7 @@ msgstr ""
 msgid "Início do período"
 msgstr ""
 
-#: src/I18nJs.php:104 src/Reports.php:220 src/Reports.php:364
+#: src/I18nJs.php:104 src/Reports.php:231 src/Reports.php:375
 #: templates/dashboard.html.twig:499
 msgid "Início planejado"
 msgstr ""
@@ -1467,11 +1463,11 @@ msgstr ""
 msgid "Kanban (ProjectPlus)"
 msgstr ""
 
-#: src/Profile.php:82
+#: src/Profile.php:78
 msgid "Kanban (tarefas)"
 msgstr ""
 
-#: front/projectkanban.php:63
+#: front/projectkanban.php:64
 msgid "Kanban de projetos"
 msgstr ""
 
@@ -1556,7 +1552,7 @@ msgid "Modelo não encontrado"
 msgstr ""
 
 #: front/projecttemplate_edit.php:40 front/projecttemplates.php:32
-#: src/Profile.php:109 templates/_topbar.html.twig:46
+#: src/Profile.php:105 templates/_topbar.html.twig:46
 #: templates/projecttemplates.html.twig:26
 msgid "Modelos"
 msgstr ""
@@ -1822,7 +1818,7 @@ msgstr ""
 msgid "NÃO registrado"
 msgstr ""
 
-#: src/Reports.php:337 src/Reports.php:539 src/Reports.php:540
+#: src/Reports.php:348 src/Reports.php:550 src/Reports.php:551
 msgid "Não"
 msgstr ""
 
@@ -1904,7 +1900,7 @@ msgstr ""
 msgid "Ordem"
 msgstr ""
 
-#: src/Reports.php:557 templates/costs.html.twig:116
+#: src/Reports.php:568 templates/costs.html.twig:116
 msgid "Origem"
 msgstr ""
 
@@ -1943,11 +1939,11 @@ msgstr ""
 msgid "Orçamento estourado"
 msgstr ""
 
-#: src/Reports.php:222
+#: src/Reports.php:233
 msgid "Orçamento gasto"
 msgstr ""
 
-#: src/Reports.php:222
+#: src/Reports.php:233
 msgid "Orçamento previsto"
 msgstr ""
 
@@ -1967,7 +1963,7 @@ msgstr ""
 msgid "Painel"
 msgstr ""
 
-#: src/Profile.php:57
+#: src/Profile.php:58
 msgid "Painel (Visão geral)"
 msgstr ""
 
@@ -2087,7 +2083,7 @@ msgstr ""
 msgid "ProjectPlus (GLPI)"
 msgstr ""
 
-#: src/Profile.php:194
+#: src/Profile.php:190
 msgid "ProjectPlus — acessos por módulo"
 msgstr ""
 
@@ -2096,7 +2092,7 @@ msgid "ProjectPlus: atrasos, pendências e projetos parados"
 msgstr ""
 
 #: front/costs.php:120 src/I18nJs.php:97 src/KanbanTab.php:80
-#: src/Reports.php:218 src/Reports.php:361 src/Reports.php:591
+#: src/Reports.php:229 src/Reports.php:372 src/Reports.php:602
 #: templates/costs.html.twig:38 templates/dashboard.html.twig:65
 #: templates/dashboard.html.twig:215 templates/dashboard.html.twig:322
 #: templates/kanban.html.twig:66 templates/mytasks.html.twig:45
@@ -2155,7 +2151,7 @@ msgstr ""
 msgid "Projeto não encontrado."
 msgstr ""
 
-#: src/Reports.php:218 templates/dashboard.html.twig:446
+#: src/Reports.php:229 templates/dashboard.html.twig:446
 msgid "Projeto pai"
 msgstr ""
 
@@ -2163,11 +2159,11 @@ msgstr ""
 msgid "Projeto parado"
 msgstr ""
 
-#: src/Reports.php:557
+#: src/Reports.php:568
 msgid "Projeto raiz"
 msgstr ""
 
-#: src/Profile.php:72 templates/config_shell.html.twig:180
+#: src/Profile.php:68 templates/config_shell.html.twig:180
 #: templates/kanban.html.twig:35 templates/projectkanban.html.twig:34
 #: templates/reports.html.twig:163 templates/reports.html.twig:188
 msgid "Projetos"
@@ -2249,7 +2245,7 @@ msgid ""
 "no Gestor de Projetos (🔗)."
 msgstr ""
 
-#: front/reports.php:43 src/Profile.php:104 templates/_topbar.html.twig:40
+#: front/reports.php:43 src/Profile.php:100 templates/_topbar.html.twig:40
 #: templates/reports.html.twig:69 templates/reports.html.twig:160
 msgid "Relatórios"
 msgstr ""
@@ -2290,7 +2286,7 @@ msgstr ""
 msgid "Responsável"
 msgstr ""
 
-#: src/Reports.php:363
+#: src/Reports.php:374
 msgid "Responsável(is)"
 msgstr ""
 
@@ -2302,7 +2298,7 @@ msgstr ""
 msgid "Sair da tela cheia"
 msgstr ""
 
-#: src/ProjectTracking.php:122 src/Reports.php:223 templates/costs.html.twig:65
+#: src/ProjectTracking.php:122 src/Reports.php:234 templates/costs.html.twig:65
 #: templates/costs.html.twig:92
 msgid "Saldo"
 msgstr ""
@@ -2447,7 +2443,7 @@ msgstr ""
 msgid "Seu usuário não tem e-mail cadastrado — informe um em Meus ajustes."
 msgstr ""
 
-#: src/Reports.php:337 src/Reports.php:539 src/Reports.php:540
+#: src/Reports.php:348 src/Reports.php:550 src/Reports.php:551
 #: templates/reports.html.twig:7
 msgid "Sim"
 msgstr ""
@@ -2483,7 +2479,7 @@ msgstr ""
 msgid "Subprojeto"
 msgstr ""
 
-#: front/costs.php:131 src/Reports.php:601
+#: front/costs.php:131 src/Reports.php:612
 #, php-format
 msgid "Subprojeto \"%s\""
 msgstr ""
@@ -2546,7 +2542,7 @@ msgstr ""
 msgid "Tabelas, direitos e cron no lugar"
 msgstr ""
 
-#: src/I18nJs.php:61 src/Reports.php:361 templates/dashboard.html.twig:321
+#: src/I18nJs.php:61 src/Reports.php:372 templates/dashboard.html.twig:321
 #: templates/reports.html.twig:98
 msgid "Tarefa"
 msgstr ""
@@ -2593,7 +2589,7 @@ msgstr ""
 msgid "Tarefa criada"
 msgstr ""
 
-#: src/I18nJs.php:107 src/Reports.php:362
+#: src/I18nJs.php:107 src/Reports.php:373
 msgid "Tarefa mãe"
 msgstr ""
 
@@ -2607,7 +2603,7 @@ msgstr ""
 msgid "Tarefa sem datas planejadas"
 msgstr ""
 
-#: src/I18nJs.php:62 src/Profile.php:77 templates/dashboard.html.twig:290
+#: src/I18nJs.php:62 src/Profile.php:73 templates/dashboard.html.twig:290
 #: templates/kanban.html.twig:33 templates/projectkanban.html.twig:33
 #: templates/reports.html.twig:167 templates/reports.html.twig:193
 msgid "Tarefas"
@@ -2672,12 +2668,12 @@ msgstr ""
 msgid "Teto somado"
 msgstr ""
 
-#: front/timeline.php:66 src/Profile.php:91 templates/_topbar.html.twig:37
+#: front/timeline.php:69 src/Profile.php:87 templates/_topbar.html.twig:37
 #: templates/timeline.html.twig:8
 msgid "Timeline"
 msgstr ""
 
-#: src/I18nJs.php:56 src/Reports.php:219 src/Reports.php:362
+#: src/I18nJs.php:56 src/Reports.php:230 src/Reports.php:373
 #: templates/dashboard.html.twig:39 templates/dashboard.html.twig:456
 #: templates/kanban.html.twig:49 templates/mytasks.html.twig:35
 #: templates/projectkanban.html.twig:47 templates/projecttemplates.html.twig:38
@@ -2781,13 +2777,13 @@ msgstr ""
 msgid "Usuário não encontrado."
 msgstr ""
 
-#: src/Reports.php:559 templates/costs.html.twig:119
+#: src/Reports.php:570 templates/costs.html.twig:119
 msgid "Valor"
 msgstr ""
 
-#: src/Profile.php:49 src/Profile.php:59 src/Profile.php:64 src/Profile.php:69
-#: src/Profile.php:85 src/Profile.php:93 src/Profile.php:99 src/Profile.php:106
-#: src/Profile.php:116 src/Profile.php:124
+#: src/Profile.php:50 src/Profile.php:60 src/Profile.php:65 src/Profile.php:81
+#: src/Profile.php:89 src/Profile.php:95 src/Profile.php:102
+#: src/Profile.php:112 src/Profile.php:120
 msgid "Ver"
 msgstr ""
 
@@ -2799,7 +2795,7 @@ msgstr ""
 msgid "Ver todos os projetos"
 msgstr ""
 
-#: src/Profile.php:122
+#: src/Profile.php:118
 msgid "Visão do cliente"
 msgstr ""
 

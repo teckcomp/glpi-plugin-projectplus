@@ -61,6 +61,17 @@ class Reports
     }
 
     /**
+     * O-1a — ALCANCE de projetos do usuário (lista + árvore que ele
+     * gerencia, R2). Para o relatório de projetos e o burndown, que tratam
+     * cada projeto por si; o seletor e os custos seguem em scopeIdsForUser()
+     * (cada cartão de custo já soma os descendentes).
+     */
+    public static function reachIdsForUser(): ?array
+    {
+        return Scope::reachProjectIds();
+    }
+
+    /**
      * Projetos para o seletor de filtro. Sem restrição de escopo, mantém o
      * critério histórico (só projetos RAIZ, como em costs.php); com escopo
      * ativo, lista exatamente os projetos que o usuário pode ver (que podem
@@ -236,7 +247,7 @@ class Reports
 
         // Filtro da tela (projeto + descendentes) ∩ escopo do perfil
         // (Etapa 8, Bloco 4): as duas restrições valem juntas.
-        $scopeIds = self::combineIds(self::scopeProjectIds($filterId), self::scopeIdsForUser());
+        $scopeIds = self::combineIds(self::scopeProjectIds($filterId), self::reachIdsForUser());
         if ($scopeIds !== null) {
             $where['glpi_projects.id'] = Scope::inList($scopeIds);
         }
@@ -686,7 +697,7 @@ class Reports
         // Escopo (Etapa 8, Bloco 4): o burndown só abre para projeto que o
         // usuário enxerga. Os DESCENDENTES continuam somando (o burndown é
         // um agregado do projeto escolhido, que já está no escopo dele).
-        $userScope = self::scopeIdsForUser();
+        $userScope = self::reachIdsForUser();
         if ($userScope !== null && !in_array((int) $project['id'], array_map('intval', $userScope), true)) {
             return null;
         }

@@ -13,7 +13,7 @@ use Session;
  * Etapa 8, Bloco 1.
  *
  * Desenha a matriz de checkboxes com os direitos granulares do plugin
- * (um por módulo + os dois direitos de escopo), reaproveitando o
+ * (um por módulo + o direito de escopo "Ver todos"), reaproveitando o
  * componente NATIVO do GLPI (Profile::displayRightsChoiceMatrix). O
  * salvamento vai pelo FORMULÁRIO NATIVO do Perfil (post para
  * Profile::getFormURL() com name="update"): como os direitos já existem em
@@ -39,7 +39,8 @@ class Profile extends CommonDBTM
     /**
      * Lista canônica dos direitos do plugin exibidos na matriz.
      * Colunas por módulo: Ver / Interagir / Criar / Excluir (só as que
-     * fazem sentido para cada linha). Os dois escopos são liga/desliga.
+     * fazem sentido para cada linha). O escopo "Ver todos" é liga/desliga
+     * (O-1a: "ver os que gerencia" virou legado — o gestor é o vínculo).
      *
      * @return array<int,array<string,mixed>>
      */
@@ -56,11 +57,6 @@ class Profile extends CommonDBTM
             [
                 'label'  => __('Painel (Visão geral)', 'projectplus'),
                 'field'  => 'plugin_projectplus_dashboard',
-                'rights' => [READ => __('Ver', 'projectplus')],
-            ],
-            [
-                'label'  => __('Escopo: ver projetos que gerencia', 'projectplus'),
-                'field'  => 'plugin_projectplus_seemanaged',
                 'rights' => [READ => __('Ver', 'projectplus')],
             ],
             [

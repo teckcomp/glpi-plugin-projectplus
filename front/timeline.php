@@ -33,7 +33,10 @@ $scopeMode           = Scope::mode();
 // Bloco F-1: fora do "Ver todos" as tarefas são sempre as MINHAS — também
 // no managed, que por isso não restringe mais por projeto (senão ficaria
 // MENOR que o pessoal: tarefa minha em projeto alheio sumiria).
-$onlyUser            = ($scopeMode !== 'all') ? (int) Session::getLoginUserID() : null;
+// O-1a: a lista de tarefas visíveis vem do Scope — no managed inclui TODAS
+// as tarefas da árvore que o usuário gerencia (R2); no pessoal, as minhas.
+$onlyUser            = null;
+$scopeTaskIds        = Scope::myTaskIds($scopeMode); // null só no "todos"
 $scopeTaskProjectIds = null;
 
 // Botão "Ver tudo" / "Ver só os meus".
@@ -80,7 +83,7 @@ TemplateRenderer::getInstance()->display(
     [
         'plugin_web_dir' => Url::base(),
         'glpi_root'      => $CFG_GLPI['root_doc'] ?? '',
-        'timeline'       => Timeline::getData($onlyUser, $scopeTaskProjectIds, $typeId),
+        'timeline'       => Timeline::getData($onlyUser, $scopeTaskProjectIds, $typeId, $scopeTaskIds),
         'only_mine'      => $scopeMode === 'personal',
         'can_templates'  => Session::haveRight('config', UPDATE),
         'nav'             => Access::sidebar(),

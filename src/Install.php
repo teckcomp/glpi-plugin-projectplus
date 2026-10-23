@@ -40,6 +40,7 @@ class Install
         'glpi_plugin_projectplus_typephases',
         'glpi_plugin_projectplus_commentfiles',
         'glpi_plugin_projectplus_userprefs', // Bloco L: filtros favoritos
+        'glpi_plugin_projectplus_projectmanagers', // O-1a: gestores do projeto
     ];
 
     /**
@@ -72,7 +73,6 @@ class Install
         'plugin_projectplus_reports',
         'plugin_projectplus_templates',
         'plugin_projectplus_alerts',
-        'plugin_projectplus_seemanaged',
         'plugin_projectplus_seeall',
         'plugin_projectplus_clientview',
     ];
@@ -84,6 +84,10 @@ class Install
      */
     public const LEGACY_RIGHTS = [
         'plugin_projectplus_projectkanban',
+        // O-1a (23/10/2026): o gestor passou a ser reconhecido pelo VÍNCULO
+        // (tabela de gestores), não por direito (R8). A linha NÃO é apagada
+        // na instalação (dado do perfil preservado) — só na purga.
+        'plugin_projectplus_seemanaged',
     ];
 
     /**
@@ -193,6 +197,11 @@ class Install
             'date_creation' => 'TIMESTAMP NULL DEFAULT NULL',
             'date_mod'      => 'TIMESTAMP NULL DEFAULT NULL',
         ],
+        'glpi_plugin_projectplus_projectmanagers' => [
+            'projects_id'   => 'INT %SIGN% NOT NULL DEFAULT 0',
+            'users_id'      => 'INT %SIGN% NOT NULL DEFAULT 0',
+            'date_creation' => 'TIMESTAMP NULL DEFAULT NULL',
+        ],
     ];
 
     /**
@@ -205,6 +214,7 @@ class Install
         'glpi_plugin_projectplus_alerts'           => ['dedup'],
         'glpi_plugin_projectplus_typephases'       => ['type_state'],
         'glpi_plugin_projectplus_userprefs'        => ['user_screen'],
+        'glpi_plugin_projectplus_projectmanagers'  => ['project_user'],
     ];
 
     public static function install(): bool
@@ -439,6 +449,25 @@ class Install
         }
 
         // ------------------------------------------------------------------
+        // 7.4) Gestores do projeto (Ciclo O, O-1a, 23/10/2026). Vários por
+        //      projeto (R3); o nativo `glpi_projects.users_id` fica com o
+        //      primeiro. Povoada logo abaixo a partir do nativo.
+        // ------------------------------------------------------------------
+        if (!$DB->tableExists('glpi_plugin_projectplus_projectmanagers')) {
+            $DB->doQuery("
+                CREATE TABLE `glpi_plugin_projectplus_projectmanagers` (
+                    `id`            INT {$sign} NOT NULL AUTO_INCREMENT,
+                    `projects_id`   INT {$sign} NOT NULL DEFAULT 0,
+                    `users_id`      INT {$sign} NOT NULL DEFAULT 0,
+                    `date_creation` TIMESTAMP NULL DEFAULT NULL,
+                    PRIMARY KEY (`id`),
+                    UNIQUE KEY `project_user` (`projects_id`, `users_id`),
+                    KEY `users_id` (`users_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET={$charset} COLLATE={$collation}
+            ");
+        }
+
+        // ------------------------------------------------------------------
         // 7.1) Reconciliação de schema (Etapa 6, Bloco 1a).
         //      Para bases criadas por versões antigas: garante as colunas
         //      que passaram a existir DEPOIS da criação da tabela.
@@ -467,6 +496,13 @@ class Install
         //      atualização ninguém veja diferença nenhuma.
         // ------------------------------------------------------------------
         self::seedDefaultPhases();
+
+        // ------------------------------------------------------------------
+        // 7.5) Gestores a partir do nativo (O-1a). IDEMPOTENTE: INSERT
+        //      IGNORE sobre o UNIQUE `project_user` — reinstalar não duplica
+        //      nem apaga gestor acrescentado depois.
+        // ------------------------------------------------------------------
+        ProjectManager::migrateFromNative();
 
         // ------------------------------------------------------------------
         // Direitos.
@@ -534,10 +570,9 @@ class Install
         // config UPDATE recebe); a partir daqui é configurável por perfil.
         $migration->addRight('plugin_projectplus_templates', $crudBits, ['config' => UPDATE]);
 
-        // Escopo: só super-admin por padrão (o Gestor recebe "ver os que
-        // gerencia" manualmente na aba do Perfil). A linha "seemanaged"
-        // existe para todos (valor 0) para aparecer na matriz.
-        $migration->addRight('plugin_projectplus_seemanaged', 0);
+        // Escopo: "Ver todos" só para o super-admin por padrão. O-1a: "ver os
+        // que gerencia" (`seemanaged`) não é mais criado — o gestor é o
+        // VÍNCULO com o projeto (LEGACY_RIGHTS; linhas existentes ficam).
         $migration->addRight('plugin_projectplus_seeall', READ, ['config' => UPDATE]);
 
         // ------------------------------------------------------------------
@@ -878,7 +913,9 @@ class Install
             }
         }
 
-        ProfileRight::deleteProfileRights(self::LEGACY_RIGHTS);
+        // O-1a: só a linha do direito APOSENTADO aqui — `seemanaged` também é
+        // legado, mas o dado do perfil fica (R8); a purga leva os dois.
+        ProfileRight::deleteProfileRights(['plugin_projectplus_projectkanban']);
 
         return $granted;
     }

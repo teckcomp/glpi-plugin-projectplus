@@ -60,7 +60,7 @@ $scopeIsExpanded     = Scope::isExpanded();
 // "união" quando há conjunto por tipo configurado — visão que cruza
 // departamentos é Visão geral / Timeline / Relatórios.
 $typeOptions = TypePhase::selectorTypes();
-$typeId      = TypePhase::resolveRequestedType(Scope::projectIds($scopeMode));
+$typeId      = TypePhase::resolveRequestedType(Scope::reachProjectIds($scopeMode)); // O-1a
 $typeUnion   = !TypePhase::hasCustomSets();
 
 // O botão de escopo precisa PRESERVAR o tipo escolhido (e vice-versa), senão
