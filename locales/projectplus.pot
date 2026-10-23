@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ProjectPlus 1.1.0-beta\n"
 "Report-Msgid-Bugs-To: https://github.com/teckcomp/glpi-plugin-projectplus/issues\n"
-"POT-Creation-Date: 2026-10-23 15:08+0000\n"
+"POT-Creation-Date: 2026-10-23 15:26+0000\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -87,6 +87,12 @@ msgid_plural "%d fases"
 msgstr[0] ""
 msgstr[1] ""
 
+#: templates/costs.html.twig:49 templates/costs.html.twig:87
+msgid "%d lançamento"
+msgid_plural "%d lançamentos"
+msgstr[0] ""
+msgstr[1] ""
+
 #: templates/projecttemplates.html.twig:34
 #: templates/projecttemplates.html.twig:46
 msgid "%d modelo"
@@ -112,6 +118,7 @@ msgstr[1] ""
 msgid "%d ponto(s) de atenção — ver as linhas marcadas abaixo."
 msgstr ""
 
+#: templates/costs.html.twig:49 templates/costs.html.twig:57
 #: templates/typephases.html.twig:57
 msgid "%d projeto"
 msgid_plural "%d projetos"
@@ -122,6 +129,12 @@ msgstr[1] ""
 #, php-format
 msgid "%d projeto ativo"
 msgid_plural "%d projetos ativos"
+msgstr[0] ""
+msgstr[1] ""
+
+#: templates/costs.html.twig:62
+msgid "%d projeto com teto"
+msgid_plural "%d projetos com teto"
 msgstr[0] ""
 msgstr[1] ""
 
@@ -165,6 +178,10 @@ msgid "%d tipo"
 msgid_plural "%d tipos"
 msgstr[0] ""
 msgstr[1] ""
+
+#: templates/costs.html.twig:105
+msgid "%d%% do teto"
+msgstr ""
 
 #: src/Notification.php:406
 #, php-format
@@ -243,6 +260,14 @@ msgstr ""
 
 #: src/I18nJs.php:108
 msgid "Abrir projeto"
+msgstr ""
+
+#: templates/costs.html.twig:70 templates/costs.html.twig:99
+msgid "Acima do alerta"
+msgstr ""
+
+#: templates/costs.html.twig:97
+msgid "Acima do teto"
 msgstr ""
 
 #: src/I18nJs.php:69 src/TaskDep.php:700
@@ -337,7 +362,7 @@ msgstr ""
 msgid "Aplica ao projeto"
 msgstr ""
 
-#: templates/costs.html.twig:23 templates/dashboard.html.twig:47
+#: templates/costs.html.twig:47 templates/dashboard.html.twig:47
 #: templates/reports.html.twig:148
 msgid "Aplicar"
 msgstr ""
@@ -574,7 +599,7 @@ msgid "Comentar"
 msgstr ""
 
 #: src/ProjectCost.php:138 src/TaskComment.php:42 src/TaskComment.php:563
-#: src/TaskCost.php:170 templates/costs.html.twig:74
+#: src/TaskCost.php:170 templates/costs.html.twig:121
 #: templates/projecttemplate_edit.html.twig:45
 #: templates/projecttemplates.html.twig:137
 msgid "Comentário"
@@ -691,7 +716,7 @@ msgstr ""
 msgid "Conjuntos"
 msgstr ""
 
-#: templates/costs.html.twig:53
+#: templates/costs.html.twig:55 templates/costs.html.twig:90
 msgid "Consumido"
 msgstr ""
 
@@ -804,8 +829,8 @@ msgstr ""
 msgid "Custos / Orçamento"
 msgstr ""
 
-#: front/costs.php:33
-msgid "Custos consolidados"
+#: templates/costs.html.twig:19
+msgid "Custos consolidados por projeto, com subprojetos e tarefas"
 msgstr ""
 
 #: src/TaskCost.php:164
@@ -825,7 +850,7 @@ msgid "Cálculo automático a partir das tarefas e subprojetos"
 msgstr ""
 
 #: src/ProjectCost.php:135 src/Reports.php:558 src/TaskComment.php:562
-#: src/TaskCost.php:167 templates/costs.html.twig:71
+#: src/TaskCost.php:167 templates/costs.html.twig:118
 msgid "Data"
 msgstr ""
 
@@ -839,6 +864,10 @@ msgstr ""
 
 #: ajax/project.php:281
 msgid "Data inválida"
+msgstr ""
+
+#: templates/costs.html.twig:101
+msgid "Dentro do teto"
 msgstr ""
 
 #: src/TaskDep.php:49
@@ -868,7 +897,7 @@ msgid "Descer"
 msgstr ""
 
 #: src/ProjectCost.php:134 src/Reports.php:558 src/TaskCost.php:166
-#: templates/costs.html.twig:70 templates/dashboard.html.twig:516
+#: templates/costs.html.twig:117 templates/dashboard.html.twig:516
 msgid "Descrição"
 msgstr ""
 
@@ -1029,9 +1058,9 @@ msgstr ""
 msgid "Escolha um tipo de origem diferente para copiar as fases"
 msgstr ""
 
-#: templates/dashboard.html.twig:53 templates/kanban.html.twig:70
-#: templates/projectkanban.html.twig:63 templates/reports.html.twig:72
-#: templates/timeline.html.twig:45
+#: templates/costs.html.twig:22 templates/dashboard.html.twig:53
+#: templates/kanban.html.twig:70 templates/projectkanban.html.twig:63
+#: templates/reports.html.twig:72 templates/timeline.html.twig:45
 msgid "Escopo"
 msgstr ""
 
@@ -1091,6 +1120,10 @@ msgstr ""
 msgid ""
 "Estes custos consomem o orçamento do projeto (junto com a aba Custos nativa "
 "do projeto)."
+msgstr ""
+
+#: templates/costs.html.twig:75
+msgid "Estourados"
 msgstr ""
 
 #: templates/projecttemplates.html.twig:55
@@ -1293,7 +1326,7 @@ msgstr ""
 msgid "Gasto nos subprojetos"
 msgstr ""
 
-#: templates/costs.html.twig:45 templates/reports.html.twig:70
+#: templates/costs.html.twig:19 templates/reports.html.twig:70
 msgid "Gerado em"
 msgstr ""
 
@@ -1338,11 +1371,11 @@ msgstr ""
 msgid "Importação dos custos nativos"
 msgstr ""
 
-#: templates/costs.html.twig:38
+#: templates/costs.html.twig:32
 msgid "Imprimir"
 msgstr ""
 
-#: templates/costs.html.twig:29 templates/dashboard.html.twig:58
+#: templates/costs.html.twig:27 templates/dashboard.html.twig:58
 #: templates/kanban.html.twig:75 templates/projectkanban.html.twig:68
 #: templates/reports.html.twig:77 templates/timeline.html.twig:50
 msgid "Incluir todos os projetos que você pode ver"
@@ -1442,8 +1475,12 @@ msgstr ""
 msgid "Kanban de projetos"
 msgstr ""
 
-#: src/ProjectCost.php:137 src/TaskCost.php:169 templates/costs.html.twig:73
+#: src/ProjectCost.php:137 src/TaskCost.php:169 templates/costs.html.twig:120
 msgid "Lançado por"
+msgstr ""
+
+#: templates/costs.html.twig:137
+msgid "Lançamentos dos subprojetos (não listados neste cartão)"
 msgstr ""
 
 #: src/I18nJs.php:125
@@ -1621,7 +1658,7 @@ msgstr ""
 msgid "Nenhum lançamento de custo encontrado"
 msgstr ""
 
-#: templates/costs.html.twig:98
+#: templates/costs.html.twig:153
 msgid "Nenhum lançamento de custo neste projeto"
 msgstr ""
 
@@ -1637,7 +1674,7 @@ msgstr ""
 msgid "Nenhum perfil com o direito Configuração (atualizar)."
 msgstr ""
 
-#: templates/costs.html.twig:102 templates/reports.html.twig:189
+#: templates/costs.html.twig:157 templates/reports.html.twig:189
 msgid "Nenhum projeto encontrado"
 msgstr ""
 
@@ -1867,11 +1904,12 @@ msgstr ""
 msgid "Ordem"
 msgstr ""
 
-#: src/Reports.php:557 templates/costs.html.twig:69
+#: src/Reports.php:557 templates/costs.html.twig:116
 msgid "Origem"
 msgstr ""
 
-#: templates/_topbar.html.twig:43 templates/dashboard.html.twig:222
+#: front/costs.php:34 templates/_topbar.html.twig:43
+#: templates/costs.html.twig:18 templates/dashboard.html.twig:222
 msgid "Orçamento"
 msgstr ""
 
@@ -1883,7 +1921,7 @@ msgstr ""
 msgid "Orçamento (R$)"
 msgstr ""
 
-#: src/Budget.php:325
+#: src/Budget.php:415
 #, php-format
 msgid "Orçamento ESTOURADO no projeto \"%s\": %d%% consumido"
 msgstr ""
@@ -1896,7 +1934,7 @@ msgstr ""
 msgid "Orçamento atualizado"
 msgstr ""
 
-#: src/Budget.php:336
+#: src/Budget.php:426
 #, php-format
 msgid "Orçamento do projeto \"%s\" atingiu %d%% do teto"
 msgstr ""
@@ -2057,12 +2095,12 @@ msgstr ""
 msgid "ProjectPlus: atrasos, pendências e projetos parados"
 msgstr ""
 
-#: front/costs.php:117 src/I18nJs.php:97 src/KanbanTab.php:80
+#: front/costs.php:120 src/I18nJs.php:97 src/KanbanTab.php:80
 #: src/Reports.php:218 src/Reports.php:361 src/Reports.php:591
-#: templates/dashboard.html.twig:65 templates/dashboard.html.twig:215
-#: templates/dashboard.html.twig:322 templates/kanban.html.twig:66
-#: templates/mytasks.html.twig:45 templates/reports.html.twig:89
-#: templates/reports.html.twig:207
+#: templates/costs.html.twig:38 templates/dashboard.html.twig:65
+#: templates/dashboard.html.twig:215 templates/dashboard.html.twig:322
+#: templates/kanban.html.twig:66 templates/mytasks.html.twig:45
+#: templates/reports.html.twig:89 templates/reports.html.twig:207
 msgid "Projeto"
 msgstr ""
 
@@ -2211,10 +2249,6 @@ msgid ""
 "no Gestor de Projetos (🔗)."
 msgstr ""
 
-#: templates/costs.html.twig:44
-msgid "Relatório de custos consolidados"
-msgstr ""
-
 #: front/reports.php:43 src/Profile.php:104 templates/_topbar.html.twig:40
 #: templates/reports.html.twig:69 templates/reports.html.twig:160
 msgid "Relatórios"
@@ -2268,7 +2302,8 @@ msgstr ""
 msgid "Sair da tela cheia"
 msgstr ""
 
-#: src/ProjectTracking.php:122 src/Reports.php:223 templates/costs.html.twig:56
+#: src/ProjectTracking.php:122 src/Reports.php:223 templates/costs.html.twig:65
+#: templates/costs.html.twig:92
 msgid "Saldo"
 msgstr ""
 
@@ -2325,11 +2360,11 @@ msgstr ""
 msgid "Sem datas planejadas — corrija o planejamento"
 msgstr ""
 
-#: src/Dashboard.php:480
+#: src/Dashboard.php:479
 msgid "Sem estado"
 msgstr ""
 
-#: src/Dashboard.php:441 src/Kanban.php:433 src/ProjectKanban.php:219
+#: src/Dashboard.php:440 src/Kanban.php:433 src/ProjectKanban.php:219
 msgid "Sem fase"
 msgstr ""
 
@@ -2388,11 +2423,11 @@ msgstr ""
 msgid "Sem tarefa pai"
 msgstr ""
 
-#: templates/costs.html.twig:60
+#: templates/costs.html.twig:103
 msgid "Sem teto de orçamento definido"
 msgstr ""
 
-#: src/Dashboard.php:502 src/TypePhase.php:339
+#: src/Dashboard.php:501 src/TypePhase.php:339
 #: templates/projecttemplates.html.twig:42
 #: templates/projecttemplates.html.twig:69
 msgid "Sem tipo"
@@ -2448,7 +2483,7 @@ msgstr ""
 msgid "Subprojeto"
 msgstr ""
 
-#: front/costs.php:127 src/Reports.php:601
+#: front/costs.php:131 src/Reports.php:601
 #, php-format
 msgid "Subprojeto \"%s\""
 msgstr ""
@@ -2486,6 +2521,7 @@ msgstr ""
 msgid "Só o autor pode excluir este comentário"
 msgstr ""
 
+#: templates/costs.html.twig:25 templates/costs.html.twig:28
 #: templates/dashboard.html.twig:56 templates/dashboard.html.twig:59
 #: templates/kanban.html.twig:73 templates/kanban.html.twig:76
 #: templates/projectkanban.html.twig:66 templates/projectkanban.html.twig:69
@@ -2515,7 +2551,7 @@ msgstr ""
 msgid "Tarefa"
 msgstr ""
 
-#: src/Budget.php:226
+#: src/Budget.php:316
 #, php-format
 msgid "Tarefa \"%s\""
 msgstr ""
@@ -2620,7 +2656,7 @@ msgstr ""
 msgid "Tela cheia"
 msgstr ""
 
-#: templates/costs.html.twig:55
+#: templates/costs.html.twig:91
 msgid "Teto"
 msgstr ""
 
@@ -2630,6 +2666,10 @@ msgstr ""
 
 #: src/ProjectTracking.php:85
 msgid "Teto planejado"
+msgstr ""
+
+#: templates/costs.html.twig:60
+msgid "Teto somado"
 msgstr ""
 
 #: front/timeline.php:66 src/Profile.php:91 templates/_topbar.html.twig:37
@@ -2676,6 +2716,7 @@ msgstr ""
 msgid "Tipo sem configuração usa o conjunto padrão."
 msgstr ""
 
+#: templates/costs.html.twig:24 templates/costs.html.twig:27
 #: templates/dashboard.html.twig:55 templates/dashboard.html.twig:58
 #: templates/kanban.html.twig:72 templates/kanban.html.twig:75
 #: templates/projectkanban.html.twig:65 templates/projectkanban.html.twig:68
@@ -2698,7 +2739,7 @@ msgstr ""
 msgid "Total"
 msgstr ""
 
-#: templates/costs.html.twig:91
+#: templates/costs.html.twig:145
 msgid "Total consumido"
 msgstr ""
 
@@ -2740,7 +2781,7 @@ msgstr ""
 msgid "Usuário não encontrado."
 msgstr ""
 
-#: src/Reports.php:559 templates/costs.html.twig:72
+#: src/Reports.php:559 templates/costs.html.twig:119
 msgid "Valor"
 msgstr ""
 
@@ -2754,16 +2795,8 @@ msgstr ""
 msgid "Ver diagnóstico completo"
 msgstr ""
 
-#: templates/costs.html.twig:31
-msgid "Ver só os meus"
-msgstr ""
-
 #: templates/dashboard.html.twig:69
 msgid "Ver todos os projetos"
-msgstr ""
-
-#: templates/costs.html.twig:33
-msgid "Ver tudo"
 msgstr ""
 
 #: src/Profile.php:122
@@ -2782,7 +2815,7 @@ msgstr ""
 msgid "Voltar ao Project+"
 msgstr ""
 
-#: templates/costs.html.twig:29 templates/dashboard.html.twig:56
+#: templates/costs.html.twig:25 templates/dashboard.html.twig:56
 #: templates/kanban.html.twig:73 templates/projectkanban.html.twig:66
 #: templates/reports.html.twig:75 templates/timeline.html.twig:48
 msgid "Voltar ao escopo pessoal"
@@ -2808,6 +2841,10 @@ msgstr ""
 msgid "Zoom"
 msgstr ""
 
+#: templates/costs.html.twig:72
+msgid "a partir de %d%% do teto"
+msgstr ""
+
 #: templates/config_shell.html.twig:302
 msgid "abaixo do máximo em %d direito(s)"
 msgstr ""
@@ -2823,6 +2860,10 @@ msgstr ""
 
 #: templates/mytasks.html.twig:62
 msgid "abertas"
+msgstr ""
+
+#: templates/costs.html.twig:77
+msgid "acima de %d%% do teto"
 msgstr ""
 
 #: src/Notification.php:809
@@ -2900,6 +2941,10 @@ msgstr ""
 msgid "deve ser uma lista"
 msgstr ""
 
+#: templates/costs.html.twig:67
+msgid "dos projetos com teto"
+msgstr ""
+
 #: src/I18nJs.php:160
 msgid "duração (d)"
 msgstr ""
@@ -2938,6 +2983,12 @@ msgstr ""
 #: templates/typephases.html.twig:113
 msgid "hoje herda o conjunto padrão; salvar cria um conjunto próprio"
 msgstr ""
+
+#: templates/costs.html.twig:87
+msgid "inclui %d subprojeto"
+msgid_plural "inclui %d subprojetos"
+msgstr[0] ""
+msgstr[1] ""
 
 #: src/I18nJs.php:159
 msgid "início (d)"
@@ -3105,7 +3156,7 @@ msgstr ""
 msgid "— Todas —"
 msgstr ""
 
-#: templates/costs.html.twig:16
+#: templates/costs.html.twig:40
 msgid "— Todos os projetos —"
 msgstr ""
 

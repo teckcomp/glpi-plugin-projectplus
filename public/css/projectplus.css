@@ -2276,3 +2276,67 @@ label.pp-cfg-row__label { cursor: pointer; }
     border: 1px dashed var(--pp-border-strong); border-radius: 8px; color: var(--pp-muted); font-size: 12.5px;
 }
 .pp-te .pp-tpl-psection:has(> .pp-tpl-list:empty) { display: none; }
+
+/* ===== Bloco N-8a — Orçamento no padrão do mockup =====
+   Cabeçalho .pp-cfg-head com Todos | Só os meus e Imprimir, faixa .pp-tl-filter
+   com ☆ e o projeto, indicadores .pp-tl-kpis e um cartão por projeto: números
+   do cabeçalho, medidor pela situação (Budget::stateFor) e a tabela em .pp-tablewrap.
+   As classes antigas pp-report-* / pp-costsum ficaram sem uso (só pp-report-origin segue). */
+.pp-or-headright { margin-left: auto; display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.pp-or-headright .pp-filterbar__btn { text-decoration: none; }
+.pp-or-select { width: 340px; max-width: 100%; }
+.pp-or-kpis small { display: block; margin-top: 4px; color: var(--pp-muted); font-size: 12px; }
+.pp-or-kpis b { font-variant-numeric: tabular-nums; }
+.pp-or-warn { color: var(--pp-warn-text) !important; }
+.pp-or-over { color: var(--pp-danger-text) !important; }
+.pp-or-card {
+    background: var(--pp-surface); border: 1px solid var(--pp-border); border-radius: 10px;
+    overflow: hidden; margin-bottom: 14px;
+}
+.pp-or-cardhead {
+    display: flex; align-items: center; gap: 18px 24px; flex-wrap: wrap;
+    padding: 14px 16px; border-bottom: 1px solid var(--pp-border);
+}
+.pp-or-name { display: flex; flex-direction: column; gap: 4px; flex: 1 1 260px; min-width: 0; }
+.pp-or-name a { font-size: 15px; font-weight: 700; color: var(--pp-text-strong); text-decoration: none; overflow-wrap: anywhere; }
+.pp-or-name a:hover { color: var(--pp-link); text-decoration: underline; }
+.pp-or-figs { display: flex; gap: 22px; flex-wrap: wrap; }
+.pp-or-figs > div { display: flex; flex-direction: column; gap: 2px; }
+.pp-or-figs span { color: var(--pp-muted); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; font-weight: 600; }
+.pp-or-figs b { font-size: 15px; color: var(--pp-text-strong); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pp-or-meter { display: flex; flex-direction: column; gap: 6px; width: 240px; max-width: 100%; }
+.pp-or-meter__row { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 22px; }
+.pp-or-bar { height: 8px; border-radius: 4px; background: var(--pp-surface-3); overflow: hidden; }
+.pp-or-bar__fill { display: block; height: 100%; border-radius: 4px; }
+.pp-or-bar__fill--ok { background: var(--pp-ok); }
+.pp-or-bar__fill--warn { background: var(--pp-warn); }
+.pp-or-bar__fill--over { background: var(--pp-danger); }
+.pp-or-bar__fill--none { width: 0 !important; }
+.pp-or-card .pp-or-tablewrap { border: 0; border-radius: 0; background: transparent; }
+.pp-or-table { min-width: 980px; }
+.pp-or-table .pp-or-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pp-or-table .pp-or-th-origin { width: 300px; }
+.pp-or-table .pp-or-th-date { width: 110px; }
+.pp-or-table .pp-or-th-value { width: 130px; }
+.pp-or-table .pp-or-th-author { width: 180px; }
+.pp-or-table .pp-or-date { white-space: nowrap; }
+.pp-or-table .pp-or-comment { color: var(--pp-muted); }
+.pp-or-table .pp-report-origin { white-space: normal; }
+.pp-or-table .pp-or-outside > td { color: var(--pp-muted); font-style: italic; }
+.pp-or-table tfoot .pp-or-total > td {
+    background: var(--pp-surface-2); font-weight: 700; color: var(--pp-text-strong);
+    padding: 11px 12px; border-top: 1px solid var(--pp-border);
+}
+.pp-or-empty { margin: 0; padding: 18px 16px; color: var(--pp-muted); font-style: italic; }
+@media print {
+    .pp-or-card { break-inside: avoid; }
+    .pp-or-table { min-width: 0; }
+}
+
+/* N-8a (acabamento do editor de Modelos, visto na validação do N-8b-2): no cartão
+   Projeto, o Gestor (combobox com busca, 220px fixos) passava por cima do
+   Orçamento na grade, e o rótulo do interruptor quebrava em duas linhas. O
+   combobox ocupa a célula dele; o interruptor vai para uma linha própria. */
+.pp-te .pp-tpl-projmeta .pp-tpl-field--user { min-width: 0; }
+.pp-te .pp-tpl-projmeta .pp-tpl-field--user .pp-ss { width: 100%; max-width: none; }
+.pp-te .pp-tpl-projmeta .pp-tpl-meta > .pp-tpl-check.pp-switch { grid-column: 1 / -1; justify-self: start; white-space: nowrap; }

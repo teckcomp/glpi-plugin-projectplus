@@ -55,6 +55,96 @@ class Budget
         ];
     }
 
+    /** @var int|null limiar de alerta lido da Configuração (cache por requisição) */
+    private static ?int $warnCache = null;
+
+    /**
+     * Bloco N-8a: limiar de alerta de orçamento (% do teto) da Configuração
+     * (`budget_warn_percent`) — o mesmo que o cron usa. Antes o Painel e a tela
+     * Orçamento usavam 80 fixo e discordavam do alerta quando o valor mudava.
+     */
+    public static function warnPercent(): int
+    {
+        if (self::$warnCache === null) {
+            $value = (int) (Config::get()['budget_warn_percent'] ?? 80);
+            self::$warnCache = ($value > 0 && $value <= 100) ? $value : 80;
+        }
+        return self::$warnCache;
+    }
+
+    /**
+     * Bloco N-8a: situação do orçamento pelo % consumido do teto — regra única
+     * (Painel, Orçamento e cron): acima de 100 = 'over'; a partir do limiar =
+     * 'warn'; abaixo = 'ok'; sem teto (null) = 'none'.
+     */
+    public static function stateFor(?int $percent, ?int $warn = null): string
+    {
+        if ($percent === null) {
+            return 'none';
+        }
+        $warn = $warn ?? self::warnPercent();
+        if ($percent > 100) {
+            return 'over';
+        }
+        return $percent >= $warn ? 'warn' : 'ok';
+    }
+
+    /**
+     * Bloco N-8a: valor no formato da tela (sem símbolo de moeda, como sempre foi).
+     */
+    public static function money(float $value): string
+    {
+        return number_format($value, 2, ',', '.');
+    }
+
+    /**
+     * Bloco N-8a: indicadores da tela Orçamento, a partir dos cartões já montados.
+     *
+     * Cada cartão: spent (gasto consolidado, com descendentes), planned (teto, 0 =
+     * sem teto), balance (?float), state, entries (nº de lançamentos listados) e
+     * nested (true = um ancestral também está na lista — no escopo pessoal a lista
+     * é plana e pode trazer pai e subprojeto). Valores de cartão aninhado já estão
+     * dentro do gasto do ancestral, então ficam FORA das somas de dinheiro (não
+     * contam duas vezes); a contagem de situação (alerta/estourado) é por projeto.
+     *
+     * @param array<array{spent: float, planned: float, balance: ?float, state: string, entries: int, nested: bool}> $cards
+     * @return array{projects: int, entries: int, top: int, consumed: float, with_ceiling: int, planned: float, balance: float, warn: int, over: int}
+     */
+    public static function costsSummary(array $cards): array
+    {
+        $out = [
+            'projects'     => count($cards),
+            'entries'      => 0,
+            'top'          => 0,
+            'consumed'     => 0.0,
+            'with_ceiling' => 0,
+            'planned'      => 0.0,
+            'balance'      => 0.0,
+            'warn'         => 0,
+            'over'         => 0,
+        ];
+        foreach ($cards as $c) {
+            $out['entries'] += (int) ($c['entries'] ?? 0);
+            $state = (string) ($c['state'] ?? 'none');
+            if ($state === 'warn') {
+                $out['warn']++;
+            } elseif ($state === 'over') {
+                $out['over']++;
+            }
+            if (!empty($c['nested'])) {
+                continue;
+            }
+            $out['top']++;
+            $out['consumed'] += (float) ($c['spent'] ?? 0);
+            if ((float) ($c['planned'] ?? 0) > 0) {
+                $out['with_ceiling']++;
+                $out['planned'] += (float) $c['planned'];
+                $out['balance'] += (float) ($c['balance'] ?? 0);
+            }
+        }
+        return $out;
+    }
+
     /**
      * Define o teto de orçamento de um projeto (upsert em projecttrackings).
      */

@@ -1,7 +1,8 @@
 <?php
 
 /**
- * ProjectPlus — relatório de custos consolidados (item "Custos" da sidebar).
+ * ProjectPlus — tela "Orçamento": custos consolidados por projeto (aba
+ * Orçamento da barra superior; layout do mockup no Bloco N-8a).
  *
  * Lista, por projeto raiz (ou um projeto escolhido no filtro), TODOS os
  * lançamentos: aba nativa "Custos" do projeto + custos por tarefa (plugin)
@@ -30,7 +31,7 @@ Session::checkRight('plugin_projectplus_costs', READ);
 Favorite::applyRedirect('costs', 'front/costs.php');
 
 Html::header(
-    __('Custos consolidados', 'projectplus'),
+    __('Orçamento', 'projectplus'),
     '', // \Html::header ignora o 2o argumento no GLPI 11 (Bloco 4a)
     'tools',
     Dashboard::class
@@ -103,6 +104,7 @@ if ($filterId > 0) {
 }
 
 $report = [];
+$listedIds = [];
 foreach (
     $DB->request([
         'SELECT' => ['id', 'name'],
@@ -112,11 +114,13 @@ foreach (
     ]) as $root
 ) {
     $rootId = (int) $root['id'];
+    $listedIds[$rootId] = true;
 
     // Lançamentos do projeto + de todos os descendentes
     $entries = Budget::getEntriesForProject($rootId, __('Projeto', 'projectplus'));
     $visited = [];
-    foreach (($scopeFlat ? [] : Budget::getDescendantIds($rootId, $visited)) as $childId) {
+    $descendants = Budget::getDescendantIds($rootId, $visited);
+    foreach (($scopeFlat ? [] : $descendants) as $childId) {
         $childRow = $DB->request([
             'SELECT' => ['name'],
             'FROM'   => 'glpi_projects',
@@ -133,31 +137,82 @@ foreach (
         return strcmp((string) ($b['date'] ?? ''), (string) ($a['date'] ?? ''));
     });
 
-    $total = 0.0;
+    $listed = 0.0;
     foreach ($entries as &$e) {
-        $total += $e['cost'];
-        $e['cost_fmt'] = number_format($e['cost'], 2, ',', '.');
+        $listed += $e['cost'];
+        $e['cost_fmt'] = Budget::money($e['cost']);
         $e['date_fmt'] = !empty($e['date']) ? DateFmt::date($e['date']) : '—';
     }
     unset($e);
 
+    // Bloco N-8a: os números do cabeçalho do cartão vêm TODOS do mesmo cálculo
+    // (Budget::getForProject — o do Painel e do cron, com os descendentes).
+    // No escopo pessoal a tabela lista só os lançamentos do próprio projeto; a
+    // diferença (lançamentos dos subprojetos) vira uma linha própria no rodapé,
+    // para o total da tabela fechar com o "Consumido" do cabeçalho.
     $budget  = Budget::getForProject($rootId);
     $planned = (float) $budget['planned'];
+    $spent   = (float) $budget['spent_total'];
+    $outside = $spent - $listed;
+    $percent = $budget['percent'];
 
     $report[] = [
         'id'          => $rootId,
         'name'        => $root['name'],
+        'url'         => Url::project($rootId),
         'entries'     => $entries,
-        'total_fmt'   => number_format($total, 2, ',', '.'),
+        'entry_count' => count($entries),
+        'sub_count'   => $scopeFlat ? 0 : count($descendants),
+        'listed_fmt'  => Budget::money($listed),
+        'outside_fmt' => abs($outside) >= 0.005 ? Budget::money($outside) : null,
+        'total_fmt'   => Budget::money($spent),
         'has_ceiling' => $planned > 0,
-        'planned_fmt' => number_format($planned, 2, ',', '.'),
-        'balance_fmt' => $budget['balance'] !== null
-            ? number_format((float) $budget['balance'], 2, ',', '.') : null,
-        'percent'     => $budget['percent'],
-        'state'       => ($budget['percent'] ?? 0) > 100 ? 'over'
-            : ((($budget['percent'] ?? 0) >= 80) ? 'warn' : 'ok'),
+        'planned_fmt' => Budget::money($planned),
+        'balance_fmt' => $budget['balance'] !== null ? Budget::money((float) $budget['balance']) : null,
+        'balance_neg' => $budget['balance'] !== null && (float) $budget['balance'] < 0,
+        'percent'     => $percent,
+        'bar'         => $percent !== null ? max(0, min(100, (int) $percent)) : 0,
+        'state'       => Budget::stateFor($percent),
+        // usados só no resumo (Budget::costsSummary)
+        '_sum'        => [
+            'spent'   => $spent,
+            'planned' => $planned,
+            'balance' => $budget['balance'],
+            'state'   => Budget::stateFor($percent),
+            'entries' => count($entries),
+            'nested'  => false,
+        ],
     ];
 }
+
+// Bloco N-8a: no escopo pessoal a lista é plana e pode trazer pai E subprojeto —
+// o gasto do subprojeto já está dentro do do pai, então ele não entra nas somas.
+if ($scopeFlat && count($listedIds) > 1) {
+    foreach ($report as &$card) {
+        foreach (Dashboard::projectAncestors($card['id']) as $ancestorId) {
+            if (isset($listedIds[$ancestorId])) {
+                $card['_sum']['nested'] = true;
+                break;
+            }
+        }
+    }
+    unset($card);
+}
+
+$sum = Budget::costsSummary(array_column($report, '_sum'));
+$summary = [
+    'projects'     => $sum['projects'],
+    'entries'      => $sum['entries'],
+    'top'          => $sum['top'],
+    'consumed_fmt' => Budget::money($sum['consumed']),
+    'with_ceiling' => $sum['with_ceiling'],
+    'planned_fmt'  => $sum['with_ceiling'] > 0 ? Budget::money($sum['planned']) : null,
+    'balance_fmt'  => $sum['with_ceiling'] > 0 ? Budget::money($sum['balance']) : null,
+    'balance_neg'  => $sum['balance'] < 0,
+    'warn'         => $sum['warn'],
+    'over'         => $sum['over'],
+    'warn_percent' => Budget::warnPercent(),
+];
 
 TemplateRenderer::getInstance()->display(
     '@projectplus/costs.html.twig',
@@ -168,6 +223,7 @@ TemplateRenderer::getInstance()->display(
         'projects_list'  => $allRoots,
         'filter_project' => $filterId,
         'generated_at'   => DateFmt::now(),
+        'summary'        => $summary, // Bloco N-8a
         'can_templates'  => Session::haveRight('config', UPDATE),
         'nav'             => Access::sidebar(),
         'fav'            => Favorite::payload('costs'), // Bloco L

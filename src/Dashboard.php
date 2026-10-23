@@ -260,8 +260,7 @@ class Dashboard extends CommonGLPI
                     'planned_fmt' => number_format($budget['planned'], 2, ',', '.'),
                     'spent_fmt'   => number_format($budget['spent_total'], 2, ',', '.'),
                     'percent'     => $budget['percent'],
-                    'state'       => $budget['percent'] > 100 ? 'over'
-                        : ($budget['percent'] >= 80 ? 'warn' : 'ok'),
+                    'state'       => Budget::stateFor($budget['percent']), // N-8a: limiar da Configuração
                 ];
             }
 
@@ -1261,8 +1260,7 @@ class Dashboard extends CommonGLPI
                 'planned_fmt' => number_format($budget['planned'], 2, ',', '.'),
                 'spent_fmt'   => number_format($budget['spent_total'], 2, ',', '.'),
                 'percent'     => $budget['percent'],
-                'state'       => $budget['percent'] > 100 ? 'over'
-                    : ($budget['percent'] >= 80 ? 'warn' : 'ok'),
+                'state'       => Budget::stateFor($budget['percent']), // N-8a: limiar da Configuração
             ];
         }
 

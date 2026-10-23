@@ -1,4 +1,4 @@
-{# ProjectPlus — relatório de custos consolidados (Bloco 5.1) #}
+{# ProjectPlus — tela "Orçamento": custos consolidados (Bloco 5.1; layout do mockup no Bloco N-8a) #}
 
 <link rel="stylesheet" href="{{ plugin_web_dir }}/css/projectplus.css">
 
@@ -8,98 +8,153 @@
     {% include '@projectplus/_topbar.html.twig' with {pp_active: 'orcamento'} %}
 
     {# ================= ÁREA PRINCIPAL ================= #}
-    <div class="projectplus-main">
+    {# Bloco N-8a: título com Todos | Só os meus e Imprimir, faixa com ☆ e o
+       seletor de projeto (mesmo nome de campo — favorito inalterado), indicadores
+       e um cartão por projeto: Consumido · Teto · Saldo (Budget::getForProject),
+       medidor com a situação (Budget::stateFor) e a tabela dos lançamentos. #}
+    <div class="projectplus-main pp-or">
 
-        <div class="projectplus-header projectplus-noprint">
-            <form method="get" class="projectplus-period" action="">
-                <select name="project" onchange="this.form.submit()">
-                    <option value="0">{{ __('— Todos os projetos —', 'projectplus') }}</option>
-                    {% for p in projects_list %}
-                        <option value="{{ p.id }}" {{ p.id == filter_project ? 'selected' : '' }}>{{ p.name }}</option>
-                    {% endfor %}
-                </select>
-                {# Escopo (Bloco 4): preserva o modo atual ao trocar o projeto #}
-                {% if filter_scope %}<input type="hidden" name="scope" value="{{ filter_scope }}">{% endif %}
-                <noscript><button type="submit" class="projectplus-btn projectplus-btn--ghost">{{ __('Aplicar', 'projectplus') }}</button></noscript>
-            </form>
-            <div class="projectplus-actions">
-                {% include '@projectplus/_favorite.html.twig' %}
+        <div class="pp-cfg-head">
+            <h1>{{ __('Orçamento', 'projectplus') }}</h1>
+            <span class="pp-cfg-head__sub">{{ __('Custos consolidados por projeto, com subprojetos e tarefas', 'projectplus') }} · {{ __('Gerado em', 'projectplus') }} {{ generated_at }}</span>
+            <span class="pp-or-headright projectplus-noprint">
                 {% if scope_can_expand %}
-                <a class="projectplus-btn projectplus-btn--ghost pp-scope-toggle" href="{{ scope_toggle_url }}"
-                   title="{{ scope_is_expanded ? __('Voltar ao escopo pessoal', 'projectplus') : __('Incluir todos os projetos que você pode ver', 'projectplus') }}">
+                <span class="pp-seg pp-seg--links" role="group" aria-label="{{ __('Escopo', 'projectplus') }}">
                     {% if scope_is_expanded %}
-                    <i class="ti ti-user"></i>{{ __('Ver só os meus', 'projectplus') }}
+                    <span class="pp-seg__btn pp-seg__btn--active" aria-current="true">{{ __('Todos', 'projectplus') }}</span>
+                    <a class="pp-seg__btn" href="{{ scope_toggle_url }}" title="{{ __('Voltar ao escopo pessoal', 'projectplus') }}">{{ __('Só os meus', 'projectplus') }}</a>
                     {% else %}
-                    <i class="ti ti-eye"></i>{{ __('Ver tudo', 'projectplus') }}
+                    <a class="pp-seg__btn" href="{{ scope_toggle_url }}" title="{{ __('Incluir todos os projetos que você pode ver', 'projectplus') }}">{{ __('Todos', 'projectplus') }}</a>
+                    <span class="pp-seg__btn pp-seg__btn--active" aria-current="true">{{ __('Só os meus', 'projectplus') }}</span>
                     {% endif %}
-                </a>
+                </span>
                 {% endif %}
-                <button type="button" class="projectplus-btn projectplus-btn--ghost" onclick="window.print()">
-                    {{ __('Imprimir', 'projectplus') }}
-                </button>
+                <button type="button" class="pp-filterbar__btn" onclick="window.print()"><i class="ti ti-printer" aria-hidden="true"></i>{{ __('Imprimir', 'projectplus') }}</button>
+            </span>
+        </div>
+
+        <form method="get" class="pp-tl-filter pp-or-filter projectplus-noprint" action="">
+            {% include '@projectplus/_favorite.html.twig' %}
+            <label class="pp-cfg-row__hint" for="pp-or-project">{{ __('Projeto', 'projectplus') }}</label>
+            <select name="project" id="pp-or-project" class="pp-tp-input pp-or-select" onchange="this.form.submit()">
+                <option value="0">{{ __('— Todos os projetos —', 'projectplus') }}</option>
+                {% for p in projects_list %}
+                    <option value="{{ p.id }}" {{ p.id == filter_project ? 'selected' : '' }}>{{ p.name }}</option>
+                {% endfor %}
+            </select>
+            {# Escopo (Bloco 4): preserva o modo atual ao trocar o projeto #}
+            {% if filter_scope %}<input type="hidden" name="scope" value="{{ filter_scope }}">{% endif %}
+            <noscript><button type="submit" class="pp-filterbar__btn">{{ __('Aplicar', 'projectplus') }}</button></noscript>
+            <span class="pp-filterbar__spacer"></span>
+            <span class="pp-cfg-row__hint">{{ _n('%d projeto', '%d projetos', summary.projects, 'projectplus')|format(summary.projects) }} · {{ _n('%d lançamento', '%d lançamentos', summary.entries, 'projectplus')|format(summary.entries) }}</span>
+        </form>
+
+        {% if report %}
+        <div class="pp-tl-kpis pp-or-kpis">
+            <div class="pp-tl-kpi">
+                <span class="pp-cfg-card__title">{{ __('Consumido', 'projectplus') }}</span>
+                <b>{{ summary.consumed_fmt }}</b>
+                <small>{{ _n('%d projeto', '%d projetos', summary.top, 'projectplus')|format(summary.top) }}</small>
+            </div>
+            <div class="pp-tl-kpi">
+                <span class="pp-cfg-card__title">{{ __('Teto somado', 'projectplus') }}</span>
+                <b>{{ summary.planned_fmt ?: '—' }}</b>
+                <small>{{ _n('%d projeto com teto', '%d projetos com teto', summary.with_ceiling, 'projectplus')|format(summary.with_ceiling) }}</small>
+            </div>
+            <div class="pp-tl-kpi">
+                <span class="pp-cfg-card__title">{{ __('Saldo', 'projectplus') }}</span>
+                <b class="{{ summary.balance_neg ? 'pp-or-over' : '' }}">{{ summary.balance_fmt ?: '—' }}</b>
+                <small>{{ __('dos projetos com teto', 'projectplus') }}</small>
+            </div>
+            <div class="pp-tl-kpi">
+                <span class="pp-cfg-card__title">{{ __('Acima do alerta', 'projectplus') }}</span>
+                <b class="{{ summary.warn > 0 ? 'pp-or-warn' : '' }}">{{ summary.warn }}</b>
+                <small>{{ __('a partir de %d%% do teto', 'projectplus')|format(summary.warn_percent) }}</small>
+            </div>
+            <div class="pp-tl-kpi">
+                <span class="pp-cfg-card__title">{{ __('Estourados', 'projectplus') }}</span>
+                <b class="{{ summary.over > 0 ? 'pp-or-over' : '' }}">{{ summary.over }}</b>
+                <small>{{ __('acima de %d%% do teto', 'projectplus')|format(100) }}</small>
             </div>
         </div>
-
-        <div class="pp-report-title">
-            <h2>{{ __('Relatório de custos consolidados', 'projectplus') }}</h2>
-            <span class="projectplus-muted">{{ __('Gerado em', 'projectplus') }} {{ generated_at }}</span>
-        </div>
+        {% endif %}
 
         {% for proj in report %}
-        <div class="projectplus-card pp-report-card">
-            <div class="pp-report-projhead">
-                <h3>{{ proj.name }}</h3>
-                <div class="pp-costsum">
-                    <span>{{ __('Consumido', 'projectplus') }}: <strong>{{ proj.total_fmt }}</strong></span>
-                    {% if proj.has_ceiling %}
-                        <span>{{ __('Teto', 'projectplus') }}: <strong>{{ proj.planned_fmt }}</strong></span>
-                        <span>{{ __('Saldo', 'projectplus') }}:
-                            <strong class="pp-costsum--{{ proj.state }}">{{ proj.balance_fmt }}</strong></span>
-                        <span class="projectplus-badge projectplus-badge--{{ proj.state == 'over' ? 'overdue' : (proj.state == 'warn' ? 'stalled' : 'ok') }}">{{ proj.percent }}%</span>
-                    {% else %}
-                        <span class="projectplus-muted">{{ __('Sem teto de orçamento definido', 'projectplus') }}</span>
-                    {% endif %}
+        <section class="pp-or-card" aria-label="{{ proj.name }}">
+            <div class="pp-or-cardhead">
+                <div class="pp-or-name">
+                    <a href="{{ proj.url }}" target="_blank" rel="noopener">{{ proj.name }}</a>
+                    <span class="pp-cfg-row__hint">{{ _n('%d lançamento', '%d lançamentos', proj.entry_count, 'projectplus')|format(proj.entry_count) }}{% if proj.sub_count > 0 %} · {{ _n('inclui %d subprojeto', 'inclui %d subprojetos', proj.sub_count, 'projectplus')|format(proj.sub_count) }}{% endif %}</span>
+                </div>
+                <div class="pp-or-figs">
+                    <div><span>{{ __('Consumido', 'projectplus') }}</span><b>{{ proj.total_fmt }}</b></div>
+                    <div><span>{{ __('Teto', 'projectplus') }}</span><b>{{ proj.has_ceiling ? proj.planned_fmt : '—' }}</b></div>
+                    <div><span>{{ __('Saldo', 'projectplus') }}</span><b class="{{ proj.balance_neg ? 'pp-or-over' : '' }}">{{ proj.balance_fmt ?? '—' }}</b></div>
+                </div>
+                <div class="pp-or-meter">
+                    <div class="pp-or-meter__row">
+                        {% if proj.state == 'over' %}
+                        <span class="projectplus-badge projectplus-badge--overdue">{{ __('Acima do teto', 'projectplus') }}</span>
+                        {% elseif proj.state == 'warn' %}
+                        <span class="projectplus-badge projectplus-badge--stalled">{{ __('Acima do alerta', 'projectplus') }}</span>
+                        {% elseif proj.state == 'ok' %}
+                        <span class="projectplus-badge projectplus-badge--ok">{{ __('Dentro do teto', 'projectplus') }}</span>
+                        {% else %}
+                        <span class="pp-rp-none">{{ __('Sem teto de orçamento definido', 'projectplus') }}</span>
+                        {% endif %}
+                        {% if proj.has_ceiling %}<span class="pp-cfg-row__hint">{{ __('%d%% do teto', 'projectplus')|format(proj.percent) }}</span>{% endif %}
+                    </div>
+                    <div class="pp-or-bar"><i class="pp-or-bar__fill pp-or-bar__fill--{{ proj.state }}" style="width: {{ proj.bar }}%"></i></div>
                 </div>
             </div>
 
-            {% if proj.entries %}
-            <table class="projectplus-table pp-report-table">
-                <thead>
-                    <tr>
-                        <th>{{ __('Origem', 'projectplus') }}</th>
-                        <th>{{ __('Descrição', 'projectplus') }}</th>
-                        <th>{{ __('Data', 'projectplus') }}</th>
-                        <th class="pp-report-num">{{ __('Valor', 'projectplus') }}</th>
-                        <th>{{ __('Lançado por', 'projectplus') }}</th>
-                        <th>{{ _n('Comentário', 'Comentários', 1, 'projectplus') }}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for e in proj.entries %}
-                    <tr>
-                        <td class="pp-report-origin">{{ e.origin }}</td>
-                        <td>{{ e.name }}</td>
-                        <td>{{ e.date_fmt }}</td>
-                        <td class="pp-report-num">{{ e.cost_fmt }}</td>
-                        <td>{{ e.author ?: '—' }}</td>
-                        <td class="projectplus-muted">{{ e.comment }}</td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-                <tfoot>
-                    <tr class="pp-report-total">
-                        <td colspan="3"><strong>{{ __('Total consumido', 'projectplus') }}</strong></td>
-                        <td class="pp-report-num"><strong>{{ proj.total_fmt }}</strong></td>
-                        <td colspan="2"></td>
-                    </tr>
-                </tfoot>
-            </table>
+            {% if proj.entries or proj.outside_fmt %}
+            <div class="pp-tablewrap pp-or-tablewrap">
+                <table class="projectplus-table pp-or-table">
+                    <thead>
+                        <tr>
+                            <th class="pp-or-th-origin">{{ __('Origem', 'projectplus') }}</th>
+                            <th>{{ __('Descrição', 'projectplus') }}</th>
+                            <th class="pp-or-th-date">{{ __('Data', 'projectplus') }}</th>
+                            <th class="pp-or-num pp-or-th-value">{{ __('Valor', 'projectplus') }}</th>
+                            <th class="pp-or-th-author">{{ __('Lançado por', 'projectplus') }}</th>
+                            <th>{{ _n('Comentário', 'Comentários', 1, 'projectplus') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for e in proj.entries %}
+                        <tr>
+                            <td class="pp-report-origin">{{ e.origin }}</td>
+                            <td>{{ e.name ?: '—' }}</td>
+                            <td class="pp-or-date">{{ e.date_fmt }}</td>
+                            <td class="pp-or-num">{{ e.cost_fmt }}</td>
+                            <td>{{ e.author ?: '—' }}</td>
+                            <td class="pp-or-comment">{% if e.comment %}{{ e.comment }}{% else %}<span class="pp-rp-none">—</span>{% endif %}</td>
+                        </tr>
+                    {% endfor %}
+                    {% if proj.outside_fmt %}
+                        <tr class="pp-or-outside">
+                            <td colspan="3">{{ __('Lançamentos dos subprojetos (não listados neste cartão)', 'projectplus') }}</td>
+                            <td class="pp-or-num">{{ proj.outside_fmt }}</td>
+                            <td colspan="2"></td>
+                        </tr>
+                    {% endif %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="pp-or-total">
+                            <td colspan="3">{{ __('Total consumido', 'projectplus') }}</td>
+                            <td class="pp-or-num">{{ proj.total_fmt }}</td>
+                            <td colspan="2"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
             {% else %}
-                <p class="projectplus-muted">{{ __('Nenhum lançamento de custo neste projeto', 'projectplus') }}</p>
+                <p class="pp-or-empty">{{ __('Nenhum lançamento de custo neste projeto', 'projectplus') }}</p>
             {% endif %}
-        </div>
+        </section>
         {% else %}
-            <div class="projectplus-card"><p class="projectplus-muted">{{ __('Nenhum projeto encontrado', 'projectplus') }}</p></div>
+            <p class="pp-rp-empty">{{ __('Nenhum projeto encontrado', 'projectplus') }}</p>
         {% endfor %}
     </div>
 </div>
