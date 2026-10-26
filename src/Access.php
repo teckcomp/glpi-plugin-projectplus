@@ -245,6 +245,10 @@ class Access
      * O-1b: pode CRIAR tarefa neste projeto? Super-Admin ou gestor da
      * árvore (R2). O técnico continua sem criar, como antes (o "Criar" do
      * nativo `projecttask` não existe no GLPI 11).
+     *
+     * O-1f (26/10/2026): também a EQUIPE do projeto com Tarefas "Criar" no
+     * perfil — só naquele projeto, sem herança (decisão do Claudio). Quem
+     * cria pela equipe vira o responsável da tarefa (canAssignTaskTeamIn).
      */
     public static function canCreateTaskIn(int $projectId): bool
     {
@@ -256,6 +260,24 @@ class Access
             || !empty($project->fields['is_deleted'])
             || !Session::haveAccessToEntity((int) $project->getEntityID())) {
             return false;
+        }
+        if (self::isSuperAdmin() || Scope::managesProject($projectId)) {
+            return true;
+        }
+        return self::can('tasks', CREATE) && self::isProjectTeamMember($projectId);
+    }
+
+    /**
+     * O-1f: ao criar, pode escolher os RESPONSÁVEIS e pendurar a tarefa
+     * sob qualquer tarefa do projeto? Super-Admin ou gestor da árvore (a
+     * mesma regra da equipe da tarefa). A equipe do projeto cria a tarefa
+     * com ela mesma como responsável e só sob uma tarefa sua — senão
+     * criaria algo que não enxerga (vê só as tarefas atribuídas a ela).
+     */
+    public static function canAssignTaskTeamIn(int $projectId): bool
+    {
+        if (self::isClient()) {
+            return false; // O-1e
         }
         return self::isSuperAdmin() || Scope::managesProject($projectId);
     }

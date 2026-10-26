@@ -95,6 +95,7 @@ $action = $_POST['action'] ?? '';
 
 // Criar: O-1b (23/10/2026) — decidido POR PROJETO em Access::canCreateTaskIn
 // (Super-Admin ou gestor da árvore). Antes: nativo `project` UPDATE, global.
+// O-1f (26/10/2026): + equipe do projeto com Tarefas "Criar" (para si).
 
 /**
  * Carrega a tarefa do POST e aplica a regra POR TAREFA de Access::canUpdateTask
@@ -217,12 +218,17 @@ switch ($action) {
         if (!Access::canCreateTaskIn($projectId)) {
             pp_reply(['ok' => false, 'message' => __('Sem permissão para criar tarefas', 'projectplus')]);
         }
+        // O-1f: Super-Admin/gestor escolhem responsáveis e mãe livremente;
+        // a equipe do projeto (Tarefas "Criar") cria para si mesma.
+        $fullCreate = Access::canAssignTaskTeamIn($projectId);
         // O-1b: a tarefa-mãe (se houver) tem de ser do MESMO projeto — a
         // permissão foi conferida no projeto informado, não no da mãe.
+        // O-1f: pela equipe, a mãe tem de ser uma tarefa da qual é ator.
         $parentId = (int) ($_POST['projecttasks_id'] ?? 0);
         if ($parentId > 0) {
             $parent = new ProjectTask();
-            if (!$parent->getFromDB($parentId) || (int) $parent->fields['projects_id'] !== $projectId) {
+            if (!$parent->getFromDB($parentId) || (int) $parent->fields['projects_id'] !== $projectId
+                || (!$fullCreate && !Access::isTaskActor($parent))) {
                 pp_reply(['ok' => false, 'message' => __('Sem permissão para criar tarefas', 'projectplus')]);
             }
         }
@@ -252,6 +258,10 @@ switch ($action) {
         $assignees = pp_user_ids(
             isset($_POST['users_ids']) ? $_POST['users_ids'] : ($_POST['users_id'] ?? '')
         );
+        if (!$fullCreate) {
+            // O-1f: pela equipe do projeto, o responsável é quem criou.
+            $assignees = [(int) Session::getLoginUserID()];
+        }
         foreach ($assignees as $assignee) {
             $team = new ProjectTaskTeam();
             $team->add([

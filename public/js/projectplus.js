@@ -1902,6 +1902,14 @@
         const me = (Array.isArray(ppData.users) ? ppData.users : []).filter(function (u) {
             return u.id === ppData.current_user_id;
         })[0];
+        // O-1f: sem gestão de responsáveis (equipe do projeto criando), a
+        // tarefa nasce com o próprio usuário — chip fixo, sem × e sem +.
+        if (!ppData.can_team) {
+            return '<div class="pp-team pp-nt-team" title="' + escapeHtml(__('Responsáveis')) + '">' +
+                (me
+                    ? '<span class="pp-team__chip" data-uid="' + parseInt(me.id, 10) + '">' + escapeHtml(me.name) + '</span>'
+                    : '') + '</div>';
+        }
         return '<div class="pp-team pp-nt-team" title="' + escapeHtml(__('Responsáveis')) + '">' +
             teamEmptyHtml(!!me) +
             (me ? teamChipHtml(me.id, me.name) : '') +
