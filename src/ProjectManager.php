@@ -44,6 +44,11 @@ class ProjectManager
     /** Cache por requisição de tableExists (o hook roda a cada update). */
     private static ?bool $tableOk = null;
 
+    /** O-1d — caches por requisição (o cron percorre centenas de tarefas). */
+    private static array $treeMgrCache = [];
+    private static array $clientCache  = [];
+    private static array $parentCache  = [];
+
     public static function tableReady(): bool
     {
         /** @var \DBmysql $DB */
@@ -58,7 +63,65 @@ class ProjectManager
     /** Para harness/instalador: esquece o cache de tableExists. */
     public static function resetCache(): void
     {
-        self::$tableOk = null;
+        self::$tableOk      = null;
+        self::$treeMgrCache = [];
+        self::$clientCache  = [];
+        self::$parentCache  = [];
+    }
+
+    /**
+     * O-1d (26/10/2026) — destinatários de ALERTA de um projeto: os gestores
+     * do projeto e de TODOS os projetos acima (decisão do Claudio), sem
+     * repetir, do mais próximo ao mais alto, sem usuário com Visão do
+     * cliente (R6 — cliente nunca é gestor). Protegido contra ciclo em
+     * `glpi_projects.projects_id`. Lê a tabela própria (ou o nativo, sem
+     * ela, via managersOf) — os alertas não leem mais `users_id` direto.
+     *
+     * @return int[]
+     */
+    public static function treeManagersOf(int $projectId): array
+    {
+        if ($projectId <= 0) {
+            return [];
+        }
+        if (isset(self::$treeMgrCache[$projectId])) {
+            return self::$treeMgrCache[$projectId];
+        }
+        $found = [];
+        $seen  = [];
+        $pid   = $projectId;
+        while ($pid > 0 && !isset($seen[$pid])) {
+            $seen[$pid] = true;
+            foreach (self::managersOf($pid) as $uid) {
+                $found[$uid] = true;
+            }
+            $pid = self::parentOf($pid);
+        }
+        $out = [];
+        foreach (array_keys($found) as $uid) {
+            if (!self::isClientUser($uid)) {
+                $out[] = $uid;
+            }
+        }
+        return self::$treeMgrCache[$projectId] = $out;
+    }
+
+    /** O-1d — projeto pai (0 = raiz), com cache por requisição. */
+    private static function parentOf(int $projectId): int
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        if (!array_key_exists($projectId, self::$parentCache)) {
+            $row = $DB->request([
+                'SELECT' => ['projects_id'],
+                'FROM'   => 'glpi_projects',
+                'WHERE'  => ['id' => $projectId],
+                'LIMIT'  => 1,
+            ])->current();
+            self::$parentCache[$projectId] = (int) ($row['projects_id'] ?? 0);
+        }
+        return self::$parentCache[$projectId];
     }
 
     /**
@@ -172,6 +235,7 @@ class ProjectManager
         if (count($exists) > 0) {
             return false;
         }
+        self::$treeMgrCache = []; // O-1d
         return (bool) $DB->insert(self::TABLE, [
             'projects_id'   => $projectId,
             'users_id'      => $userId,
@@ -188,6 +252,7 @@ class ProjectManager
         if ($projectId <= 0 || $userId <= 0 || !self::tableReady()) {
             return;
         }
+        self::$treeMgrCache = []; // O-1d
         $DB->delete(self::TABLE, ['projects_id' => $projectId, 'users_id' => $userId]);
     }
 
@@ -364,6 +429,19 @@ class ProjectManager
      * cliente nunca é gestor.)
      */
     public static function isClientUser(int $userId): bool
+    {
+        if ($userId <= 0) {
+            return false;
+        }
+        // O-1d: cache por requisição (alertas consultam o mesmo usuário
+        // para muitas tarefas).
+        if (!array_key_exists($userId, self::$clientCache)) {
+            self::$clientCache[$userId] = self::loadIsClientUser($userId);
+        }
+        return self::$clientCache[$userId];
+    }
+
+    private static function loadIsClientUser(int $userId): bool
     {
         /** @var \DBmysql $DB */
         global $DB;

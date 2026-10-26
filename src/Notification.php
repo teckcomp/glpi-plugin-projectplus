@@ -197,7 +197,6 @@ class Notification
             'SELECT' => [
                 'glpi_plugin_projectplus_projecttrackings.projects_id',
                 'glpi_projects.name',
-                'glpi_projects.users_id',
             ],
             'FROM'      => 'glpi_plugin_projectplus_projecttrackings',
             'LEFT JOIN' => [
@@ -215,23 +214,23 @@ class Notification
         ]);
 
         foreach ($iterator as $row) {
-            $managerId = (int) ($row['users_id'] ?? 0);
-            if ($managerId <= 0) {
-                continue;
-            }
+            $projectId = (int) $row['projects_id'];
             $message = sprintf(
                 __('Projeto "%s" está sem atividade (parado)', 'projectplus'),
                 $row['name']
             );
-            if (self::addAlert($managerId, 'Project', (int) $row['projects_id'], 'stalled', $message)) {
-                self::sendMail(
-                    $managerId,
-                    __('Projeto parado', 'projectplus'),
-                    $message,
-                    'Project',
-                    (int) $row['projects_id']
-                );
-                $count++;
+            // O-1d: gestores do projeto e dos projetos acima (tabela própria).
+            foreach (ProjectManager::treeManagersOf($projectId) as $managerId) {
+                if (self::addAlert($managerId, 'Project', $projectId, 'stalled', $message)) {
+                    self::sendMail(
+                        $managerId,
+                        __('Projeto parado', 'projectplus'),
+                        $message,
+                        'Project',
+                        $projectId
+                    );
+                    $count++;
+                }
             }
         }
         return $count;
@@ -240,7 +239,8 @@ class Notification
     // ------------------------------------------------------------------
     // Barra de prazo (Bloco 4-revisado)
     //
-    // Alertas ao GESTOR do projeto (glpi_projects.users_id) quando o
+    // Alertas aos GESTORES da árvore (O-1d: ProjectManager::treeManagersOf
+    // — gestores do projeto e dos projetos acima, sem cliente) quando o
     // prazo consumido cruza 50/75/90/100%. Cada limiar dispara UMA vez
     // (dedup pela unique key da tabela de alertas); o estouro (100%)
     // é reenviado a cada 8h até o item ser concluído. Tarefa sem datas
@@ -274,8 +274,8 @@ class Notification
                 'glpi_projecttasks.real_start_date',
                 'glpi_projecttasks.plan_end_date',
                 'glpi_projecttasks.percent_done',
+                'glpi_projecttasks.projects_id',
                 'glpi_projects.name AS project_name',
-                'glpi_projects.users_id AS manager_id',
             ],
             'FROM'      => 'glpi_projecttasks',
             'LEFT JOIN' => [
@@ -294,8 +294,9 @@ class Notification
         ]);
 
         foreach ($iterator as $row) {
-            $managerId = (int) ($row['manager_id'] ?? 0);
-            if ($managerId <= 0) {
+            // O-1d: gestores da árvore do projeto da tarefa.
+            $managers = ProjectManager::treeManagersOf((int) $row['projects_id']);
+            if ($managers === []) {
                 continue; // projeto sem gestor definido
             }
 
@@ -312,22 +313,23 @@ class Notification
                 $row['project_name'] ?? '—'
             );
 
-            if ($dl['state'] === 'none') {
-                $count += (int) self::deadlineAlert(
-                    $managerId,
-                    'ProjectTask',
-                    (int) $row['id'],
-                    'deadline_nodates',
-                    sprintf(
-                        __('%s está sem datas planejadas — corrija o planejamento', 'projectplus'),
-                        $label
-                    ),
-                    false
-                );
-                continue;
+            foreach ($managers as $managerId) {
+                if ($dl['state'] === 'none') {
+                    $count += (int) self::deadlineAlert(
+                        $managerId,
+                        'ProjectTask',
+                        (int) $row['id'],
+                        'deadline_nodates',
+                        sprintf(
+                            __('%s está sem datas planejadas — corrija o planejamento', 'projectplus'),
+                            $label
+                        ),
+                        false
+                    );
+                    continue;
+                }
+                $count += self::fireDeadlineStep($managerId, 'ProjectTask', (int) $row['id'], $dl, $label);
             }
-
-            $count += self::fireDeadlineStep($managerId, 'ProjectTask', (int) $row['id'], $dl, $label);
         }
         return $count;
     }
@@ -343,7 +345,7 @@ class Notification
         $count    = 0;
         $iterator = $DB->request([
             'SELECT' => [
-                'id', 'name', 'users_id',
+                'id', 'name',
                 'plan_start_date', 'real_start_date', 'plan_end_date',
                 'percent_done',
             ],
@@ -356,11 +358,6 @@ class Notification
         ]);
 
         foreach ($iterator as $row) {
-            $managerId = (int) ($row['users_id'] ?? 0);
-            if ($managerId <= 0) {
-                continue;
-            }
-
             $dl = Deadline::compute(
                 $row['plan_start_date'],
                 $row['real_start_date'],
@@ -372,13 +369,16 @@ class Notification
                 continue; // projeto sem datas: só barra cinza, sem alerta
             }
 
-            $count += self::fireDeadlineStep(
-                $managerId,
-                'Project',
-                (int) $row['id'],
-                $dl,
-                sprintf(__('Projeto "%s"', 'projectplus'), $row['name'])
-            );
+            // O-1d: gestores do projeto e dos projetos acima.
+            foreach (ProjectManager::treeManagersOf((int) $row['id']) as $managerId) {
+                $count += self::fireDeadlineStep(
+                    $managerId,
+                    'Project',
+                    (int) $row['id'],
+                    $dl,
+                    sprintf(__('Projeto "%s"', 'projectplus'), $row['name'])
+                );
+            }
         }
         return $count;
     }
@@ -583,6 +583,12 @@ class Notification
         // Cuidado: iterar VALORES de um mapa [id => true] devolve `true`
         // (lição 34) — as chaves são os IDs.
         foreach (array_keys($userIds) as $userId) {
+            // O-1d: alerta de prazo/conclusão não vai a usuário com Visão do
+            // cliente (comentário da tarefa SIM — é a conversa dele, em
+            // TaskComment::notifyTeam).
+            if (ProjectManager::isClientUser($userId)) {
+                continue;
+            }
             if (self::addAlert($userId, 'ProjectTask', $taskId, $kind, $message)) {
                 $subject = match ($kind) {
                     'overdue'   => __('Tarefa atrasada', 'projectplus'),

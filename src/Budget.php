@@ -361,7 +361,7 @@ class Budget
 
     /**
      * Verificação de orçamento para o cron (chamada por Notification).
-     * Alerta o gestor do projeto ao cruzar o limiar e ao estourar.
+     * Alerta os gestores da árvore (O-1d) ao cruzar o limiar e ao estourar.
      *
      * @return int alertas novos gerados
      */
@@ -375,7 +375,6 @@ class Budget
             'SELECT'    => [
                 ProjectTracking::getTable() . '.projects_id',
                 'glpi_projects.name',
-                'glpi_projects.users_id',
             ],
             'FROM'      => ProjectTracking::getTable(),
             'LEFT JOIN' => [
@@ -394,8 +393,9 @@ class Budget
 
         foreach ($iterator as $row) {
             $projectId = (int) $row['projects_id'];
-            $managerId = (int) ($row['users_id'] ?? 0);
-            if ($managerId <= 0) {
+            // O-1d: gestores do projeto e dos projetos acima (tabela própria).
+            $managers  = ProjectManager::treeManagersOf($projectId);
+            if ($managers === []) {
                 continue;
             }
 
@@ -407,27 +407,24 @@ class Budget
             }
 
             if ($budget['percent'] > 100) {
-                $count += (int) Notification::budgetAlert(
-                    $managerId,
-                    $projectId,
-                    'budget_over',
-                    sprintf(
-                        __('Orçamento ESTOURADO no projeto "%s": %d%% consumido', 'projectplus'),
-                        $row['name'],
-                        $budget['percent']
-                    )
+                $kind    = 'budget_over';
+                $message = sprintf(
+                    __('Orçamento ESTOURADO no projeto "%s": %d%% consumido', 'projectplus'),
+                    $row['name'],
+                    $budget['percent']
                 );
             } elseif ($budget['percent'] >= $warnPercent) {
-                $count += (int) Notification::budgetAlert(
-                    $managerId,
-                    $projectId,
-                    'budget_warn',
-                    sprintf(
-                        __('Orçamento do projeto "%s" atingiu %d%% do teto', 'projectplus'),
-                        $row['name'],
-                        $budget['percent']
-                    )
+                $kind    = 'budget_warn';
+                $message = sprintf(
+                    __('Orçamento do projeto "%s" atingiu %d%% do teto', 'projectplus'),
+                    $row['name'],
+                    $budget['percent']
                 );
+            } else {
+                continue;
+            }
+            foreach ($managers as $managerId) {
+                $count += (int) Notification::budgetAlert($managerId, $projectId, $kind, $message);
             }
         }
         return $count;

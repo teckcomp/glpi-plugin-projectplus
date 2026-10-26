@@ -315,7 +315,8 @@ class TaskComment extends CommonDBTM
 
     /**
      * Bloco D-3b — comentário no PROJETO. Atualiza a atividade e avisa no
-     * sino só o GESTOR (glpi_projects.users_id), se não for o autor.
+     * sino os destinatários de projectRecipients() (O-1d: gestores da
+     * árvore + quem já comentou), menos o autor.
      *
      * @return int id do comentário criado (0 = falha)
      */
@@ -346,6 +347,11 @@ class TaskComment extends CommonDBTM
      * Bloco F-2b (decisão do Claudio): avisa no sino o GESTOR do projeto e
      * quem JÁ comentou nele (participantes da conversa), menos o autor.
      *
+     * O-1d (26/10/2026): "gestor" = gestores do projeto E dos projetos
+     * acima (ProjectManager::treeManagersOf, sem cliente). Quem já comentou
+     * entra mesmo sendo cliente — decisão do Claudio: o cliente recebe o
+     * que for interação dele.
+     *
      * @return int[] ids avisados (para o harness)
      */
     public static function projectRecipients(Project $project, int $authorId): array
@@ -354,9 +360,8 @@ class TaskComment extends CommonDBTM
         global $DB;
 
         $ids = [];
-        $managerId = (int) ($project->fields['users_id'] ?? 0);
-        if ($managerId > 0) {
-            $ids[$managerId] = true;
+        foreach (ProjectManager::treeManagersOf((int) $project->getID()) as $managerId) {
+            $ids[$managerId] = true; // O-1d
         }
         foreach (
             $DB->request([
