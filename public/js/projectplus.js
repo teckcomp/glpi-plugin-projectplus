@@ -2550,7 +2550,8 @@
                   escapeHtml(__('subtarefa')) + '</span>'
                 : '') +
             '<span class="projectplus-muted"> — ' + (d.open ? d.percent + '%' : escapeHtml(__('concluída'))) + '</span>' +
-            (canEdit && !d.implicit
+            // O-1b-2b: o servidor decide por vínculo (ator das duas pontas)
+            (canEdit && !d.implicit && d.can_remove !== false
                 ? '<button type="button" class="pp-dep-del" data-link-id="' + d.link_id + '" title="' +
                   escapeHtml(__('Remover vínculo')) + '"><i class="ti ti-unlink"></i> ' +
                   escapeHtml(__('Remover')) + '</button>'

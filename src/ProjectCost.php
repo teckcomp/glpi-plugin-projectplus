@@ -39,9 +39,15 @@ class ProjectCost extends CommonDBTM
         return Access::can('costs');
     }
 
-    public static function canEditCosts(): bool
+    /**
+     * Pode lançar/excluir custo NESTE projeto? O-1b-2b (26/10/2026): pela
+     * matriz do Project+ e por item — Super-Admin, gestor da árvore, ou
+     * Custos "Interagir" + equipe do projeto (Access::canEditProjectCosts).
+     * O nativo `project` UPDATE deixou de valer.
+     */
+    public static function canEditCosts(Project $project): bool
     {
-        return Access::can('costs', UPDATE) && Session::haveRight('project', UPDATE);
+        return Access::canEditProjectCosts($project);
     }
 
     // ------------------------------------------------------------------
@@ -103,7 +109,7 @@ class ProjectCost extends CommonDBTM
         global $DB;
 
         $projectId = (int) $project->getID();
-        $canedit   = self::canEditCosts();
+        $canedit   = self::canEditCosts($project); // O-1b-2b: por projeto
         $action    = Url::to('front/projectcost.form.php');
 
         // ---- Formulário de lançamento ----

@@ -20,19 +20,21 @@ Session::checkLoginUser();
 /** @var \DBmysql $DB */
 global $DB;
 
-if (!TaskCost::canEditCosts()) {
+$taskId = (int) ($_POST['projecttasks_id'] ?? 0);
+$task   = new ProjectTask();
+if ($taskId <= 0 || !$task->getFromDB($taskId)) {
+    Session::addMessageAfterRedirect(__('Tarefa não encontrada', 'projectplus'), false, ERROR);
+    Html::back();
+}
+
+// O-1b-2b: por tarefa — Super-Admin, gestor da árvore ou Custos
+// "Interagir" + ator da tarefa
+if (!TaskCost::canEditCosts($task)) {
     Session::addMessageAfterRedirect(
         __('Sem permissão para alterar custos', 'projectplus'),
         false,
         ERROR
     );
-    Html::back();
-}
-
-$taskId = (int) ($_POST['projecttasks_id'] ?? 0);
-$task   = new ProjectTask();
-if ($taskId <= 0 || !$task->getFromDB($taskId)) {
-    Session::addMessageAfterRedirect(__('Tarefa não encontrada', 'projectplus'), false, ERROR);
     Html::back();
 }
 

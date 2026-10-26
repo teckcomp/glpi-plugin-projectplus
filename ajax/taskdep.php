@@ -46,6 +46,11 @@ switch ($action) {
         $otherId = (int) ($_POST['other_id'] ?? 0);
         $dir     = (string) ($_POST['dir'] ?? 'blocked_by');
 
+        // O-1b-2b: por vínculo — gestor/Super-Admin ou ator das DUAS tarefas
+        if (!TaskDep::canManageLinkIds($taskId, $otherId)) {
+            pp_reply(['ok' => false, 'message' => __('Sem permissão para gerenciar dependências', 'projectplus')]);
+        }
+
         $result = ($dir === 'blocks')
             ? TaskDep::addLink($taskId, $otherId)   // task bloqueia other
             : TaskDep::addLink($otherId, $taskId);  // other bloqueia task
@@ -53,7 +58,16 @@ switch ($action) {
         break;
 
     case 'delete':
-        pp_reply(TaskDep::deleteLink((int) ($_POST['link_id'] ?? 0)));
+        $linkId = (int) ($_POST['link_id'] ?? 0);
+        $ends   = TaskDep::linkTaskIds($linkId);
+        if ($ends === null) {
+            pp_reply(['ok' => false, 'message' => __('Vínculo não encontrado', 'projectplus')]);
+        }
+        // O-1b-2b: as duas pontas do vínculo
+        if (!TaskDep::canManageLinkIds($ends[0], $ends[1])) {
+            pp_reply(['ok' => false, 'message' => __('Sem permissão para gerenciar dependências', 'projectplus')]);
+        }
+        pp_reply(TaskDep::deleteLink($linkId));
         break;
 
     default:

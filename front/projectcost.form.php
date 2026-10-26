@@ -19,19 +19,21 @@ Session::checkLoginUser();
 /** @var \DBmysql $DB */
 global $DB;
 
-if (!ProjectCost::canEditCosts()) {
+$projectId = (int) ($_POST['projects_id'] ?? 0);
+$project   = new Project();
+if ($projectId <= 0 || !$project->getFromDB($projectId)) {
+    Session::addMessageAfterRedirect(__('Projeto não encontrado', 'projectplus'), false, ERROR);
+    Html::back();
+}
+
+// O-1b-2b: por projeto — Super-Admin, gestor da árvore ou Custos
+// "Interagir" + equipe do projeto
+if (!ProjectCost::canEditCosts($project)) {
     Session::addMessageAfterRedirect(
         __('Sem permissão para alterar custos', 'projectplus'),
         false,
         ERROR
     );
-    Html::back();
-}
-
-$projectId = (int) ($_POST['projects_id'] ?? 0);
-$project   = new Project();
-if ($projectId <= 0 || !$project->getFromDB($projectId)) {
-    Session::addMessageAfterRedirect(__('Projeto não encontrado', 'projectplus'), false, ERROR);
     Html::back();
 }
 

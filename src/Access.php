@@ -516,6 +516,156 @@ class Access
     }
 
     /**
+     * O-1b-2b (26/10/2026): flag de PÁGINA do 🔗 (liga o painel de
+     * dependências em modo edição); a decisão final é por vínculo, em
+     * canManageTaskDep(). Super-Admin, gestor de algum projeto ou Tarefas
+     * "Interagir". O nativo `projecttask`/`project` UPDATE deixou de valer.
+     */
+    public static function canManageTaskDeps(): bool
+    {
+        if (self::isClient()) {
+            return false; // O-1e
+        }
+        return self::isSuperAdmin()
+            || Scope::managesAny()
+            || self::can('tasks', UPDATE);
+    }
+
+    /**
+     * O-1b-2b: pode mexer nas dependências DESTA tarefa (abrir o "Nova
+     * dependência")? Super-Admin, gestor da árvore, ou Tarefas "Interagir"
+     * + ator da tarefa. Cada vínculo ainda exige o ator nas DUAS pontas
+     * (canManageTaskDep).
+     *
+     * @param \ProjectTask $task
+     */
+    public static function canEditTaskDeps($task): bool
+    {
+        if (self::isClient()) {
+            return false; // O-1e
+        }
+        if (!Session::haveAccessToEntity((int) $task->getEntityID())) {
+            return false;
+        }
+        if (self::isSuperAdmin() || self::managesTask($task)) {
+            return true;
+        }
+        return self::can('tasks', UPDATE) && self::isTaskActor($task);
+    }
+
+    /**
+     * O-1b-2b: pode criar/remover o vínculo entre ESTAS duas tarefas?
+     * Super-Admin ou gestor da árvore (das duas); os demais com Tarefas
+     * "Interagir" e ATOR das DUAS tarefas (decisão do Claudio, 26/10).
+     *
+     * @param \ProjectTask $a
+     * @param \ProjectTask $b
+     */
+    public static function canManageTaskDep($a, $b): bool
+    {
+        if (self::isClient()) {
+            return false; // O-1e
+        }
+        if (!Session::haveAccessToEntity((int) $a->getEntityID())
+            || !Session::haveAccessToEntity((int) $b->getEntityID())) {
+            return false;
+        }
+        if (self::isSuperAdmin() || (self::managesTask($a) && self::managesTask($b))) {
+            return true;
+        }
+        return self::can('tasks', UPDATE)
+            && self::isTaskActor($a)
+            && self::isTaskActor($b);
+    }
+
+    /**
+     * O-1b-2b: pode lançar/excluir CUSTO nesta tarefa? Super-Admin, gestor
+     * da árvore, ou Custos "Interagir" + ator da tarefa.
+     *
+     * @param \ProjectTask $task
+     */
+    public static function canEditTaskCosts($task): bool
+    {
+        if (self::isClient()) {
+            return false; // O-1e
+        }
+        if (!Session::haveAccessToEntity((int) $task->getEntityID())) {
+            return false;
+        }
+        if (self::isSuperAdmin() || self::managesTask($task)) {
+            return true;
+        }
+        return self::can('costs', UPDATE) && self::isTaskActor($task);
+    }
+
+    /**
+     * O-1b-2b: pode lançar/excluir CUSTO do projeto e gravar o TETO de
+     * orçamento? Super-Admin, gestor da árvore, ou Custos "Interagir" +
+     * membro da equipe DAQUELE projeto (sem herança).
+     *
+     * @param \Project $project
+     */
+    public static function canEditProjectCosts($project): bool
+    {
+        if (self::isClient()) {
+            return false; // O-1e
+        }
+        if (!Session::haveAccessToEntity((int) $project->getEntityID())) {
+            return false;
+        }
+        $pid = (int) $project->getID();
+        if (self::isSuperAdmin() || Scope::managesProject($pid)) {
+            return true;
+        }
+        return self::can('costs', UPDATE) && self::isProjectTeamMember($pid);
+    }
+
+    /**
+     * O-1b-2b: das tarefas informadas, em quais o usuário logado é ATOR
+     * (responsável, equipe direta ou por grupo)? Versão em lote do
+     * isTaskActor(), para filtrar as candidatas do 🔗 sem N consultas.
+     *
+     * @param int[] $taskIds
+     * @return array<int, true>
+     */
+    public static function actorTaskIds(array $taskIds): array
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        $uid = (int) Session::getLoginUserID();
+        $ids = array_values(array_unique(array_filter(array_map('intval', $taskIds))));
+        if ($uid <= 0 || $ids === []) {
+            return [];
+        }
+        $out = [];
+        foreach (
+            $DB->request([
+                'SELECT' => ['id'],
+                'FROM'   => 'glpi_projecttasks',
+                'WHERE'  => ['id' => $ids, 'users_id' => $uid],
+            ]) as $row
+        ) {
+            $out[(int) $row['id']] = true;
+        }
+        $or = [['itemtype' => 'User', 'items_id' => $uid]];
+        $groups = array_values(array_filter(array_map('intval', (array) ($_SESSION['glpigroups'] ?? []))));
+        if ($groups !== []) {
+            $or[] = ['itemtype' => 'Group', 'items_id' => $groups];
+        }
+        foreach (
+            $DB->request([
+                'SELECT' => ['projecttasks_id'],
+                'FROM'   => 'glpi_projecttaskteams',
+                'WHERE'  => ['projecttasks_id' => $ids, 'OR' => $or],
+            ]) as $row
+        ) {
+            $out[(int) $row['projecttasks_id']] = true;
+        }
+        return $out;
+    }
+
+    /**
      * O usuário logado é ator da tarefa? Responsável (`users_id`) ou membro
      * da equipe (`glpi_projecttaskteams`) — direto ou por um de seus grupos.
      *

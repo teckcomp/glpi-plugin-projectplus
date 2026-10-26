@@ -11,17 +11,16 @@ include('../../../inc/includes.php');
 
 Session::checkLoginUser();
 
-// Etapa 8, Bloco 4: gravar o teto de orçamento exige o direito de Custos
-// (Colaborador e Cliente ficam de fora, mesmo podendo editar o projeto).
-Access::require('costs', UPDATE); // O-1e: pelo Access (trava da Visão do cliente)
-
 $projectId = (int) ($_POST['projects_id'] ?? 0);
 
 $project = new Project();
 if ($projectId <= 0 || !$project->getFromDB($projectId)) {
     Html::displayErrorAndDie(__('Projeto não encontrado', 'projectplus'));
 }
-if (!$project->canUpdateItem()) {
+// O-1b-2b (26/10/2026): teto = mesma regra do custo do projeto — Super-Admin,
+// gestor da árvore ou Custos "Interagir" + equipe do projeto. Sai o nativo
+// `canUpdateItem` (só entidade/`project` UPDATE); cliente nunca (O-1e).
+if (!Access::canEditProjectCosts($project)) {
     Html::displayRightError();
 }
 

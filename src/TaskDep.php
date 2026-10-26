@@ -49,14 +49,50 @@ class TaskDep extends CommonGLPI
         return _n('Dependência', 'Dependências', $nb, 'projectplus');
     }
 
-    /** Quem pode criar/remover dependências: quem edita tarefas. */
+    /**
+     * Flag de PÁGINA: o perfil pode mexer em dependências em ALGUMA tarefa?
+     * O-1b-2b (26/10/2026): pela matriz do Project+ (Access::canManageTaskDeps)
+     * — o nativo `projecttask`/`project` UPDATE deixou de valer. A decisão
+     * final é por vínculo: canManageLinkIds().
+     */
     public static function canManage(): bool
     {
-        if (Access::isClient()) {
-            return false; // O-1e: Visão do cliente é somente leitura
+        return Access::canManageTaskDeps();
+    }
+
+    /**
+     * O-1b-2b: pode criar/remover o vínculo entre as tarefas $aId e $bId?
+     * Super-Admin/gestor da árvore, ou Tarefas "Interagir" + ator das duas.
+     */
+    public static function canManageLinkIds(int $aId, int $bId): bool
+    {
+        $a = new ProjectTask();
+        $b = new ProjectTask();
+        if ($aId <= 0 || $bId <= 0 || !$a->getFromDB($aId) || !$b->getFromDB($bId)) {
+            return false;
         }
-        return Session::haveRight('projecttask', UPDATE)
-            || Session::haveRight('project', UPDATE);
+        return Access::canManageTaskDep($a, $b);
+    }
+
+    /**
+     * O-1b-2b: as duas pontas de um vínculo finish_to_start, ou null.
+     *
+     * @return array{0:int,1:int}|null
+     */
+    public static function linkTaskIds(int $linkId): ?array
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        $row = $DB->request([
+            'SELECT' => ['projecttasks_id_source', 'projecttasks_id_target'],
+            'FROM'   => self::TABLE,
+            'WHERE'  => ['id' => $linkId, 'type' => self::TYPE_FINISH_TO_START],
+        ])->current();
+        if (!$row) {
+            return null;
+        }
+        return [(int) $row['projecttasks_id_source'], (int) $row['projecttasks_id_target']];
     }
 
     // ------------------------------------------------------------------
@@ -336,6 +372,12 @@ class TaskDep extends CommonGLPI
             }
         }
 
+        // O-1b-2b: quem pode editar ESTA tarefa e se é "gestor" (Super-Admin
+        // ou árvore) — o não gestor só vincula/desvincula tarefas de que
+        // também é ator (as duas pontas).
+        $canEdit   = Access::canEditTaskDeps($task);
+        $isManager = $canEdit && (Access::isSuperAdmin() || Access::managesTask($task));
+
         // Candidatas: tarefas do mesmo projeto, fora as já vinculadas
         $candidates = [];
         foreach (
@@ -356,11 +398,31 @@ class TaskDep extends CommonGLPI
             ];
         }
 
+        $actor = [];
+        if ($canEdit && !$isManager) {
+            $otherIds = array_merge(
+                array_column($candidates, 'id'),
+                array_column($blockers, 'task_id'),
+                array_column($blocked, 'task_id')
+            );
+            $actor = Access::actorTaskIds($otherIds);
+            $candidates = array_values(array_filter($candidates, static function (array $c) use ($actor): bool {
+                return isset($actor[(int) $c['id']]);
+            }));
+        }
+        $flag = static function (array $rows) use ($canEdit, $isManager, $actor): array {
+            foreach ($rows as $i => $r) {
+                $rows[$i]['can_remove'] = $canEdit && empty($r['implicit'])
+                    && ($isManager || isset($actor[(int) $r['task_id']]));
+            }
+            return $rows;
+        };
+
         return [
-            'blockers'   => $blockers,
-            'blocked'    => $blocked,
+            'blockers'   => $flag($blockers),
+            'blocked'    => $flag($blocked),
             'candidates' => $candidates,
-            'can_edit'   => self::canManage(),
+            'can_edit'   => $canEdit,
         ];
     }
 
@@ -753,9 +815,9 @@ class TaskDep extends CommonGLPI
     public static function showForTask(ProjectTask $task): void
     {
         $taskId  = (int) $task->getID();
-        $canEdit = self::canManage();
         $action  = Url::to('front/taskdep.form.php');
         $data    = self::getPanelData($taskId);
+        $canEdit = !empty($data['can_edit']); // O-1b-2b: por tarefa
 
         // ---- Formulário de novo vínculo ----
         if ($canEdit) {
@@ -811,7 +873,7 @@ class TaskDep extends CommonGLPI
                         ? '<span class="text-warning">' . sprintf(__('aberta (%d%%)', 'projectplus'), $r['percent']) . '</span>'
                         : '<span class="text-success">' . __('concluída', 'projectplus') . '</span>') . '</td>';
                     echo '<td style="width:60px">';
-                    if ($canEdit && !$implicit) {
+                    if (!empty($r['can_remove'])) { // O-1b-2b: ator das duas pontas
                         echo "<form method='post' action='" . htmlspecialchars($action) . "' style='display:inline'>";
                         echo Html::hidden('link_id', ['value' => (int) $r['link_id']]);
                         echo Html::hidden('projecttasks_id', ['value' => $taskId]);

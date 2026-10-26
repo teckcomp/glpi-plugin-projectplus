@@ -32,9 +32,23 @@ if ($taskId <= 0 || !$task->getFromDB($taskId)) {
     Html::back();
 }
 
+$denied = static function (): void {
+    Session::addMessageAfterRedirect(
+        __('Sem permissão para gerenciar dependências', 'projectplus'),
+        false,
+        ERROR
+    );
+    Html::back();
+};
+
 if (isset($_POST['add'])) {
     $otherId = (int) ($_POST['other_id'] ?? 0);
     $dir     = (string) ($_POST['dir'] ?? 'blocked_by');
+
+    // O-1b-2b: por vínculo — gestor/Super-Admin ou ator das DUAS tarefas
+    if (!TaskDep::canManageLinkIds($taskId, $otherId)) {
+        $denied();
+    }
 
     $result = ($dir === 'blocks')
         ? TaskDep::addLink($taskId, $otherId)   // esta tarefa bloqueia a outra
@@ -42,7 +56,16 @@ if (isset($_POST['add'])) {
 
     Session::addMessageAfterRedirect($result['message'], false, $result['ok'] ? INFO : ERROR);
 } elseif (isset($_POST['delete'])) {
-    $result = TaskDep::deleteLink((int) ($_POST['link_id'] ?? 0));
+    $linkId = (int) ($_POST['link_id'] ?? 0);
+    $ends   = TaskDep::linkTaskIds($linkId);
+    if ($ends === null) {
+        Session::addMessageAfterRedirect(__('Vínculo não encontrado', 'projectplus'), false, ERROR);
+        Html::back();
+    }
+    if (!TaskDep::canManageLinkIds($ends[0], $ends[1])) {
+        $denied();
+    }
+    $result = TaskDep::deleteLink($linkId);
     Session::addMessageAfterRedirect($result['message'], false, $result['ok'] ? INFO : ERROR);
 }
 

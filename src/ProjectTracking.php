@@ -77,7 +77,7 @@ class ProjectTracking extends CommonDBTM
 
         // ------------------ Orçamento (Fase B parte 1) ------------------
         $budget    = Budget::getForProject((int) $item->getID());
-        $canUpdate = $item->canUpdateItem();
+        $canUpdate = Access::canEditProjectCosts($item); // O-1b-2b: regra do teto
 
         echo '<table class="tab_cadre_fixe" style="margin-top:12px">';
         echo '<tr><th colspan="2">' . __('Orçamento (ProjectPlus)', 'projectplus') . '</th></tr>';

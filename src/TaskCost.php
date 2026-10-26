@@ -41,10 +41,15 @@ class TaskCost extends CommonDBTM
         return Access::can('costs');
     }
 
-    public static function canEditCosts(): bool
+    /**
+     * Pode lançar/excluir custo NESTA tarefa? O-1b-2b (26/10/2026): pela
+     * matriz do Project+ e por item — Super-Admin, gestor da árvore, ou
+     * Custos "Interagir" + ator da tarefa (Access::canEditTaskCosts). O
+     * nativo `projecttask`/`project` UPDATE deixou de valer.
+     */
+    public static function canEditCosts(ProjectTask $task): bool
     {
-        return Access::can('costs', UPDATE)
-            && (Session::haveRight('projecttask', UPDATE) || Session::haveRight('project', UPDATE));
+        return Access::canEditTaskCosts($task);
     }
 
     // ------------------------------------------------------------------
@@ -135,7 +140,7 @@ class TaskCost extends CommonDBTM
         global $DB;
 
         $taskId  = (int) $task->getID();
-        $canedit = self::canEditCosts();
+        $canedit = self::canEditCosts($task); // O-1b-2b: por tarefa
         $action  = Url::to('front/taskcost.form.php');
 
         // ---- Formulário de lançamento ----
