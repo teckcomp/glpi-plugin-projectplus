@@ -2532,7 +2532,8 @@
             '<span class="projectplus-muted"> — ' + (d.open ? d.percent + '%' : escapeHtml(__('concluída'))) + '</span>' +
             (canEdit && !d.implicit
                 ? '<button type="button" class="pp-dep-del" data-link-id="' + d.link_id + '" title="' +
-                  escapeHtml(__('Remover vínculo')) + '">×</button>'
+                  escapeHtml(__('Remover vínculo')) + '"><i class="ti ti-unlink"></i> ' +
+                  escapeHtml(__('Remover')) + '</button>'
                 : '') +
             '</div>';
     }

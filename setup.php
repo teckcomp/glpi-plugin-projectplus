@@ -132,9 +132,12 @@ function plugin_init_projectplus(): void
     ];
 
     // Guarda de fase (Etapa 3, Bloco 3 / Fix 1): projeto com filhos
-    // abertos não pode ir para fase finalizada — vale na ficha nativa
+    // abertos não pode ir para fase finalizada — vale na ficha nativa.
+    // O-1b-1t (23/10/2026): a mesma trava para a TAREFA (subtarefa ou
+    // bloqueadora aberta), em todos os caminhos de update.
     $PLUGIN_HOOKS[Hooks::PRE_ITEM_UPDATE]['projectplus'] = [
-        Project::class => [TaskDep::class, 'onProjectPreUpdate'],
+        Project::class     => [TaskDep::class, 'onProjectPreUpdate'],
+        ProjectTask::class => [TaskDep::class, 'onTaskPreUpdate'],
     ];
 }
 

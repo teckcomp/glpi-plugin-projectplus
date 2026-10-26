@@ -726,12 +726,16 @@ tr.pp-focus-task > td {
 }
 .pp-dep-item__status--open { background: var(--pp-warn); }
 .pp-dep-item__status--done { background: var(--pp-ok); }
+/* O-1b-1t (26/10/2026): o × solto no canto direito quase não era achado —
+   vira botão com contorno (mesmo desenho do 🗑 da linha), ao lado do item. */
 .pp-dep-del {
-    border: 0; background: none; cursor: pointer;
-    color: var(--pp-muted); font-size: 0.9rem; padding: 0 4px;
-    margin-left: auto;
+    border: 1px solid var(--pp-danger-border); background: var(--pp-surface);
+    color: var(--pp-danger-text); border-radius: 6px; cursor: pointer;
+    font-size: 0.75rem; font-weight: 600; line-height: 1.4;
+    padding: 1px 8px; margin-left: 10px; align-self: center; white-space: nowrap;
 }
-.pp-dep-del:hover { color: var(--pp-danger-text); }
+.pp-dep-del i { font-size: 0.85rem; vertical-align: -1px; }
+.pp-dep-del:hover { background: var(--pp-danger-soft); border-color: var(--pp-danger-text); }
 .pp-dep-new {
     display: flex; gap: 8px; margin-top: 8px; align-items: center;
     flex-wrap: wrap;

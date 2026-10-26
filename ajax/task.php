@@ -51,19 +51,7 @@ function pp_reply(array $payload): void
  */
 function pp_open_children(int $taskId): int
 {
-    /** @var \DBmysql $DB */
-    global $DB;
-
-    $row = $DB->request([
-        'COUNT' => 'cpt',
-        'FROM'  => 'glpi_projecttasks',
-        'WHERE' => array_merge([
-            'projecttasks_id' => $taskId,
-            'percent_done'    => ['<', 100],
-        ], Trash::liveTasks()), // Bloco M-1
-    ])->current();
-
-    return (int) ($row['cpt'] ?? 0);
+    return TaskDep::openChildTaskCount($taskId); // O-1b-1t: regra única
 }
 
 /**
@@ -279,9 +267,15 @@ switch ($action) {
 
     case 'state':
         $task = pp_task_for_update('tasks');
+        $newState = (int) ($_POST['projectstates_id'] ?? 0);
+        // O-1b-1t: mesma trava do Kanban (fase finalizada com subtarefa ou
+        // bloqueadora aberta) — antes só o arrastar e o ✓ recusavam.
+        if (($msg = TaskDep::finishedMoveBlock((int) $task->getID(), $newState)) !== null) {
+            pp_reply(['ok' => false, 'message' => $msg]);
+        }
         $ok = $task->update([
             'id'               => $task->getID(),
-            'projectstates_id' => (int) ($_POST['projectstates_id'] ?? 0),
+            'projectstates_id' => $newState,
         ]);
         pp_reply(['ok' => (bool) $ok]);
         break;
@@ -357,32 +351,13 @@ switch ($action) {
         // Etapa 7, Bloco 2a — arrastar cartão entre colunas do Kanban =
         // mudar a fase da tarefa. TRAVA por dependência: não deixa mover
         // para uma fase FINALIZADA (is_finished=1) enquanto houver
-        // subtarefa aberta ou bloqueadora aberta (mesma regra da guarda de
-        // fase de projeto, onProjectPreUpdate).
+        // subtarefa aberta ou bloqueadora aberta. O-1b-1t: regra única em
+        // TaskDep::finishedMoveBlock (também no `state` e no hook).
         $task = pp_task_for_update('kanban');
         $newState = (int) ($_POST['projectstates_id'] ?? 0);
 
-        if ($newState > 0 && in_array($newState, TaskDep::finishedStateIds(), true)) {
-            $reasons  = [];
-            if (($open = pp_open_children($task->getID())) > 0) {
-                $reasons[] = sprintf(
-                    _n('%d subtarefa aberta', '%d subtarefas abertas', $open, 'projectplus'),
-                    $open
-                );
-            }
-            $blockers = TaskDep::openBlockerNames($task->getID());
-            if (!empty($blockers)) {
-                $reasons[] = sprintf(
-                    __('bloqueada por: %s', 'projectplus'),
-                    implode(', ', array_slice($blockers, 0, 5)) . (count($blockers) > 5 ? '…' : '')
-                );
-            }
-            if (!empty($reasons)) {
-                pp_reply(['ok' => false, 'message' => sprintf(
-                    __('Não é possível mover para uma fase finalizada — %s', 'projectplus'),
-                    implode('; ', $reasons)
-                )]);
-            }
+        if (($msg = TaskDep::finishedMoveBlock((int) $task->getID(), $newState)) !== null) {
+            pp_reply(['ok' => false, 'message' => $msg]);
         }
 
         $ok = $task->update(['id' => $task->getID(), 'projectstates_id' => $newState]);

@@ -662,6 +662,87 @@ class TaskDep extends CommonGLPI
         );
     }
 
+    /**
+     * Quantas subtarefas DIRETAS da tarefa estão abertas (% < 100), fora
+     * da lixeira. Mesma conta do `pp_open_children()` do ajax/task.php.
+     */
+    public static function openChildTaskCount(int $taskId): int
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        $row = $DB->request([
+            'COUNT' => 'cpt',
+            'FROM'  => 'glpi_projecttasks',
+            'WHERE' => array_merge([
+                'projecttasks_id' => $taskId,
+                'percent_done'    => ['<', 100],
+            ], Trash::liveTasks()),
+        ])->current();
+
+        return (int) ($row['cpt'] ?? 0);
+    }
+
+    /**
+     * Trava de fase finalizada da TAREFA (O-1b-1t, 23/10/2026): mensagem
+     * de recusa se `$newState` é uma fase finalizada (is_finished=1) e a
+     * tarefa tem subtarefa aberta ou bloqueadora aberta; `null` se pode.
+     * Regra única — usada pelo hook (ficha nativa e qualquer update via
+     * core) e pelos endpoints do painel (`state`) e do Kanban
+     * (`kanban_move`), que respondem com a mensagem antes do update.
+     */
+    public static function finishedMoveBlock(int $taskId, int $newState): ?string
+    {
+        if ($newState <= 0 || !in_array($newState, self::finishedStateIds(), true)) {
+            return null;
+        }
+        $reasons = [];
+        if (($open = self::openChildTaskCount($taskId)) > 0) {
+            $reasons[] = sprintf(
+                _n('%d subtarefa aberta', '%d subtarefas abertas', $open, 'projectplus'),
+                $open
+            );
+        }
+        $blockers = self::openBlockerNames($taskId);
+        if (!empty($blockers)) {
+            $reasons[] = sprintf(
+                __('bloqueada por: %s', 'projectplus'),
+                implode(', ', array_slice($blockers, 0, 5)) . (count($blockers) > 5 ? '…' : '')
+            );
+        }
+        if (empty($reasons)) {
+            return null;
+        }
+        return sprintf(
+            __('Não é possível mover para uma fase finalizada — %s', 'projectplus'),
+            implode('; ', $reasons)
+        );
+    }
+
+    /**
+     * Guarda de fase da TAREFA (hook PRE_ITEM_UPDATE em ProjectTask), par
+     * do `onProjectPreUpdate`: só age quando a fase MUDA para uma
+     * finalizada; tira só o campo de fase do update (o resto segue) e
+     * avisa. Roda antes do `prepareInputForUpdate` do core.
+     */
+    public static function onTaskPreUpdate(ProjectTask $item): void
+    {
+        if (!is_array($item->input) || !isset($item->input['projectstates_id'])) {
+            return;
+        }
+        $newState = (int) $item->input['projectstates_id'];
+        $oldState = (int) ($item->fields['projectstates_id'] ?? 0);
+        if ($newState === $oldState) {
+            return;
+        }
+        $msg = self::finishedMoveBlock((int) $item->getID(), $newState);
+        if ($msg === null) {
+            return;
+        }
+        unset($item->input['projectstates_id']);
+        Session::addMessageAfterRedirect(htmlspecialchars($msg), false, ERROR);
+    }
+
     // ------------------------------------------------------------------
     // Conteúdo da aba: listas + formulário
     // ------------------------------------------------------------------
