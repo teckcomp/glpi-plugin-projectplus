@@ -53,9 +53,20 @@ switch ($action) {
         break;
 
     case 'projectmeta':
-        $meta = Access::canEditProjects()
-            ? Dashboard::getProjectMeta((int) ($_GET['id'] ?? 0))
-            : null;
+        // O-1b-2a (26/10/2026): faixa "Projeto" só onde o usuário edita
+        // ESTE projeto (Access::canEditProject — Super-Admin, gestor da
+        // árvore ou equipe com Projetos "Interagir"); a meta leva as
+        // permissões que mudam o desenho (equipe e lixeira).
+        $meta    = null;
+        $project = new Project();
+        if ($project->getFromDB((int) ($_GET['id'] ?? 0))
+            && empty($project->fields['is_deleted'])
+            && Access::canEditProject($project)) {
+            $meta = Dashboard::getProjectMeta((int) $project->getID());
+            if ($meta !== null) {
+                $meta += Access::projectStripFlags($project);
+            }
+        }
         echo json_encode(['ok' => $meta !== null, 'meta' => $meta]);
         break;
 

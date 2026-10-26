@@ -13,7 +13,7 @@ Session::checkLoginUser();
 
 // Etapa 8, Bloco 4: gravar o teto de orçamento exige o direito de Custos
 // (Colaborador e Cliente ficam de fora, mesmo podendo editar o projeto).
-Session::checkRight(Access::RIGHTS['costs'], UPDATE);
+Access::require('costs', UPDATE); // O-1e: pelo Access (trava da Visão do cliente)
 
 $projectId = (int) ($_POST['projects_id'] ?? 0);
 

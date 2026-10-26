@@ -90,10 +90,12 @@ TemplateRenderer::getInstance()->display(
         'fav_done'          => Favorite::ui('projectkanban', 'done') === '1',
         // Quem tem o Kanban de TAREFAS vê o atalho para o outro board.
         'can_task_kanban'   => Access::can('kanban'),
-        // Ajuste 4b.2 — arrastar cartão muda a fase do PROJETO. Exige o
-        // direito do módulo Projetos em UPDATE E o direito nativo (o mesmo
-        // par validado em ajax/project.php). Cliente = somente leitura.
-        'can_edit'          => Access::can('projects', UPDATE) && Session::haveRight('project', UPDATE),
+        // Ajuste 4b.2 — arrastar cartão muda a fase do PROJETO. O-1b-2a
+        // (26/10/2026): flag de página = Access::canEditProjects()
+        // (Super-Admin, gestor ou Projetos "Interagir"); por cartão o
+        // ajax/project.php confere Access::canEditProject e recusa com
+        // mensagem (o cartão fica onde estava).
+        'can_edit'          => Access::canEditProjects(),
         'csrf_token'        => Session::getNewCSRFToken(),
         'scope_can_expand'  => $scopeCanExpand,
         'scope_is_expanded' => $scopeIsExpanded,

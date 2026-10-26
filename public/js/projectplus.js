@@ -1728,8 +1728,9 @@
                 projectStripInner(meta) + '</div>';
         }
 
-        // Formulário de nova tarefa
-        html += '<div class="projectplus-newtask">' +
+        // Formulário de nova tarefa. O-1e: a Visão do cliente é somente
+        // leitura (ppData.read_only) — sem linha de criação.
+        if (!isReadOnly()) html += '<div class="projectplus-newtask">' +
             '<input type="text" class="pp-nt-name" placeholder="' + escapeHtml(__('Nova tarefa…')) + '" maxlength="255">' +
             '<select class="pp-nt-parent pp-search"><option value="0">' + escapeHtml(__('Sem tarefa pai')) + '</option>' +
             tasks.filter(function (t) { return !t.context; }).map(function (t) {
@@ -1829,21 +1830,21 @@
                         : '') +
                     '<a href="' + escapeHtml(t.url) + '" target="_blank">' + escapeHtml(t.name) + '</a></td>' +
                 '<td class="pp-team-cell">' + teamCellHtml(t) + '</td>' +
-                '<td><input type="date" class="pp-task-start" value="' + (t.start_iso || '') + '"></td>' +
-                '<td><input type="date" class="pp-task-end" value="' + (t.end_iso || '') + '"></td>' +
+                '<td><input type="date" class="pp-task-start" value="' + (t.start_iso || '') + '"' + roAttr() + '></td>' +
+                '<td><input type="date" class="pp-task-end" value="' + (t.end_iso || '') + '"' + roAttr() + '></td>' +
                 '<td><input type="number" class="pp-task-percent" min="0" max="100" value="' + t.percent + '"' +
                     (t.auto_percent
                         ? ' disabled title="' + escapeHtml(__('Cálculo automático a partir das subtarefas')) + '"'
-                        : '') + '></td>' +
+                        : roAttr()) + '></td>' +
                 '<td class="pp-state-cell"><span class="pp-phase-dot" style="background:' + stateColor(t.state_id) + '"></span>' +
-                    '<select class="pp-task-state"><option value="0">—</option>' + stateOpts + '</select></td>' +
+                    '<select class="pp-task-state"' + roAttr() + '><option value="0">—</option>' + stateOpts + '</select></td>' +
                 '<td class="pp-deadline-cell">' + deadlineCell(t.deadline) + '</td>' +
                 '<td class="pp-auto-cell">' + autoSwitchHtml(t) + '</td>' +
                 '<td class="pp-dep-cell">' + depBtnHtml(t) + '</td>' +
                 '<td class="pp-cmt-cell">' + commentBtnHtml(t) + '</td>' +
                 '<td class="pp-task-endcell">' + (t.percent >= 100
                     ? '<span class="pp-task-donemark" title="' + escapeHtml(__('Concluída')) + '">✓ ' + escapeHtml(__('Concluída')) + '</span>'
-                    : (!t.auto_percent
+                    : (!t.auto_percent && !isReadOnly()
                         ? '<button type="button" class="pp-task-complete" title="' + escapeHtml(__('Concluir')) + '">✓</button>'
                         : '')) +
                     // Bloco M-2: 🗑 na MESMA célula do ✓ (sem coluna nova — lição 155)
@@ -1973,13 +1974,24 @@
     // o mesmo da ficha do GLPI: ligado, o % vira a média das subtarefas e
     // o campo trava; desligado, volta a ser editável. Só aparece em tarefa
     // com subtarefa — ou já ligada, para poder desligar.
+    // O-1e (26/10/2026): Visão do cliente = somente leitura. Campos da
+    // linha da tarefa saem desabilitados, sem ✓ e sem linha de criação; o
+    // 💬 (comentários e anexos) continua. O servidor também recusa.
+    function isReadOnly() {
+        return !!(ppData && ppData.read_only);
+    }
+
+    function roAttr() {
+        return isReadOnly() ? ' disabled' : '';
+    }
+
     function autoSwitchHtml(t) {
         if (!t.has_children && !t.auto_percent) { return ''; }
         const tip = t.auto_percent
             ? __('Cálculo automático a partir das subtarefas')
             : __('Calcular automaticamente a partir das subtarefas');
         return '<label class="pp-auto-switch" title="' + escapeHtml(tip) + '">' +
-            '<input type="checkbox" class="pp-task-auto"' + (t.auto_percent ? ' checked' : '') + '>' +
+            '<input type="checkbox" class="pp-task-auto"' + (t.auto_percent ? ' checked' : '') + roAttr() + '>' +
             '<span class="pp-auto-switch__track"></span>' +
             '<span class="pp-auto-switch__txt">auto</span></label>';
     }
@@ -3078,8 +3090,16 @@
                 : '') +
             '<div class="pp-team pp-projstrip__team">' +
                 '<span class="pp-projstrip__lbl">' + escapeHtml(__('Equipe do projeto')) + '</span>' +
-                team.map(function (u) { return teamChipHtml(u.id, u.name, __('Remover da equipe')); }).join('') +
-                teamAddBtnHtml(__('Adicionar à equipe')) +
+                // O-1b-2a: "+" e "×" só para Super-Admin/gestor (m.can_team);
+                // o membro da equipe com Interagir vê os nomes sem editar.
+                (m.can_team
+                    ? team.map(function (u) { return teamChipHtml(u.id, u.name, __('Remover da equipe')); }).join('') +
+                      teamAddBtnHtml(__('Adicionar à equipe'))
+                    : (team.length
+                        ? team.map(function (u) {
+                            return '<span class="pp-team__chip" data-uid="' + parseInt(u.id, 10) + '">' + escapeHtml(u.name) + '</span>';
+                        }).join('')
+                        : '<span class="projectplus-muted">—</span>')) +
             '</div>' +
             '<input type="date" class="pp-ps-start" value="' + escapeHtml(m.start_iso || '') + '" title="' + escapeHtml(__('Início planejado')) + '">' +
             '<input type="date" class="pp-ps-end" value="' + escapeHtml(m.end_iso || '') + '" title="' + escapeHtml(__('Fim planejado')) + '">' +
@@ -3092,8 +3112,9 @@
                 '<span class="pp-auto-switch__track"></span><span class="pp-auto-switch__txt">auto</span></label>' +
             // Bloco D-3b: 💬 do projeto (painel abre logo abaixo da faixa)
             commentBtnHtml({ comments: m.comments }) +
-            // Bloco M-2: projeto (com subprojetos) para a lixeira
-            (ppData.can_delete_project
+            // Bloco M-2: projeto (com subprojetos) para a lixeira. O-1b-2a:
+            // por projeto (m.can_delete — Super-Admin ou gestor da árvore).
+            (ppData.can_delete_project && m.can_delete
                 ? '<button type="button" class="pp-ps-del" data-name="' + escapeHtml(m.name || '') + '" title="' +
                   escapeHtml(__('Mover para a lixeira')) + '"><i class="ti ti-trash"></i></button>'
                 : '');

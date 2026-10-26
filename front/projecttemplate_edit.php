@@ -26,7 +26,7 @@ include('../../../inc/includes.php');
 /** @var array $CFG_GLPI */
 global $CFG_GLPI;
 
-Session::checkRight('plugin_projectplus_templates', UPDATE);
+Access::require('templates', UPDATE); // O-1e: pelo Access (trava da Visão do cliente)
 
 $id  = (int) ($_GET['id'] ?? 0);
 $tpl = $id > 0 ? Templates::getForEdit($id) : null;

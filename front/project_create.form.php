@@ -15,6 +15,11 @@ include('../../../inc/includes.php');
 
 Session::checkLoginUser();
 Session::checkRight('project', CREATE);
+// O-1e (26/10/2026): Visão do cliente é somente leitura, mesmo com o
+// nativo "Projeto: Criar" no perfil.
+if (Access::isClient()) {
+    Html::displayRightError();
+}
 
 $name = trim((string) ($_POST['name'] ?? ''));
 if ($name === '') {

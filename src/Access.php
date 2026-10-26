@@ -66,7 +66,44 @@ class Access
         if ($right === null) {
             $right = READ;
         }
+        // O-1e (26/10/2026) — Visão do cliente = SOMENTE LEITURA, travada no
+        // código: nenhum "Interagir/Criar/Excluir" de módulo vale para o
+        // cliente, mesmo marcado na matriz. Ver continua pela matriz.
+        if ($right !== READ && !in_array($module, ['clientview', 'seeall'], true) && self::isClient()) {
+            return false;
+        }
+        // O-1e: "Painel: Ver" + "Visão do cliente" já abre Kanban (os dois
+        // boards) e Timeline, sem marcar esses módulos (decisão do Claudio).
+        if ($right === READ && in_array($module, self::CLIENT_IMPLIED, true) && self::isClientPackage()) {
+            return true;
+        }
         return (bool) Session::haveRight(self::RIGHTS[$module], $right);
+    }
+
+    /** O-1e: telas que o pacote do cliente (Painel + Visão do cliente) abre. */
+    public const CLIENT_IMPLIED = ['kanban', 'timeline'];
+
+    /** O-1e: o perfil tem "Visão do cliente"? (direto na sessão, sem recursão) */
+    public static function isClient(): bool
+    {
+        return (bool) Session::haveRight(self::RIGHTS['clientview'], READ);
+    }
+
+    /** O-1e: pacote do cliente ligado = "Visão do cliente" + "Painel: Ver". */
+    public static function isClientPackage(): bool
+    {
+        return self::isClient() && (bool) Session::haveRight(self::RIGHTS['dashboard'], READ);
+    }
+
+    /**
+     * O-1e: o Painel mostra TAREFAS (botão Tarefas da linha do projeto,
+     * Tarefas em andamento, "Tarefas atrasadas")? Quem tem Tarefas: Ver, ou
+     * o cliente com o pacote — que vê as tarefas atribuídas a ele no Painel
+     * sem ganhar a tela "Minhas tarefas" (essa segue a matriz).
+     */
+    public static function canSeeTasksInPanel(): bool
+    {
+        return self::can('tasks') || self::isClientPackage();
     }
 
     /**
@@ -150,6 +187,9 @@ class Access
      */
     public static function canUpdateTasks(string $module = 'tasks'): bool
     {
+        if (self::isClient()) {
+            return false; // O-1e: cliente nunca edita
+        }
         return self::isSuperAdmin()
             || Scope::managesAny()
             || self::can($module, UPDATE);
@@ -173,6 +213,9 @@ class Access
      */
     public static function canUpdateTask($task, string $module = 'tasks'): bool
     {
+        if (self::isClient()) {
+            return false; // O-1e: fecha também o nativo UPDATEMY
+        }
         if (!Session::haveAccessToEntity((int) $task->getEntityID())) {
             return false;
         }
@@ -205,6 +248,9 @@ class Access
      */
     public static function canCreateTaskIn(int $projectId): bool
     {
+        if (self::isClient()) {
+            return false; // O-1e
+        }
         $project = new \Project();
         if ($projectId <= 0 || !$project->getFromDB($projectId)
             || !empty($project->fields['is_deleted'])
@@ -224,6 +270,9 @@ class Access
      */
     public static function canDeleteTask($task): bool
     {
+        if (self::isClient()) {
+            return false; // O-1e
+        }
         if (!Session::haveAccessToEntity((int) $task->getEntityID())) {
             return false;
         }
@@ -238,27 +287,148 @@ class Access
     /** Flag de PÁGINA do 🗑 da tarefa; o servidor confere por tarefa. */
     public static function canDeleteTasks(): bool
     {
+        if (self::isClient()) {
+            return false; // O-1e
+        }
         return self::isSuperAdmin()
             || Scope::managesAny()
             || (self::can('tasks', UPDATE) && (bool) Session::haveRight('projecttask', DELETE));
     }
 
     /**
-     * Bloco D-3a (01/10/2026): pode editar o PROJETO pela faixa do painel
-     * (equipe, datas, fase, %, auto)? Mesmo critério do arrastar no Kanban de
-     * projetos (4b.2): módulo Projetos em UPDATE E direito nativo `project`
-     * UPDATE. Flag de PÁGINA; por projeto o servidor ainda exige
-     * canUpdateItem() (entidade).
+     * Pode editar PROJETOS nesta tela? Flag de PÁGINA (liga a faixa
+     * "Projeto" do painel e o arrastar no Kanban de projetos); a decisão
+     * final é por projeto, em canEditProject().
+     *
+     * Bloco D-3a: módulo Projetos UPDATE + nativo `project` UPDATE.
+     * O-1b-2a (26/10/2026): Super-Admin, quem gerencia algum projeto (R2)
+     * ou "Interagir" de Projetos (vale nos projetos de cuja equipe faz
+     * parte). O nativo `project` UPDATE deixou de valer.
      */
     public static function canEditProjects(): bool
     {
-        return self::can('projects', UPDATE) && (bool) Session::haveRight('project', UPDATE);
+        if (self::isClient()) {
+            return false; // O-1e
+        }
+        return self::isSuperAdmin()
+            || Scope::managesAny()
+            || self::can('projects', UPDATE);
     }
 
-    /** @param \Project $project */
+    /**
+     * Pode editar ESTE projeto (faixa "Projeto": fase, datas, %, auto;
+     * arrastar no Kanban de projetos)? O-1b-2a (26/10/2026):
+     *
+     *   1. Super-Admin (nativo "Configuração: Atualizar") → sim;
+     *   2. gestor do projeto ou de um projeto acima (vínculo, R2) → sim;
+     *   3. membro da EQUIPE do projeto (`glpi_projectteams`, usuário) com
+     *      Projetos "Interagir" → sim (decisão do Claudio, 23/10).
+     *
+     * "Ver todos" (`seeall`) é só leitura. Sempre exige a entidade.
+     *
+     * @param \Project $project projeto já carregado (getFromDB)
+     */
     public static function canEditProject($project): bool
     {
-        return self::canEditProjects() && (bool) $project->canUpdateItem();
+        if (self::isClient()) {
+            return false; // O-1e
+        }
+        if (!Session::haveAccessToEntity((int) $project->getEntityID())) {
+            return false;
+        }
+        $pid = (int) $project->getID();
+        if (self::isSuperAdmin() || Scope::managesProject($pid)) {
+            return true;
+        }
+        return self::can('projects', UPDATE) && self::isProjectTeamMember($pid);
+    }
+
+    /**
+     * Pode adicionar/remover pessoas na EQUIPE deste projeto? O-1b-2a:
+     * só Super-Admin ou gestor da árvore (decisão do Claudio, 26/10 — igual
+     * à equipe da tarefa). Quem entra na equipe passa a ENXERGAR o
+     * projeto, então o membro com "Interagir" edita mas não amplia a equipe.
+     *
+     * @param \Project $project
+     */
+    public static function canManageProjectTeam($project): bool
+    {
+        if (self::isClient()) {
+            return false; // O-1e
+        }
+        if (!Session::haveAccessToEntity((int) $project->getEntityID())) {
+            return false;
+        }
+        return self::isSuperAdmin() || Scope::managesProject((int) $project->getID());
+    }
+
+    /**
+     * Pode mandar ESTE projeto (com os subprojetos) para a lixeira?
+     * O-1b-2a: Super-Admin ou gestor da árvore, sem depender do Excluir
+     * nativo (decisão do Claudio, 26/10). Antes: Projetos "Interagir" +
+     * nativo `project` DELETE.
+     *
+     * @param \Project $project
+     */
+    public static function canDeleteProject($project): bool
+    {
+        if (self::isClient()) {
+            return false; // O-1e
+        }
+        if (!Session::haveAccessToEntity((int) $project->getEntityID())) {
+            return false;
+        }
+        return self::isSuperAdmin() || Scope::managesProject((int) $project->getID());
+    }
+
+    /** Flag de PÁGINA da lixeira do projeto; o servidor confere por projeto. */
+    public static function canDeleteProjects(): bool
+    {
+        if (self::isClient()) {
+            return false; // O-1e
+        }
+        return self::isSuperAdmin() || Scope::managesAny();
+    }
+
+    /**
+     * O usuário logado está na EQUIPE deste projeto (linha de usuário em
+     * `glpi_projectteams` — a equipe de projeto é só de usuários, P-0)?
+     */
+    public static function isProjectTeamMember(int $projectId): bool
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        $uid = (int) Session::getLoginUserID();
+        if ($uid <= 0 || $projectId <= 0) {
+            return false;
+        }
+        $row = $DB->request([
+            'SELECT' => ['id'],
+            'FROM'   => 'glpi_projectteams',
+            'WHERE'  => [
+                'projects_id' => $projectId,
+                'itemtype'    => 'User',
+                'items_id'    => $uid,
+            ],
+            'LIMIT'  => 1,
+        ])->current();
+        return !empty($row);
+    }
+
+    /**
+     * Permissões da faixa "Projeto" que mudam o desenho (O-1b-2a): vão
+     * junto da meta para o JS esconder o "+"/"×" da equipe e a lixeira.
+     *
+     * @param \Project $project
+     * @return array{can_team: bool, can_delete: bool}
+     */
+    public static function projectStripFlags($project): array
+    {
+        return [
+            'can_team'   => self::canManageProjectTeam($project),
+            'can_delete' => self::canDeleteProject($project),
+        ];
     }
 
     /**
@@ -273,6 +443,9 @@ class Access
      */
     public static function canManageTaskTeam($task): bool
     {
+        if (self::isClient()) {
+            return false; // O-1e
+        }
         if (!Session::haveAccessToEntity((int) $task->getEntityID())) {
             return false;
         }
@@ -282,6 +455,9 @@ class Access
     /** Flag de PÁGINA (mostra chips com × e o "+"); o servidor confere por tarefa. */
     public static function canManageTaskTeams(): bool
     {
+        if (self::isClient()) {
+            return false; // O-1e
+        }
         return self::isSuperAdmin() || Scope::managesAny();
     }
 

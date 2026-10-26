@@ -78,7 +78,7 @@ TemplateRenderer::getInstance()->display(
         'projects'       => Templates::getProjectsForSelect(),
         'can_templates'  => true,
         'nav'             => Access::sidebar(),
-        'can_create'     => Session::haveRight('plugin_projectplus_projects', CREATE),
+        'can_create'     => Access::can('projects', CREATE), // O-1e: trava do cliente
         'csrf_token'     => Session::getNewCSRFToken(),
     ]
 );

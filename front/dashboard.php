@@ -222,7 +222,7 @@ foreach ($data['projects'] as $p) {
     }
 }
 $attention = [];
-if (Access::can('tasks')) {
+if (Access::canSeeTasksInPanel()) { // O-1e: inclui o pacote do cliente
     $attention[] = ['label' => __('Tarefas atrasadas', 'projectplus'), 'count' => (int) ($data['kpis']['tasks_overdue'] ?? 0), 'level' => 'danger'];
 }
 $attention[] = ['label' => __('Projetos atrasados', 'projectplus'), 'count' => (int) ($data['kpis']['overdue'] ?? 0), 'level' => 'danger'];
@@ -254,8 +254,12 @@ TemplateRenderer::getInstance()->display(
         // Bloco M-2 / O-1b: 🗑 da tarefa — Super-Admin, gestor de algum
         // projeto, ou Interagir + Excluir nativo (servidor confere por tarefa).
         'can_delete_tasks'   => Access::canDeleteTasks(),
-        'can_delete_project' => Access::can('projects', UPDATE) && Session::haveRight('project', DELETE),
-        // Bloco D-3a: faixa "Projeto" no painel (equipe, datas, fase, %, auto)
+        // O-1b-2a: lixeira do projeto — Super-Admin ou gestor (flag de
+        // página; o servidor confere por projeto e a meta traz can_delete).
+        'can_delete_project' => Access::canDeleteProjects(),
+        // Bloco D-3a: faixa "Projeto" no painel (equipe, datas, fase, %, auto).
+        // O-1b-2a: Super-Admin, gestor ou Projetos "Interagir" (por projeto
+        // no projectmeta: gestor da árvore ou equipe do projeto).
         'can_edit_project' => Access::canEditProjects(),
         'parents'         => $parents,
         // Etapa 9 — filtro de tipo e donut adaptativo
@@ -276,7 +280,7 @@ TemplateRenderer::getInstance()->display(
         'phases_by_type'  => TypePhase::phasesByType(),
         'current_user_id' => (int) Session::getLoginUserID(),
         'csrf_token'      => Session::getNewCSRFToken(),
-        'can_create'      => Session::haveRight('plugin_projectplus_projects', CREATE),
+        'can_create'      => Access::can('projects', CREATE), // O-1e: trava do cliente
         'can_templates'   => Session::haveRight('config', UPDATE),
         // Etapa 8, Bloco 4: o painel some com o que o perfil não pode ver —
         // coluna/campo de Orçamento sem o direito de Custos (Cliente e
@@ -285,7 +289,7 @@ TemplateRenderer::getInstance()->display(
         // Bloco J: modelos para o campo "Modelo" do modal Novo projeto
         'templates'       => Access::can('templates') ? Templates::pickerOptions() : [],
         'today'           => date('Y-m-d'), // Bloco J: início padrão no modal (fuso do servidor, não UTC do navegador)
-        'can_tasks'       => Access::can('tasks'),
+        'can_tasks'       => Access::canSeeTasksInPanel(), // O-1e: pacote do cliente vê as tarefas dele
         'nav'             => Access::sidebar(),
         'fav'            => Favorite::payload('dashboard'), // Bloco L
         'scope_can_expand'  => $scopeCanExpand,

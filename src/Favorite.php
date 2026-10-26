@@ -46,7 +46,9 @@ class Favorite
         if ($ok === null) {
             $ok = $DB->tableExists(self::TABLE);
         }
-        return $ok;
+        // O-1e (26/10/2026): Visão do cliente não favorita filtros — o botão
+        // some nas telas e um favorito antigo deixa de ser reaplicado.
+        return $ok && !Access::isClient();
     }
 
     /**

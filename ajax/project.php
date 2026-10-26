@@ -43,20 +43,34 @@ function pp_reply(array $payload): void
 }
 
 /**
- * Projeto do POST, já conferido para edição (módulo Projetos UPDATE + nativo
- * `project` UPDATE + canUpdateItem). Responde e encerra se não puder.
+ * Projeto do POST, já conferido para edição pelo VÍNCULO (O-1b-2a,
+ * 26/10/2026 — Access::canEditProject: Super-Admin, gestor da árvore ou
+ * equipe do projeto com Projetos "Interagir"; antes módulo Projetos UPDATE
+ * + nativo `project` UPDATE). Responde e encerra se não puder.
  */
 function pp_project_for_update(): Project
 {
-    if (!Access::canEditProjects()) {
-        pp_reply(['ok' => false, 'message' => __('Sem permissão', 'projectplus')]);
-    }
     $project = new Project();
-    if (!$project->getFromDB((int) ($_POST['project_id'] ?? 0))) {
+    if (!$project->getFromDB((int) ($_POST['project_id'] ?? 0))
+        || !empty($project->fields['is_deleted'])) {
         pp_reply(['ok' => false, 'message' => __('Projeto não encontrado', 'projectplus')]);
     }
-    if (!$project->canUpdateItem()) {
+    if (!Access::canEditProject($project)) {
         pp_reply(['ok' => false, 'message' => __('Sem permissão para alterar este projeto', 'projectplus')]);
+    }
+    return $project;
+}
+
+/**
+ * O-1b-2a: Equipe do projeto (adicionar/remover) só Super-Admin ou gestor
+ * da árvore — além de poder editar o projeto. Responde e encerra se não.
+ */
+function pp_project_for_team(): Project
+{
+    $project = pp_project_for_update();
+    if (!Access::canManageProjectTeam($project)) {
+        pp_reply(['ok' => false, 'message' => __('Sem permissão para alterar este projeto', 'projectplus')]
+            + pp_project_payload((int) $project->getID()));
     }
     return $project;
 }
@@ -91,11 +105,19 @@ function pp_applied_state(int $projectId, int $fallback): int
     return $fallback;
 }
 
-/** meta + linhas do projeto e dos ancestrais (Bloco D-3a). */
+/**
+ * meta + linhas do projeto e dos ancestrais (Bloco D-3a). O-1b-2a: a meta
+ * leva também can_team/can_delete (Access::projectStripFlags).
+ */
 function pp_project_payload(int $projectId): array
 {
+    $meta = Dashboard::getProjectMeta($projectId);
+    $fresh = new Project();
+    if ($meta !== null && $fresh->getFromDB($projectId)) {
+        $meta += Access::projectStripFlags($fresh);
+    }
     return [
-        'meta' => Dashboard::getProjectMeta($projectId),
+        'meta' => $meta,
         'rows' => Dashboard::getProjectRows(
             array_merge([$projectId], Dashboard::projectAncestors($projectId))
         ),
@@ -140,31 +162,28 @@ function pp_project_team_row(int $projectId, int $userId): int
 
 $action = $_POST['action'] ?? '';
 
-// Mover projeto = alterar projeto: exige o direito do módulo (Projetos em
-// UPDATE) E o direito nativo de projeto. O Cliente não passa por aqui.
-$canUpdate = Access::can('projects', UPDATE) && Session::haveRight('project', UPDATE);
-
 switch ($action) {
     // Bloco M-2 (21/10/2026): projeto para a LIXEIRA nativa, COM todos os
     // subprojetos (decisão do Claudio). O core não leva subprojetos sozinho;
     // o plugin manda cada um, do mais fundo para cima. Tarefas não são
     // tocadas: Trash::liveTasks() as esconde enquanto o projeto delas estiver
-    // na lixeira, e elas voltam quando ele for restaurado. Permissão: módulo
-    // Projetos em Interagir + direito NATIVO de excluir projeto, conferido
-    // pelo core em CADA projeto antes de mexer em qualquer um.
+    // na lixeira, e elas voltam quando ele for restaurado. Permissão
+    // (O-1b-2a, 26/10/2026): Super-Admin ou gestor da árvore, sem depender
+    // do Excluir nativo (Access::canDeleteProject), conferida em CADA
+    // projeto antes de mexer em qualquer um.
     case 'delete':
         $root = new Project();
         $rid  = (int) ($_POST['project_id'] ?? 0);
         if (!$root->getFromDB($rid) || !empty($root->fields['is_deleted'])) {
             pp_reply(['ok' => false, 'message' => __('Projeto não encontrado', 'projectplus')]);
         }
-        if (!Access::can('projects', UPDATE) || !$root->can($rid, DELETE)) {
+        if (!Access::canDeleteProject($root)) {
             pp_reply(['ok' => false, 'message' => __('Sem permissão', 'projectplus')]);
         }
         $desc = Budget::getDescendantIds($rid); // pré-ordem: pai antes do filho
         $probe = new Project();
         foreach ($desc as $sid) {
-            if (!$probe->getFromDB($sid) || !$probe->can($sid, DELETE)) {
+            if (!$probe->getFromDB($sid) || !Access::canDeleteProject($probe)) {
                 pp_reply(['ok' => false, 'message' => sprintf(
                     __('Sem permissão para mover o subprojeto "%s" para a lixeira — nada foi alterado', 'projectplus'),
                     $probe->fields['name'] ?? ('#' . $sid)
@@ -187,17 +206,8 @@ switch ($action) {
         ]);
 
     case 'kanban_move':
-        if (!$canUpdate) {
-            pp_reply(['ok' => false, 'message' => __('Sem permissão', 'projectplus')]);
-        }
-
-        $project = new Project();
-        if (!$project->getFromDB((int) ($_POST['project_id'] ?? 0))) {
-            pp_reply(['ok' => false, 'message' => __('Projeto não encontrado', 'projectplus')]);
-        }
-        if (!$project->canUpdateItem()) {
-            pp_reply(['ok' => false, 'message' => __('Sem permissão para alterar este projeto', 'projectplus')]);
-        }
+        // O-1b-2a: mesma regra da faixa (Access::canEditProject).
+        $project = pp_project_for_update();
 
         $newState = (int) ($_POST['projectstates_id'] ?? 0);
         $oldState = (int) ($project->fields['projectstates_id'] ?? 0);
@@ -320,7 +330,8 @@ switch ($action) {
     case 'team_add':
         // Equipe do projeto: quem entra passa a ENXERGAR o projeto no escopo
         // (Scope usa glpi_projectteams) — decisão do Claudio, 01/10/2026.
-        $project = pp_project_for_update();
+        // O-1b-2a: só Super-Admin ou gestor da árvore.
+        $project = pp_project_for_team();
         $pid     = (int) $project->getID();
         $uid     = pp_active_user((int) ($_POST['users_id'] ?? 0));
         if ($uid <= 0) {
@@ -338,7 +349,7 @@ switch ($action) {
         break;
 
     case 'team_remove':
-        $project = pp_project_for_update();
+        $project = pp_project_for_team();
         $pid     = (int) $project->getID();
         $rowId   = pp_project_team_row($pid, (int) ($_POST['users_id'] ?? 0));
         if ($rowId > 0) {

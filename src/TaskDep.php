@@ -52,6 +52,9 @@ class TaskDep extends CommonGLPI
     /** Quem pode criar/remover dependências: quem edita tarefas. */
     public static function canManage(): bool
     {
+        if (Access::isClient()) {
+            return false; // O-1e: Visão do cliente é somente leitura
+        }
         return Session::haveRight('projecttask', UPDATE)
             || Session::haveRight('project', UPDATE);
     }

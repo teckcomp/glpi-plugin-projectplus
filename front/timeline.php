@@ -24,7 +24,8 @@ include('../../../inc/includes.php');
 global $CFG_GLPI;
 
 // Bloco F-2a: direito próprio (antes reaproveitava Tarefas → Ver)
-Session::checkRight('plugin_projectplus_timeline', READ);
+// O-1e: pelo Access — o pacote do cliente (Painel + Visão do cliente) abre a Timeline
+Access::require('timeline');
 
 // Escopo (Etapa 8, Bloco 3): abre no PESSOAL (minhas tarefas, mesmo critério
 // de "Minhas tarefas"); quem tem direito de escopo amplia via ?scope=all
