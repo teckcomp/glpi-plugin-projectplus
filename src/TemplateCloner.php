@@ -104,6 +104,12 @@ class TemplateCloner
         if (!empty($ov['users_id'])) {
             $managerId = (int) $ov['users_id'];
         }
+        // O-1c (26/10/2026): sem gestor, ou gestor com Visão do cliente
+        // (R6), quem cria vira o gestor (R4).
+        $managerId = (int) $managerId;
+        if ($managerId <= 0 || ProjectManager::isClientUser($managerId)) {
+            $managerId = (int) Session::getLoginUserID();
+        }
 
         // Datas do projeto raiz: início = data escolhida + offset do modelo;
         // fim = início + (duração-1). Se o modelo não trouxer duração
@@ -258,6 +264,9 @@ class TemplateCloner
 
         // Gestor do subprojeto: o do modelo, se houver; senão herda da raiz.
         $subManager = !empty($def['users_id']) ? (int) $def['users_id'] : $managerId;
+        if (ProjectManager::isClientUser($subManager)) {
+            $subManager = $managerId; // O-1c: cliente nunca é gestor (R6)
+        }
 
         $subInput = [
             'name'            => $name,
@@ -432,7 +441,8 @@ class TemplateCloner
             return;
         }
         $proj = new Project();
-        if (!$proj->getFromDB($projectId) || (int) $proj->fields['users_id'] === $uid) {
+        // O-1c: "já é gestor" pela tabela de gestores (qualquer posição).
+        if (!$proj->getFromDB($projectId) || in_array($uid, ProjectManager::managersOf($projectId), true)) {
             return;
         }
         $team  = new ProjectTeam();

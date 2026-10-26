@@ -3092,10 +3092,27 @@
             ? __('Cálculo automático a partir das tarefas e subprojetos')
             : __('Calcular automaticamente a partir das tarefas e subprojetos');
         const team = Array.isArray(m.team_users) ? m.team_users : [];
-        return '<span class="pp-projstrip__title">' + escapeHtml(__('Projeto')) + '</span>' +
-            (m.manager
+        // O-1c: gestores da tabela própria, editáveis na faixa (m.can_managers
+        // — Super-Admin, gestores do projeto e de cima). Sem a lista (meta
+        // antiga), o texto de antes.
+        const mgrs = Array.isArray(m.managers) ? m.managers : null;
+        const mgrHtml = mgrs
+            ? '<div class="pp-team pp-projstrip__mgrs">' +
+                '<span class="pp-projstrip__lbl">' + escapeHtml(__('Gestores')) + '</span>' +
+                (m.can_managers
+                    ? mgrs.map(function (u) { return teamChipHtml(u.id, u.name, __('Remover gestor')); }).join('') +
+                      teamAddBtnHtml(__('Adicionar gestor'))
+                    : (mgrs.length
+                        ? mgrs.map(function (u) {
+                            return '<span class="pp-team__chip" data-uid="' + parseInt(u.id, 10) + '">' + escapeHtml(u.name) + '</span>';
+                        }).join('')
+                        : '<span class="projectplus-muted">—</span>')) +
+              '</div>'
+            : (m.manager
                 ? '<span class="pp-projstrip__mgr">' + escapeHtml(__('Gestor')) + ': ' + escapeHtml(m.manager) + '</span>'
-                : '') +
+                : '');
+        return '<span class="pp-projstrip__title">' + escapeHtml(__('Projeto')) + '</span>' +
+            mgrHtml +
             '<div class="pp-team pp-projstrip__team">' +
                 '<span class="pp-projstrip__lbl">' + escapeHtml(__('Equipe do projeto')) + '</span>' +
                 // O-1b-2a: "+" e "×" só para Super-Admin/gestor (m.can_team);
@@ -3203,17 +3220,21 @@
                 toggleProjectComments(strip);
                 return;
             }
+            // O-1c: o mesmo componente de chips serve aos Gestores e à Equipe;
+            // a caixa onde o clique caiu decide a ação.
             const x = ev.target.closest('.pp-team__x');
             if (x) {
-                post({ action: 'team_remove', users_id: x.dataset.uid }, x);
+                const isMgr = !!x.closest('.pp-projstrip__mgrs');
+                post({ action: isMgr ? 'manager_remove' : 'team_remove', users_id: x.dataset.uid }, x);
                 return;
             }
             const add = ev.target.closest('.pp-team__add');
             if (add) {
                 const box = add.closest('.pp-team');
+                const isMgrAdd = !!add.closest('.pp-projstrip__mgrs');
                 openTeamPicker(add, teamIds(box), function (uid) {
-                    post({ action: 'team_add', users_id: uid }, add);
-                }, __('Adicionar à equipe'));
+                    post({ action: isMgrAdd ? 'manager_add' : 'team_add', users_id: uid }, add);
+                }, isMgrAdd ? __('Adicionar gestor') : __('Adicionar à equipe'));
             }
         });
     }

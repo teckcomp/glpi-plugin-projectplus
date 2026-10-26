@@ -1361,6 +1361,8 @@ a.pp-kb-lane-head__name:hover { color: var(--pp-link); text-decoration: underlin
 .pp-projstrip__mgr { font-size: 0.82rem; color: var(--pp-text-2); }
 .pp-projstrip__lbl { font-size: 0.78rem; color: var(--pp-text-2); margin-right: 2px; }
 .pp-projstrip__team { flex: 1 1 260px; }
+/* O-1c: gestores editáveis ao lado da equipe (mesmo componente de chips) */
+.pp-projstrip__mgrs { flex: 0 1 auto; margin-right: 12px; }
 .pp-projstrip input[type="date"],
 .pp-projstrip input[type="number"],
 .pp-projstrip select {

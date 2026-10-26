@@ -55,6 +55,10 @@ class I18nJs
                 // ---- geral / rótulos compartilhados ----
                 'Tipo'                     => __('Tipo', 'projectplus'),
                 'Gestor'                   => __('Gestor', 'projectplus'),
+                // O-1c: gestores na faixa "Projeto"
+                'Gestores'                 => __('Gestores', 'projectplus'),
+                'Adicionar gestor'         => __('Adicionar gestor', 'projectplus'),
+                'Remover gestor'           => __('Remover gestor', 'projectplus'),
                 'Responsáveis'             => __('Responsáveis', 'projectplus'),
                 'Subprojeto'               => __('Subprojeto', 'projectplus'),
                 'Subprojetos'              => __('Subprojetos', 'projectplus'),

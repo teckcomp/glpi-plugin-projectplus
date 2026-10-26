@@ -202,8 +202,9 @@ class Access
      *   1. Super-Admin (nativo "Configuração: Atualizar") → sim;
      *   2. gestor do projeto da tarefa ou de um projeto acima (vínculo, sem
      *      depender de direito do módulo) → sim;
-     *   3. "Interagir" do módulo (Tarefas ou Kanban) ou o nativo
-     *      `projecttask` UPDATEMY, E o usuário é ATOR da tarefa → sim.
+     *   3. "Interagir" do módulo (Tarefas ou Kanban) na aba ProjectPlus E o
+     *      usuário é ATOR da tarefa → sim (O-1g: o nativo `projecttask`
+     *      UPDATEMY não vale mais — matriz única).
      *
      * "Ver todos" (`seeall`) é só leitura e NÃO entra. O nativo `project`
      * UPDATE deixou de liberar tudo (correção de 22/09 mantida no item 3).
@@ -222,9 +223,10 @@ class Access
         if (self::isSuperAdmin() || self::managesTask($task)) {
             return true;
         }
-        $viaPlugin = self::can($module, UPDATE);
-        $viaCore   = (bool) Session::haveRight('projecttask', 1024); // ProjectTask::UPDATEMY
-        if (!$viaPlugin && !$viaCore) {
+        // O-1g (26/10/2026) — MATRIZ ÚNICA: só o "Interagir" do módulo na
+        // aba ProjectPlus. O nativo `projecttask` UPDATEMY (correção de
+        // 22/09) deixou de valer — rumo ao Ciclo P (independência do nativo).
+        if (!self::can($module, UPDATE)) {
             return false;
         }
         return self::isTaskActor($task);
@@ -285,7 +287,7 @@ class Access
     /**
      * O-1b: pode mandar ESTA tarefa para a lixeira? Super-Admin ou gestor
      * da árvore (R2, sem depender de Excluir); os demais como antes
-     * ("Interagir" de Tarefas + Excluir nativo) e só se forem ATORES da
+     * (O-1g: "Excluir" de Tarefas da matriz do Project+) e só se forem ATORES da
      * tarefa (R5 — antes valia para qualquer tarefa da entidade).
      *
      * @param \ProjectTask $task
@@ -301,9 +303,9 @@ class Access
         if (self::isSuperAdmin() || self::managesTask($task)) {
             return true;
         }
-        return self::can('tasks', UPDATE)
-            && (bool) Session::haveRight('projecttask', DELETE)
-            && self::isTaskActor($task);
+        // O-1g — matriz única: coluna "Excluir" de Tarefas do Project+ (antes
+        // Interagir + Excluir NATIVO), só em tarefa da qual é ator.
+        return self::can('tasks', DELETE) && self::isTaskActor($task);
     }
 
     /** Flag de PÁGINA do 🗑 da tarefa; o servidor confere por tarefa. */
@@ -314,7 +316,7 @@ class Access
         }
         return self::isSuperAdmin()
             || Scope::managesAny()
-            || (self::can('tasks', UPDATE) && (bool) Session::haveRight('projecttask', DELETE));
+            || self::can('tasks', DELETE); // O-1g: matriz única
     }
 
     /**
@@ -385,10 +387,29 @@ class Access
     }
 
     /**
+     * O-1c (26/10/2026): pode trocar os GESTORES deste projeto (R4)?
+     * Super-Admin, gestores atuais do projeto e gestores de projetos acima
+     * — exatamente a árvore gerenciada (Scope::managesProject). A equipe
+     * do projeto não mexe; a Visão do cliente nunca.
+     *
+     * @param \Project $project
+     */
+    public static function canManageProjectManagers($project): bool
+    {
+        if (self::isClient()) {
+            return false;
+        }
+        if (!Session::haveAccessToEntity((int) $project->getEntityID())) {
+            return false;
+        }
+        return self::isSuperAdmin() || Scope::managesProject((int) $project->getID());
+    }
+
+    /**
      * Pode mandar ESTE projeto (com os subprojetos) para a lixeira?
      * O-1b-2a: Super-Admin ou gestor da árvore, sem depender do Excluir
-     * nativo (decisão do Claudio, 26/10). Antes: Projetos "Interagir" +
-     * nativo `project` DELETE.
+     * (decisão do Claudio, 26/10). O-1g: também a equipe do projeto com
+     * Projetos "Excluir", em projeto sem subprojetos.
      *
      * @param \Project $project
      */
@@ -400,7 +421,16 @@ class Access
         if (!Session::haveAccessToEntity((int) $project->getEntityID())) {
             return false;
         }
-        return self::isSuperAdmin() || Scope::managesProject((int) $project->getID());
+        $pid = (int) $project->getID();
+        if (self::isSuperAdmin() || Scope::managesProject($pid)) {
+            return true;
+        }
+        // O-1g (26/10/2026): equipe do projeto com Projetos "Excluir" na
+        // matriz — só projeto SEM subprojetos (a lixeira leva os subprojetos
+        // e a equipe não herda; com subprojeto, só gestor/Super-Admin).
+        return self::can('projects', DELETE)
+            && self::isProjectTeamMember($pid)
+            && Budget::getDescendantIds($pid) === [];
     }
 
     /** Flag de PÁGINA da lixeira do projeto; o servidor confere por projeto. */
@@ -409,7 +439,8 @@ class Access
         if (self::isClient()) {
             return false; // O-1e
         }
-        return self::isSuperAdmin() || Scope::managesAny();
+        return self::isSuperAdmin() || Scope::managesAny()
+            || self::can('projects', DELETE); // O-1g: equipe com Excluir
     }
 
     /**
@@ -443,11 +474,12 @@ class Access
      * junto da meta para o JS esconder o "+"/"×" da equipe e a lixeira.
      *
      * @param \Project $project
-     * @return array{can_team: bool, can_delete: bool}
+     * @return array{can_team: bool, can_delete: bool, can_managers: bool}
      */
     public static function projectStripFlags($project): array
     {
         return [
+            'can_managers' => self::canManageProjectManagers($project), // O-1c
             'can_team'   => self::canManageProjectTeam($project),
             'can_delete' => self::canDeleteProject($project),
         ];

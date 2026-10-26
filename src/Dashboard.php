@@ -1417,17 +1417,10 @@ class Dashboard extends CommonGLPI
             $team[] = ['id' => (int) $row['items_id'], 'name' => $label !== '' ? $label : '?'];
         }
 
-        $manager = '';
-        if ((int) $p['users_id'] > 0) {
-            $u = $DB->request([
-                'SELECT' => ['name', 'realname', 'firstname'],
-                'FROM'   => 'glpi_users',
-                'WHERE'  => ['id' => (int) $p['users_id']],
-            ])->current();
-            if ($u) {
-                $manager = \formatUserName(0, $u['name'] ?? '', $u['realname'] ?? '', $u['firstname'] ?? '');
-            }
-        }
+        // O-1c (26/10/2026): gestores da TABELA própria (vários, na ordem
+        // de entrada), não mais do campo nativo `users_id`.
+        $managers = ProjectManager::managersWithNames((int) $p['id']);
+        $manager  = implode(', ', array_column($managers, 'name'));
 
         return [
             'id'           => (int) $p['id'],
@@ -1438,8 +1431,9 @@ class Dashboard extends CommonGLPI
             'type_id'      => (int) $p['projecttypes_id'],
             'percent'      => (int) $p['percent_done'],
             'auto_percent' => (bool) $p['auto_percent_done'],
-            'manager_id'   => (int) $p['users_id'],
+            'manager_id'   => (int) ($managers[0]['id'] ?? 0),
             'manager'      => $manager,
+            'managers'     => $managers, // O-1c: chips da faixa
             'team_users'   => $team,
             // Bloco D-3b: contador do 💬 da faixa
             'comments'     => TaskComment::countForProject((int) $p['id']),

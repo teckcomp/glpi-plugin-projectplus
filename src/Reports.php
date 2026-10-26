@@ -147,14 +147,9 @@ class Reports
         global $DB;
 
         $ids = [];
-        foreach (
-            $DB->request([
-                'SELECT' => 'users_id',
-                'FROM'   => 'glpi_projects',
-                'WHERE'  => ['users_id' => ['>', 0]],
-            ]) as $r
-        ) {
-            $ids[(int) $r['users_id']] = true;
+        // O-1c: gestores da tabela própria (antes `glpi_projects.users_id`).
+        foreach (ProjectManager::allManagerIds() as $mid) {
+            $ids[(int) $mid] = true;
         }
         foreach (
             $DB->request([
@@ -248,13 +243,15 @@ class Reports
         // Filtro da tela (projeto + descendentes) ∩ escopo do perfil
         // (Etapa 8, Bloco 4): as duas restrições valem juntas.
         $scopeIds = self::combineIds(self::scopeProjectIds($filterId), self::reachIdsForUser());
+        // Filtros extras (Bloco 1.1): Gestor, Fase, Tipo de projeto.
+        // O-1c: Gestor = projetos em que o usuário está na tabela de
+        // gestores (qualquer posição), INTERSECTADO com o recorte acima — a
+        // mesma chave do WHERE não pode ser sobrescrita.
+        if (!empty($filters['user'])) {
+            $scopeIds = self::combineIds($scopeIds, ProjectManager::projectsOf((int) $filters['user']));
+        }
         if ($scopeIds !== null) {
             $where['glpi_projects.id'] = Scope::inList($scopeIds);
-        }
-
-        // Filtros extras (Bloco 1.1): Gestor, Fase, Tipo de projeto
-        if (!empty($filters['user'])) {
-            $where['glpi_projects.users_id'] = (int) $filters['user'];
         }
         if (!empty($filters['state'])) {
             $where['glpi_projects.projectstates_id'] = (int) $filters['state'];
@@ -284,15 +281,8 @@ class Reports
                 'glpi_projects.percent_done', 'glpi_projects.plan_start_date',
                 'glpi_projects.plan_end_date', 'glpi_projects.projectstates_id',
                 'glpi_projects.projecttypes_id',
-                'glpi_users.realname AS mgr_realname', 'glpi_users.firstname AS mgr_firstname',
-                'glpi_users.name AS mgr_login',
             ],
             'FROM'      => 'glpi_projects',
-            'LEFT JOIN' => [
-                'glpi_users' => [
-                    'ON' => ['glpi_projects' => 'users_id', 'glpi_users' => 'id'],
-                ],
-            ],
             'WHERE'     => $where,
             'ORDER'     => 'glpi_projects.name',
         ]);
@@ -301,6 +291,20 @@ class Reports
         foreach ($iterator as $row) {
             $data[(int) $row['id']] = $row;
             $names[(int) $row['id']] = $row['name'];
+        }
+
+        // O-1c: gestores de todos os projetos listados (tabela própria) —
+        // coluna "Gestor" com todos, na ordem de entrada.
+        $mgrNames = [];
+        $mgrMap   = ProjectManager::managersOfMany(array_keys($data));
+        $allMgr   = [];
+        foreach ($mgrMap as $uids) {
+            foreach ($uids as $u) {
+                $allMgr[$u] = $u;
+            }
+        }
+        foreach (ProjectManager::namesOf(array_values($allMgr)) as $u) {
+            $mgrNames[$u['id']] = $u['name'];
         }
 
         // Nomes de pais fora do escopo (ex.: filtro por subprojeto cujo pai
@@ -341,7 +345,9 @@ class Reports
                 $parentId > 0 ? ($names[$parentId] ?? ('#' . $parentId)) : '',
                 $states[$stateId]['name'] ?? '',
                 $types[$typeId] ?? '',
-                self::userLabel($row['mgr_realname'], $row['mgr_firstname'], $row['mgr_login']) ?? '',
+                implode(', ', array_map(static function ($u) use ($mgrNames) {
+                    return $mgrNames[$u] ?? ('#' . $u);
+                }, $mgrMap[(int) $row['id']] ?? [])),
                 $pct,
                 !empty($row['plan_start_date']) ? DateFmt::date($row['plan_start_date']) : '',
                 !empty($row['plan_end_date']) ? DateFmt::date($row['plan_end_date']) : '',

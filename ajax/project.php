@@ -16,6 +16,8 @@
  * POST action=auto_percent project_id, value (0|1) — auto_percent_done nativo
  * POST action=team_add     project_id, users_id — Equipe do projeto (glpi_projectteams)
  * POST action=team_remove  project_id, users_id — só linha de USUÁRIO
+ * POST action=manager_add    project_id, users_id — O-1c: gestor (tabela própria)
+ * POST action=manager_remove project_id, users_id — O-1c: nunca o último
  *
  * O CSRF é validado automaticamente pelo core (includes.php) em todo POST —
  * nunca chamar Session::checkCSRF aqui. Cada resposta devolve um token novo
@@ -24,6 +26,7 @@
 
 use GlpiPlugin\Projectplus\Access;
 use GlpiPlugin\Projectplus\Dashboard;
+use GlpiPlugin\Projectplus\ProjectManager;
 use GlpiPlugin\Projectplus\ProjectTracking;
 use GlpiPlugin\Projectplus\TaskDep;
 use GlpiPlugin\Projectplus\Budget;
@@ -359,6 +362,28 @@ switch ($action) {
             }
             ProjectTracking::touch($pid);
         }
+        pp_reply(['ok' => true] + pp_project_payload($pid));
+        break;
+
+    // O-1c (26/10/2026): GESTORES pela faixa "Projeto" — tabela própria
+    // (ProjectManager), vários, nunca o último, nunca cliente (R3/R4/R6).
+    // Quem mexe: Super-Admin, gestores do projeto e gestores acima.
+    case 'manager_add':
+    case 'manager_remove':
+        $project = pp_project_for_update();
+        $pid     = (int) $project->getID();
+        if (!Access::canManageProjectManagers($project)) {
+            pp_reply(['ok' => false, 'message' => __('Sem permissão para alterar este projeto', 'projectplus')]
+                + pp_project_payload($pid));
+        }
+        $uid = (int) ($_POST['users_id'] ?? 0);
+        $err = $action === 'manager_add'
+            ? ProjectManager::addManager($pid, $uid)
+            : ProjectManager::removeManager($pid, $uid);
+        if ($err !== null) {
+            pp_reply(['ok' => false, 'message' => $err] + pp_project_payload($pid));
+        }
+        ProjectTracking::touch($pid);
         pp_reply(['ok' => true] + pp_project_payload($pid));
         break;
 

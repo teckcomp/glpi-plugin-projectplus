@@ -7,19 +7,37 @@
 
 use GlpiPlugin\Projectplus\Access;
 use GlpiPlugin\Projectplus\Budget;
+use GlpiPlugin\Projectplus\ProjectManager;
 use GlpiPlugin\Projectplus\ProjectTracking;
 use GlpiPlugin\Projectplus\TemplateCloner;
 use GlpiPlugin\Projectplus\Url;
 
 include('../../../inc/includes.php');
 
-Session::checkLoginUser();
-Session::checkRight('project', CREATE);
-// O-1e (26/10/2026): Visão do cliente é somente leitura, mesmo com o
-// nativo "Projeto: Criar" no perfil.
-if (Access::isClient()) {
-    Html::displayRightError();
+/**
+ * O-1c (26/10/2026): gestor escolhido no modal; sem escolha (ou usuário
+ * com Visão do cliente — R6), quem cria vira o gestor (R4). O hook de
+ * criação grava a tabela de gestores a partir deste campo.
+ */
+function pp_creation_manager(): int
+{
+    $chosen = (int) ($_POST['users_id'] ?? 0);
+    if ($chosen > 0 && ProjectManager::isClientUser($chosen)) {
+        Session::addMessageAfterRedirect(
+            __('Usuário com Visão do cliente não pode ser gestor', 'projectplus'),
+            true,
+            WARNING
+        );
+        $chosen = 0;
+    }
+    return $chosen > 0 ? $chosen : (int) Session::getLoginUserID();
 }
+
+Session::checkLoginUser();
+// O-1g (26/10/2026) — matriz única: "Projetos: Criar" da aba ProjectPlus
+// (o mesmo direito que mostra o botão Novo projeto). Antes: nativo
+// "Projeto: Criar". A trava da Visão do cliente (O-1e) está em Access::can.
+Access::require('projects', CREATE);
 
 $name = trim((string) ($_POST['name'] ?? ''));
 if ($name === '') {
@@ -77,7 +95,7 @@ $input = [
     // conjunto de fases do projeto (colunas do Kanban, filtro da Visão geral).
     'projecttypes_id'  => (int) ($_POST['projecttypes_id'] ?? 0),
     'priority'         => min(6, max(1, (int) ($_POST['priority'] ?? 3))),
-    'users_id'         => (int) ($_POST['users_id'] ?? Session::getLoginUserID()),
+    'users_id'         => pp_creation_manager(),
     'content'          => $_POST['content'] ?? '',
     'date'             => date('Y-m-d H:i:s'),
 ];
