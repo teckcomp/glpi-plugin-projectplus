@@ -2200,6 +2200,12 @@
                     taskPost(taskUrl, { action: 'state', task_id: taskId, projectstates_id: st.value }, function (resp) {
                         if (resp.ok) {
                             st.dataset.ppPrev = st.value;
+                            // O-2d: fase finalizadora leva a tarefa a 100% no
+                            // servidor — o % da linha mudou, redesenha (lição 130).
+                            const pctEl = row.querySelector('.pp-task-percent');
+                            if (typeof resp.percent === 'number' && pctEl && Number(pctEl.value) !== resp.percent) {
+                                reload();
+                            }
                             return;
                         }
                         st.value = st.dataset.ppPrev;
@@ -3327,6 +3333,20 @@
                     ctl.disabled = false;
                 }
                 if (resp && resp.rows) { refreshProjectRows(resp.rows); }
+                // O-2d: fase finalizadora com itens abertos abaixo — o servidor
+                // não gravou nada e manda a pergunta pronta; confirmada, reenvia
+                // com force=1 (só Super-Admin/gestor recebem a pergunta).
+                if (resp && resp.confirm && !data.force) {
+                    if (window.confirm(resp.confirm)) {
+                        post(Object.assign({}, data, { force: 1 }), null);
+                    }
+                    return;
+                }
+                // Cascata feita: tarefas e subprojetos mudaram em toda a
+                // árvore — recarrega a tela para nenhum número ficar velho.
+                if (resp && resp.ok && data.force) {
+                    window.location.reload();
+                }
             });
         };
 

@@ -425,20 +425,39 @@
         if (!card || card.state_id === newStateId) {
             return;
         }
-        ppPost(state.ajaxUrl, {
-            action: 'kanban_move',
-            project_id: cardId,
-            projectstates_id: newStateId,
-            _glpi_csrf_token: state.csrf,
-        }, function (resp) {
-            if (resp && resp.csrf) { state.csrf = resp.csrf; }
-            if (resp && resp.ok) {
-                applyCardState(state.data, cardId, newStateId);
-            } else if (resp && resp.message) {
-                window.alert(resp.message);
-            }
-            render(state._holder, state);
-        });
+        // O-2d: fase finalizadora com itens abertos abaixo — o servidor manda
+        // a pergunta pronta (`confirm`) sem gravar; confirmada, reenvia com
+        // force=1 e a árvore é finalizada. O cartão recalculado volta junto.
+        const send = function (force) {
+            const data = {
+                action: 'kanban_move',
+                project_id: cardId,
+                projectstates_id: newStateId,
+                _glpi_csrf_token: state.csrf,
+            };
+            if (force) { data.force = 1; }
+            ppPost(state.ajaxUrl, data, function (resp) {
+                if (resp && resp.csrf) { state.csrf = resp.csrf; }
+                if (resp && resp.confirm && !force) {
+                    if (window.confirm(resp.confirm)) {
+                        send(true);
+                        return;
+                    }
+                    render(state._holder, state);
+                    return;
+                }
+                if (resp && resp.ok) {
+                    const K = window.ProjectPlusKanban || {};
+                    if (!(resp.card && typeof K.applyFreshCard === 'function' && K.applyFreshCard(state, card, resp.card))) {
+                        applyCardState(state.data, cardId, newStateId);
+                    }
+                } else if (resp && resp.message) {
+                    window.alert(resp.message);
+                }
+                render(state._holder, state);
+            });
+        };
+        send(false);
     }
 
     // Escapa texto que entra em HTML/atributo montado por concatenacao.
@@ -472,7 +491,7 @@
     }
 
     // Exposto só para os testes isolados (jsdom).
-    ProjectPlusProjectKanban._test = { visibleCards: visibleCards, applyCardState: applyCardState, cardEl: cardEl };
+    ProjectPlusProjectKanban._test = { moveProjectPhase: moveProjectPhase /* O-2d */, visibleCards: visibleCards, applyCardState: applyCardState, cardEl: cardEl };
 
     window.ProjectPlusProjectKanban = ProjectPlusProjectKanban;
 })();

@@ -10,7 +10,10 @@
  * de ok/message, `meta` (Dashboard::getProjectMeta) e `rows` (linhas da
  * tabela de projetos do próprio projeto e dos ancestrais), para o JS
  * redesenhar a faixa e as linhas sem recarregar a página:
- * POST action=state        project_id, projectstates_id (mesma trava do kanban_move)
+ * POST action=state        project_id, projectstates_id (mesma porta do kanban_move)
+ *                          O-2d: fase finalizadora com itens abertos abaixo →
+ *                          `confirm` (pergunta) para Super-Admin/gestor, que
+ *                          reenvia com force=1; equipe recebe a recusa
  * POST action=dates        project_id, plan_start_date, plan_end_date (Y-m-d ou vazio)
  * POST action=percent      project_id, percent (0-100; recusado com auto ligado)
  * POST action=auto_percent project_id, value (0|1) — auto_percent_done nativo
@@ -32,6 +35,7 @@
 
 use GlpiPlugin\Projectplus\Access;
 use GlpiPlugin\Projectplus\Dashboard;
+use GlpiPlugin\Projectplus\ProjectFinish;
 use GlpiPlugin\Projectplus\ProjectKanban;
 use GlpiPlugin\Projectplus\ProjectManager;
 use GlpiPlugin\Projectplus\ProjectTracking;
@@ -86,22 +90,52 @@ function pp_project_for_team(): Project
 }
 
 /**
- * Trava de fase finalizada — MESMA regra da guarda da ficha nativa
- * (TaskDep::onProjectPreUpdate, hook PRE_ITEM_UPDATE). A recusa é
- * ANTECIPADA para devolver mensagem: o hook só removeria o campo, em
- * silêncio (lição 7). $extra vai junto na resposta de recusa.
+ * O-2d (27/10/2026) — porta da fase FINALIZADORA do projeto (substitui a
+ * trava antiga, que só recusava). Não sendo fase finalizadora, ou sem nada
+ * aberto abaixo, passa direto (o hook põe o projeto em 100%). Com itens não
+ * finalizados (ProjectFinish::openItems — a árvore inteira):
+ *   - quem não pode confirmar (equipe) recebe a recusa de antes;
+ *   - Super-Admin/gestor sem `force=1` recebe `confirm` (a pergunta pronta)
+ *     e NADA é gravado — o JS pergunta e reenvia com `force=1`;
+ *   - com `force=1`, finaliza tudo abaixo, de baixo para cima.
+ * $extra() vai junto nas respostas de recusa/pergunta (estado real do banco).
+ * Devolve true quando a cascata rodou (o update do projeto roda com
+ * ProjectFinish::$running ligado).
  */
-function pp_state_guard(Project $project, int $newState, array $extra = []): void
+function pp_finish_gate(Project $project, int $newState, callable $extra): bool
 {
-    if ($newState > 0 && in_array($newState, TaskDep::finishedStateIds(), true)) {
-        $open = TaskDep::projectOpenChildrenNames((int) $project->getID());
-        if (!empty($open)) {
-            pp_reply(['ok' => false, 'message' => sprintf(
-                __('Não é possível mover para uma fase finalizada — %d item(ns) aberto(s): %s', 'projectplus'),
-                count($open),
-                implode(', ', array_slice($open, 0, 5)) . (count($open) > 5 ? '…' : '')
-            )] + $extra);
-        }
+    if ($newState <= 0 || !in_array($newState, TaskDep::finishedStateIds(), true)) {
+        return false;
+    }
+    $pid  = (int) $project->getID();
+    $open = ProjectFinish::openItems($pid);
+    $sum  = ProjectFinish::summary($open);
+    if ($sum['count'] === 0) {
+        return false;
+    }
+    if (!ProjectFinish::canForce($project)) {
+        pp_reply(['ok' => false, 'message' => ProjectFinish::refuseText($sum)] + $extra());
+    }
+    if (empty($_POST['force'])) {
+        pp_reply([
+            'ok'         => false,
+            'confirm'    => ProjectFinish::confirmText($sum),
+            'open_count' => $sum['count'],
+        ] + $extra());
+    }
+    ProjectFinish::finishBelow($pid, $newState, $open);
+    return true;
+}
+
+/** O-2d — update do projeto; com a cascata feita, sem as travas dos hooks. */
+function pp_update_project(Project $project, array $input, bool $forced): bool
+{
+    $was = ProjectFinish::$running;
+    ProjectFinish::$running = $forced || $was;
+    try {
+        return (bool) $project->update($input);
+    } finally {
+        ProjectFinish::$running = $was;
     }
 }
 
@@ -230,24 +264,13 @@ switch ($action) {
             pp_reply(['ok' => true, 'project_id' => (int) $project->getID(), 'state_id' => $newState]);
         }
 
-        // MESMA regra da guarda de fase da ficha nativa
-        // (TaskDep::onProjectPreUpdate, hook PRE_ITEM_UPDATE): projeto com
-        // tarefa aberta ou subprojeto não concluído não vai para fase
-        // finalizada. Aqui a recusa é ANTECIPADA para devolver a mensagem
-        // ao JS — o hook apenas removeria o campo do update, e a tela
-        // "voltaria sozinha" sem explicação.
-        if ($newState > 0 && in_array($newState, TaskDep::finishedStateIds(), true)) {
-            $open = TaskDep::projectOpenChildrenNames((int) $project->getID());
-            if (!empty($open)) {
-                pp_reply(['ok' => false, 'message' => sprintf(
-                    __('Não é possível mover para uma fase finalizada — %d item(ns) aberto(s): %s', 'projectplus'),
-                    count($open),
-                    implode(', ', array_slice($open, 0, 5)) . (count($open) > 5 ? '…' : '')
-                )]);
-            }
-        }
+        // O-2d: fase finalizadora com itens abertos abaixo → recusa (equipe)
+        // ou pergunta "Finalizar mesmo assim?" (Super-Admin/gestor); com
+        // `force=1`, finaliza a árvore antes. A resposta leva o cartão real.
+        $pid    = (int) $project->getID();
+        $forced = pp_finish_gate($project, $newState, static fn () => ['card' => ProjectKanban::cardFor($pid)]);
 
-        $ok = $project->update(['id' => $project->getID(), 'projectstates_id' => $newState]);
+        $ok = pp_update_project($project, ['id' => $pid, 'projectstates_id' => $newState], $forced);
 
         // Defesa: se algum outro hook reverter o campo (lição 7), o update
         // volta "true" sem ter mudado nada — confere no banco antes de dizer
@@ -264,13 +287,15 @@ switch ($action) {
                 'ok'      => false,
                 'state_id' => $applied,
                 'message' => __('A fase não pôde ser alterada.', 'projectplus'),
+                'card'    => ProjectKanban::cardFor($pid), // O-2d
             ]);
         }
 
         // Mesmo carimbo de atividade das demais telas do plugin
-        ProjectTracking::touch((int) $project->getID());
+        ProjectTracking::touch($pid);
 
-        pp_reply(['ok' => true, 'project_id' => (int) $project->getID(), 'state_id' => $newState]);
+        // O-2d: o cartão recalculado (100%, tag) volta junto
+        pp_reply(['ok' => true, 'project_id' => $pid, 'state_id' => $newState, 'card' => ProjectKanban::cardFor($pid)]);
         break;
 
     case 'state':
@@ -278,8 +303,9 @@ switch ($action) {
         $pid      = (int) $project->getID();
         $newState = (int) ($_POST['projectstates_id'] ?? 0);
         if ($newState !== (int) ($project->fields['projectstates_id'] ?? 0)) {
-            pp_state_guard($project, $newState, pp_project_payload($pid));
-            $ok = $project->update(['id' => $pid, 'projectstates_id' => $newState]);
+            // O-2d: recusa, pergunta ou cascata (ver pp_finish_gate)
+            $forced = pp_finish_gate($project, $newState, static fn () => pp_project_payload($pid));
+            $ok = pp_update_project($project, ['id' => $pid, 'projectstates_id' => $newState], $forced);
             if (!$ok || pp_applied_state($pid, $newState) !== $newState) {
                 pp_reply(['ok' => false, 'message' => __('A fase não pôde ser alterada.', 'projectplus')]
                     + pp_project_payload($pid));

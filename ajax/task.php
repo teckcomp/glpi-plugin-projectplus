@@ -124,6 +124,13 @@ function pp_with_card(array $payload, int $taskId): array
     return $payload;
 }
 
+/** O-2d — % gravado da tarefa (relido do banco depois do update). */
+function pp_task_percent(int $taskId): int
+{
+    $fresh = new ProjectTask();
+    return $fresh->getFromDB($taskId) ? (int) ($fresh->fields['percent_done'] ?? 0) : 0;
+}
+
 /** O-2b — data `AAAA-MM-DD` do POST (vazio = limpar); null = inválida. */
 function pp_post_date(string $value, string $time): ?string
 {
@@ -374,7 +381,9 @@ switch ($action) {
             'id'               => $tid,
             'projectstates_id' => $newState,
         ]);
-        pp_reply(pp_with_card(['ok' => (bool) $ok], $tid));
+        // O-2d: fase finalizadora leva a tarefa a 100% (hook) — o % real volta
+        // na resposta para o painel/Minhas tarefas redesenharem a linha.
+        pp_reply(pp_with_card(['ok' => (bool) $ok, 'percent' => pp_task_percent($tid)], $tid));
         break;
 
     case 'percent':
@@ -464,7 +473,14 @@ switch ($action) {
         }
 
         $ok = $task->update(['id' => $task->getID(), 'projectstates_id' => $newState]);
-        pp_reply(['ok' => (bool) $ok, 'task_id' => (int) $task->getID(), 'state_id' => $newState]);
+        // O-2d: a fase finalizadora leva a tarefa a 100% (hook) — o cartão
+        // recalculado volta junto para o board redesenhar % e tag.
+        pp_reply([
+            'ok'       => (bool) $ok,
+            'task_id'  => (int) $task->getID(),
+            'state_id' => $newState,
+            'card'     => Kanban::cardFor((int) $task->getID()),
+        ]);
         break;
 
     case 'team_add':

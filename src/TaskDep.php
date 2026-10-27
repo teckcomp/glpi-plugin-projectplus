@@ -700,7 +700,7 @@ class TaskDep extends CommonGLPI
      */
     public static function onProjectPreUpdate(Project $item): void
     {
-        if (!isset($item->input['projectstates_id'])) {
+        if (!is_array($item->input) || !isset($item->input['projectstates_id'])) {
             return;
         }
         $newState = (int) $item->input['projectstates_id'];
@@ -710,8 +710,14 @@ class TaskDep extends CommonGLPI
             return;
         }
 
-        $open = self::projectOpenChildrenNames((int) $item->getID());
+        // O-2d: finalização em cascata confirmada ("Finalizar mesmo assim")
+        // — a árvore já foi finalizada de baixo para cima; não recusa.
+        $open = ProjectFinish::$running ? [] : self::projectOpenChildrenNames((int) $item->getID());
         if (empty($open)) {
+            // O-2d (27/10/2026): fase finalizadora FINALIZA — o projeto vai
+            // junto para 100% (vale também na ficha nativa). Com o cálculo
+            // automático ligado, o core recalcula pela média, que já é 100.
+            $item->input['percent_done'] = 100;
             return;
         }
 
@@ -800,8 +806,17 @@ class TaskDep extends CommonGLPI
         if ($newState === $oldState) {
             return;
         }
-        $msg = self::finishedMoveBlock((int) $item->getID(), $newState);
+        // O-2d: na finalização em cascata do projeto ("Finalizar mesmo
+        // assim") a trava não vale — a cascata já vai de baixo para cima.
+        $msg = ProjectFinish::$running ? null : self::finishedMoveBlock((int) $item->getID(), $newState);
         if ($msg === null) {
+            // O-2d (27/10/2026): fase finalizadora FINALIZA — a tarefa vai
+            // junto para 100%, em qualquer caminho (Kanban, modal, painel,
+            // Minhas tarefas, ficha nativa). Sobrepõe o % que veio no
+            // formulário da ficha nativa.
+            if ($newState > 0 && in_array($newState, self::finishedStateIds(), true)) {
+                $item->input['percent_done'] = 100;
+            }
             return;
         }
         unset($item->input['projectstates_id']);

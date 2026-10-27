@@ -554,7 +554,11 @@
         }, function (resp) {
             if (resp && resp.csrf) { state.csrf = resp.csrf; }
             if (resp && resp.ok) {
-                applyCardState(state.data, cardId, newStateId);
+                // O-2d: o cartão recalculado (fase finalizadora = 100%) volta
+                // junto; sem ele, só a fase muda, como antes.
+                if (!(resp.card && qeApplyCard(state, card, resp.card))) {
+                    applyCardState(state.data, cardId, newStateId);
+                }
             } else if (resp && resp.message) {
                 window.alert(resp.message);
             }
@@ -866,6 +870,21 @@
             build(r);
         });
 
+        // O-2d: o % do modal acompanha o cartão (a fase finalizadora leva a
+        // 100% no servidor). Refs preenchidas pelo build().
+        let pctNum = null, pctRange = null, pctAuto = null;
+        function refreshPercent() {
+            const v = String(Number(card.percent) || 0);
+            if (pctNum) {
+                pctNum.value = v;
+                pctNum.dataset.ppPrev = v;
+                if (pctRange) { pctRange.value = v; }
+            }
+            if (pctAuto) {
+                pctAuto.textContent = v + '% — ' + __('calculado automaticamente');
+            }
+        }
+
         function refreshDeadline() {
             const dd = qeDd(el, 'deadline');
             if (!dd) { return; }
@@ -886,6 +905,18 @@
                 if (r.card && qeApplyCard(state, card, r.card)) {
                     if (typeof opts.onChange === 'function') { opts.onChange(); }
                     refreshDeadline();
+                    refreshPercent(); // O-2d: fase finalizadora = 100%
+                }
+                // O-2d: projeto indo para fase finalizadora com itens abertos —
+                // pergunta pronta do servidor; confirmada, reenvia com force=1.
+                if (r.confirm && !data.force) {
+                    if (window.confirm(r.confirm)) {
+                        save(dd, Object.assign({}, data, { force: 1 }), onOk, onFail);
+                        return;
+                    }
+                    qeMsg(dd, '', '');
+                    if (onFail) { onFail(r); }
+                    return;
                 }
                 if (r.ok) {
                     qeMsg(dd, __('Salvo'), 'ok');
@@ -952,6 +983,7 @@
                     t.textContent = Number(r.percent) + '% — ' + __('calculado automaticamente');
                     t.className = 'pp-im__auto';
                     dd.appendChild(t);
+                    pctAuto = t;
                 } else {
                     const row = document.createElement('div');
                     row.className = 'pp-im__pct';
@@ -984,6 +1016,8 @@
                         num.dispatchEvent(new Event('change'));
                     });
                     const ddPct = dd;
+                    pctNum = num;
+                    pctRange = range;
                     bindInput(num, ddPct, function (v) {
                         const n = Math.round(Number(v));
                         if (v === '' || isNaN(n)) { return null; }
@@ -1076,6 +1110,7 @@
     }
     ProjectPlusKanban.quickEdit = quickEdit;
     ProjectPlusKanban._qeApplyCard = qeApplyCard; // harness
+    ProjectPlusKanban.applyFreshCard = qeApplyCard; // O-2d: Kanban de projetos
 
     // Bloco N-5: cartão em atraso (prazo estourado) ganha a borda vermelha.
     function isLate(d) {
@@ -1354,7 +1389,7 @@
     ProjectPlusKanban.bindFullscreen = bindFullscreen;
 
     // Exposto só para os testes isolados (jsdom) do Bloco 2a.
-    ProjectPlusKanban._test = { applyCardState: applyCardState, laneZebra: laneZebra, laneCount: laneCount,
+    ProjectPlusKanban._test = { moveCardPhase: moveCardPhase /* O-2d */, applyCardState: applyCardState, laneZebra: laneZebra, laneCount: laneCount,
         laneOpenDefaultFor: laneOpenDefaultFor, subtreeIds: subtreeIds, cardEl: cardEl, isLate: isLate };
 
     window.ProjectPlusKanban = ProjectPlusKanban;
