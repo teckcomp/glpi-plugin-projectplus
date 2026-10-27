@@ -153,6 +153,21 @@ class ProjectKanban
             }
         }
 
+        // O-2a (26/10/2026): o modal do cartão mostra TODOS os gestores
+        // (tabela própria, O-1a/O-1c) e o cartão ganha o 💬 do projeto.
+        $mgrIds = ProjectManager::managersOfMany($ids);
+        $allMgr = [];
+        foreach ($mgrIds as $uids) {
+            foreach ($uids as $uid) {
+                $allMgr[$uid] = true;
+            }
+        }
+        $mgrName = [];
+        foreach (ProjectManager::namesOf(array_keys($allMgr)) as $u) {
+            $mgrName[$u['id']] = $u['name'];
+        }
+        $comments = TaskComment::countForProjects($ids);
+
         $cards         = [];
         $sawExtraState = false;
         foreach ($rows as $row) {
@@ -187,6 +202,13 @@ class ProjectKanban
                 'manager'     => $manager !== '' ? $manager : __('Sem gestor', 'projectplus'),
                 'tasks_total' => $taskTotal[$id] ?? 0,
                 'tasks_done'  => $taskDone[$id] ?? 0,
+                // O-2a: dados do modal do cartão
+                'managers'    => array_values(array_map(
+                    static fn ($uid) => $mgrName[$uid] ?? ('#' . $uid),
+                    $mgrIds[$id] ?? []
+                )),
+                'comments'    => $comments[$id] ?? 0,
+                'start_label' => DateFmt::date($row['plan_start_date'], ''),
                 // Bloco N-5: prazo final no rodapé do cartão (formato do usuário)
                 'end_label'   => DateFmt::date($row['plan_end_date'], ''),
                 'deadline'    => Deadline::compute(

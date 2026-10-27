@@ -2346,3 +2346,47 @@ label.pp-cfg-row__label { cursor: pointer; }
 .pp-te .pp-tpl-projmeta .pp-tpl-field--user { min-width: 0; }
 .pp-te .pp-tpl-projmeta .pp-tpl-field--user .pp-ss { width: 100%; max-width: none; }
 .pp-te .pp-tpl-projmeta .pp-tpl-meta > .pp-tpl-check.pp-switch { grid-column: 1 / -1; justify-self: start; white-space: nowrap; }
+
+/* ===== O-2a (26/10/2026) — tarefa/projeto aberto no próprio Kanban =====
+   Modal central (ProjectPlus.itemModal) sobre o .projectplus-modal do Bloco 2.
+   Entra DENTRO do widget do Kanban — na tela cheia (z 1500) ele vai junto e
+   fica por cima (z 2000 do .projectplus-modal). Cores só por variável. */
+.pp-im .pp-im__box { display: flex; flex-direction: column; }
+.pp-im__head { align-items: flex-start; gap: 12px; }
+.pp-im__titles { min-width: 0; }
+.pp-im__titles h3 { color: var(--pp-text-strong); overflow-wrap: anywhere; }
+.pp-im__sub { margin-top: 2px; font-size: 0.82rem; color: var(--pp-muted); overflow-wrap: anywhere; }
+.pp-im__body { padding: 14px 20px 6px; }
+.pp-im__grid {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 12px 18px; margin: 0;
+}
+.pp-im__field { min-width: 0; }
+.pp-im__field--wide { grid-column: 1 / -1; }
+.pp-im__field dt {
+    margin: 0 0 3px; font-size: 0.7rem; font-weight: 700; color: var(--pp-muted);
+    text-transform: uppercase; letter-spacing: .4px;
+}
+.pp-im__field dd { margin: 0; font-size: 0.9rem; color: var(--pp-text); overflow-wrap: anywhere; }
+.pp-im__field .pp-phase { max-width: 100%; }
+.pp-im__field .pp-kb-card-item__dl { max-width: 360px; }
+.pp-im__note {
+    margin: 12px 0 0; padding: 6px 10px; border-radius: 6px; font-size: 0.82rem;
+    color: var(--pp-danger-text); background: var(--pp-danger-soft); border: 1px solid var(--pp-danger-border);
+}
+.pp-im__sect {
+    margin: 16px 0 6px; padding-top: 12px; border-top: 1px solid var(--pp-border);
+    font-size: 0.85rem; font-weight: 700; color: var(--pp-text-strong);
+}
+.pp-im__sect .ti { margin-right: 4px; color: var(--pp-accent); }
+.pp-im__cmts .pp-cmt-panel { padding: 0 0 6px; border-left: 0; }
+.pp-im__foot {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 12px 20px; border-top: 1px solid var(--pp-border);
+}
+.pp-im__full { color: var(--pp-link); font-size: 0.85rem; text-decoration: none; }
+.pp-im__full:hover { text-decoration: underline; }
+.pp-im__foot .projectplus-btn:only-child { margin-left: auto; }
+@media (max-width: 560px) {
+    .pp-im__grid { grid-template-columns: minmax(0, 1fr); }
+}

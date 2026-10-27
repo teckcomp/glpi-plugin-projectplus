@@ -207,6 +207,38 @@ class TaskComment extends CommonDBTM
         return $n;
     }
 
+    /**
+     * O-2a — comentários de VÁRIOS projetos numa consulta (cartões do Kanban
+     * de projetos). Só os do projeto (projecttasks_id 0), contados em PHP
+     * (lição 1).
+     *
+     * @param int[] $projectIds
+     * @return array<int,int> [projects_id => total]
+     */
+    public static function countForProjects(array $projectIds): array
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        $projectIds = array_values(array_filter(array_map('intval', $projectIds)));
+        if ($projectIds === [] || !$DB->tableExists(self::getTable())
+            || !$DB->fieldExists(self::getTable(), 'projects_id')) {
+            return [];
+        }
+        $counts = [];
+        foreach (
+            $DB->request([
+                'SELECT' => 'projects_id',
+                'FROM'   => self::getTable(),
+                'WHERE'  => ['projecttasks_id' => 0, 'projects_id' => $projectIds],
+            ]) as $row
+        ) {
+            $pid          = (int) $row['projects_id'];
+            $counts[$pid] = ($counts[$pid] ?? 0) + 1;
+        }
+        return $counts;
+    }
+
     private static function getWhere(array $where): array
     {
         /** @var \DBmysql $DB */

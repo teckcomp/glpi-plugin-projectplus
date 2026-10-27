@@ -235,6 +235,9 @@ class I18nJs
 
                 // ---- anexos de comentários (Rodada 3, Bloco 4) ----
                 'Anexar arquivo'           => __('Anexar arquivo', 'projectplus'),
+                // O-2a — modal da tarefa/projeto no Kanban
+                'Fechar'                   => __('Fechar', 'projectplus'),
+                'Abrir ficha completa'     => __('Abrir ficha completa', 'projectplus'),
             ],
 
             'p' => [

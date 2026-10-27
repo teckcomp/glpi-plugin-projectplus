@@ -122,6 +122,7 @@
             laneFlip: new Set(),
             optsLanesOpen: (typeof opts.lanesOpen === 'boolean') ? opts.lanesOpen : null,
             _holder: holder,           // referência estável p/ handlers de re-render
+            _root: root,               // O-2a: o modal entra no widget (vai junto na tela cheia)
             // Bloco 2a — arrastar-e-soltar (mudar fase): endpoint + token
             // (rotacionado a cada resposta) + permissão de edição.
             ajaxUrl: root.dataset.ajaxUrl || null,
@@ -622,6 +623,9 @@
         // o link é draggable por padrão no HTML — desliga pra o arraste do
         // cartão não virar "arrastar o link".
         a.draggable = false;
+        // O-2a: clique simples abre a tarefa no próprio Kanban (modal);
+        // Ctrl/⌘/Shift/botão do meio seguem abrindo a ficha em aba nova.
+        bindCardOpen(a, function () { openTaskModal(state, c, byId, a); });
 
         // Bloco N-5: bloqueio por dependência = cadeado (ícone) antes do nome.
         const name = document.createElement('span');
@@ -670,6 +674,88 @@
 
         return wrap;
     }
+
+    // ------------------------------------------------------------------
+    // O-2a (26/10/2026) — abrir a tarefa no próprio Kanban. O modal é o
+    // ProjectPlus.itemModal (projectplus.js, carregado em todas as telas pelo
+    // setup.php); sem ele, o link segue para a ficha nativa como antes.
+    // ------------------------------------------------------------------
+    function bindCardOpen(link, open) {
+        link.addEventListener('click', function (e) {
+            if (e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) {
+                return;
+            }
+            if (!window.ProjectPlus || typeof window.ProjectPlus.itemModal !== 'function') {
+                return;
+            }
+            e.preventDefault();
+            open();
+        });
+    }
+    ProjectPlusKanban.bindCardOpen = bindCardOpen;
+
+    // Base dos endpoints a partir do data-ajax-url do widget
+    // (…/ajax/task.php ou …/ajax/project.php → …/ajax/).
+    function ajaxBase(ajaxUrl) {
+        return ajaxUrl ? String(ajaxUrl).replace(/[^\/]+$/, '') : null;
+    }
+    ProjectPlusKanban.ajaxBase = ajaxBase;
+
+    // Chip da fase (mesmo componente .pp-phase do painel, cor da coluna).
+    function phaseEl(columns, stateId) {
+        let col = null;
+        (columns || []).forEach(function (cl) { if (cl.id === stateId) { col = cl; } });
+        const chip = document.createElement('span');
+        chip.className = 'pp-phase';
+        if (col && col.color) { chip.style.setProperty('--pp-phase-color', col.color); }
+        chip.textContent = col ? col.name : '—';
+        return chip;
+    }
+    ProjectPlusKanban.phaseEl = phaseEl;
+
+    function openTaskModal(state, c, byId, opener) {
+        const base = ajaxBase(state.ajaxUrl);
+        const subtitle = [c.project_name];
+        if (c.task_parent_id) {
+            const parent = byId[c.task_parent_id];
+            subtitle.push(__('Subtarefa da tarefa: %s', parent ? parent.name : '—'));
+        }
+        const team = Array.isArray(c.team_names) && c.team_names.length
+            ? c.team_names.join(', ')
+            : (c.responsible_name || __('Sem responsável'));
+        let changed = false;
+        window.ProjectPlus.itemModal({
+            host: state._root || document.body,
+            title: c.name,
+            subtitle: subtitle,
+            fields: [
+                { label: __('Fase'), node: phaseEl(state.data.columns, c.state_id) },
+                { label: __('Progresso'), text: c.percent + '% ' + __('concluído') },
+                { label: __('Início planejado'), text: c.start_label },
+                { label: __('Fim planejado'), text: c.end_label },
+                { label: __('Responsáveis'), text: team, wide: true },
+                (c.deadline && c.deadline.state !== 'done' && c.deadline.state !== 'none')
+                ? { label: __('Prazo'), node: deadlineEl(c.deadline), wide: true }
+                : { label: __('Prazo'), text: (c.is_done || (c.deadline && c.deadline.state === 'done')) ? __('Concluída') : (c.deadline && c.deadline.state === 'none' ? __('Sem datas planejadas — corrija o planejamento') : ''), wide: true },
+            ],
+            note: c.blocked ? __('Bloqueada — veja as dependências') : '',
+            url: c.url,
+            opener: opener,
+            comments: base ? {
+                id: c.id,
+                kind: 'task',
+                readUrl: base + 'dashboard_data.php',
+                postUrl: base + 'comment.php',
+                csrf: state.csrf,
+                onCsrf: function (t) { state.csrf = t; },
+                onCount: function (n) { c.comments = n; changed = true; },
+            } : null,
+            onClose: function () {
+                if (changed) { render(state._holder, state); }
+            },
+        });
+    }
+    ProjectPlusKanban.openTaskModal = openTaskModal;
 
     // Bloco N-5: cartão em atraso (prazo estourado) ganha a borda vermelha.
     function isLate(d) {

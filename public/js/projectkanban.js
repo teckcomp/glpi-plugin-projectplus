@@ -93,6 +93,7 @@
             query: '',
             data: data,
             _holder: holder,                       // referência estável p/ re-render
+            _root: root,                           // O-2a: o modal entra no widget
             ajaxUrl: root.dataset.ajaxUrl || null, // ajax/project.php
             csrf: root.dataset.csrf || null,
             canEdit: root.dataset.canEdit === '1',
@@ -248,6 +249,11 @@
         a.rel = 'noopener';
         a.className = 'pp-kb-card-item__link';
         a.draggable = false;
+        // O-2a: clique simples abre o projeto no próprio Kanban (modal).
+        const K = window.ProjectPlusKanban;
+        if (K && typeof K.bindCardOpen === 'function') {
+            K.bindCardOpen(a, function () { openProjectModal(state, c, a); });
+        }
 
         const name = document.createElement('span');
         name.className = 'pp-kb-card-item__name';
@@ -269,6 +275,9 @@
         let text = c.percent + '% ' + __('concluído');
         if (c.tasks_total > 0) {
             text += '  •  ' + c.tasks_done + '/' + c.tasks_total + ' ' + __('tarefas');
+        }
+        if (c.comments > 0) {
+            text += '  💬' + Number(c.comments); // O-2a
         }
         badges.textContent = text;
         foot.appendChild(badges);
@@ -300,6 +309,52 @@
     // Ajuste 4b.2 — persistência do arrastar (mudar fase do projeto), com
     // rotação de token: todo endpoint AJAX devolve 'csrf' novo na resposta.
     // ------------------------------------------------------------------
+    // ------------------------------------------------------------------
+    // O-2a (26/10/2026) — abrir o projeto no próprio Kanban: mesmo modal do
+    // board de tarefas (ProjectPlus.itemModal), com o 💬 do PROJETO.
+    // ------------------------------------------------------------------
+    function openProjectModal(state, c, opener) {
+        const K = window.ProjectPlusKanban || {};
+        const base = typeof K.ajaxBase === 'function' ? K.ajaxBase(state.ajaxUrl) : null;
+        const managers = Array.isArray(c.managers) && c.managers.length
+            ? c.managers.join(', ')
+            : (c.manager || '');
+        let changed = false;
+        const fields = [
+            { label: __('Fase'), node: typeof K.phaseEl === 'function' ? K.phaseEl(state.data.columns, c.state_id) : null },
+            { label: __('Progresso'), text: c.percent + '% ' + __('concluído') },
+            { label: __('Início planejado'), text: c.start_label },
+            { label: __('Fim planejado'), text: c.end_label },
+            { label: __('Gestores'), text: managers },
+            { label: __('Tarefas'), text: c.tasks_total > 0 ? (c.tasks_done + '/' + c.tasks_total + ' ' + __('concluídas')) : '' },
+            (c.deadline && c.deadline.state !== 'done' && c.deadline.state !== 'none')
+                ? { label: __('Prazo'), node: deadlineEl(c.deadline), wide: true }
+                : { label: __('Prazo'), text: (c.is_done || (c.deadline && c.deadline.state === 'done')) ? __('Concluído') : (c.deadline && c.deadline.state === 'none' ? __('Sem datas planejadas — corrija o planejamento') : ''), wide: true },
+        ];
+        if (!fields[0].node) { fields[0] = { label: __('Fase'), text: '' }; }
+        window.ProjectPlus.itemModal({
+            host: state._root || document.body,
+            title: c.name,
+            subtitle: c.parent_id ? [__('Subprojeto de: %s', c.parent_name || '—')] : [],
+            fields: fields,
+            url: c.url,
+            opener: opener,
+            comments: base ? {
+                id: c.id,
+                kind: 'project',
+                readUrl: base + 'dashboard_data.php',
+                postUrl: base + 'comment.php',
+                csrf: state.csrf,
+                onCsrf: function (t) { state.csrf = t; },
+                onCount: function (n) { c.comments = n; changed = true; },
+            } : null,
+            onClose: function () {
+                if (changed) { render(state._holder, state); }
+            },
+        });
+    }
+    ProjectPlusProjectKanban.openProjectModal = openProjectModal;
+
     function ppPost(url, data, onDone) {
         const body = new URLSearchParams();
         Object.keys(data).forEach(function (k) { body.append(k, data[k]); });

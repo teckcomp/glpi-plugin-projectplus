@@ -1629,6 +1629,9 @@
     let ppData = { states: [], users: [], current_user_id: 0, phases_by_type: {} };
     let ppDataUrl = null;      // ajax/dashboard_data.php (leituras)
     let ppCommentUrl = null;   // ajax/comment.php (Etapa 3, Bloco 2)
+    // O-2a: quem abriu o 💬 fora do painel (modal do Kanban) recebe o token
+    // novo a cada resposta — o Kanban usa o MESMO token no arrastar.
+    let ppCsrfSink = null;
     let ppDepUrl = null;       // ajax/taskdep.php (Etapa 3, Bloco 3)
     let ppProjectUrl = null;   // ajax/project.php (Bloco D-3a, faixa "Projeto")
 
@@ -2475,6 +2478,10 @@
 
     // Atualiza o badge 💬 da linha sem recarregar a tabela
     function setCommentCount(row, count) {
+        // O-2a: o modal do Kanban passa um "dono" com ppOnCount no lugar da linha.
+        if (row && typeof row.ppOnCount === 'function' && typeof count !== 'undefined') {
+            row.ppOnCount(parseInt(count, 10) || 0);
+        }
         const btn = row.querySelector('.pp-cmt-btn');
         if (!btn || typeof count === 'undefined') { return; }
         const n = parseInt(count, 10) || 0;
@@ -2491,6 +2498,126 @@
             span.remove();
         }
     }
+
+    // ------------------------------------------------------------------
+    // O-2a (26/10/2026) — tarefa/projeto aberto no PRÓPRIO Kanban.
+    //
+    // Modal central (decisão do Claudio) com os dados do cartão, o 💬 do
+    // painel (mesmo componente: loadComments/renderComments) e o link para a
+    // ficha nativa. Os dois Kanbans (kanban.js e projectkanban.js) chamam
+    // ProjectPlus.itemModal(opts):
+    //   host      elemento onde o modal entra (o widget — vai junto na tela cheia)
+    //   title     nome; subtitle: linhas de contexto (texto)
+    //   fields    [{label, text}] ou [{label, node}] — só leitura no O-2a
+    //   note      texto de aviso opcional (ex.: bloqueada)
+    //   url       ficha nativa ("Abrir ficha completa", aba nova)
+    //   comments  {id, kind ('task'|'project'), readUrl, postUrl, csrf,
+    //              onCsrf(token), onCount(n)}
+    //   opener    elemento que recebe o foco de volta; onClose()
+    // Só um modal por vez. Fecha no X, no Fechar, no fundo e no Esc.
+    // ------------------------------------------------------------------
+
+    let ppItemModal = null;
+
+    function closeItemModal() {
+        const m = ppItemModal;
+        if (!m) { return; }
+        ppItemModal = null;
+        document.removeEventListener('keydown', m.onKey, true);
+        if (m.el.parentNode) { m.el.parentNode.removeChild(m.el); }
+        if (m.opts.comments) { ppCsrfSink = null; }
+        if (m.opts.opener && typeof m.opts.opener.focus === 'function') {
+            try { m.opts.opener.focus(); } catch (e) { /* elemento já fora da tela */ }
+        }
+        if (typeof m.opts.onClose === 'function') { m.opts.onClose(); }
+    }
+
+    function itemModal(opts) {
+        opts = opts || {};
+        closeItemModal();
+
+        const el = document.createElement('div');
+        el.className = 'projectplus-modal pp-im';
+        const titleId = 'pp-im-title-' + Date.now();
+
+        let html = '<div class="projectplus-modal__backdrop" data-pp-im-close></div>' +
+            '<div class="projectplus-modal__box pp-im__box" role="dialog" aria-modal="true" aria-labelledby="' + titleId + '">' +
+            '<div class="projectplus-modal__head pp-im__head"><div class="pp-im__titles">' +
+            '<h3 id="' + titleId + '">' + escapeHtml(opts.title || '') + '</h3>';
+        (Array.isArray(opts.subtitle) ? opts.subtitle : (opts.subtitle ? [opts.subtitle] : [])).forEach(function (line) {
+            if (line) { html += '<div class="pp-im__sub">' + escapeHtml(line) + '</div>'; }
+        });
+        html += '</div><button type="button" class="projectplus-modal__x" data-pp-im-close title="' +
+            escapeHtml(__('Fechar')) + '" aria-label="' + escapeHtml(__('Fechar')) + '">&times;</button></div>' +
+            '<div class="pp-im__body"><dl class="pp-im__grid"></dl>';
+        if (opts.note) {
+            html += '<p class="pp-im__note"><i class="ti ti-lock" aria-hidden="true"></i> ' + escapeHtml(opts.note) + '</p>';
+        }
+        if (opts.comments) {
+            html += '<h4 class="pp-im__sect"><i class="ti ti-message" aria-hidden="true"></i> ' +
+                escapeHtml(__('Comentários')) + '</h4><div class="pp-im__cmts"><div class="pp-cmt-panel">' +
+                '<span class="projectplus-muted">' + escapeHtml(__('Carregando comentários…')) + '</span></div></div>';
+        }
+        html += '</div><div class="pp-im__foot">';
+        if (opts.url) {
+            html += '<a class="pp-im__full" target="_blank" rel="noopener" href="' + escapeHtml(opts.url) + '">' +
+                '<i class="ti ti-external-link" aria-hidden="true"></i> ' + escapeHtml(__('Abrir ficha completa')) + '</a>';
+        }
+        html += '<button type="button" class="projectplus-btn projectplus-btn--ghost" data-pp-im-close>' +
+            escapeHtml(__('Fechar')) + '</button></div></div>';
+        el.innerHTML = html;
+
+        // Campos: texto vai por textContent; nó pronto (fase, barra de prazo) é anexado.
+        const grid = el.querySelector('.pp-im__grid');
+        (opts.fields || []).forEach(function (f) {
+            if (!f) { return; }
+            const box = document.createElement('div');
+            box.className = 'pp-im__field' + (f.wide ? ' pp-im__field--wide' : '');
+            const dt = document.createElement('dt');
+            dt.textContent = f.label || '';
+            const dd = document.createElement('dd');
+            if (f.node) {
+                dd.appendChild(f.node);
+            } else {
+                dd.textContent = (f.text === undefined || f.text === null || f.text === '') ? '—' : String(f.text);
+            }
+            box.appendChild(dt);
+            box.appendChild(dd);
+            grid.appendChild(box);
+        });
+
+        el.querySelectorAll('[data-pp-im-close]').forEach(function (b) {
+            b.addEventListener('click', closeItemModal);
+        });
+        const onKey = function (e) {
+            if (e.key === 'Escape') {
+                e.stopPropagation();
+                closeItemModal();
+            }
+        };
+        document.addEventListener('keydown', onKey, true);
+
+        (opts.host || document.body).appendChild(el);
+        ppItemModal = { el: el, opts: opts, onKey: onKey };
+
+        if (opts.comments && opts.comments.id) {
+            const c = opts.comments;
+            ppDataUrl = c.readUrl || ppDataUrl;
+            ppCommentUrl = c.postUrl || ppCommentUrl;
+            if (c.csrf) { ppCsrf = c.csrf; }
+            ppCsrfSink = typeof c.onCsrf === 'function' ? c.onCsrf : null;
+            const owner = document.createElement('div');
+            owner.ppOnCount = typeof c.onCount === 'function' ? c.onCount : null;
+            loadComments(el.querySelector('.pp-im__cmts'), owner, c.id, c.kind === 'project' ? 'project' : undefined);
+        } else {
+            const x = el.querySelector('.projectplus-modal__x');
+            if (x) { x.focus(); }
+        }
+        return el;
+    }
+
+    ProjectPlus.itemModal = itemModal;
+    ProjectPlus.closeItemModal = closeItemModal;
 
     // ------------------------------------------------------------------
     // Dependências entre tarefas (Etapa 3, Bloco 3)
@@ -2747,7 +2874,7 @@
             .then(function (r) { return r.json(); })
             .then(function (resp) {
                 resp = resp || {};
-                if (resp.csrf) { ppCsrf = resp.csrf; }
+                if (resp.csrf) { ppCsrf = resp.csrf; if (ppCsrfSink) { ppCsrfSink(resp.csrf); } }
                 if (resp.ok === false && resp.message) { alert(resp.message); }
                 if (onDone) { onDone(resp); }
             })
@@ -2757,7 +2884,7 @@
     function taskPost(url, data, onDone) {
         data._glpi_csrf_token = ppCsrf;
         postForm(url, data, function (resp) {
-            if (resp && resp.csrf) { ppCsrf = resp.csrf; }
+            if (resp && resp.csrf) { ppCsrf = resp.csrf; if (ppCsrfSink) { ppCsrfSink(resp.csrf); } }
             if (resp && resp.ok === false && resp.message) { alert(resp.message); }
             if (onDone) { onDone(resp || {}); }
         });
@@ -3721,6 +3848,8 @@
         initReportTabs: initReportTabs, // Bloco N-6 (N-7: também a Configuração)
         initTemplateListFilter: initTemplateListFilter, // Bloco N-8b-1
         tplSummary: tplSummary, // Bloco N-8b-2
+        itemModal: itemModal, // O-2a
+        closeItemModal: closeItemModal,
     };
 
     window.ProjectPlus = ProjectPlus;

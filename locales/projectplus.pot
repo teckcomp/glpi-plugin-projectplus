@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ProjectPlus 1.1.0-beta\n"
 "Report-Msgid-Bugs-To: https://github.com/teckcomp/glpi-plugin-projectplus/issues\n"
-"POT-Creation-Date: 2026-10-26 15:33+0000\n"
+"POT-Creation-Date: 2026-10-26 18:56+0000\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -50,17 +50,17 @@ msgstr ""
 msgid "%1$d fase(s) gravada(s) para \"%2$s\""
 msgstr ""
 
-#: src/TaskComment.php:442
+#: src/TaskComment.php:479
 #, php-format
 msgid "%1$s comentou na tarefa \"%2$s\": %3$s"
 msgstr ""
 
-#: src/TaskComment.php:394
+#: src/TaskComment.php:431
 #, php-format
 msgid "%1$s comentou no projeto \"%2$s\": %3$s"
 msgstr ""
 
-#: src/I18nJs.php:258 src/I18nJs.php:259
+#: src/I18nJs.php:261 src/I18nJs.php:262
 #, php-format
 msgid "%d arquivo selecionado"
 msgid_plural "%d arquivos selecionados"
@@ -138,7 +138,7 @@ msgid_plural "%d projetos com teto"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/I18nJs.php:253 src/I18nJs.php:254
+#: src/I18nJs.php:256 src/I18nJs.php:257
 #, php-format
 msgid "%d restante"
 msgid_plural "%d restantes"
@@ -151,21 +151,21 @@ msgid_plural "%d subprojetos"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/I18nJs.php:248 src/I18nJs.php:249
+#: src/I18nJs.php:251 src/I18nJs.php:252
 #, php-format
 msgid "%d subtarefa"
 msgid_plural "%d subtarefas"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/TaskDep.php:705
+#: src/TaskDep.php:767
 #, php-format
 msgid "%d subtarefa aberta"
 msgid_plural "%d subtarefas abertas"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/I18nJs.php:243 src/I18nJs.php:244 templates/dashboard.html.twig:436
+#: src/I18nJs.php:246 src/I18nJs.php:247 templates/dashboard.html.twig:436
 #: templates/projecttemplates.html.twig:73
 #, php-format
 msgid "%d tarefa"
@@ -193,7 +193,7 @@ msgstr ""
 msgid "%s atingiu %d%% do prazo planejado"
 msgstr ""
 
-#: src/Notification.php:322
+#: src/Notification.php:324
 #, php-format
 msgid "%s está sem datas planejadas — corrija o planejamento"
 msgstr ""
@@ -254,7 +254,11 @@ msgstr ""
 msgid "Abrir"
 msgstr ""
 
-#: src/Notification.php:733
+#: src/I18nJs.php:240
+msgid "Abrir ficha completa"
+msgstr ""
+
+#: src/Notification.php:739
 msgid "Abrir no GLPI:"
 msgstr ""
 
@@ -270,15 +274,15 @@ msgstr ""
 msgid "Acima do teto"
 msgstr ""
 
-#: src/I18nJs.php:73 src/TaskDep.php:784
+#: src/I18nJs.php:73 src/TaskDep.php:846
 msgid "Adicionar"
 msgstr ""
 
-#: src/ProjectCost.php:113
+#: src/ProjectCost.php:119
 msgid "Adicionar custo ao projeto"
 msgstr ""
 
-#: src/TaskCost.php:145
+#: src/TaskCost.php:150
 msgid "Adicionar custo à tarefa"
 msgstr ""
 
@@ -342,7 +346,7 @@ msgstr ""
 msgid "Anexar arquivo"
 msgstr ""
 
-#: src/TaskComment.php:542
+#: src/TaskComment.php:579
 msgid "Anexos: imagens, PDF, DOC/DOCX, XLS/XLSX — até 10 MB cada"
 msgstr ""
 
@@ -397,7 +401,7 @@ msgid ""
 "ordem aparecem no Kanban"
 msgstr ""
 
-#: src/TaskDep.php:394
+#: src/TaskDep.php:456
 msgid "As tarefas precisam ser do mesmo projeto"
 msgstr ""
 
@@ -431,7 +435,7 @@ msgstr ""
 msgid "Atualizado às %s"
 msgstr ""
 
-#: src/Reports.php:576 src/TaskComment.php:561
+#: src/Reports.php:576 src/TaskComment.php:598
 msgid "Autor"
 msgstr ""
 
@@ -460,7 +464,7 @@ msgstr ""
 msgid "Bloqueada por"
 msgstr ""
 
-#: src/TaskDep.php:792
+#: src/TaskDep.php:854
 msgid "Bloqueada por (precisam terminar antes)"
 msgstr ""
 
@@ -476,7 +480,7 @@ msgstr ""
 msgid "Bloqueia"
 msgstr ""
 
-#: src/TaskDep.php:793
+#: src/TaskDep.php:855
 msgid "Bloqueia (só concluem depois desta)"
 msgstr ""
 
@@ -598,12 +602,12 @@ msgstr ""
 msgid "Com subprojetos"
 msgstr ""
 
-#: src/I18nJs.php:138 src/TaskComment.php:547
+#: src/I18nJs.php:138 src/TaskComment.php:584
 msgid "Comentar"
 msgstr ""
 
-#: src/ProjectCost.php:138 src/TaskComment.php:42 src/TaskComment.php:563
-#: src/TaskCost.php:170 templates/costs.html.twig:121
+#: src/ProjectCost.php:144 src/TaskComment.php:42 src/TaskComment.php:600
+#: src/TaskCost.php:175 templates/costs.html.twig:121
 #: templates/projecttemplate_edit.html.twig:45
 #: templates/projecttemplates.html.twig:137
 msgid "Comentário"
@@ -611,7 +615,7 @@ msgid_plural "Comentários"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/ProjectCost.php:122 src/TaskCost.php:154
+#: src/ProjectCost.php:128 src/TaskCost.php:159
 msgid "Comentário (opcional)"
 msgstr ""
 
@@ -641,11 +645,11 @@ msgstr ""
 msgid "Comentários (ProjectPlus)"
 msgstr ""
 
-#: src/TaskComment.php:503
+#: src/TaskComment.php:540
 msgid "Comentários da tarefa"
 msgstr ""
 
-#: src/TaskComment.php:516
+#: src/TaskComment.php:553
 msgid "Comentários do projeto"
 msgstr ""
 
@@ -801,18 +805,18 @@ msgstr ""
 msgid "Crítica"
 msgstr ""
 
-#: src/ProjectCost.php:30 src/ProjectCost.php:136 src/TaskCost.php:31
-#: src/TaskCost.php:168
+#: src/ProjectCost.php:30 src/ProjectCost.php:142 src/TaskCost.php:31
+#: src/TaskCost.php:173
 msgid "Custo"
 msgid_plural "Custos"
 msgstr[0] ""
 msgstr[1] ""
 
-#: front/projectcost.form.php:73 front/taskcost.form.php:75
+#: front/projectcost.form.php:75 front/taskcost.form.php:77
 msgid "Custo excluído"
 msgstr ""
 
-#: front/projectcost.form.php:66 front/taskcost.form.php:68
+#: front/projectcost.form.php:68 front/taskcost.form.php:70
 msgid "Custo lançado"
 msgstr ""
 
@@ -825,7 +829,7 @@ msgstr ""
 msgid "Custos"
 msgstr ""
 
-#: src/ProjectCost.php:58 src/TaskCost.php:61
+#: src/ProjectCost.php:64 src/TaskCost.php:66
 msgid "Custos (ProjectPlus)"
 msgstr ""
 
@@ -837,11 +841,11 @@ msgstr ""
 msgid "Custos consolidados por projeto, com subprojetos e tarefas"
 msgstr ""
 
-#: src/TaskCost.php:164
+#: src/TaskCost.php:169
 msgid "Custos da tarefa"
 msgstr ""
 
-#: src/ProjectCost.php:132
+#: src/ProjectCost.php:138
 msgid "Custos do projeto"
 msgstr ""
 
@@ -853,8 +857,8 @@ msgstr ""
 msgid "Cálculo automático a partir das tarefas e subprojetos"
 msgstr ""
 
-#: src/ProjectCost.php:135 src/Reports.php:575 src/TaskComment.php:562
-#: src/TaskCost.php:167 templates/costs.html.twig:118
+#: src/ProjectCost.php:141 src/Reports.php:575 src/TaskComment.php:599
+#: src/TaskCost.php:172 templates/costs.html.twig:118
 msgid "Data"
 msgstr ""
 
@@ -880,11 +884,11 @@ msgid_plural "Dependências"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/TaskDep.php:431
+#: src/TaskDep.php:493
 msgid "Dependência criada"
 msgstr ""
 
-#: src/TaskDep.php:463
+#: src/TaskDep.php:525
 msgid "Dependência removida"
 msgstr ""
 
@@ -892,7 +896,7 @@ msgstr ""
 msgid "Dependências"
 msgstr ""
 
-#: src/TaskDep.php:87
+#: src/TaskDep.php:123
 msgid "Dependências (ProjectPlus)"
 msgstr ""
 
@@ -900,7 +904,7 @@ msgstr ""
 msgid "Descer"
 msgstr ""
 
-#: src/ProjectCost.php:134 src/Reports.php:575 src/TaskCost.php:166
+#: src/ProjectCost.php:140 src/Reports.php:575 src/TaskCost.php:171
 #: templates/costs.html.twig:117 templates/dashboard.html.twig:516
 msgid "Descrição"
 msgstr ""
@@ -909,7 +913,7 @@ msgstr ""
 msgid "Descrição (opcional)"
 msgstr ""
 
-#: src/ProjectCost.php:116 src/TaskCost.php:148
+#: src/ProjectCost.php:122 src/TaskCost.php:153
 msgid "Descrição do custo"
 msgstr ""
 
@@ -917,7 +921,7 @@ msgstr ""
 msgid "Descrição do projeto (opcional)"
 msgstr ""
 
-#: front/projectcost.form.php:48 front/taskcost.form.php:50
+#: front/projectcost.form.php:50 front/taskcost.form.php:52
 msgid "Descrição e custo válido são obrigatórios"
 msgstr ""
 
@@ -988,11 +992,11 @@ msgstr ""
 msgid "E-mail"
 msgstr ""
 
-#: src/Notification.php:916 templates/config_shell.html.twig:106
+#: src/Notification.php:922 templates/config_shell.html.twig:106
 msgid "E-mail de teste"
 msgstr ""
 
-#: src/Notification.php:927
+#: src/Notification.php:933
 #, php-format
 msgid "E-mail de teste enviado para %s (remetente: %s)."
 msgstr ""
@@ -1025,7 +1029,7 @@ msgstr ""
 msgid "Entra na instância desligada em todos os conjuntos"
 msgstr ""
 
-#: src/Notification.php:920
+#: src/Notification.php:926
 #, php-format
 msgid "Enviado em %s"
 msgstr ""
@@ -1072,7 +1076,7 @@ msgstr ""
 msgid "Escopo: ver todos os projetos"
 msgstr ""
 
-#: src/TaskComment.php:538
+#: src/TaskComment.php:575
 msgid "Escreva um comentário…"
 msgstr ""
 
@@ -1080,11 +1084,11 @@ msgstr ""
 msgid "Escreva um comentário… (Ctrl+Enter envia)"
 msgstr ""
 
-#: src/TaskDep.php:768
+#: src/TaskDep.php:830
 msgid "Esta tarefa BLOQUEIA"
 msgstr ""
 
-#: src/TaskDep.php:767
+#: src/TaskDep.php:829
 msgid "Esta tarefa é BLOQUEADA por"
 msgstr ""
 
@@ -1096,27 +1100,27 @@ msgstr ""
 msgid "Este projeto não tem tarefas nem subprojetos para capturar"
 msgstr ""
 
-#: src/TaskDep.php:408
+#: src/TaskDep.php:470
 msgid "Este vínculo já existe"
 msgstr ""
 
-#: src/Notification.php:918
+#: src/Notification.php:924
 msgid "Este é um e-mail de teste do plugin ProjectPlus."
 msgstr ""
 
-#: src/TaskComment.php:595
+#: src/TaskComment.php:632
 msgid ""
 "Estes comentários também aparecem no Gestor de Projetos (faixa Projeto do "
 "painel)."
 msgstr ""
 
-#: src/TaskComment.php:596
+#: src/TaskComment.php:633
 msgid ""
 "Estes comentários também aparecem no Gestor de Projetos (árvore de tarefas e "
 "Minhas tarefas)."
 msgstr ""
 
-#: src/TaskCost.php:240
+#: src/TaskCost.php:245
 msgid ""
 "Estes custos consomem o orçamento do projeto (junto com a aba Custos nativa "
 "do projeto)."
@@ -1158,7 +1162,7 @@ msgstr ""
 msgid "Falha ao atualizar a fase"
 msgstr ""
 
-#: src/TaskDep.php:433
+#: src/TaskDep.php:495
 msgid "Falha ao criar a dependência"
 msgstr ""
 
@@ -1193,7 +1197,7 @@ msgstr ""
 msgid "Falha no envio de \"%s\""
 msgstr ""
 
-#: src/Notification.php:939 src/Notification.php:945
+#: src/Notification.php:945 src/Notification.php:951
 #, php-format
 msgid "Falha no envio: %s"
 msgstr ""
@@ -1227,7 +1231,7 @@ msgstr ""
 msgid "Fase finalizadora em cada conjunto"
 msgstr ""
 
-#: src/TaskDep.php:659
+#: src/TaskDep.php:721
 #, php-format
 msgid "Fase não alterada: o projeto tem %d item(ns) aberto(s) — %s"
 msgstr ""
@@ -1274,6 +1278,10 @@ msgstr ""
 msgid "Favoritar filtros"
 msgstr ""
 
+#: src/I18nJs.php:239
+msgid "Fechar"
+msgstr ""
+
 #: templates/_favorite.html.twig:8
 msgid "Filtros favoritos"
 msgstr ""
@@ -1296,7 +1304,7 @@ msgstr ""
 msgid "Finalizadora"
 msgstr ""
 
-#: src/ProjectCost.php:208
+#: src/ProjectCost.php:214
 msgid ""
 "Fonte única de custos do projeto (a aba Custos nativa foi desativada pelo "
 "ProjectPlus)."
@@ -1479,7 +1487,7 @@ msgstr ""
 msgid "Kanban de projetos"
 msgstr ""
 
-#: src/ProjectCost.php:137 src/TaskCost.php:169 templates/costs.html.twig:120
+#: src/ProjectCost.php:143 src/TaskCost.php:174 templates/costs.html.twig:120
 msgid "Lançado por"
 msgstr ""
 
@@ -1642,19 +1650,19 @@ msgstr ""
 msgid "Nenhum comentário ainda."
 msgstr ""
 
-#: src/TaskComment.php:504
+#: src/TaskComment.php:541
 msgid "Nenhum comentário nesta tarefa"
 msgstr ""
 
-#: src/TaskComment.php:517
+#: src/TaskComment.php:554
 msgid "Nenhum comentário neste projeto"
 msgstr ""
 
-#: src/TaskCost.php:231
+#: src/TaskCost.php:236
 msgid "Nenhum custo lançado nesta tarefa"
 msgstr ""
 
-#: src/ProjectCost.php:199
+#: src/ProjectCost.php:205
 msgid "Nenhum custo lançado neste projeto"
 msgstr ""
 
@@ -1694,7 +1702,7 @@ msgstr ""
 msgid "Nenhum projeto ou tarefa encontrado."
 msgstr ""
 
-#: src/Notification.php:903
+#: src/Notification.php:909
 msgid ""
 "Nenhum remetente configurado: preencha \"E-mail do remetente\" em Configurar "
 "> Notificações ou \"E-mail do administrador\" em Configurar > Geral."
@@ -1708,7 +1716,7 @@ msgstr ""
 msgid "Nenhum subprojeto."
 msgstr ""
 
-#: src/I18nJs.php:84 src/TaskDep.php:799
+#: src/I18nJs.php:84 src/TaskDep.php:861
 msgid "Nenhuma"
 msgstr ""
 
@@ -1794,7 +1802,7 @@ msgid ""
 "\"Usar\" valem só para este conjunto."
 msgstr ""
 
-#: src/TaskDep.php:764
+#: src/TaskDep.php:826
 msgid "Nova dependência"
 msgstr ""
 
@@ -1806,7 +1814,7 @@ msgstr ""
 msgid "Nova tarefa…"
 msgstr ""
 
-#: src/TaskComment.php:535
+#: src/TaskComment.php:572
 msgid "Novo comentário"
 msgstr ""
 
@@ -1830,7 +1838,7 @@ msgstr ""
 msgid "Não"
 msgstr ""
 
-#: src/Notification.php:876
+#: src/Notification.php:882
 #, php-format
 msgid "Não enviado: %s."
 msgstr ""
@@ -1865,7 +1873,7 @@ msgid ""
 "Não é possível mover para uma fase finalizada — %d item(ns) aberto(s): %s"
 msgstr ""
 
-#: src/TaskDep.php:720
+#: src/TaskDep.php:782
 #, php-format
 msgid "Não é possível mover para uma fase finalizada — %s"
 msgstr ""
@@ -1896,7 +1904,7 @@ msgstr ""
 msgid "O percentual deste projeto é calculado automaticamente"
 msgstr ""
 
-#: src/ProjectManager.php:235
+#: src/ProjectManager.php:300
 msgid "O projeto precisa de pelo menos um gestor"
 msgstr ""
 
@@ -1929,7 +1937,7 @@ msgstr ""
 msgid "Orçamento (R$)"
 msgstr ""
 
-#: src/Budget.php:415
+#: src/Budget.php:412
 #, php-format
 msgid "Orçamento ESTOURADO no projeto \"%s\": %d%% consumido"
 msgstr ""
@@ -1938,11 +1946,11 @@ msgstr ""
 msgid "Orçamento acima do alerta"
 msgstr ""
 
-#: front/budget.form.php:34
+#: front/budget.form.php:33
 msgid "Orçamento atualizado"
 msgstr ""
 
-#: src/Budget.php:426
+#: src/Budget.php:419
 #, php-format
 msgid "Orçamento do projeto \"%s\" atingiu %d%% do teto"
 msgstr ""
@@ -2053,7 +2061,7 @@ msgstr ""
 msgid "Prazo final"
 msgstr ""
 
-#: src/Notification.php:589
+#: src/Notification.php:595
 msgid "Prazo se aproximando"
 msgstr ""
 
@@ -2087,11 +2095,11 @@ msgid "Project+ como primeiro item do menu Ferramentas"
 msgstr ""
 
 #: front/config.form.php:41 src/Dashboard.php:23 src/Notification.php:453
-#: src/Notification.php:591 src/Profile.php:36
+#: src/Notification.php:597 src/Profile.php:36
 msgid "ProjectPlus"
 msgstr ""
 
-#: src/Notification.php:736
+#: src/Notification.php:742
 msgid "ProjectPlus (GLPI)"
 msgstr ""
 
@@ -2112,7 +2120,7 @@ msgstr ""
 msgid "Projeto"
 msgstr ""
 
-#: src/Notification.php:380
+#: src/Notification.php:379
 #, php-format
 msgid "Projeto \"%s\""
 msgstr ""
@@ -2122,7 +2130,7 @@ msgstr ""
 msgid "Projeto \"%s\" criado"
 msgstr ""
 
-#: src/Notification.php:223
+#: src/Notification.php:219
 #, php-format
 msgid "Projeto \"%s\" está sem atividade (parado)"
 msgstr ""
@@ -2150,7 +2158,7 @@ msgid "Projeto de origem"
 msgstr ""
 
 #: ajax/comment.php:62 ajax/project.php:59 ajax/project.php:181
-#: front/budget.form.php:22 front/projectcost.form.php:34
+#: front/budget.form.php:18 front/projectcost.form.php:25
 #: front/taskcomment.form.php:42 src/Templates.php:267
 msgid "Projeto não encontrado"
 msgstr ""
@@ -2167,7 +2175,7 @@ msgstr ""
 msgid "Projeto pai"
 msgstr ""
 
-#: src/Notification.php:229
+#: src/Notification.php:227
 msgid "Projeto parado"
 msgstr ""
 
@@ -2249,7 +2257,7 @@ msgstr ""
 msgid "Regra geral: subtarefa aberta bloqueia a mãe"
 msgstr ""
 
-#: src/TaskDep.php:829
+#: src/TaskDep.php:891
 msgid ""
 "Regra geral: subtarefas abertas bloqueiam a tarefa mãe automaticamente "
 "(itens \"subtarefa\" acima). Uma tarefa bloqueada não pode ser concluída "
@@ -2286,7 +2294,7 @@ msgstr ""
 msgid "Remover responsável"
 msgstr ""
 
-#: src/I18nJs.php:149 src/TaskDep.php:819
+#: src/I18nJs.php:149 src/TaskDep.php:881
 msgid "Remover vínculo"
 msgstr ""
 
@@ -2351,7 +2359,7 @@ msgstr ""
 msgid "Salvar projeto como modelo"
 msgstr ""
 
-#: src/Notification.php:919
+#: src/Notification.php:925
 msgid "Se você recebeu esta mensagem, os alertas por e-mail estão funcionando."
 msgstr ""
 
@@ -2376,26 +2384,26 @@ msgstr ""
 msgid "Sem estado"
 msgstr ""
 
-#: src/Dashboard.php:440 src/Kanban.php:433 src/ProjectKanban.php:219
+#: src/Dashboard.php:440 src/Kanban.php:437 src/ProjectKanban.php:241
 msgid "Sem fase"
 msgstr ""
 
-#: src/ProjectKanban.php:187
+#: src/ProjectKanban.php:202
 msgid "Sem gestor"
 msgstr ""
 
-#: src/TaskDep.php:771
+#: src/TaskDep.php:833
 msgid "Sem outras tarefas neste projeto"
 msgstr ""
 
 #: ajax/favorite.php:29 ajax/favorite.php:34 ajax/project.php:184
 #: ajax/task.php:171 ajax/task.php:183 ajax/task.php:203
-#: front/project_create.form.php:56 src/ProjectManager.php:207
-#: src/ProjectManager.php:228
+#: front/project_create.form.php:56 src/ProjectManager.php:272
+#: src/ProjectManager.php:293
 msgid "Sem permissão"
 msgstr ""
 
-#: front/projectcost.form.php:24 front/taskcost.form.php:25
+#: front/projectcost.form.php:33 front/taskcost.form.php:34
 msgid "Sem permissão para alterar custos"
 msgstr ""
 
@@ -2413,7 +2421,8 @@ msgstr ""
 msgid "Sem permissão para criar tarefas"
 msgstr ""
 
-#: ajax/taskdep.php:38 front/taskdep.form.php:21
+#: ajax/taskdep.php:38 ajax/taskdep.php:51 ajax/taskdep.php:68
+#: front/taskdep.form.php:21 front/taskdep.form.php:37
 msgid "Sem permissão para gerenciar dependências"
 msgstr ""
 
@@ -2428,7 +2437,7 @@ msgstr ""
 msgid "Sem registro"
 msgstr ""
 
-#: src/I18nJs.php:97 src/Kanban.php:289
+#: src/I18nJs.php:97 src/Kanban.php:291
 msgid "Sem responsável"
 msgstr ""
 
@@ -2456,7 +2465,7 @@ msgstr ""
 msgid "Semana"
 msgstr ""
 
-#: src/Notification.php:892
+#: src/Notification.php:898
 msgid "Seu usuário não tem e-mail cadastrado — informe um em Meus ajustes."
 msgstr ""
 
@@ -2569,7 +2578,7 @@ msgstr ""
 msgid "Tarefa \"%s\""
 msgstr ""
 
-#: src/Notification.php:310
+#: src/Notification.php:311
 #, php-format
 msgid "Tarefa \"%s\" (projeto \"%s\")"
 msgstr ""
@@ -2589,7 +2598,7 @@ msgstr ""
 msgid "Tarefa \"%s\" vence em breve (%s)"
 msgstr ""
 
-#: src/Notification.php:588
+#: src/Notification.php:594
 msgid "Tarefa atrasada"
 msgstr ""
 
@@ -2598,7 +2607,7 @@ msgstr ""
 msgid "Tarefa bloqueada — conclua antes: %s"
 msgstr ""
 
-#: src/Notification.php:590
+#: src/Notification.php:596
 msgid "Tarefa concluída"
 msgstr ""
 
@@ -2611,8 +2620,8 @@ msgid "Tarefa mãe"
 msgstr ""
 
 #: ajax/comment.php:73 ajax/task.php:168 ajax/task.php:180 ajax/task.php:198
-#: front/taskcomment.form.php:53 front/taskcost.form.php:35
-#: front/taskdep.form.php:31 src/TaskDep.php:391
+#: front/taskcomment.form.php:53 front/taskcost.form.php:26
+#: front/taskdep.form.php:31 src/TaskDep.php:453
 msgid "Tarefa não encontrada"
 msgstr ""
 
@@ -2642,7 +2651,7 @@ msgstr ""
 msgid "Tarefas em andamento"
 msgstr ""
 
-#: src/TaskDep.php:385
+#: src/TaskDep.php:447
 msgid "Tarefas inválidas para o vínculo"
 msgstr ""
 
@@ -2748,7 +2757,7 @@ msgstr ""
 msgid "Todos os tipos"
 msgstr ""
 
-#: src/ProjectCost.php:201 src/TaskCost.php:233
+#: src/ProjectCost.php:207 src/TaskCost.php:238
 msgid "Total"
 msgstr ""
 
@@ -2790,12 +2799,12 @@ msgid ""
 "primeiro."
 msgstr ""
 
-#: front/project_create.form.php:27 src/ProjectManager.php:213
+#: front/project_create.form.php:27 src/ProjectManager.php:278
 msgid "Usuário com Visão do cliente não pode ser gestor"
 msgstr ""
 
-#: ajax/project.php:341 ajax/task.php:382 src/Notification.php:884
-#: src/ProjectManager.php:210
+#: ajax/project.php:341 ajax/task.php:382 src/Notification.php:890
+#: src/ProjectManager.php:275
 msgid "Usuário não encontrado."
 msgstr ""
 
@@ -2847,11 +2856,11 @@ msgstr ""
 msgid "Voltar à Configuração"
 msgstr ""
 
-#: src/TaskDep.php:454
+#: ajax/taskdep.php:64 front/taskdep.form.php:62 src/TaskDep.php:516
 msgid "Vínculo não encontrado"
 msgstr ""
 
-#: src/TaskDep.php:414
+#: src/TaskDep.php:476
 msgid "Vínculo recusado: criaria um ciclo de bloqueio entre as tarefas"
 msgstr ""
 
@@ -2871,7 +2880,7 @@ msgstr ""
 msgid "aberta"
 msgstr ""
 
-#: src/TaskDep.php:811
+#: src/TaskDep.php:873
 #, php-format
 msgid "aberta (%d%%)"
 msgstr ""
@@ -2884,7 +2893,7 @@ msgstr ""
 msgid "acima de %d%% do teto"
 msgstr ""
 
-#: src/Notification.php:809
+#: src/Notification.php:815
 msgid "as notificações estão desativadas no GLPI"
 msgstr ""
 
@@ -2901,7 +2910,7 @@ msgstr ""
 msgid "até"
 msgstr ""
 
-#: src/TaskDep.php:712
+#: src/TaskDep.php:774
 #, php-format
 msgid "bloqueada por: %s"
 msgstr ""
@@ -2926,7 +2935,7 @@ msgstr ""
 msgid "completo"
 msgstr ""
 
-#: src/I18nJs.php:146 src/TaskDep.php:812
+#: src/I18nJs.php:146 src/TaskDep.php:874
 msgid "concluída"
 msgstr ""
 
@@ -2967,7 +2976,7 @@ msgstr ""
 msgid "duração (d)"
 msgstr ""
 
-#: src/I18nJs.php:136 src/TaskComment.php:570
+#: src/I18nJs.php:136 src/TaskComment.php:607
 msgid "editado"
 msgstr ""
 
@@ -3031,7 +3040,7 @@ msgstr ""
 msgid "ligados"
 msgstr ""
 
-#: src/Notification.php:934
+#: src/Notification.php:940
 msgid "motivo não informado"
 msgstr ""
 
@@ -3055,11 +3064,11 @@ msgstr ""
 msgid "não configurada — os e-mails saem sem link"
 msgstr ""
 
-#: src/Notification.php:849
+#: src/Notification.php:855
 msgid "não foi possível montar o DSN:"
 msgstr ""
 
-#: src/Notification.php:813
+#: src/Notification.php:819
 msgid "o canal de e-mail está desativado no GLPI"
 msgstr ""
 
@@ -3118,7 +3127,7 @@ msgid ""
 "vai para fase finalizada\" nunca dispara nesse conjunto."
 msgstr ""
 
-#: src/I18nJs.php:147 src/TaskDep.php:807
+#: src/I18nJs.php:147 src/TaskDep.php:869
 msgid "subtarefa"
 msgstr ""
 

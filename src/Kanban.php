@@ -218,6 +218,7 @@ class Kanban
         // ---------- Responsável = primeiro membro da equipe da tarefa,
         // mesma convenção da captura de Modelos (Etapa 4, lição 15) ----------
         $teamFirst = [];
+        $teamAll   = []; // O-2a: todos os responsáveis, para o modal do cartão
         foreach (
             $DB->request([
                 'SELECT'    => [
@@ -242,9 +243,6 @@ class Kanban
             ]) as $row
         ) {
             $tid = (int) $row['projecttasks_id'];
-            if (isset($teamFirst[$tid])) {
-                continue; // já temos o primeiro (ordenado por id da equipe)
-            }
             // Respeita a ordem de nome configurada no GLPI (config ou
             // preferência da sessão), em vez de fixar "Sobrenome Nome".
             $label           = \formatUserName(
@@ -253,6 +251,10 @@ class Kanban
                 $row['realname'] ?? '',
                 $row['firstname'] ?? ''
             );
+            $teamAll[$tid][] = $label !== '' ? $label : '?';
+            if (isset($teamFirst[$tid])) {
+                continue; // já temos o primeiro (ordenado por id da equipe)
+            }
             $teamFirst[$tid] = [
                 'id'   => (int) $row['items_id'],
                 'name' => $label !== '' ? $label : '?',
@@ -301,6 +303,7 @@ class Kanban
                 'task_parent_id'    => (int) $row['projecttasks_id'],
                 'responsible_id'    => $respId,
                 'responsible_name'  => $respName,
+                'team_names'        => $teamAll[$id] ?? [], // O-2a
                 'state_id'          => $stateId,
                 'percent'           => (int) $row['percent_done'],
                 'is_done'           => (int) $row['percent_done'] >= 100,
@@ -309,6 +312,7 @@ class Kanban
                 'comments'          => $comments[$id] ?? 0,
                 // Bloco N-5: prazo final no rodapé do cartão (formato do usuário)
                 'end_label'         => DateFmt::date($row['plan_end_date'], ''),
+                'start_label'       => DateFmt::date($row['plan_start_date'], ''), // O-2a
                 'deadline'          => Deadline::compute(
                     $row['plan_start_date'],
                     $row['real_start_date'],
