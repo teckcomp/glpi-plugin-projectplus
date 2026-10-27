@@ -93,6 +93,7 @@ class ProjectKanban
                     'glpi_projects.plan_end_date',
                     'glpi_projects.real_start_date',
                     'glpi_projects.projectstates_id',
+                    'glpi_projects.auto_percent_done', // O-2b: % travado no modal
                     'glpi_users.realname AS mgr_realname',
                     'glpi_users.firstname AS mgr_firstname',
                     'glpi_users.name AS mgr_login',
@@ -220,6 +221,7 @@ class ProjectKanban
                 'parent_name' => $parentId > 0 ? ($parentNames[$parentId] ?? '—') : '',
                 'state_id'    => $stateId,
                 'percent'     => (int) $row['percent_done'],
+                'auto_percent' => !empty($row['auto_percent_done']), // O-2b
                 'is_done'     => (int) $row['percent_done'] >= 100,
                 'manager'     => $manager !== '' ? $manager : __('Sem gestor', 'projectplus'),
                 'tasks_total' => $taskTotal[$id] ?? 0,
@@ -243,6 +245,24 @@ class ProjectKanban
             'columns' => self::columnsFrom($states, $sawExtraState),
             'cards'   => $cards,
         ];
+    }
+
+    /**
+     * O-2b (27/10/2026) — UM cartão de projeto recalculado (mesmo motivo de
+     * Kanban::cardFor). Sem filtro de tipo: `state_id` é a fase real.
+     */
+    public static function cardFor(int $projectId): ?array
+    {
+        if ($projectId <= 0) {
+            return null;
+        }
+        $data = self::getBoardData([$projectId]);
+        foreach ($data['cards'] as $card) {
+            if ((int) $card['id'] === $projectId) {
+                return $card;
+            }
+        }
+        return null;
     }
 
     /**

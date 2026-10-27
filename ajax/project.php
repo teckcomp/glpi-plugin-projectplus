@@ -18,6 +18,12 @@
  * POST action=team_remove  project_id, users_id — só linha de USUÁRIO
  * POST action=manager_add    project_id, users_id — O-1c: gestor (tabela própria)
  * POST action=manager_remove project_id, users_id — O-1c: nunca o último
+ * POST action=kanban_edit  project_id — O-2b: o que o modal do Kanban de
+ *                          projetos pode editar (+ valores atuais)
+ *
+ * O-2b (27/10/2026): com `kanban_card=1` (modal do Kanban), `state`, `dates`
+ * e `percent` devolvem `card` (ProjectKanban::cardFor, o cartão recalculado)
+ * NO LUGAR de `meta`/`rows`, que só servem à faixa do painel.
  *
  * O CSRF é validado automaticamente pelo core (includes.php) em todo POST —
  * nunca chamar Session::checkCSRF aqui. Cada resposta devolve um token novo
@@ -26,6 +32,7 @@
 
 use GlpiPlugin\Projectplus\Access;
 use GlpiPlugin\Projectplus\Dashboard;
+use GlpiPlugin\Projectplus\ProjectKanban;
 use GlpiPlugin\Projectplus\ProjectManager;
 use GlpiPlugin\Projectplus\ProjectTracking;
 use GlpiPlugin\Projectplus\TaskDep;
@@ -114,6 +121,11 @@ function pp_applied_state(int $projectId, int $fallback): int
  */
 function pp_project_payload(int $projectId): array
 {
+    // O-2b: o modal do Kanban recebe o CARTÃO recalculado (não usa a faixa
+    // nem as linhas do painel — evita montar o que ninguém vai ler).
+    if (!empty($_POST['kanban_card'])) {
+        return ['card' => ProjectKanban::cardFor($projectId)];
+    }
     $meta = Dashboard::getProjectMeta($projectId);
     $fresh = new Project();
     if ($meta !== null && $fresh->getFromDB($projectId)) {
@@ -328,6 +340,29 @@ switch ($action) {
             ProjectTracking::touch($pid);
         }
         pp_reply(['ok' => (bool) $ok] + pp_project_payload($pid));
+        break;
+
+    case 'kanban_edit':
+        // O-2b (27/10/2026) — o modal do Kanban de projetos abre só leitura e
+        // pergunta aqui se pode editar. MESMA regra da faixa e do arrastar
+        // (Access::canEditProject). Sem permissão, a resposta não traz dado.
+        $project = new Project();
+        if (!$project->getFromDB((int) ($_POST['project_id'] ?? 0))
+            || !empty($project->fields['is_deleted'])) {
+            pp_reply(['ok' => false, 'message' => __('Projeto não encontrado', 'projectplus')]);
+        }
+        if (!Access::canEditProject($project)) {
+            pp_reply(['ok' => true, 'can_edit' => false]);
+        }
+        pp_reply([
+            'ok'           => true,
+            'can_edit'     => true,
+            'state_id'     => (int) ($project->fields['projectstates_id'] ?? 0),
+            'percent'      => (int) ($project->fields['percent_done'] ?? 0),
+            'auto_percent' => !empty($project->fields['auto_percent_done']),
+            'plan_start'   => substr((string) ($project->fields['plan_start_date'] ?? ''), 0, 10),
+            'plan_end'     => substr((string) ($project->fields['plan_end_date'] ?? ''), 0, 10),
+        ]);
         break;
 
     case 'team_add':

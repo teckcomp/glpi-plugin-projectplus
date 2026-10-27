@@ -2508,7 +2508,9 @@
     // ProjectPlus.itemModal(opts):
     //   host      elemento onde o modal entra (o widget — vai junto na tela cheia)
     //   title     nome; subtitle: linhas de contexto (texto)
-    //   fields    [{label, text}] ou [{label, node}] — só leitura no O-2a
+    //   fields    [{label, text}] ou [{label, node}]; `key` opcional vira
+    //             data-pp-field no bloco do campo — O-2b: o Kanban troca o
+    //             conteúdo do <dd> pelos campos editáveis depois de abrir
     //   note      texto de aviso opcional (ex.: bloqueada)
     //   url       ficha nativa ("Abrir ficha completa", aba nova)
     //   comments  {id, kind ('task'|'project'), readUrl, postUrl, csrf,
@@ -2573,6 +2575,7 @@
             if (!f) { return; }
             const box = document.createElement('div');
             box.className = 'pp-im__field' + (f.wide ? ' pp-im__field--wide' : '');
+            if (f.key) { box.dataset.ppField = String(f.key); } // O-2b
             const dt = document.createElement('dt');
             dt.textContent = f.label || '';
             const dd = document.createElement('dd');
@@ -2590,6 +2593,11 @@
             b.addEventListener('click', closeItemModal);
         });
         const onKey = function (e) {
+            // O-2b: Esc dentro da busca de responsável fecha só a busca.
+            if (e.key === 'Escape' && e.target && typeof e.target.closest === 'function'
+                && e.target.closest('.pp-team__picker')) {
+                return;
+            }
             if (e.key === 'Escape') {
                 e.stopPropagation();
                 closeItemModal();
@@ -2618,6 +2626,18 @@
 
     ProjectPlus.itemModal = itemModal;
     ProjectPlus.closeItemModal = closeItemModal;
+
+    // O-2b (27/10/2026) — o modal do Kanban grava campos com o MESMO token do
+    // widget; o 💬 do modal usa o ppCsrf daqui. Depois de cada gravação o
+    // Kanban repassa o token novo, senão o próximo comentário seria recusado
+    // (token de uso único).
+    ProjectPlus.setCsrf = function (token) {
+        if (token) { ppCsrf = token; }
+    };
+    // Chips de responsáveis reaproveitados no modal (Bloco D-2a).
+    ProjectPlus.teamChipHtml = teamChipHtml;
+    ProjectPlus.teamAddBtnHtml = teamAddBtnHtml;
+    ProjectPlus.openTeamPicker = openTeamPicker;
 
     // ------------------------------------------------------------------
     // Dependências entre tarefas (Etapa 3, Bloco 3)

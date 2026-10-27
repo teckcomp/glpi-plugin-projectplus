@@ -338,19 +338,22 @@
             ? c.managers.join(', ')
             : (c.manager || '');
         let changed = false;
+        // O-2b: `key` em cada campo — o quickEdit troca Fase, %, datas pelos
+        // campos editáveis; o Prazo é redesenhado depois de cada gravação.
+        const dl = (c.deadline && c.deadline.state !== 'done' && c.deadline.state !== 'none')
+            ? { node: deadlineEl(c.deadline) }
+            : { text: (c.is_done || (c.deadline && c.deadline.state === 'done')) ? __('Concluído') : (c.deadline && c.deadline.state === 'none' ? __('Sem datas planejadas — corrija o planejamento') : '') };
         const fields = [
-            { label: __('Fase'), node: typeof K.phaseEl === 'function' ? K.phaseEl(state.data.columns, c.state_id) : null },
-            { label: __('Progresso'), text: c.percent + '% ' + __('concluído') },
-            { label: __('Início planejado'), text: c.start_label },
-            { label: __('Fim planejado'), text: c.end_label },
-            { label: __('Gestores'), text: managers },
-            { label: __('Tarefas'), text: c.tasks_total > 0 ? (c.tasks_done + '/' + c.tasks_total + ' ' + __('concluídas')) : '' },
-            (c.deadline && c.deadline.state !== 'done' && c.deadline.state !== 'none')
-                ? { label: __('Prazo'), node: deadlineEl(c.deadline), wide: true }
-                : { label: __('Prazo'), text: (c.is_done || (c.deadline && c.deadline.state === 'done')) ? __('Concluído') : (c.deadline && c.deadline.state === 'none' ? __('Sem datas planejadas — corrija o planejamento') : ''), wide: true },
+            { key: 'state', label: __('Fase'), node: typeof K.phaseEl === 'function' ? K.phaseEl(state.data.columns, c.state_id) : null },
+            { key: 'percent', label: __('Progresso'), text: c.percent + '% ' + __('concluído') },
+            { key: 'start', label: __('Início planejado'), text: c.start_label },
+            { key: 'end', label: __('Fim planejado'), text: c.end_label },
+            { key: 'managers', label: __('Gestores'), text: managers },
+            { key: 'tasks', label: __('Tarefas'), text: c.tasks_total > 0 ? (c.tasks_done + '/' + c.tasks_total + ' ' + __('concluídas')) : '' },
+            { key: 'deadline', label: __('Prazo'), node: dl.node, text: dl.text, wide: true },
         ];
-        if (!fields[0].node) { fields[0] = { label: __('Fase'), text: '' }; }
-        window.ProjectPlus.itemModal({
+        if (!fields[0].node) { fields[0] = { key: 'state', label: __('Fase'), text: '' }; }
+        const el = window.ProjectPlus.itemModal({
             host: state._root || document.body,
             title: c.name,
             subtitle: c.parent_id ? [__('Subprojeto de: %s', c.parent_name || '—')] : [],
@@ -370,6 +373,17 @@
                 if (changed) { render(state._holder, state); }
             },
         });
+        // O-2b: edição rápida (Fase, %, datas — sem equipe/gestores).
+        if (typeof K.quickEdit === 'function') {
+            K.quickEdit({
+                kind: 'project',
+                state: state,
+                card: c,
+                el: el,
+                doneLabel: __('Concluído'),
+                onChange: function () { changed = true; },
+            });
+        }
     }
     ProjectPlusProjectKanban.openProjectModal = openProjectModal;
 

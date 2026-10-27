@@ -2391,6 +2391,27 @@ label.pp-cfg-row__label { cursor: pointer; }
     .pp-im__grid { grid-template-columns: minmax(0, 1fr); }
 }
 
+/* ===== O-2b (27/10/2026) — edição rápida no modal do Kanban =====
+   Campos trocados pelo kanban.js (quickEdit) dentro do <dd> do campo; cada um
+   grava ao alterar e mostra o retorno logo abaixo. Cores só por variável. */
+.pp-im__input {
+    width: 100%; max-width: 100%; box-sizing: border-box; height: 32px; padding: 0 8px;
+    border: 1px solid var(--pp-border-strong); border-radius: 6px;
+    background: var(--pp-surface); color: var(--pp-text); font-size: 0.88rem;
+}
+.pp-im__input:focus { outline: 2px solid var(--pp-accent); outline-offset: 1px; }
+.pp-im__input:disabled { opacity: .6; cursor: progress; }
+.pp-im__pct { display: flex; align-items: center; gap: 8px; }
+.pp-im__pct input[type="range"] { flex: 1 1 auto; min-width: 0; accent-color: var(--pp-accent); }
+.pp-im__input--pct { width: 64px; flex: none; }
+.pp-im__auto { color: var(--pp-text-2); }
+.pp-im__team { min-height: 26px; }
+.pp-im__msg { min-height: 0; margin-top: 3px; font-size: 0.75rem; color: var(--pp-muted); }
+.pp-im__msg:empty { display: none; }
+.pp-im__msg--ok { color: var(--pp-ok-text); }
+.pp-im__msg--err { color: var(--pp-danger-text); }
+.pp-im__msg--busy { color: var(--pp-muted); }
+
 /* ===== O-2c (27/10/2026) — cartão do Kanban mais claro =====
    Nome + tag de status na mesma linha; barras Prazo/Progresso com rótulo e
    valor; prévia dos 2 últimos comentários. Cores só por variável. */

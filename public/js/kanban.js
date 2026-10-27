@@ -715,6 +715,19 @@
     }
     ProjectPlusKanban.phaseEl = phaseEl;
 
+    // Prazo do modal: barra quando há janela aberta; senão o texto do estado.
+    // `doneLabel` = "Concluída" (tarefa) ou "Concluído" (projeto).
+    function deadlineSpec(c, doneLabel) {
+        if (c.deadline && c.deadline.state !== 'done' && c.deadline.state !== 'none') {
+            return { node: deadlineEl(c.deadline) };
+        }
+        if (c.is_done || (c.deadline && c.deadline.state === 'done')) {
+            return { text: doneLabel };
+        }
+        return { text: (c.deadline && c.deadline.state === 'none') ? __('Sem datas planejadas — corrija o planejamento') : '' };
+    }
+    ProjectPlusKanban.deadlineSpec = deadlineSpec;
+
     function openTaskModal(state, c, byId, opener) {
         const base = ajaxBase(state.ajaxUrl);
         const subtitle = [c.project_name];
@@ -726,19 +739,18 @@
             ? c.team_names.join(', ')
             : (c.responsible_name || __('Sem responsável'));
         let changed = false;
-        window.ProjectPlus.itemModal({
+        const dl = deadlineSpec(c, __('Concluída'));
+        const el = window.ProjectPlus.itemModal({
             host: state._root || document.body,
             title: c.name,
             subtitle: subtitle,
             fields: [
-                { label: __('Fase'), node: phaseEl(state.data.columns, c.state_id) },
-                { label: __('Progresso'), text: c.percent + '% ' + __('concluído') },
-                { label: __('Início planejado'), text: c.start_label },
-                { label: __('Fim planejado'), text: c.end_label },
-                { label: __('Responsáveis'), text: team, wide: true },
-                (c.deadline && c.deadline.state !== 'done' && c.deadline.state !== 'none')
-                ? { label: __('Prazo'), node: deadlineEl(c.deadline), wide: true }
-                : { label: __('Prazo'), text: (c.is_done || (c.deadline && c.deadline.state === 'done')) ? __('Concluída') : (c.deadline && c.deadline.state === 'none' ? __('Sem datas planejadas — corrija o planejamento') : ''), wide: true },
+                { key: 'state', label: __('Fase'), node: phaseEl(state.data.columns, c.state_id) },
+                { key: 'percent', label: __('Progresso'), text: c.percent + '% ' + __('concluído') },
+                { key: 'start', label: __('Início planejado'), text: c.start_label },
+                { key: 'end', label: __('Fim planejado'), text: c.end_label },
+                { key: 'team', label: __('Responsáveis'), text: team, wide: true },
+                { key: 'deadline', label: __('Prazo'), node: dl.node, text: dl.text, wide: true },
             ],
             note: c.blocked ? __('Bloqueada — veja as dependências') : '',
             url: c.url,
@@ -756,8 +768,314 @@
                 if (changed) { render(state._holder, state); }
             },
         });
+        // O-2b: edição rápida (só quem pode editar; o servidor decide).
+        quickEdit({
+            kind: 'task',
+            state: state,
+            card: c,
+            el: el,
+            doneLabel: __('Concluída'),
+            onChange: function () { changed = true; },
+        });
     }
     ProjectPlusKanban.openTaskModal = openTaskModal;
+
+    // ------------------------------------------------------------------
+    // O-2b (27/10/2026) — edição rápida no modal (tarefa e projeto).
+    //
+    // O modal abre só leitura (O-2a). Se a página permite editar
+    // (data-can-edit), pergunta ao servidor (action=kanban_edit) o que pode
+    // virar campo NESTE item — a regra é a dos endpoints que gravam, nada é
+    // decidido aqui. Cada campo grava ao alterar (decisão do Claudio, como no
+    // painel), com `kanban_card=1`: a resposta traz o cartão recalculado, que
+    // substitui o do board (tag, barras, coluna) e o Prazo do modal. Recusa
+    // = mensagem no próprio campo e volta ao valor aceito (lição 204).
+    // Tarefa: `module=kanban` (mesma regra do arrastar).
+    //   opts: {kind 'task'|'project', state, card, el (modal), doneLabel,
+    //          onChange()}
+    // ------------------------------------------------------------------
+    function qePost(state, data, done) {
+        data._glpi_csrf_token = state.csrf;
+        ppPost(state.ajaxUrl, data, function (resp) {
+            if (resp && resp.csrf) {
+                state.csrf = resp.csrf;
+                // o 💬 do modal usa o token do projectplus.js (uso único)
+                if (window.ProjectPlus && typeof window.ProjectPlus.setCsrf === 'function') {
+                    window.ProjectPlus.setCsrf(resp.csrf);
+                }
+            }
+            done(resp || {});
+        });
+    }
+
+    function qeDd(el, key) {
+        return el ? el.querySelector('[data-pp-field="' + key + '"] dd') : null;
+    }
+
+    function qeMsg(dd, text, kind) {
+        if (!dd) { return; }
+        let m = dd.querySelector('.pp-im__msg');
+        if (!m) {
+            m = document.createElement('div');
+            m.className = 'pp-im__msg';
+            m.setAttribute('role', 'status');
+            dd.appendChild(m);
+        }
+        m.className = 'pp-im__msg' + (kind ? ' pp-im__msg--' + kind : '');
+        m.textContent = text || '';
+        if (m._ppTimer) { clearTimeout(m._ppTimer); m._ppTimer = null; }
+        if (kind === 'ok') {
+            m._ppTimer = setTimeout(function () { m.textContent = ''; m.className = 'pp-im__msg'; }, 2500);
+        }
+    }
+
+    function qeClear(dd) {
+        while (dd && dd.firstChild) { dd.removeChild(dd.firstChild); }
+    }
+
+    // Cartão recalculado do servidor → payload do board. `state_id` vem como
+    // a fase REAL; se ela não for coluna deste board, fica na "Sem fase" (0)
+    // quando existir, senão na coluna em que já estava.
+    function qeApplyCard(state, card, fresh) {
+        if (!fresh || typeof fresh !== 'object') { return false; }
+        const cols = {};
+        (state.data.columns || []).forEach(function (cl) { cols[cl.id] = true; });
+        const out = Object.assign({}, fresh);
+        if (!cols[out.state_id]) {
+            out.state_id = cols[0] ? 0 : card.state_id;
+        }
+        Object.assign(card, out);
+        return true;
+    }
+
+    function quickEdit(opts) {
+        const state = opts.state;
+        const card = opts.card;
+        const el = opts.el;
+        if (!state || !card || !el || !state.canEdit || !state.ajaxUrl) {
+            return;
+        }
+        const isTask = opts.kind !== 'project';
+        const ids = {};
+        ids[isTask ? 'task_id' : 'project_id'] = card.id;
+        if (isTask) { ids.module = 'kanban'; }
+
+        qePost(state, Object.assign({ action: 'kanban_edit' }, ids), function (r) {
+            if (!r || !r.ok || !r.can_edit) { return; }
+            if (!el.parentNode) { return; } // o modal já foi fechado
+            build(r);
+        });
+
+        function refreshDeadline() {
+            const dd = qeDd(el, 'deadline');
+            if (!dd) { return; }
+            const spec = deadlineSpec(card, opts.doneLabel || '');
+            qeClear(dd);
+            if (spec.node) {
+                dd.appendChild(spec.node);
+            } else {
+                dd.textContent = spec.text ? String(spec.text) : '—';
+            }
+        }
+
+        // Grava UM campo. ok/falha → mensagem no campo; o cartão devolvido
+        // (nos dois casos) atualiza o board e o Prazo do modal.
+        function save(dd, data, onOk, onFail) {
+            qeMsg(dd, __('Salvando…'), 'busy');
+            qePost(state, Object.assign({ kanban_card: 1 }, ids, data), function (r) {
+                if (r.card && qeApplyCard(state, card, r.card)) {
+                    if (typeof opts.onChange === 'function') { opts.onChange(); }
+                    refreshDeadline();
+                }
+                if (r.ok) {
+                    qeMsg(dd, __('Salvo'), 'ok');
+                    if (onOk) { onOk(r); }
+                } else {
+                    qeMsg(dd, r.message || __('Não foi possível salvar.'), 'err');
+                    if (onFail) { onFail(r); }
+                }
+            });
+        }
+
+        // Campo simples: grava no `change`, guarda o valor aceito em
+        // dataset.ppPrev e volta nele na recusa.
+        // `after(busy)` (opcional) acompanha o início e o fim da gravação.
+        function bindInput(input, dd, toData, after) {
+            const settle = function (busy) { if (typeof after === 'function') { after(busy); } };
+            input.dataset.ppPrev = input.value;
+            input.addEventListener('change', function () {
+                if (input.value === input.dataset.ppPrev) { return; }
+                const data = toData(input.value);
+                if (!data) { input.value = input.dataset.ppPrev; settle(false); return; }
+                input.disabled = true;
+                settle(true);
+                save(dd, data, function () {
+                    input.disabled = false;
+                    input.dataset.ppPrev = input.value;
+                    settle(false);
+                }, function () {
+                    input.disabled = false;
+                    input.value = input.dataset.ppPrev;
+                    settle(false);
+                });
+            });
+        }
+
+        function build(r) {
+            // ---- Fase: as colunas DESTE board, na ordem delas ----
+            let dd = qeDd(el, 'state');
+            if (dd) {
+                const sel = document.createElement('select');
+                sel.className = 'pp-im__input';
+                sel.setAttribute('aria-label', __('Fase'));
+                (state.data.columns || []).forEach(function (cl) {
+                    const o = document.createElement('option');
+                    o.value = String(cl.id);
+                    o.textContent = cl.name;
+                    sel.appendChild(o);
+                });
+                sel.value = String(card.state_id);
+                qeClear(dd);
+                dd.appendChild(sel);
+                const ddState = dd;
+                bindInput(sel, ddState, function (v) {
+                    return { action: 'state', projectstates_id: v };
+                });
+            }
+
+            // ---- % concluído (travado com o cálculo automático) ----
+            dd = qeDd(el, 'percent');
+            if (dd) {
+                qeClear(dd);
+                if (r.auto_percent) {
+                    const t = document.createElement('span');
+                    t.textContent = Number(r.percent) + '% — ' + __('calculado automaticamente');
+                    t.className = 'pp-im__auto';
+                    dd.appendChild(t);
+                } else {
+                    const row = document.createElement('div');
+                    row.className = 'pp-im__pct';
+                    const range = document.createElement('input');
+                    range.type = 'range';
+                    range.min = '0';
+                    range.max = '100';
+                    range.step = '5';
+                    range.value = String(Number(r.percent) || 0);
+                    range.setAttribute('aria-hidden', 'true');
+                    range.tabIndex = -1;
+                    const num = document.createElement('input');
+                    num.type = 'number';
+                    num.min = '0';
+                    num.max = '100';
+                    num.step = '1';
+                    num.className = 'pp-im__input pp-im__input--pct';
+                    num.value = String(Number(r.percent) || 0);
+                    num.setAttribute('aria-label', __('Progresso'));
+                    const pct = document.createElement('span');
+                    pct.textContent = '%';
+                    row.appendChild(range);
+                    row.appendChild(num);
+                    row.appendChild(pct);
+                    dd.appendChild(row);
+                    // a régua só move o número; quem grava é o número
+                    range.addEventListener('input', function () { num.value = range.value; });
+                    range.addEventListener('change', function () {
+                        num.value = range.value;
+                        num.dispatchEvent(new Event('change'));
+                    });
+                    const ddPct = dd;
+                    bindInput(num, ddPct, function (v) {
+                        const n = Math.round(Number(v));
+                        if (v === '' || isNaN(n)) { return null; }
+                        num.value = String(Math.max(0, Math.min(100, n)));
+                        return { action: 'percent', percent: num.value };
+                    }, function (busy) {
+                        // a régua acompanha o número (ajustado, aceito ou devolvido)
+                        range.disabled = busy;
+                        range.value = num.value;
+                    });
+                }
+            }
+
+            // ---- Datas planejadas (uma de cada vez; vazio = limpar) ----
+            [['start', 'plan_start', 'plan_start_date', __('Início planejado')],
+             ['end', 'plan_end', 'plan_end_date', __('Fim planejado')]].forEach(function (d) {
+                const ddDate = qeDd(el, d[0]);
+                if (!ddDate) { return; }
+                const inp = document.createElement('input');
+                inp.type = 'date';
+                inp.className = 'pp-im__input';
+                inp.value = r[d[1]] || '';
+                inp.setAttribute('aria-label', d[3]);
+                qeClear(ddDate);
+                ddDate.appendChild(inp);
+                bindInput(inp, ddDate, function (v) {
+                    const data = { action: 'dates' };
+                    data[d[2]] = v;
+                    return data;
+                });
+            });
+
+            // ---- Responsáveis (só tarefa; só Super-Admin/gestor da árvore) ----
+            dd = qeDd(el, 'team');
+            if (isTask && dd && r.can_team && window.ProjectPlus
+                && typeof window.ProjectPlus.teamChipHtml === 'function'
+                && typeof window.ProjectPlus.openTeamPicker === 'function') {
+                buildTeam(dd, Array.isArray(r.team) ? r.team : [], Array.isArray(r.users) ? r.users : []);
+            }
+        }
+
+        function buildTeam(dd, team, users) {
+            const PP = window.ProjectPlus;
+            qeClear(dd);
+            const box = document.createElement('div');
+            box.className = 'pp-team pp-team--edit pp-im__team';
+            const empty = document.createElement('span');
+            empty.className = 'pp-team__empty projectplus-muted';
+            empty.textContent = __('Sem responsável');
+            box.appendChild(empty);
+            box.insertAdjacentHTML('beforeend',
+                team.map(function (u) { return PP.teamChipHtml(u.id, u.name); }).join('') +
+                (typeof PP.teamAddBtnHtml === 'function' ? PP.teamAddBtnHtml() : ''));
+            dd.appendChild(box);
+
+            function ids() {
+                return Array.prototype.map.call(box.querySelectorAll('.pp-team__chip'), function (ch) {
+                    return parseInt(ch.dataset.uid, 10);
+                });
+            }
+            function refreshEmpty() { empty.hidden = ids().length > 0; }
+            refreshEmpty();
+
+            box.addEventListener('click', function (e) {
+                const x = e.target.closest('.pp-team__x');
+                if (x && box.contains(x)) {
+                    if (x.disabled) { return; }
+                    const uid = parseInt(x.dataset.uid, 10);
+                    x.disabled = true;
+                    save(dd, { action: 'team_remove', users_id: uid }, function () {
+                        const chip = x.closest('.pp-team__chip');
+                        if (chip && chip.parentNode) { chip.parentNode.removeChild(chip); }
+                        refreshEmpty();
+                    }, function () { x.disabled = false; });
+                    return;
+                }
+                const add = e.target.closest('.pp-team__add');
+                if (add && box.contains(add)) {
+                    PP.openTeamPicker(add, ids(), function (uid, label) {
+                        save(dd, { action: 'team_add', users_id: uid }, function () {
+                            if (ids().indexOf(uid) === -1) {
+                                add.insertAdjacentHTML('beforebegin', PP.teamChipHtml(uid, label));
+                            }
+                            refreshEmpty();
+                        });
+                    }, undefined, users);
+                }
+            });
+        }
+    }
+    ProjectPlusKanban.quickEdit = quickEdit;
+    ProjectPlusKanban._qeApplyCard = qeApplyCard; // harness
 
     // Bloco N-5: cartão em atraso (prazo estourado) ganha a borda vermelha.
     function isLate(d) {

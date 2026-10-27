@@ -12,11 +12,19 @@
  *                      "Calcular automaticamente" nativo (auto_percent_done)
  * POST action=team_add    task_id, users_id — Bloco D-2a: inclui responsável
  * POST action=team_remove task_id, users_id — Bloco D-2a: retira responsável
+ * POST action=kanban_edit task_id — O-2b: o que o modal do Kanban pode editar
+ *                      nesta tarefa (+ valores atuais e lista de usuários)
  *                      (os dois só para o GESTOR — vínculo, O-1b — ou o
  *                      Super-Admin: Access::canManageTaskTeam)
  *
  * No create, `users_ids` (lista separada por vírgula) traz VÁRIOS
  * responsáveis; `users_id` (um só) segue aceito por compatibilidade.
+ *
+ * O-2b (27/10/2026): `state`, `percent` e `dates` aceitam `module=kanban`
+ * (a regra passa a ser a do módulo Kanban, a mesma do arrastar) e, com
+ * `kanban_card=1`, devolvem também `card` — o cartão recalculado
+ * (Kanban::cardFor) para o modal redesenhar o board. O mesmo vale para
+ * `team_add`/`team_remove`.
  *
  * O CSRF é validado automaticamente pelo core (includes.php) em todo POST.
  * Cada resposta devolve um token novo em 'csrf' — o JS deve usá-lo na
@@ -24,6 +32,8 @@
  */
 
 use GlpiPlugin\Projectplus\Access;
+use GlpiPlugin\Projectplus\Dashboard;
+use GlpiPlugin\Projectplus\Kanban;
 use GlpiPlugin\Projectplus\ProjectTracking;
 use GlpiPlugin\Projectplus\TaskDep;
 use GlpiPlugin\Projectplus\Trash;
@@ -89,6 +99,82 @@ function pp_blocked_message(int $taskId): ?string
         implode(', ', array_slice($names, 0, 5))
         . (count($names) > 5 ? '…' : '')
     );
+}
+
+/**
+ * O-2b — módulo da regra de edição: `kanban` quando a chamada vem do modal do
+ * Kanban (mesma regra do arrastar), `tasks` nos demais (painel, Minhas
+ * tarefas). Qualquer outro valor cai em `tasks`.
+ */
+function pp_module(): string
+{
+    return (($_POST['module'] ?? '') === 'kanban') ? 'kanban' : 'tasks';
+}
+
+/**
+ * O-2b — acrescenta o cartão recalculado do Kanban quando o modal pede
+ * (`kanban_card=1`), tanto no sucesso quanto na recusa: o modal volta os
+ * campos para o valor REAL que está no banco.
+ */
+function pp_with_card(array $payload, int $taskId): array
+{
+    if (!empty($_POST['kanban_card'])) {
+        $payload['card'] = Kanban::cardFor($taskId);
+    }
+    return $payload;
+}
+
+/** O-2b — data `AAAA-MM-DD` do POST (vazio = limpar); null = inválida. */
+function pp_post_date(string $value, string $time): ?string
+{
+    $value = trim($value);
+    if ($value === '') {
+        return 'NULL';
+    }
+    if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+        return $value . $time;
+    }
+    return null;
+}
+
+/**
+ * O-2b — responsáveis (usuários) da tarefa, na ordem de entrada, com o nome
+ * no formato configurado no GLPI.
+ *
+ * @return array<int, array{id:int, name:string}>
+ */
+function pp_team_users(int $taskId): array
+{
+    /** @var \DBmysql $DB */
+    global $DB;
+
+    $out = [];
+    foreach (
+        $DB->request([
+            'SELECT'    => [
+                'glpi_projecttaskteams.items_id',
+                'glpi_users.realname',
+                'glpi_users.firstname',
+                'glpi_users.name AS login',
+            ],
+            'FROM'      => 'glpi_projecttaskteams',
+            'LEFT JOIN' => [
+                'glpi_users' => [
+                    'ON' => ['glpi_projecttaskteams' => 'items_id', 'glpi_users' => 'id'],
+                ],
+            ],
+            'WHERE'     => [
+                'glpi_projecttaskteams.projecttasks_id' => $taskId,
+                'glpi_projecttaskteams.itemtype'        => 'User',
+            ],
+            'ORDER'     => 'glpi_projecttaskteams.id',
+        ]) as $row
+    ) {
+        $uid   = (int) $row['items_id'];
+        $label = \formatUserName($uid, (string) ($row['login'] ?? ''), (string) ($row['realname'] ?? ''), (string) ($row['firstname'] ?? ''));
+        $out[] = ['id' => $uid, 'name' => $label !== '' ? $label : '?'];
+    }
+    return $out;
 }
 
 $action = $_POST['action'] ?? '';
@@ -276,52 +362,59 @@ switch ($action) {
         break;
 
     case 'state':
-        $task = pp_task_for_update('tasks');
+        $task = pp_task_for_update(pp_module()); // O-2b: `kanban` no modal
+        $tid  = (int) $task->getID();
         $newState = (int) ($_POST['projectstates_id'] ?? 0);
         // O-1b-1t: mesma trava do Kanban (fase finalizada com subtarefa ou
         // bloqueadora aberta) — antes só o arrastar e o ✓ recusavam.
-        if (($msg = TaskDep::finishedMoveBlock((int) $task->getID(), $newState)) !== null) {
-            pp_reply(['ok' => false, 'message' => $msg]);
+        if (($msg = TaskDep::finishedMoveBlock($tid, $newState)) !== null) {
+            pp_reply(pp_with_card(['ok' => false, 'message' => $msg], $tid));
         }
         $ok = $task->update([
-            'id'               => $task->getID(),
+            'id'               => $tid,
             'projectstates_id' => $newState,
         ]);
-        pp_reply(['ok' => (bool) $ok]);
+        pp_reply(pp_with_card(['ok' => (bool) $ok], $tid));
         break;
 
     case 'percent':
-        $task = pp_task_for_update('tasks');
+        $task = pp_task_for_update(pp_module()); // O-2b: `kanban` no modal
+        $tid  = (int) $task->getID();
         if (!empty($task->fields['auto_percent_done'])) {
-            pp_reply(['ok' => false, 'message' => __('O percentual desta tarefa é calculado automaticamente a partir das subtarefas', 'projectplus')]);
+            pp_reply(pp_with_card(['ok' => false, 'message' => __('O percentual desta tarefa é calculado automaticamente a partir das subtarefas', 'projectplus')], $tid));
         }
         $percent = min(100, max(0, (int) ($_POST['percent'] ?? 0)));
-        if ($percent >= 100 && ($open = pp_open_children($task->getID())) > 0) {
-            pp_reply(['ok' => false, 'message' => sprintf(
+        if ($percent >= 100 && ($open = pp_open_children($tid)) > 0) {
+            pp_reply(pp_with_card(['ok' => false, 'message' => sprintf(
                 __('Conclua antes as %d subtarefa(s) aberta(s) desta tarefa', 'projectplus'),
                 $open
-            )]);
+            )], $tid));
         }
-        if ($percent >= 100 && ($msg = pp_blocked_message($task->getID())) !== null) {
-            pp_reply(['ok' => false, 'message' => $msg]);
+        if ($percent >= 100 && ($msg = pp_blocked_message($tid)) !== null) {
+            pp_reply(pp_with_card(['ok' => false, 'message' => $msg], $tid));
         }
-        $ok = $task->update(['id' => $task->getID(), 'percent_done' => $percent]);
-        pp_reply(['ok' => (bool) $ok, 'percent' => $percent]);
+        $ok = $task->update(['id' => $tid, 'percent_done' => $percent]);
+        pp_reply(pp_with_card(['ok' => (bool) $ok, 'percent' => $percent], $tid));
         break;
 
     case 'dates':
-        $task = pp_task_for_update('tasks');
-        $input = ['id' => $task->getID()];
-        if (isset($_POST['plan_start_date'])) {
-            $input['plan_start_date'] = $_POST['plan_start_date'] !== ''
-                ? $_POST['plan_start_date'] . ' 09:00:00' : 'NULL';
-        }
-        if (isset($_POST['plan_end_date'])) {
-            $input['plan_end_date'] = $_POST['plan_end_date'] !== ''
-                ? $_POST['plan_end_date'] . ' 18:00:00' : 'NULL';
+        $task  = pp_task_for_update(pp_module()); // O-2b: `kanban` no modal
+        $tid   = (int) $task->getID();
+        $input = ['id' => $tid];
+        // O-2b: formato conferido (antes ia direto para o update), como na
+        // faixa do projeto (ajax/project.php action=dates).
+        foreach (['plan_start_date' => ' 09:00:00', 'plan_end_date' => ' 18:00:00'] as $f => $time) {
+            if (!isset($_POST[$f])) {
+                continue;
+            }
+            $v = pp_post_date((string) $_POST[$f], $time);
+            if ($v === null) {
+                pp_reply(pp_with_card(['ok' => false, 'message' => __('Data inválida', 'projectplus')], $tid));
+            }
+            $input[$f] = $v;
         }
         $ok = $task->update($input);
-        pp_reply(['ok' => (bool) $ok]);
+        pp_reply(pp_with_card(['ok' => (bool) $ok], $tid));
         break;
 
     case 'complete':
@@ -382,7 +475,7 @@ switch ($action) {
             pp_reply(['ok' => false, 'message' => __('Usuário não encontrado.', 'projectplus')]);
         }
         if (pp_team_row((int) $task->getID(), $uid) > 0) {
-            pp_reply(['ok' => true, 'already' => true]); // idempotente
+            pp_reply(pp_with_card(['ok' => true, 'already' => true], (int) $task->getID())); // idempotente
         }
         $team = new ProjectTaskTeam();
         $ok   = $team->add([
@@ -393,7 +486,7 @@ switch ($action) {
         if ($ok) {
             ProjectTracking::touch((int) $task->fields['projects_id']);
         }
-        pp_reply(['ok' => (bool) $ok]);
+        pp_reply(pp_with_card(['ok' => (bool) $ok], (int) $task->getID()));
         break;
 
     case 'team_remove':
@@ -402,14 +495,44 @@ switch ($action) {
         $task  = pp_task_for_team();
         $rowId = pp_team_row((int) $task->getID(), (int) ($_POST['users_id'] ?? 0));
         if ($rowId <= 0) {
-            pp_reply(['ok' => true, 'already' => true]); // já não estava
+            pp_reply(pp_with_card(['ok' => true, 'already' => true], (int) $task->getID())); // já não estava
         }
         $team = new ProjectTaskTeam();
         $ok   = $team->delete(['id' => $rowId]);
         if ($ok) {
             ProjectTracking::touch((int) $task->fields['projects_id']);
         }
-        pp_reply(['ok' => (bool) $ok]);
+        pp_reply(pp_with_card(['ok' => (bool) $ok], (int) $task->getID()));
+        break;
+
+    case 'kanban_edit':
+        // O-2b (27/10/2026) — o modal do Kanban abre só leitura e pergunta
+        // aqui o que pode virar campo editável. A regra é a MESMA dos
+        // endpoints que gravam (Access::canUpdateTask com o módulo Kanban,
+        // Access::canManageTaskTeam para os responsáveis) — nada é decidido
+        // no cliente. Sem permissão nenhuma, a resposta não traz dado algum.
+        $task = new ProjectTask();
+        if (!$task->getFromDB((int) ($_POST['task_id'] ?? 0)) || !empty($task->fields['is_deleted'])) {
+            pp_reply(['ok' => false, 'message' => __('Tarefa não encontrada', 'projectplus')]);
+        }
+        $canEdit = Access::canUpdateTask($task, 'kanban');
+        $canTeam = Access::canManageTaskTeam($task);
+        if (!$canEdit && !$canTeam) {
+            pp_reply(['ok' => true, 'can_edit' => false, 'can_team' => false]);
+        }
+        $tid = (int) $task->getID();
+        pp_reply([
+            'ok'           => true,
+            'can_edit'     => $canEdit,
+            'can_team'     => $canTeam,
+            'state_id'     => (int) ($task->fields['projectstates_id'] ?? 0),
+            'percent'      => (int) ($task->fields['percent_done'] ?? 0),
+            'auto_percent' => !empty($task->fields['auto_percent_done']),
+            'plan_start'   => substr((string) ($task->fields['plan_start_date'] ?? ''), 0, 10),
+            'plan_end'     => substr((string) ($task->fields['plan_end_date'] ?? ''), 0, 10),
+            'team'         => pp_team_users($tid),
+            'users'        => $canTeam ? Dashboard::userOptions() : [],
+        ]);
         break;
 
     default:

@@ -12,7 +12,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ProjectPlus\n"
 "Report-Msgid-Bugs-To: https://github.com/teckcomp/glpi-plugin-projectplus/issues\n"
-"POT-Creation-Date: 2026-10-27 14:15+0000\n"
+"POT-Creation-Date: 2026-10-27 14:35+0000\n"
 "PO-Revision-Date: 2026-07-25 00:00+0000\n"
 "Last-Translator: Teckcomp I.T. Services\n"
 "Language-Team: Portugues do Brasil\n"
@@ -66,7 +66,7 @@ msgstr "%1$s comentou na tarefa \"%2$s\": %3$s"
 msgid "%1$s comentou no projeto \"%2$s\": %3$s"
 msgstr "%1$s comentou no projeto \"%2$s\": %3$s"
 
-#: src/I18nJs.php:266 src/I18nJs.php:267
+#: src/I18nJs.php:271 src/I18nJs.php:272
 #, php-format
 msgid "%d arquivo selecionado"
 msgid_plural "%d arquivos selecionados"
@@ -144,7 +144,7 @@ msgid_plural "%d projetos com teto"
 msgstr[0] "%d projeto com teto"
 msgstr[1] "%d projetos com teto"
 
-#: src/I18nJs.php:261 src/I18nJs.php:262
+#: src/I18nJs.php:266 src/I18nJs.php:267
 #, php-format
 msgid "%d restante"
 msgid_plural "%d restantes"
@@ -157,7 +157,7 @@ msgid_plural "%d subprojetos"
 msgstr[0] "%d subprojeto"
 msgstr[1] "%d subprojetos"
 
-#: src/I18nJs.php:256 src/I18nJs.php:257
+#: src/I18nJs.php:261 src/I18nJs.php:262
 #, php-format
 msgid "%d subtarefa"
 msgid_plural "%d subtarefas"
@@ -171,7 +171,7 @@ msgid_plural "%d subtarefas abertas"
 msgstr[0] "%d subtarefa aberta"
 msgstr[1] "%d subtarefas abertas"
 
-#: src/I18nJs.php:251 src/I18nJs.php:252 templates/dashboard.html.twig:436
+#: src/I18nJs.php:256 src/I18nJs.php:257 templates/dashboard.html.twig:436
 #: templates/projecttemplates.html.twig:73
 #, php-format
 msgid "%d tarefa"
@@ -199,12 +199,12 @@ msgstr "%s ESTOUROU o prazo planejado (excedente: %s)"
 msgid "%s atingiu %d%% do prazo planejado"
 msgstr "%s atingiu %d%% do prazo planejado"
 
-#: src/I18nJs.php:244
+#: src/I18nJs.php:249
 #, php-format
 msgid "%s de atraso"
 msgstr "%s de atraso"
 
-#: src/I18nJs.php:245
+#: src/I18nJs.php:250
 #, php-format
 msgid "%s do tempo"
 msgstr "%s do tempo"
@@ -238,7 +238,7 @@ msgstr "+ subtarefa"
 msgid "+ tarefa"
 msgstr "+ tarefa"
 
-#: ajax/project.php:254 ajax/project.php:272
+#: ajax/project.php:266 ajax/project.php:284
 msgid "A fase não pôde ser alterada."
 msgstr "A fase não pôde ser alterada."
 
@@ -654,7 +654,7 @@ msgstr "Comentários da tarefa"
 msgid "Comentários do projeto"
 msgstr "Comentários do projeto"
 
-#: ajax/task.php:301 ajax/task.php:334
+#: ajax/task.php:389 ajax/task.php:427
 #, php-format
 msgid "Conclua antes as %d subtarefa(s) aberta(s) desta tarefa"
 msgstr "Conclua antes as %d subtarefa(s) aberta(s) desta tarefa"
@@ -867,7 +867,7 @@ msgstr "Data de início"
 msgid "Data de início inválida"
 msgstr "Data de início inválida"
 
-#: ajax/project.php:294
+#: ajax/project.php:306 ajax/task.php:412
 msgid "Data inválida"
 msgstr "Data inválida"
 
@@ -1016,7 +1016,7 @@ msgstr "Em andamento"
 msgid "Em atraso"
 msgstr "Em atraso"
 
-#: src/I18nJs.php:242
+#: src/I18nJs.php:247
 msgid "Em dia"
 msgstr "Em dia"
 
@@ -1163,7 +1163,7 @@ msgstr "Falha ao criar a dependência"
 msgid "Falha ao criar a fase"
 msgstr "Falha ao criar a fase"
 
-#: ajax/task.php:253
+#: ajax/task.php:339
 msgid "Falha ao criar a tarefa"
 msgstr "Falha ao criar a tarefa"
 
@@ -1763,7 +1763,7 @@ msgstr "Nome do projeto"
 msgid "Nome do subprojeto"
 msgstr "Nome do subprojeto"
 
-#: ajax/task.php:216
+#: ajax/task.php:302
 msgid "Nome e projeto são obrigatórios"
 msgstr "Nome e projeto são obrigatórios"
 
@@ -1828,7 +1828,7 @@ msgstr "Não foi possível carregar o burndown."
 msgid "Não foi possível carregar os dados da timeline."
 msgstr "Não foi possível carregar os dados da timeline."
 
-#: ajax/project.php:203 ajax/task.php:207
+#: ajax/project.php:215 ajax/task.php:293
 msgid "Não foi possível mover para a lixeira"
 msgstr "Não foi possível mover para a lixeira"
 
@@ -1836,7 +1836,11 @@ msgstr "Não foi possível mover para a lixeira"
 msgid "Não foi possível salvar o favorito"
 msgstr "Não foi possível salvar o favorito"
 
-#: ajax/project.php:93 ajax/project.php:231
+#: src/I18nJs.php:244
+msgid "Não foi possível salvar."
+msgstr "Não foi possível salvar."
+
+#: ajax/project.php:100 ajax/project.php:243
 #, php-format
 msgid "Não é possível mover para uma fase finalizada — %d item(ns) aberto(s): %s"
 msgstr "Não é possível mover para uma fase finalizada — %d item(ns) aberto(s): %s"
@@ -1855,7 +1859,7 @@ msgstr "O conjunto padrão precisa de ao menos uma fase"
 msgid "O conteúdo de \"%s\" não corresponde à extensão"
 msgstr "O conteúdo de \"%s\" não corresponde à extensão"
 
-#: ajax/task.php:354
+#: ajax/task.php:447
 msgid "O cálculo automático precisa de ao menos uma subtarefa"
 msgstr "O cálculo automático precisa de ao menos uma subtarefa"
 
@@ -1863,11 +1867,11 @@ msgstr "O cálculo automático precisa de ao menos uma subtarefa"
 msgid "O modelo precisa de \"tasks\" e/ou \"subprojects\""
 msgstr "O modelo precisa de \"tasks\" e/ou \"subprojects\""
 
-#: ajax/task.php:296 ajax/task.php:330
+#: ajax/task.php:384 ajax/task.php:423
 msgid "O percentual desta tarefa é calculado automaticamente a partir das subtarefas"
 msgstr "O percentual desta tarefa é calculado automaticamente a partir das subtarefas"
 
-#: ajax/project.php:308
+#: ajax/project.php:320
 msgid "O percentual deste projeto é calculado automaticamente"
 msgstr "O percentual deste projeto é calculado automaticamente"
 
@@ -2123,8 +2127,8 @@ msgstr "Projeto criado com %1$d tarefa(s) e %2$d subprojeto(s)"
 msgid "Projeto de origem"
 msgstr "Projeto de origem"
 
-#: ajax/comment.php:62 ajax/project.php:59 ajax/project.php:181
-#: front/budget.form.php:18 front/projectcost.form.php:25
+#: ajax/comment.php:62 ajax/project.php:66 ajax/project.php:193
+#: ajax/project.php:352 front/budget.form.php:18 front/projectcost.form.php:25
 #: front/taskcomment.form.php:42 src/Templates.php:267
 msgid "Projeto não encontrado"
 msgstr "Projeto não encontrado"
@@ -2289,6 +2293,10 @@ msgstr "Saldo"
 msgid "Salva as alterações e envia para o seu próprio usuário — não depende da opção acima"
 msgstr "Salva as alterações e envia para o seu próprio usuário — não depende da opção acima"
 
+#: src/I18nJs.php:242
+msgid "Salvando…"
+msgstr "Salvando…"
+
 #: src/I18nJs.php:71
 msgid "Salvar"
 msgstr "Salvar"
@@ -2315,6 +2323,10 @@ msgstr "Salvar modelo"
 msgid "Salvar projeto como modelo"
 msgstr "Salvar projeto como modelo"
 
+#: src/I18nJs.php:243
+msgid "Salvo"
+msgstr "Salvo"
+
 #: src/Notification.php:925
 msgid "Se você recebeu esta mensagem, os alertas por e-mail estão funcionando."
 msgstr "Se você recebeu esta mensagem, os alertas por e-mail estão funcionando."
@@ -2331,7 +2343,7 @@ msgstr "Selecione um projeto para ver o burndown."
 msgid "Sem dados para exibir"
 msgstr "Sem dados para exibir"
 
-#: src/I18nJs.php:243
+#: src/I18nJs.php:248
 msgid "Sem datas"
 msgstr "Sem datas"
 
@@ -2344,11 +2356,11 @@ msgstr "Sem datas planejadas — corrija o planejamento"
 msgid "Sem estado"
 msgstr "Sem estado"
 
-#: src/Dashboard.php:440 src/Kanban.php:481 src/ProjectKanban.php:282
+#: src/Dashboard.php:440 src/Kanban.php:505 src/ProjectKanban.php:302
 msgid "Sem fase"
 msgstr "Sem fase"
 
-#: src/ProjectKanban.php:224
+#: src/ProjectKanban.php:226
 msgid "Sem gestor"
 msgstr "Sem gestor"
 
@@ -2356,8 +2368,8 @@ msgstr "Sem gestor"
 msgid "Sem outras tarefas neste projeto"
 msgstr "Sem outras tarefas neste projeto"
 
-#: ajax/favorite.php:29 ajax/favorite.php:34 ajax/project.php:184
-#: ajax/task.php:171 ajax/task.php:183 ajax/task.php:203
+#: ajax/favorite.php:29 ajax/favorite.php:34 ajax/project.php:196
+#: ajax/task.php:257 ajax/task.php:269 ajax/task.php:289
 #: front/project_create.form.php:56 src/ProjectManager.php:272
 #: src/ProjectManager.php:293
 msgid "Sem permissão"
@@ -2367,7 +2379,7 @@ msgstr "Sem permissão"
 msgid "Sem permissão para alterar custos"
 msgstr "Sem permissão para alterar custos"
 
-#: ajax/project.php:62 ajax/project.php:75 ajax/project.php:376
+#: ajax/project.php:69 ajax/project.php:82 ajax/project.php:411
 msgid "Sem permissão para alterar este projeto"
 msgstr "Sem permissão para alterar este projeto"
 
@@ -2377,7 +2389,7 @@ msgstr "Sem permissão para alterar este projeto"
 msgid "Sem permissão para comentar"
 msgstr "Sem permissão para comentar"
 
-#: ajax/task.php:219 ajax/task.php:232
+#: ajax/task.php:305 ajax/task.php:318
 msgid "Sem permissão para criar tarefas"
 msgstr "Sem permissão para criar tarefas"
 
@@ -2386,7 +2398,7 @@ msgstr "Sem permissão para criar tarefas"
 msgid "Sem permissão para gerenciar dependências"
 msgstr "Sem permissão para gerenciar dependências"
 
-#: ajax/project.php:191
+#: ajax/project.php:203
 #, php-format
 msgid "Sem permissão para mover o subprojeto \"%s\" para a lixeira — nada foi alterado"
 msgstr "Sem permissão para mover o subprojeto \"%s\" para a lixeira — nada foi alterado"
@@ -2395,7 +2407,7 @@ msgstr "Sem permissão para mover o subprojeto \"%s\" para a lixeira — nada fo
 msgid "Sem registro"
 msgstr "Sem registro"
 
-#: src/I18nJs.php:97 src/Kanban.php:294
+#: src/I18nJs.php:97 src/Kanban.php:295
 msgid "Sem responsável"
 msgstr "Sem responsável"
 
@@ -2554,7 +2566,7 @@ msgstr "Tarefa \"%s\" vence em breve (%s)"
 msgid "Tarefa atrasada"
 msgstr "Tarefa atrasada"
 
-#: ajax/task.php:88
+#: ajax/task.php:98
 #, php-format
 msgid "Tarefa bloqueada — conclua antes: %s"
 msgstr "Tarefa bloqueada — conclua antes: %s"
@@ -2563,7 +2575,7 @@ msgstr "Tarefa bloqueada — conclua antes: %s"
 msgid "Tarefa concluída"
 msgstr "Tarefa concluída"
 
-#: ajax/task.php:275
+#: ajax/task.php:361
 msgid "Tarefa criada"
 msgstr "Tarefa criada"
 
@@ -2571,8 +2583,8 @@ msgstr "Tarefa criada"
 msgid "Tarefa mãe"
 msgstr "Tarefa mãe"
 
-#: ajax/comment.php:73 ajax/task.php:168 ajax/task.php:180 ajax/task.php:198
-#: front/taskcomment.form.php:53 front/taskcost.form.php:26
+#: ajax/comment.php:73 ajax/task.php:254 ajax/task.php:266 ajax/task.php:284
+#: ajax/task.php:516 front/taskcomment.form.php:53 front/taskcost.form.php:26
 #: front/taskdep.form.php:31 src/TaskDep.php:453
 msgid "Tarefa não encontrada"
 msgstr "Tarefa não encontrada"
@@ -2747,7 +2759,7 @@ msgstr "Use \"Criar modelo do zero\" ou \"Salvar projeto como modelo\" para cria
 msgid "Usuário com Visão do cliente não pode ser gestor"
 msgstr "Usuário com Visão do cliente não pode ser gestor"
 
-#: ajax/project.php:341 ajax/task.php:382 src/Notification.php:890
+#: ajax/project.php:376 ajax/task.php:475 src/Notification.php:890
 #: src/ProjectManager.php:275
 msgid "Usuário não encontrado."
 msgstr "Usuário não encontrado."
@@ -2862,6 +2874,10 @@ msgstr "bloqueada por: %s"
 #: templates/reports.html.twig:100
 msgid "buscar por nome…"
 msgstr "buscar por nome…"
+
+#: src/I18nJs.php:245
+msgid "calculado automaticamente"
+msgstr "calculado automaticamente"
 
 #: src/I18nJs.php:165
 msgid "calcular automaticamente o %"

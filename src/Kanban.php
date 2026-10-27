@@ -191,6 +191,7 @@ class Kanban
                     'glpi_projecttasks.real_start_date',
                     'glpi_projecttasks.projectstates_id',
                     'glpi_projecttasks.date_mod', // O-2c: regra de "Parado"
+                    'glpi_projecttasks.auto_percent_done', // O-2b: % travado no modal
                     'glpi_projects.name AS project_name',
                 ],
                 'FROM'       => 'glpi_projecttasks',
@@ -316,6 +317,7 @@ class Kanban
                 'team_names'        => $teamAll[$id] ?? [], // O-2a
                 'state_id'          => $stateId,
                 'percent'           => (int) $row['percent_done'],
+                'auto_percent'      => !empty($row['auto_percent_done']), // O-2b
                 'is_done'           => (int) $row['percent_done'] >= 100,
                 'blocked'           => $deps[$id]['blocked'] ?? false,
                 'deps'              => $deps[$id]['deps'] ?? 0,
@@ -428,6 +430,28 @@ class Kanban
                 'responsible' => $laneUsers,
             ],
         ];
+    }
+
+    /**
+     * O-2b (27/10/2026) — UM cartão recalculado (tag, barras, prévia), para o
+     * modal redesenhar o cartão depois de salvar sem recarregar a página.
+     * Reaproveita getBoardData() inteiro com a lista de UM id, para o cartão
+     * sair idêntico ao do board. Sem filtro de tipo: `state_id` é a fase
+     * real (o JS encaixa na coluna do board). Quem chama já conferiu a
+     * permissão sobre a tarefa.
+     */
+    public static function cardFor(int $taskId): ?array
+    {
+        if ($taskId <= 0) {
+            return null;
+        }
+        $data = self::getBoardData(null, [$taskId]);
+        foreach ($data['cards'] as $card) {
+            if ((int) $card['id'] === $taskId) {
+                return $card;
+            }
+        }
+        return null;
     }
 
     /**
