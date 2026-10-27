@@ -190,6 +190,7 @@ class Kanban
                     'glpi_projecttasks.plan_end_date',
                     'glpi_projecttasks.real_start_date',
                     'glpi_projecttasks.projectstates_id',
+                    'glpi_projecttasks.date_mod', // O-2c: regra de "Parado"
                     'glpi_projects.name AS project_name',
                 ],
                 'FROM'       => 'glpi_projecttasks',
@@ -263,6 +264,8 @@ class Kanban
 
         $deps     = TaskDep::countForTasks($allTaskIds);
         $comments = TaskComment::countForTasks($allTaskIds);
+        $preview  = TaskComment::previewFor('task', $allTaskIds); // O-2c
+        $now      = time();
 
         // ---------- Monta os cartões (TODAS as tarefas, inclusive
         // filhas — o JS decide o que vira cartão de topo x subtarefa
@@ -290,6 +293,13 @@ class Kanban
             $respId   = $resp['id'] ?? self::UNSET_ID;
             $respName = $resp['name'] ?? __('Sem responsável', 'projectplus');
 
+            $deadline = Deadline::compute(
+                $row['plan_start_date'],
+                $row['real_start_date'],
+                $row['plan_end_date'],
+                (int) $row['percent_done']
+            );
+
             $usersSeen[$respId]      = $respName;
             $directProjectIds[$pid]  = true;
 
@@ -313,12 +323,10 @@ class Kanban
                 // Bloco N-5: prazo final no rodapé do cartão (formato do usuário)
                 'end_label'         => DateFmt::date($row['plan_end_date'], ''),
                 'start_label'       => DateFmt::date($row['plan_start_date'], ''), // O-2a
-                'deadline'          => Deadline::compute(
-                    $row['plan_start_date'],
-                    $row['real_start_date'],
-                    $row['plan_end_date'],
-                    (int) $row['percent_done']
-                ),
+                'deadline'          => $deadline,
+                // O-2c: tag de status e prévia dos 2 últimos comentários
+                'status'            => self::taskStatus($row, $deadline, $preview['latest'][$id] ?? null, $now),
+                'last_comments'     => $preview['items'][$id] ?? [],
             ];
         }
 
@@ -425,6 +433,42 @@ class Kanban
     /**
      * @param array<int, array{name:string, color:string}> $states
      */
+    /** O-2c: tarefa iniciada sem nenhuma alteração há este tanto de dias = "Parado". */
+    public const TASK_STALLED_DAYS = 3;
+
+    /**
+     * O-2c (27/10/2026) — tag de status do cartão da tarefa, nesta ordem:
+     *   done     — 100% concluída;
+     *   late     — fim planejado já passou (mesma regra do "Atrasado" do painel);
+     *   stalled  — começou (% > 0) e nem a tarefa (date_mod) nem os comentários
+     *              mudam há TASK_STALLED_DAYS dias;
+     *   nodates  — sem datas suficientes para a barra de prazo;
+     *   ok       — em dia.
+     */
+    public static function taskStatus(array $row, array $deadline, ?string $lastComment, int $now): string
+    {
+        $pct = (int) ($row['percent_done'] ?? 0);
+        if ($pct >= 100) {
+            return 'done';
+        }
+        if (!empty($row['plan_end_date']) && strtotime((string) $row['plan_end_date']) < $now) {
+            return 'late';
+        }
+        if ($pct > 0) {
+            $last = max(
+                !empty($row['date_mod']) ? (int) strtotime((string) $row['date_mod']) : 0,
+                !empty($lastComment) ? (int) strtotime($lastComment) : 0
+            );
+            if ($last > 0 && $last < $now - self::TASK_STALLED_DAYS * 86400) {
+                return 'stalled';
+            }
+        }
+        if (($deadline['state'] ?? '') === 'none') {
+            return 'nodates';
+        }
+        return 'ok';
+    }
+
     private static function columnsFrom(array $states, bool $withUnset = false): array
     {
         $columns = [];

@@ -628,13 +628,14 @@
         bindCardOpen(a, function () { openTaskModal(state, c, byId, a); });
 
         // Bloco N-5: bloqueio por dependência = cadeado (ícone) antes do nome.
+        // O-2c: nome à esquerda e a TAG de status à direita, na mesma linha.
         const name = document.createElement('span');
         name.className = 'pp-kb-card-item__name';
         if (c.blocked) {
             name.appendChild(lockEl());
         }
         name.appendChild(document.createTextNode(c.name));
-        a.appendChild(name);
+        a.appendChild(topEl(name, statusTagEl(c.status, 'task')));
 
         // Linha de meta: no agrupamento por Projeto mostra o responsável;
         // no agrupamento por Responsável mostra o projeto direto da tarefa.
@@ -643,21 +644,22 @@
         meta.textContent = state.lane === 'responsible' ? c.project_name : c.responsible_name;
         a.appendChild(meta);
 
-        a.appendChild(deadlineEl(c.deadline));
+        // O-2c: duas barras COM RÓTULO (Prazo = tempo consumido; Progresso =
+        // % concluído). O selo "✓ Concluída" virou a tag de status.
+        a.appendChild(barsEl(c.deadline, c.percent, c.is_done));
 
-        let html = escapeText(c.percent + '% ' + __('concluído'));
-        if (c.is_done) {
-            // Selo de conclusão (pedido de 31/07/2026): além da cor do cartão,
-            // um check textual explícito. Só texto TRADUZIDO passa por aqui.
-            html += ' <span class="pp-kb-donebadge">✓ ' + escapeText(__('Concluída')) + '</span>';
-        }
+        let html = '';
         if (c.comments > 0) {
-            html += ' &nbsp;💬' + Number(c.comments);
+            html += '💬' + Number(c.comments);
         }
         if (c.deps > 0) {
-            html += ' &nbsp;🔗' + Number(c.deps);
+            html += (html ? ' &nbsp;' : '') + '🔗' + Number(c.deps);
         }
         a.appendChild(footEl(html, c.end_label));
+        const prev = commentsPreviewEl(c.last_comments);
+        if (prev) {
+            a.appendChild(prev);
+        }
 
         wrap.appendChild(a);
 
@@ -782,15 +784,122 @@
         if (endLabel) {
             const end = document.createElement('span');
             end.className = 'pp-kb-card-item__end';
-            end.title = __('Prazo');
+            end.title = __('Fim planejado');
             const ico = document.createElement('i');
             ico.className = 'ti ti-calendar-due';
             end.appendChild(ico);
-            end.appendChild(document.createTextNode(String(endLabel)));
+            end.appendChild(document.createTextNode(__('Fim') + ' ' + String(endLabel))); // O-2c
             foot.appendChild(end);
         }
         return foot;
     }
+
+    // ------------------------------------------------------------------
+    // O-2c (27/10/2026) — cartão mais claro, compartilhado com o Kanban de
+    // projetos: tag de status, barras rotuladas e prévia dos comentários.
+    // ------------------------------------------------------------------
+    function topEl(nameEl, tagEl) {
+        const top = document.createElement('span');
+        top.className = 'pp-kb-card-item__top';
+        top.appendChild(nameEl);
+        if (tagEl) {
+            top.appendChild(tagEl);
+        }
+        return top;
+    }
+
+    // status vem do servidor (Kanban::taskStatus / ProjectKanban::projectStatus)
+    function statusTagEl(status, kind) {
+        const text = {
+            late: __('Atrasado'),
+            stalled: __('Parado'),
+            ok: __('Em dia'),
+            nodates: __('Sem datas'),
+            done: kind === 'project' ? __('Concluído') : __('Concluída'),
+        }[status];
+        if (!text) {
+            return null;
+        }
+        const tag = document.createElement('span');
+        tag.className = 'pp-kb-tag pp-kb-tag--' + status;
+        tag.textContent = text;
+        if (status === 'nodates') {
+            tag.title = __('Sem datas planejadas — corrija o planejamento');
+        }
+        return tag;
+    }
+
+    function barRowEl(label, fillClass, width, valueText, valueClass) {
+        const row = document.createElement('span');
+        row.className = 'pp-kb-bar';
+        const lb = document.createElement('span');
+        lb.className = 'pp-kb-bar__label';
+        lb.textContent = label;
+        const track = document.createElement('span');
+        track.className = 'pp-kb-bar__track';
+        const fill = document.createElement('span');
+        fill.className = 'pp-kb-bar__fill ' + fillClass;
+        fill.style.width = Math.max(0, Math.min(100, Number(width) || 0)) + '%';
+        track.appendChild(fill);
+        const val = document.createElement('span');
+        val.className = 'pp-kb-bar__value' + (valueClass ? ' ' + valueClass : '');
+        val.textContent = valueText;
+        row.appendChild(lb);
+        row.appendChild(track);
+        row.appendChild(val);
+        return row;
+    }
+
+    // Prazo: some quando concluído; "sem datas" quando não há janela;
+    // "+17d 17h" do servidor vira "17d 17h de atraso", "40%" vira "40% do tempo".
+    function barsEl(d, percent, isDone) {
+        const box = document.createElement('span');
+        box.className = 'pp-kb-bars';
+        if (!isDone && d && d.state !== 'done') {
+            if (d.state === 'none') {
+                box.appendChild(barRowEl(__('Prazo'), '', 0, __('sem datas'), 'pp-kb-bar__value--muted'));
+            } else {
+                const label = String(d.label || '');
+                const over = label.charAt(0) === '+';
+                box.appendChild(barRowEl(
+                    __('Prazo'),
+                    'pp-deadline__fill--' + d.state,
+                    d.display,
+                    over ? __('%s de atraso', label.substring(1)) : __('%s do tempo', label),
+                    'pp-deadline__label--' + d.state
+                ));
+            }
+        }
+        const pct = Number(percent) || 0;
+        box.appendChild(barRowEl(__('Progresso'), 'pp-kb-bar__fill--progress', pct, pct + '%', ''));
+        return box;
+    }
+
+    function commentsPreviewEl(list) {
+        if (!Array.isArray(list) || !list.length) {
+            return null;
+        }
+        const box = document.createElement('span');
+        box.className = 'pp-kb-cmts';
+        list.slice(0, 2).forEach(function (cm) {
+            const line = document.createElement('span');
+            line.className = 'pp-kb-cmts__line';
+            const who = document.createElement('b');
+            who.textContent = cm.author || '—';
+            line.appendChild(who);
+            line.appendChild(document.createTextNode(
+                (cm.date ? ' · ' + cm.date : '') + ' — ' + (cm.text || '')
+            ));
+            line.title = (cm.author || '') + (cm.date ? ' · ' + cm.date : '') + ' — ' + (cm.text || '');
+            box.appendChild(line);
+        });
+        return box;
+    }
+    ProjectPlusKanban.topEl = topEl;
+    ProjectPlusKanban.statusTagEl = statusTagEl;
+    ProjectPlusKanban.barsEl = barsEl;
+    ProjectPlusKanban.commentsPreviewEl = commentsPreviewEl;
+
     ProjectPlusKanban.isLate = isLate;
     ProjectPlusKanban.footEl = footEl;
 

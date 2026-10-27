@@ -239,6 +239,79 @@ class TaskComment extends CommonDBTM
         return $counts;
     }
 
+    /**
+     * O-2c (27/10/2026) — prévia dos comentários nos cartões do Kanban: os
+     * $limit mais recentes de cada tarefa (kind 'task') ou de cada projeto
+     * (kind 'project', só os do projeto — projecttasks_id 0), numa consulta.
+     * Devolve também a data do comentário MAIS RECENTE de cada um (entra na
+     * regra de "Parado" da tarefa: comentar conta como movimento).
+     *
+     * @param int[] $ids
+     * @return array{items: array<int, array<int, array{author:string, date:string, text:string}>>, latest: array<int,string>}
+     */
+    public static function previewFor(string $kind, array $ids, int $limit = 2): array
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        $out = ['items' => [], 'latest' => []];
+        $ids = array_values(array_filter(array_map('intval', $ids)));
+        $key = $kind === 'project' ? 'projects_id' : 'projecttasks_id';
+        if ($ids === [] || !$DB->tableExists(self::getTable())
+            || ($kind === 'project' && !$DB->fieldExists(self::getTable(), 'projects_id'))) {
+            return $out;
+        }
+        $where = [$key => $ids];
+        if ($kind === 'project') {
+            $where['projecttasks_id'] = 0;
+        }
+
+        $raw  = [];
+        $uids = [];
+        foreach (
+            $DB->request([
+                'SELECT' => ['id', 'users_id', 'projecttasks_id', 'projects_id', 'content', 'date_creation'],
+                'FROM'   => self::getTable(),
+                'WHERE'  => $where,
+                'ORDER'  => ['date_creation DESC', 'id DESC'],
+            ]) as $row
+        ) {
+            $owner = (int) $row[$key];
+            if (!isset($out['latest'][$owner])) {
+                $out['latest'][$owner] = (string) $row['date_creation'];
+            }
+            if (count($raw[$owner] ?? []) < $limit) {
+                $raw[$owner][] = $row;
+                $uids[(int) $row['users_id']] = true;
+            }
+        }
+
+        $names = [];
+        foreach (ProjectManager::namesOf(array_keys($uids)) as $u) {
+            $names[$u['id']] = $u['name'];
+        }
+        foreach ($raw as $owner => $rows) {
+            foreach ($rows as $row) {
+                $out['items'][$owner][] = [
+                    'author' => $names[(int) $row['users_id']] ?? '—',
+                    'date'   => DateFmt::date($row['date_creation'], ''),
+                    'text'   => self::excerpt((string) $row['content']),
+                ];
+            }
+        }
+        return $out;
+    }
+
+    /** Uma linha curta do comentário para o cartão (sem texto = só anexo). */
+    public static function excerpt(string $content, int $max = 100): string
+    {
+        $text = trim((string) preg_replace('/\s+/u', ' ', $content));
+        if ($text === '') {
+            return '📎';
+        }
+        return mb_strlen($text) > $max ? rtrim(mb_substr($text, 0, $max)) . '…' : $text;
+    }
+
     private static function getWhere(array $where): array
     {
         /** @var \DBmysql $DB */

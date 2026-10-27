@@ -258,40 +258,58 @@
         const name = document.createElement('span');
         name.className = 'pp-kb-card-item__name';
         name.textContent = c.name;
-        a.appendChild(name);
+        // O-2c: nome + tag de status (helpers do kanban.js)
+        if (K && typeof K.topEl === 'function') {
+            a.appendChild(K.topEl(name, K.statusTagEl(c.status, 'project')));
+        } else {
+            a.appendChild(name);
+        }
 
         const meta = document.createElement('span');
         meta.className = 'pp-kb-card-item__project';
         meta.textContent = c.manager || '';
         a.appendChild(meta);
 
-        a.appendChild(deadlineEl(c.deadline));
+        // O-2c: barras rotuladas (Prazo / Progresso) no lugar da barra solta.
+        if (K && typeof K.barsEl === 'function') {
+            a.appendChild(K.barsEl(c.deadline, c.percent, c.is_done));
+        } else {
+            a.appendChild(deadlineEl(c.deadline));
+        }
 
-        // Bloco N-5: rodapé — % concluído e tarefas à esquerda, prazo final à direita.
+        // Bloco N-5: rodapé — tarefas e 💬 à esquerda, fim planejado à direita
+        // (O-2c: o % saiu do rodapé — está na barra Progresso).
         const foot = document.createElement('span');
         foot.className = 'pp-kb-card-item__meta';
         const badges = document.createElement('span');
         badges.className = 'pp-kb-card-item__badges';
-        let text = c.percent + '% ' + __('concluído');
+        let text = '';
         if (c.tasks_total > 0) {
-            text += '  •  ' + c.tasks_done + '/' + c.tasks_total + ' ' + __('tarefas');
+            text += c.tasks_done + '/' + c.tasks_total + ' ' + __('tarefas');
         }
         if (c.comments > 0) {
-            text += '  💬' + Number(c.comments); // O-2a
+            text += (text ? '  •  ' : '') + '💬' + Number(c.comments); // O-2a
         }
         badges.textContent = text;
         foot.appendChild(badges);
         if (c.end_label) {
             const end = document.createElement('span');
             end.className = 'pp-kb-card-item__end';
-            end.title = __('Prazo');
+            end.title = __('Fim planejado');
             const ico = document.createElement('i');
             ico.className = 'ti ti-calendar-due';
             end.appendChild(ico);
-            end.appendChild(document.createTextNode(String(c.end_label)));
+            end.appendChild(document.createTextNode(__('Fim') + ' ' + String(c.end_label))); // O-2c
             foot.appendChild(end);
         }
         a.appendChild(foot);
+        // O-2c: os 2 últimos comentários do projeto
+        if (K && typeof K.commentsPreviewEl === 'function') {
+            const prev = K.commentsPreviewEl(c.last_comments);
+            if (prev) {
+                a.appendChild(prev);
+            }
+        }
 
         wrap.appendChild(a);
 

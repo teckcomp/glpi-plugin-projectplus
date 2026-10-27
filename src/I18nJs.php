@@ -238,6 +238,11 @@ class I18nJs
                 // O-2a — modal da tarefa/projeto no Kanban
                 'Fechar'                   => __('Fechar', 'projectplus'),
                 'Abrir ficha completa'     => __('Abrir ficha completa', 'projectplus'),
+                // O-2c — cartão do Kanban mais claro
+                'Em dia'                   => __('Em dia', 'projectplus'),
+                'Sem datas'                => __('Sem datas', 'projectplus'),
+                '%s de atraso'             => __('%s de atraso', 'projectplus'),
+                '%s do tempo'              => __('%s do tempo', 'projectplus'),
             ],
 
             'p' => [

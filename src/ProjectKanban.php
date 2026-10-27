@@ -168,6 +168,22 @@ class ProjectKanban
         }
         $comments = TaskComment::countForProjects($ids);
 
+        // O-2c (27/10/2026): status do cartão (mesma regra do painel —
+        // Atrasado pelo fim planejado, Parado pelo indicador do cron) e a
+        // prévia dos 2 últimos comentários do projeto.
+        $stalled = [];
+        foreach (
+            $DB->request([
+                'SELECT' => ['projects_id', 'is_stalled'],
+                'FROM'   => ProjectTracking::getTable(),
+                'WHERE'  => ['projects_id' => $ids],
+            ]) as $r
+        ) {
+            $stalled[(int) $r['projects_id']] = !empty($r['is_stalled']);
+        }
+        $preview = TaskComment::previewFor('project', $ids);
+        $now     = time();
+
         $cards         = [];
         $sawExtraState = false;
         foreach ($rows as $row) {
@@ -180,6 +196,12 @@ class ProjectKanban
                 $sawExtraState = true;
                 $stateId       = self::UNSET_ID;
             }
+            $deadline = Deadline::compute(
+                $row['plan_start_date'],
+                $row['real_start_date'],
+                $row['plan_end_date'],
+                (int) $row['percent_done']
+            );
             $parentId = (int) $row['projects_id'];
             // Respeita a ordem de nome configurada no GLPI (config ou
             // preferência da sessão), em vez de fixar "Sobrenome Nome".
@@ -211,12 +233,9 @@ class ProjectKanban
                 'start_label' => DateFmt::date($row['plan_start_date'], ''),
                 // Bloco N-5: prazo final no rodapé do cartão (formato do usuário)
                 'end_label'   => DateFmt::date($row['plan_end_date'], ''),
-                'deadline'    => Deadline::compute(
-                    $row['plan_start_date'],
-                    $row['real_start_date'],
-                    $row['plan_end_date'],
-                    (int) $row['percent_done']
-                ),
+                'deadline'    => $deadline,
+                'status'      => self::projectStatus($row, $deadline, $stalled[$id] ?? false, $now), // O-2c
+                'last_comments' => $preview['items'][$id] ?? [],                                    // O-2c
             ];
         }
 
@@ -229,6 +248,28 @@ class ProjectKanban
     /**
      * @param array<int, array{name:string, color:string}> $states
      */
+    /**
+     * O-2c (27/10/2026) — tag de status do cartão do projeto, mesma régua do
+     * painel: done (100%) > late (fim planejado passou) > stalled (indicador
+     * do ProjectTracking, cron de 7 dias) > nodates (sem datas) > ok.
+     */
+    public static function projectStatus(array $row, array $deadline, bool $isStalled, int $now): string
+    {
+        if ((int) ($row['percent_done'] ?? 0) >= 100) {
+            return 'done';
+        }
+        if (!empty($row['plan_end_date']) && strtotime((string) $row['plan_end_date']) < $now) {
+            return 'late';
+        }
+        if ($isStalled) {
+            return 'stalled';
+        }
+        if (($deadline['state'] ?? '') === 'none') {
+            return 'nodates';
+        }
+        return 'ok';
+    }
+
     private static function columnsFrom(array $states, bool $withUnset = false): array
     {
         $columns = [];

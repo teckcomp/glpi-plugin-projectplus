@@ -2390,3 +2390,39 @@ label.pp-cfg-row__label { cursor: pointer; }
 @media (max-width: 560px) {
     .pp-im__grid { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* ===== O-2c (27/10/2026) — cartão do Kanban mais claro =====
+   Nome + tag de status na mesma linha; barras Prazo/Progresso com rótulo e
+   valor; prévia dos 2 últimos comentários. Cores só por variável. */
+.pp-kb-card-item__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.pp-kb-card-item__top .pp-kb-card-item__name { min-width: 0; overflow-wrap: anywhere; }
+.pp-kb-tag {
+    flex: none; display: inline-block; padding: 1px 8px; border-radius: 10px;
+    font-size: 10.5px; font-weight: 700; line-height: 1.6; white-space: nowrap;
+    border: 1px solid transparent;
+}
+.pp-kb-tag--late    { background: var(--pp-danger-soft); color: var(--pp-danger-text); border-color: var(--pp-danger-border); }
+.pp-kb-tag--stalled { background: var(--pp-warn-soft);   color: var(--pp-warn-text);   border-color: var(--pp-warn-border); }
+.pp-kb-tag--ok      { background: var(--pp-ok-soft);     color: var(--pp-ok-text);     border-color: color-mix(in srgb, var(--pp-ok) 45%, transparent); }
+.pp-kb-tag--done    { background: var(--pp-surface-2);   color: var(--pp-ok-text);     border-color: var(--pp-border); }
+.pp-kb-tag--nodates { background: var(--pp-surface-2);   color: var(--pp-muted);       border-color: var(--pp-border); border-style: dashed; }
+.pp-kb-bars { display: flex; flex-direction: column; gap: 5px; }
+.pp-kb-bar {
+    display: grid; grid-template-columns: 62px minmax(0, 1fr) auto; align-items: center; gap: 8px;
+    font-size: 11.5px;
+}
+.pp-kb-bar__label { color: var(--pp-muted); }
+.pp-kb-bar__track { display: block; height: 6px; border-radius: 3px; background: var(--pp-border); overflow: hidden; }
+.pp-kb-bar__fill { display: block; height: 100%; border-radius: 3px; }
+.pp-kb-bar__fill--progress { background: var(--pp-accent); }
+.pp-kb-bar__value { white-space: nowrap; color: var(--pp-text-2); text-align: right; }
+.pp-kb-bar__value--muted { color: var(--pp-muted); font-style: italic; }
+.pp-kb-cmts {
+    display: flex; flex-direction: column; gap: 3px;
+    padding-top: 7px; border-top: 1px solid var(--pp-border);
+}
+.pp-kb-cmts__line {
+    display: block; font-size: 11.5px; color: var(--pp-text-2);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.pp-kb-cmts__line b { font-weight: 700; color: var(--pp-text-strong); }

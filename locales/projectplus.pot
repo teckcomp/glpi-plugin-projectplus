@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ProjectPlus 1.1.0-beta\n"
 "Report-Msgid-Bugs-To: https://github.com/teckcomp/glpi-plugin-projectplus/issues\n"
-"POT-Creation-Date: 2026-10-26 18:56+0000\n"
+"POT-Creation-Date: 2026-10-27 14:15+0000\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -50,17 +50,17 @@ msgstr ""
 msgid "%1$d fase(s) gravada(s) para \"%2$s\""
 msgstr ""
 
-#: src/TaskComment.php:479
+#: src/TaskComment.php:552
 #, php-format
 msgid "%1$s comentou na tarefa \"%2$s\": %3$s"
 msgstr ""
 
-#: src/TaskComment.php:431
+#: src/TaskComment.php:504
 #, php-format
 msgid "%1$s comentou no projeto \"%2$s\": %3$s"
 msgstr ""
 
-#: src/I18nJs.php:261 src/I18nJs.php:262
+#: src/I18nJs.php:266 src/I18nJs.php:267
 #, php-format
 msgid "%d arquivo selecionado"
 msgid_plural "%d arquivos selecionados"
@@ -138,7 +138,7 @@ msgid_plural "%d projetos com teto"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/I18nJs.php:256 src/I18nJs.php:257
+#: src/I18nJs.php:261 src/I18nJs.php:262
 #, php-format
 msgid "%d restante"
 msgid_plural "%d restantes"
@@ -151,7 +151,7 @@ msgid_plural "%d subprojetos"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/I18nJs.php:251 src/I18nJs.php:252
+#: src/I18nJs.php:256 src/I18nJs.php:257
 #, php-format
 msgid "%d subtarefa"
 msgid_plural "%d subtarefas"
@@ -165,7 +165,7 @@ msgid_plural "%d subtarefas abertas"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/I18nJs.php:246 src/I18nJs.php:247 templates/dashboard.html.twig:436
+#: src/I18nJs.php:251 src/I18nJs.php:252 templates/dashboard.html.twig:436
 #: templates/projecttemplates.html.twig:73
 #, php-format
 msgid "%d tarefa"
@@ -191,6 +191,16 @@ msgstr ""
 #: src/Notification.php:412
 #, php-format
 msgid "%s atingiu %d%% do prazo planejado"
+msgstr ""
+
+#: src/I18nJs.php:244
+#, php-format
+msgid "%s de atraso"
+msgstr ""
+
+#: src/I18nJs.php:245
+#, php-format
+msgid "%s do tempo"
 msgstr ""
 
 #: src/Notification.php:324
@@ -346,7 +356,7 @@ msgstr ""
 msgid "Anexar arquivo"
 msgstr ""
 
-#: src/TaskComment.php:579
+#: src/TaskComment.php:652
 msgid "Anexos: imagens, PDF, DOC/DOCX, XLS/XLSX — até 10 MB cada"
 msgstr ""
 
@@ -435,7 +445,7 @@ msgstr ""
 msgid "Atualizado às %s"
 msgstr ""
 
-#: src/Reports.php:576 src/TaskComment.php:598
+#: src/Reports.php:576 src/TaskComment.php:671
 msgid "Autor"
 msgstr ""
 
@@ -602,11 +612,11 @@ msgstr ""
 msgid "Com subprojetos"
 msgstr ""
 
-#: src/I18nJs.php:138 src/TaskComment.php:584
+#: src/I18nJs.php:138 src/TaskComment.php:657
 msgid "Comentar"
 msgstr ""
 
-#: src/ProjectCost.php:144 src/TaskComment.php:42 src/TaskComment.php:600
+#: src/ProjectCost.php:144 src/TaskComment.php:42 src/TaskComment.php:673
 #: src/TaskCost.php:175 templates/costs.html.twig:121
 #: templates/projecttemplate_edit.html.twig:45
 #: templates/projecttemplates.html.twig:137
@@ -645,11 +655,11 @@ msgstr ""
 msgid "Comentários (ProjectPlus)"
 msgstr ""
 
-#: src/TaskComment.php:540
+#: src/TaskComment.php:613
 msgid "Comentários da tarefa"
 msgstr ""
 
-#: src/TaskComment.php:553
+#: src/TaskComment.php:626
 msgid "Comentários do projeto"
 msgstr ""
 
@@ -857,7 +867,7 @@ msgstr ""
 msgid "Cálculo automático a partir das tarefas e subprojetos"
 msgstr ""
 
-#: src/ProjectCost.php:141 src/Reports.php:575 src/TaskComment.php:599
+#: src/ProjectCost.php:141 src/Reports.php:575 src/TaskComment.php:672
 #: src/TaskCost.php:172 templates/costs.html.twig:118
 msgid "Data"
 msgstr ""
@@ -1021,6 +1031,10 @@ msgstr ""
 msgid "Em atraso"
 msgstr ""
 
+#: src/I18nJs.php:242
+msgid "Em dia"
+msgstr ""
+
 #: templates/config_shell.html.twig:95
 msgid "Em dias"
 msgstr ""
@@ -1076,7 +1090,7 @@ msgstr ""
 msgid "Escopo: ver todos os projetos"
 msgstr ""
 
-#: src/TaskComment.php:575
+#: src/TaskComment.php:648
 msgid "Escreva um comentário…"
 msgstr ""
 
@@ -1108,13 +1122,13 @@ msgstr ""
 msgid "Este é um e-mail de teste do plugin ProjectPlus."
 msgstr ""
 
-#: src/TaskComment.php:632
+#: src/TaskComment.php:705
 msgid ""
 "Estes comentários também aparecem no Gestor de Projetos (faixa Projeto do "
 "painel)."
 msgstr ""
 
-#: src/TaskComment.php:633
+#: src/TaskComment.php:706
 msgid ""
 "Estes comentários também aparecem no Gestor de Projetos (árvore de tarefas e "
 "Minhas tarefas)."
@@ -1650,11 +1664,11 @@ msgstr ""
 msgid "Nenhum comentário ainda."
 msgstr ""
 
-#: src/TaskComment.php:541
+#: src/TaskComment.php:614
 msgid "Nenhum comentário nesta tarefa"
 msgstr ""
 
-#: src/TaskComment.php:554
+#: src/TaskComment.php:627
 msgid "Nenhum comentário neste projeto"
 msgstr ""
 
@@ -1814,7 +1828,7 @@ msgstr ""
 msgid "Nova tarefa…"
 msgstr ""
 
-#: src/TaskComment.php:572
+#: src/TaskComment.php:645
 msgid "Novo comentário"
 msgstr ""
 
@@ -2375,6 +2389,10 @@ msgstr ""
 msgid "Sem dados para exibir"
 msgstr ""
 
+#: src/I18nJs.php:243
+msgid "Sem datas"
+msgstr ""
+
 #: src/I18nJs.php:120 templates/dashboard.html.twig:255
 #: templates/dashboard.html.twig:370
 msgid "Sem datas planejadas — corrija o planejamento"
@@ -2384,11 +2402,11 @@ msgstr ""
 msgid "Sem estado"
 msgstr ""
 
-#: src/Dashboard.php:440 src/Kanban.php:437 src/ProjectKanban.php:241
+#: src/Dashboard.php:440 src/Kanban.php:481 src/ProjectKanban.php:282
 msgid "Sem fase"
 msgstr ""
 
-#: src/ProjectKanban.php:202
+#: src/ProjectKanban.php:224
 msgid "Sem gestor"
 msgstr ""
 
@@ -2437,7 +2455,7 @@ msgstr ""
 msgid "Sem registro"
 msgstr ""
 
-#: src/I18nJs.php:97 src/Kanban.php:291
+#: src/I18nJs.php:97 src/Kanban.php:294
 msgid "Sem responsável"
 msgstr ""
 
@@ -2976,7 +2994,7 @@ msgstr ""
 msgid "duração (d)"
 msgstr ""
 
-#: src/I18nJs.php:136 src/TaskComment.php:607
+#: src/I18nJs.php:136 src/TaskComment.php:680
 msgid "editado"
 msgstr ""
 
