@@ -247,7 +247,7 @@ class TaskComment extends CommonDBTM
      * regra de "Parado" da tarefa: comentar conta como movimento).
      *
      * @param int[] $ids
-     * @return array{items: array<int, array<int, array{author:string, date:string, text:string}>>, latest: array<int,string>}
+     * @return array{items: array<int, array<int, array{id:int, uid:int, author:string, date:string, text:string}>>, latest: array<int,string>}
      */
     public static function previewFor(string $kind, array $ids, int $limit = 2): array
     {
@@ -293,6 +293,8 @@ class TaskComment extends CommonDBTM
         foreach ($raw as $owner => $rows) {
             foreach ($rows as $row) {
                 $out['items'][$owner][] = [
+                    'id'     => (int) $row['id'],       // O-4: decide o "novo" no cartão
+                    'uid'    => (int) $row['users_id'], // O-4: o próprio nunca é novo
                     'author' => $names[(int) $row['users_id']] ?? '—',
                     'date'   => DateFmt::date($row['date_creation'], ''),
                     'text'   => self::excerpt((string) $row['content']),
@@ -605,10 +607,13 @@ class TaskComment extends CommonDBTM
 
     public static function showForTask(ProjectTask $task): void
     {
+        $list = self::getForTask((int) $task->getID());
+        // O-4: abrir a aba nativa também conta como leitura
+        CommentRead::markList('task', (int) $task->getID(), $list, (int) Session::getLoginUserID());
         self::showTab(
             'projecttasks_id',
             (int) $task->getID(),
-            self::getForTask((int) $task->getID()),
+            $list,
             self::canComment(),
             __('Comentários da tarefa', 'projectplus'),
             __('Nenhum comentário nesta tarefa', 'projectplus')
@@ -618,10 +623,12 @@ class TaskComment extends CommonDBTM
     /** Bloco D-3b — aba "Comentários (ProjectPlus)" na ficha do projeto. */
     public static function showForProject(Project $project): void
     {
+        $list = self::getForProject((int) $project->getID());
+        CommentRead::markList('project', (int) $project->getID(), $list, (int) Session::getLoginUserID()); // O-4
         self::showTab(
             'projects_id',
             (int) $project->getID(),
-            self::getForProject((int) $project->getID()),
+            $list,
             self::canCommentProject(),
             __('Comentários do projeto', 'projectplus'),
             __('Nenhum comentário neste projeto', 'projectplus')

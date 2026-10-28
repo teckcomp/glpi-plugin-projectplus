@@ -41,6 +41,7 @@ class Install
         'glpi_plugin_projectplus_commentfiles',
         'glpi_plugin_projectplus_userprefs', // Bloco L: filtros favoritos
         'glpi_plugin_projectplus_projectmanagers', // O-1a: gestores do projeto
+        'glpi_plugin_projectplus_commentreads', // O-4: leitura dos comentários por usuário
     ];
 
     /**
@@ -202,6 +203,13 @@ class Install
             'users_id'      => 'INT %SIGN% NOT NULL DEFAULT 0',
             'date_creation' => 'TIMESTAMP NULL DEFAULT NULL',
         ],
+        'glpi_plugin_projectplus_commentreads' => [
+            'users_id'        => 'INT %SIGN% NOT NULL DEFAULT 0',
+            'projecttasks_id' => 'INT %SIGN% NOT NULL DEFAULT 0',
+            'projects_id'     => 'INT %SIGN% NOT NULL DEFAULT 0',
+            'last_comment_id' => 'INT %SIGN% NOT NULL DEFAULT 0',
+            'date_read'       => 'TIMESTAMP NULL DEFAULT NULL',
+        ],
     ];
 
     /**
@@ -215,6 +223,7 @@ class Install
         'glpi_plugin_projectplus_typephases'       => ['type_state'],
         'glpi_plugin_projectplus_userprefs'        => ['user_screen'],
         'glpi_plugin_projectplus_projectmanagers'  => ['project_user'],
+        'glpi_plugin_projectplus_commentreads'     => ['user_item'],
     ];
 
     public static function install(): bool
@@ -468,6 +477,28 @@ class Install
         }
 
         // ------------------------------------------------------------------
+        // 7.6) Leitura dos comentários por usuário (Ciclo O, O-4, 28/10/2026).
+        //      Uma linha por (usuário, tarefa) ou (usuário, projeto) — tarefa
+        //      com `projects_id` 0, projeto com `projecttasks_id` 0, como em
+        //      `taskcomments`. Guarda o id do ÚLTIMO comentário visto (o id é
+        //      monotônico; a hora tinha a janela de 1 segundo do Task+ 16d).
+        // ------------------------------------------------------------------
+        if (!$DB->tableExists('glpi_plugin_projectplus_commentreads')) {
+            $DB->doQuery("
+                CREATE TABLE `glpi_plugin_projectplus_commentreads` (
+                    `id`              INT {$sign} NOT NULL AUTO_INCREMENT,
+                    `users_id`        INT {$sign} NOT NULL DEFAULT 0 COMMENT 'leitor',
+                    `projecttasks_id` INT {$sign} NOT NULL DEFAULT 0,
+                    `projects_id`     INT {$sign} NOT NULL DEFAULT 0,
+                    `last_comment_id` INT {$sign} NOT NULL DEFAULT 0 COMMENT 'ultimo comentario visto',
+                    `date_read`       TIMESTAMP NULL DEFAULT NULL,
+                    PRIMARY KEY (`id`),
+                    UNIQUE KEY `user_item` (`users_id`, `projecttasks_id`, `projects_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET={$charset} COLLATE={$collation}
+            ");
+        }
+
+        // ------------------------------------------------------------------
         // 7.1) Reconciliação de schema (Etapa 6, Bloco 1a).
         //      Para bases criadas por versões antigas: garante as colunas
         //      que passaram a existir DEPOIS da criação da tabela.
@@ -503,6 +534,13 @@ class Install
         //      nem apaga gestor acrescentado depois.
         // ------------------------------------------------------------------
         ProjectManager::migrateFromNative();
+
+        // ------------------------------------------------------------------
+        // 7.7) Marco dos não lidos (O-4). UMA vez: tudo o que já existia na
+        //      instalação conta como lido, para ninguém ver todos os
+        //      comentários antigos como "novos" no primeiro acesso.
+        // ------------------------------------------------------------------
+        CommentRead::seedBase();
 
         // ------------------------------------------------------------------
         // Direitos.

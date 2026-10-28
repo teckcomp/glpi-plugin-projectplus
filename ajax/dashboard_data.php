@@ -6,7 +6,8 @@
  * GET ?action=data              -> KPIs + gráfico + projetos pai
  * GET ?action=children&id=NN    -> subprojetos de um pai (requisito 2)
  * GET ?action=mytasks[&done=1]  -> tarefas do usuário logado (Etapa 3, Bloco 1)
- * GET ?action=taskcomments&id=NN -> comentários de uma tarefa (Etapa 3, Bloco 2)
+ * GET ?action=taskcomments&id=NN -> comentários de uma tarefa (Etapa 3, Bloco 2;
+ *                                  O-4: marca como lidos para quem abriu)
  * GET ?action=taskdeps&id=NN    -> dependências de uma tarefa (Etapa 3, Bloco 3)
  * GET ?action=projectmeta&id=NN -> faixa "Projeto" do painel (Bloco D-3a; só
  *                                  para quem edita projeto)
@@ -16,6 +17,7 @@
  */
 
 use GlpiPlugin\Projectplus\Access;
+use GlpiPlugin\Projectplus\CommentRead;
 use GlpiPlugin\Projectplus\Dashboard;
 use GlpiPlugin\Projectplus\Description;
 use GlpiPlugin\Projectplus\Scope;
@@ -87,12 +89,11 @@ switch ($action) {
 
     case 'projectcomments':
         // Bloco F-2b: quem enxerga o projeto (💬 da linha do projeto)
-        $pcId = (int) ($_GET['id'] ?? 0);
-        echo json_encode(
-            TaskComment::canCommentOnProject($pcId)
-                ? TaskComment::getForProject($pcId)
-                : []
-        );
+        $pcId   = (int) ($_GET['id'] ?? 0);
+        $pcList = TaskComment::canCommentOnProject($pcId) ? TaskComment::getForProject($pcId) : [];
+        // O-4: abrir os comentários = ler (só quem enxerga o projeto chega aqui com lista)
+        CommentRead::markList('project', $pcId, $pcList, (int) Session::getLoginUserID());
+        echo json_encode($pcList);
         break;
 
     case 'projectdesc':
@@ -140,7 +141,9 @@ switch ($action) {
 
     case 'taskcomments':
         $taskId = (int) ($_GET['id'] ?? 0);
-        echo json_encode(TaskComment::getForTask($taskId));
+        $tcList = TaskComment::getForTask($taskId);
+        CommentRead::markList('task', $taskId, $tcList, (int) Session::getLoginUserID()); // O-4
+        echo json_encode($tcList);
         break;
 
     case 'taskdeps':

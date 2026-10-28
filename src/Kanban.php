@@ -4,6 +4,7 @@ namespace GlpiPlugin\Projectplus;
 
 use Project;
 use ProjectTask;
+use Session;
 
 /**
  * ProjectPlus — Kanban avançado (Etapa 7, Bloco 1 + 1.1 + 1.2 + 1.3).
@@ -222,6 +223,7 @@ class Kanban
         // mesma convenção da captura de Modelos (Etapa 4, lição 15) ----------
         $teamFirst = [];
         $teamAll   = []; // O-2a: todos os responsáveis, para o modal do cartão
+        $teamPeople = []; // O-4: os mesmos, com id (avatares)
         foreach (
             $DB->request([
                 'SELECT'    => [
@@ -255,6 +257,8 @@ class Kanban
                 $row['firstname'] ?? ''
             );
             $teamAll[$tid][] = $label !== '' ? $label : '?';
+            // O-4: avatares no cartão (id + nome, na ordem da equipe)
+            $teamPeople[$tid][] = ['id' => (int) $row['items_id'], 'name' => $label !== '' ? $label : '?'];
             if (isset($teamFirst[$tid])) {
                 continue; // já temos o primeiro (ordenado por id da equipe)
             }
@@ -267,6 +271,9 @@ class Kanban
         $deps     = TaskDep::countForTasks($allTaskIds);
         $comments = TaskComment::countForTasks($allTaskIds);
         $preview  = TaskComment::previewFor('task', $allTaskIds); // O-2c
+        // O-4: não lidos do usuário logado (a leitura é por pessoa)
+        $me       = (int) Session::getLoginUserID();
+        $unread   = CommentRead::unreadFor('task', $allTaskIds, $me);
         $now      = time();
 
         // ---------- Monta os cartões (TODAS as tarefas, inclusive
@@ -316,6 +323,7 @@ class Kanban
                 'responsible_id'    => $respId,
                 'responsible_name'  => $respName,
                 'team_names'        => $teamAll[$id] ?? [], // O-2a
+                'team'              => $teamPeople[$id] ?? [], // O-4: avatares
                 'state_id'          => $stateId,
                 'percent'           => (int) $row['percent_done'],
                 'auto_percent'      => !empty($row['auto_percent_done']), // O-2b
@@ -323,13 +331,14 @@ class Kanban
                 'blocked'           => $deps[$id]['blocked'] ?? false,
                 'deps'              => $deps[$id]['deps'] ?? 0,
                 'comments'          => $comments[$id] ?? 0,
+                'unread'            => $unread['count'][$id] ?? 0, // O-4
                 // Bloco N-5: prazo final no rodapé do cartão (formato do usuário)
                 'end_label'         => DateFmt::date($row['plan_end_date'], ''),
                 'start_label'       => DateFmt::date($row['plan_start_date'], ''), // O-2a
                 'deadline'          => $deadline,
                 // O-2c: tag de status e prévia dos 2 últimos comentários
                 'status'            => self::taskStatus($row, $deadline, $preview['latest'][$id] ?? null, $now),
-                'last_comments'     => $preview['items'][$id] ?? [],
+                'last_comments'     => CommentRead::flagPreview($preview['items'][$id] ?? [], $unread['since'][$id] ?? PHP_INT_MAX, $me),
                 // O-2e-2: descrição — 2 linhas abaixo do título (texto puro)
                 'has_desc'          => Description::has($row['content'] ?? ''),
                 'desc_excerpt'      => Description::excerpt($row['content'] ?? ''),

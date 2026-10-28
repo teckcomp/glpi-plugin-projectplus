@@ -48,6 +48,7 @@
     --pp-card-border: #e1e5ea;
     --pp-chart-grid: #e7ebf0;
     --pp-chart-ideal: #c3ccd4;
+    --pp-avatar-text: #fff; /* O-4: iniciais sobre a cor da pessoa (igual nos dois temas) */
 }
 html[data-pp-theme="dark"] {
     --pp-page: #0C1F24;
@@ -2543,3 +2544,36 @@ label.pp-cfg-row__label { cursor: pointer; }
     flex: 1 0 100%; margin: 0 0 8px; padding: 6px 10px; border-radius: 6px; font-size: 0.82rem;
     color: var(--pp-danger-text); background: var(--pp-danger-soft); border: 1px solid var(--pp-danger-border);
 }
+
+/* ------------------------------------------------------------------
+ * O-4 (28/10/2026) — avatares no cartão e 💬 com não lidos.
+ * A cor de cada avatar vem do JS (cor de DADO, paleta do Task+).
+ * ------------------------------------------------------------------ */
+.pp-kb-card-item__people {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0;
+}
+.pp-kb-avatars { display: inline-flex; align-items: center; min-width: 0; }
+.pp-kb-avatars--none { font-size: 11.5px; color: var(--pp-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pp-kb-avatar {
+    width: 22px; height: 22px; border-radius: 50%; flex: 0 0 auto;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; line-height: 1; letter-spacing: .02em;
+    color: var(--pp-avatar-text); border: 2px solid var(--pp-card); margin-left: -6px;
+}
+.pp-kb-avatar:first-child { margin-left: 0; }
+.pp-kb-avatar--more { background: var(--pp-surface-2); color: var(--pp-text-2); font-weight: 600; }
+/* O-4a-3: o 💬 é SEMPRE um chip (pedido do Claudio — destaque aos diálogos
+   nos dois Kanbans); neutro sem novidade, destacado com não lidos. */
+.pp-kb-cmtbadge {
+    display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto;
+    padding: 1px 8px; border-radius: 999px; border: 1px solid var(--pp-border-strong);
+    background: var(--pp-surface-2); font-size: 12px; font-weight: 600;
+    color: var(--pp-text-2); white-space: nowrap;
+}
+.pp-kb-cmtbadge__ico { font-size: 14px; line-height: 1; }
+.pp-kb-cmtbadge--new {
+    background: var(--pp-accent-soft); color: var(--pp-link); border-color: var(--pp-accent);
+}
+.pp-kb-cmtbadge__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--pp-accent); }
+.pp-kb-cmts__line--new { border-left: 2px solid var(--pp-accent); padding-left: 6px; }
+

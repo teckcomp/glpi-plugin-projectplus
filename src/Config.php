@@ -28,13 +28,15 @@ class Config
         'purge_on_uninstall'  => 0,   // 1 = apaga tabelas/dados/direitos ao desinstalar
         'costs_migrated'      => 0,   // 1 = custos nativos já importados (marca interna)
         'phases_seeded'       => 0,   // 1 = conjunto padrão de fases já semeado (marca interna, Etapa 9)
+        'unread_seeded'       => 0,   // O-4: 1 = marco dos não lidos já gravado (marca interna)
+        'unread_base_id'      => 0,   // O-4: comentários com id até este contam como lidos (marca interna)
     ];
 
     /**
      * Chaves internas: existem em DEFAULTS (para serem apagadas na purga),
      * mas não aparecem no formulário de configuração.
      */
-    public const INTERNAL_KEYS = ['costs_migrated', 'phases_seeded'];
+    public const INTERNAL_KEYS = ['costs_migrated', 'phases_seeded', 'unread_seeded', 'unread_base_id'];
 
     /** O-3: teto de chaves que não são número livre (o resto só tem piso 0). */
     public const MAX = ['move_comment' => 2];

@@ -250,7 +250,12 @@
 
         // Mapa id -> cartão (p/ achar o nome da mãe na tag da subtarefa).
         const byId = {};
-        data.cards.forEach(function (c) { byId[c.id] = c; });
+        const peopleNames = {};
+        data.cards.forEach(function (c) {
+            byId[c.id] = c;
+            (Array.isArray(c.team) ? c.team : []).forEach(function (p) { if (p && p.name) { peopleNames[p.name] = true; } });
+        });
+        registerPeople(Object.keys(peopleNames)); // O-4: cor de pessoa estável
         const q = state.query;
 
         // linhas (lanes) + regra de agrupamento por modo
@@ -877,24 +882,36 @@
             a.appendChild(dx);
         }
 
-        // Linha de meta: no agrupamento por Projeto mostra o responsável;
-        // no agrupamento por Responsável mostra o projeto direto da tarefa.
-        const meta = document.createElement('span');
-        meta.className = 'pp-kb-card-item__project';
-        meta.textContent = state.lane === 'responsible' ? c.project_name : c.responsible_name;
-        a.appendChild(meta);
+        // Linha de meta: no agrupamento por Responsável mostra o projeto
+        // direto da tarefa. O-4: no agrupamento por Projeto a linha de nomes
+        // saiu — os responsáveis viraram avatares (linha das pessoas abaixo).
+        if (state.lane === 'responsible') {
+            const meta = document.createElement('span');
+            meta.className = 'pp-kb-card-item__project';
+            meta.textContent = c.project_name;
+            a.appendChild(meta);
+        }
 
         // O-2c: duas barras COM RÓTULO (Prazo = tempo consumido; Progresso =
         // % concluído). O selo "✓ Concluída" virou a tag de status.
         a.appendChild(barsEl(c.deadline, c.percent, c.is_done));
 
+        // O-4: avatares da equipe da tarefa + 💬 com não lidos
+        const people = peopleRowEl(
+            Array.isArray(c.team) ? c.team : [],
+            __('Responsáveis'),
+            (Array.isArray(c.team) && c.team.length) ? '' : (c.responsible_name || __('Sem responsável')),
+            c.comments,
+            c.unread
+        );
+        if (people) {
+            a.appendChild(people);
+        }
+
         let html = '';
         // O-2e-2: ícone só para descrição sem texto (ex.: só imagem)
         if (c.has_desc && !c.desc_excerpt) {
             html += '<i class="ti ti-align-left pp-kb-card-item__desc" title="' + escapeText(__('Descrição')) + '"></i>';
-        }
-        if (c.comments > 0) {
-            html += '💬' + Number(c.comments);
         }
         if (c.deps > 0) {
             html += (html ? ' &nbsp;' : '') + '🔗' + Number(c.deps);
@@ -1025,6 +1042,10 @@
                 if (changed) { render(state._holder, state); }
             },
         });
+        // O-4: o modal abre os comentários (e o servidor marca como lidos)
+        if (base && clearUnread(c)) {
+            changed = true;
+        }
         // O-2e-2: descrição (leitura para quem vê; edição pela regra do Kanban)
         descField({
             kind: 'task',
@@ -1550,7 +1571,7 @@
         box.className = 'pp-kb-cmts';
         list.slice(0, 2).forEach(function (cm) {
             const line = document.createElement('span');
-            line.className = 'pp-kb-cmts__line';
+            line.className = 'pp-kb-cmts__line' + (cm.new ? ' pp-kb-cmts__line--new' : ''); // O-4
             const who = document.createElement('b');
             who.textContent = cm.author || '—';
             line.appendChild(who);
@@ -1562,6 +1583,173 @@
         });
         return box;
     }
+    // ------------------------------------------------------------------
+    // O-4 (28/10/2026) — avatares dos responsáveis/gestores e 💬 com não
+    // lidos. Cor de PESSOA = paleta e regra do Task+ (card.js, personColor):
+    // hash do nome, e um registro por página para duas pessoas não dividirem
+    // a mesma cor (até 12). `registerPeople` registra em ordem alfabética
+    // antes de desenhar, para a cor não depender da ordem dos cartões.
+    // São cores de DADO (como as de fase), por isso ficam fora das variáveis.
+    // ------------------------------------------------------------------
+    const PEOPLE_PAL = ['#E05A6B', '#7C5CFF', '#F28C28', '#2EA8E5', '#C33FA0', '#3DBF6E',
+        '#E8B931', '#5B8DEF', '#F0623D', '#9A6BFF', '#1FB7B0', '#D9538E'];
+    const AVATAR_MAX = 4;
+    const peopleColors = {};
+    const peopleTaken = {};
+
+    function personHash(s) {
+        let h = 0;
+        s = String(s || '');
+        for (let i = 0; i < s.length; i++) {
+            h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+        }
+        return Math.abs(h);
+    }
+
+    function personColor(name) {
+        name = String(name || '');
+        if (peopleColors[name]) {
+            return peopleColors[name];
+        }
+        const start = personHash(name) % PEOPLE_PAL.length;
+        let idx = start;
+        let i;
+        for (i = 0; i < PEOPLE_PAL.length; i++) {
+            idx = (start + i) % PEOPLE_PAL.length;
+            if (!peopleTaken[idx]) {
+                break;
+            }
+        }
+        if (i === PEOPLE_PAL.length) {
+            idx = start; // mais de 12 pessoas: repete a do hash
+        }
+        peopleTaken[idx] = true;
+        peopleColors[name] = PEOPLE_PAL[idx];
+        return peopleColors[name];
+    }
+
+    function registerPeople(names) {
+        (names || []).slice().sort(function (a, b) { return String(a).localeCompare(String(b)); })
+            .forEach(personColor);
+    }
+
+    function initials(name) {
+        const parts = String(name || '').trim().split(/[\s.\-_]+/).filter(Boolean);
+        if (!parts.length) {
+            return '?';
+        }
+        const a = parts[0].charAt(0);
+        const b = parts.length > 1 ? parts[parts.length - 1].charAt(0) : '';
+        return (a + b).toUpperCase();
+    }
+
+    function avatarsEl(people, label) {
+        const list = (Array.isArray(people) ? people : []).filter(function (p) { return p && p.name; });
+        if (!list.length) {
+            return null;
+        }
+        const names = list.map(function (p) { return String(p.name); });
+        const box = document.createElement('span');
+        box.className = 'pp-kb-avatars';
+        box.title = names.join(', ');
+        box.setAttribute('aria-label', (label ? label + ': ' : '') + names.join(', '));
+        list.slice(0, AVATAR_MAX).forEach(function (p) {
+            const av = document.createElement('span');
+            av.className = 'pp-kb-avatar';
+            av.style.background = personColor(p.name);
+            av.textContent = initials(p.name);
+            av.title = String(p.name);
+            av.setAttribute('aria-hidden', 'true');
+            box.appendChild(av);
+        });
+        if (list.length > AVATAR_MAX) {
+            const more = document.createElement('span');
+            more.className = 'pp-kb-avatar pp-kb-avatar--more';
+            more.textContent = '+' + (list.length - AVATAR_MAX);
+            more.title = names.slice(AVATAR_MAX).join(', ');
+            more.setAttribute('aria-hidden', 'true');
+            box.appendChild(more);
+        }
+        return box;
+    }
+
+    // "💬5" comum; com não lidos vira a pílula "💬5 · 2 novos".
+    function commentsBadgeEl(total, unread) {
+        total = Number(total) || 0;
+        unread = Number(unread) || 0;
+        if (total <= 0 && unread <= 0) {
+            return null;
+        }
+        const b = document.createElement('span');
+        b.className = 'pp-kb-cmtbadge';
+        // O-4a-2: ícone de traço (como no mockup) no lugar do emoji, que o
+        // navegador desenhava miúdo e cinza ao lado dos avatares
+        const ico = document.createElement('i');
+        ico.className = 'ti ti-message-circle pp-kb-cmtbadge__ico';
+        ico.setAttribute('aria-hidden', 'true');
+        if (unread > 0) {
+            b.classList.add('pp-kb-cmtbadge--new');
+            const dot = document.createElement('span');
+            dot.className = 'pp-kb-cmtbadge__dot';
+            dot.setAttribute('aria-hidden', 'true');
+            b.appendChild(dot);
+            b.appendChild(ico);
+            b.appendChild(document.createTextNode(total + ' · ' + _n('%d novo', '%d novos', unread, unread)));
+            b.title = _n('%d comentário não lido', '%d comentários não lidos', unread, unread);
+        } else {
+            b.appendChild(ico);
+            b.appendChild(document.createTextNode(String(total)));
+            b.title = __('Comentários');
+        }
+        return b;
+    }
+
+    // Linha das pessoas: avatares à esquerda (ou o texto de "sem
+    // responsável/gestor"), 💬 à direita. Nada a mostrar = null.
+    function peopleRowEl(people, label, emptyText, total, unread) {
+        const av = avatarsEl(people, label);
+        const cb = commentsBadgeEl(total, unread);
+        if (!av && !cb && !emptyText) {
+            return null;
+        }
+        const row = document.createElement('span');
+        row.className = 'pp-kb-card-item__people';
+        if (av) {
+            row.appendChild(av);
+        } else {
+            const none = document.createElement('span');
+            none.className = 'pp-kb-avatars pp-kb-avatars--none';
+            none.textContent = emptyText || '';
+            row.appendChild(none);
+        }
+        if (cb) {
+            row.appendChild(cb);
+        }
+        return row;
+    }
+
+    // Ao abrir os comentários (modal) o servidor marca como lidos; o cartão
+    // acompanha sem recarregar. Devolve true se havia algo a limpar.
+    function clearUnread(c) {
+        let had = (Number(c.unread) || 0) > 0;
+        c.unread = 0;
+        (Array.isArray(c.last_comments) ? c.last_comments : []).forEach(function (cm) {
+            if (cm && cm.new) {
+                cm.new = false;
+                had = true;
+            }
+        });
+        return had;
+    }
+
+    ProjectPlusKanban.personColor = personColor;
+    ProjectPlusKanban.registerPeople = registerPeople;
+    ProjectPlusKanban.initials = initials;
+    ProjectPlusKanban.avatarsEl = avatarsEl;
+    ProjectPlusKanban.commentsBadgeEl = commentsBadgeEl;
+    ProjectPlusKanban.peopleRowEl = peopleRowEl;
+    ProjectPlusKanban.clearUnread = clearUnread;
+
     ProjectPlusKanban.topEl = topEl;
     ProjectPlusKanban.statusTagEl = statusTagEl;
     ProjectPlusKanban.barsEl = barsEl;

@@ -12,7 +12,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ProjectPlus\n"
 "Report-Msgid-Bugs-To: https://github.com/teckcomp/glpi-plugin-projectplus/issues\n"
-"POT-Creation-Date: 2026-10-28 12:52+0000\n"
+"POT-Creation-Date: 2026-10-28 14:21+0000\n"
 "PO-Revision-Date: 2026-07-25 00:00+0000\n"
 "Last-Translator: Teckcomp I.T. Services\n"
 "Language-Team: Portugues do Brasil\n"
@@ -41,7 +41,7 @@ msgstr "% orçamento consumido"
 msgid "%1$d conjunto(s) para %2$d fase(s) cadastrada(s)"
 msgstr "%1$d conjunto(s) para %2$d fase(s) cadastrada(s)"
 
-#: src/Config.php:139 src/Config.php:152
+#: src/Config.php:141 src/Config.php:154
 #, php-format
 msgid "%1$d de %2$d"
 msgstr "%1$d de %2$d"
@@ -56,12 +56,12 @@ msgstr "%1$d fase(s) copiada(s) para \"%2$s\""
 msgid "%1$d fase(s) gravada(s) para \"%2$s\""
 msgstr "%1$d fase(s) gravada(s) para \"%2$s\""
 
-#: src/TaskComment.php:552
+#: src/TaskComment.php:554
 #, php-format
 msgid "%1$s comentou na tarefa \"%2$s\": %3$s"
 msgstr "%1$s comentou na tarefa \"%2$s\": %3$s"
 
-#: src/TaskComment.php:504
+#: src/TaskComment.php:506
 #, php-format
 msgid "%1$s comentou no projeto \"%2$s\": %3$s"
 msgstr "%1$s comentou no projeto \"%2$s\": %3$s"
@@ -73,7 +73,14 @@ msgid_plural "%d arquivos selecionados"
 msgstr[0] "%d arquivo selecionado"
 msgstr[1] "%d arquivos selecionados"
 
-#: src/Config.php:206
+#: src/I18nJs.php:304 src/I18nJs.php:305
+#, php-format
+msgid "%d comentário não lido"
+msgid_plural "%d comentários não lidos"
+msgstr[0] "%d comentário não lido"
+msgstr[1] "%d comentários não lidos"
+
+#: src/Config.php:208
 #, php-format
 msgid "%d conjunto sem finalizadora"
 msgid_plural "%d conjuntos sem finalizadora"
@@ -106,14 +113,21 @@ msgid_plural "%d modelos"
 msgstr[0] "%d modelo"
 msgstr[1] "%d modelos"
 
-#: src/Config.php:185
+#: src/I18nJs.php:300 src/I18nJs.php:301
+#, php-format
+msgid "%d novo"
+msgid_plural "%d novos"
+msgstr[0] "%d novo"
+msgstr[1] "%d novos"
+
+#: src/Config.php:187
 #, php-format
 msgid "%d perfil abaixo do máximo"
 msgid_plural "%d perfis abaixo do máximo"
 msgstr[0] "%d perfil abaixo do máximo"
 msgstr[1] "%d perfis abaixo do máximo"
 
-#: src/Config.php:236
+#: src/Config.php:238
 #, php-format
 msgid "%d ponto de atenção"
 msgid_plural "%d pontos de atenção"
@@ -276,7 +290,7 @@ msgstr "A árvore completa do projeto (tarefas e TODOS os subprojetos, com prazo
 msgid "APAGA tabelas, dados e direitos"
 msgstr "APAGA tabelas, dados e direitos"
 
-#: src/Config.php:201 templates/config_shell.html.twig:283
+#: src/Config.php:203 templates/config_shell.html.twig:283
 msgid "AUSENTE"
 msgstr "AUSENTE"
 
@@ -381,7 +395,7 @@ msgstr "Alternar tema claro/escuro"
 msgid "Anexar arquivo"
 msgstr "Anexar arquivo"
 
-#: src/TaskComment.php:652
+#: src/TaskComment.php:659
 msgid "Anexos: imagens, PDF, DOC/DOCX, XLS/XLSX — até 10 MB cada"
 msgstr "Anexos: imagens, PDF, DOC/DOCX, XLS/XLSX — até 10 MB cada"
 
@@ -464,7 +478,7 @@ msgstr "Atualizado por último"
 msgid "Atualizado às %s"
 msgstr "Atualizado às %s"
 
-#: src/Reports.php:576 src/TaskComment.php:671
+#: src/Reports.php:576 src/TaskComment.php:678
 msgid "Autor"
 msgstr "Autor"
 
@@ -625,12 +639,12 @@ msgstr "Com esta opção ligada, desinstalar o plugin APAGA as tabelas do Projec
 msgid "Com subprojetos"
 msgstr "Com subprojetos"
 
-#: src/I18nJs.php:162 src/TaskComment.php:657
+#: src/I18nJs.php:162 src/TaskComment.php:664
 msgid "Comentar"
 msgstr "Comentar"
 
 #: src/I18nJs.php:86 src/ProjectCost.php:144 src/TaskComment.php:42
-#: src/TaskComment.php:673 src/TaskCost.php:175 templates/costs.html.twig:121
+#: src/TaskComment.php:680 src/TaskCost.php:175 templates/costs.html.twig:121
 #: templates/projecttemplate_edit.html.twig:45
 #: templates/projecttemplates.html.twig:137
 msgid "Comentário"
@@ -672,11 +686,11 @@ msgstr "Comentários"
 msgid "Comentários (ProjectPlus)"
 msgstr "Comentários (ProjectPlus)"
 
-#: src/TaskComment.php:613
+#: src/TaskComment.php:618
 msgid "Comentários da tarefa"
 msgstr "Comentários da tarefa"
 
-#: src/TaskComment.php:626
+#: src/TaskComment.php:633
 msgid "Comentários do projeto"
 msgstr "Comentários do projeto"
 
@@ -816,7 +830,7 @@ msgstr "Criar tipo"
 msgid "Crie projetos prontos a partir de uma estrutura de tarefas e subprojetos salva"
 msgstr "Crie projetos prontos a partir de uma estrutura de tarefas e subprojetos salva"
 
-#: src/Config.php:168
+#: src/Config.php:170
 msgid "Cron de alertas"
 msgstr "Cron de alertas"
 
@@ -880,7 +894,7 @@ msgstr "Cálculo automático a partir das subtarefas"
 msgid "Cálculo automático a partir das tarefas e subprojetos"
 msgstr "Cálculo automático a partir das tarefas e subprojetos"
 
-#: src/ProjectCost.php:141 src/Reports.php:575 src/TaskComment.php:672
+#: src/ProjectCost.php:141 src/Reports.php:575 src/TaskComment.php:679
 #: src/TaskCost.php:172 templates/costs.html.twig:118
 msgid "Data"
 msgstr "Data"
@@ -969,7 +983,7 @@ msgstr "Desligado"
 msgid "Desligado: desinstalar preserva os dados e os direitos por perfil; reinstalar devolve tudo como estava"
 msgstr "Desligado: desinstalar preserva os dados e os direitos por perfil; reinstalar devolve tudo como estava"
 
-#: src/Config.php:239
+#: src/Config.php:241
 msgid "Detalhes na aba Diagnóstico"
 msgstr "Detalhes na aba Diagnóstico"
 
@@ -1002,7 +1016,7 @@ msgstr "Digite para buscar…"
 msgid "Direito"
 msgstr "Direito"
 
-#: src/Config.php:151 templates/config_shell.html.twig:303
+#: src/Config.php:153 templates/config_shell.html.twig:303
 msgid "Direitos"
 msgstr "Direitos"
 
@@ -1122,7 +1136,7 @@ msgstr "Escopo: ver todos os projetos"
 msgid "Escreva um comentário para mover."
 msgstr "Escreva um comentário para mover."
 
-#: src/TaskComment.php:648
+#: src/TaskComment.php:655
 msgid "Escreva um comentário…"
 msgstr "Escreva um comentário…"
 
@@ -1162,11 +1176,11 @@ msgstr "Este vínculo já existe"
 msgid "Este é um e-mail de teste do plugin ProjectPlus."
 msgstr "Este é um e-mail de teste do plugin ProjectPlus."
 
-#: src/TaskComment.php:705
+#: src/TaskComment.php:712
 msgid "Estes comentários também aparecem no Gestor de Projetos (faixa Projeto do painel)."
 msgstr "Estes comentários também aparecem no Gestor de Projetos (faixa Projeto do painel)."
 
-#: src/TaskComment.php:706
+#: src/TaskComment.php:713
 msgid "Estes comentários também aparecem no Gestor de Projetos (árvore de tarefas e Minhas tarefas)."
 msgstr "Estes comentários também aparecem no Gestor de Projetos (árvore de tarefas e Minhas tarefas)."
 
@@ -1316,7 +1330,7 @@ msgstr "Fases cadastradas na instância: %1$d · tipos com conjunto próprio: %2
 msgid "Fases de"
 msgstr "Fases de"
 
-#: src/Config.php:215 templates/_topbar.html.twig:73
+#: src/Config.php:217 templates/_topbar.html.twig:73
 #: templates/config_shell.html.twig:89 templates/config_shell.html.twig:190
 #: templates/config_shell.html.twig:203 templates/typephases.html.twig:21
 msgid "Fases por tipo"
@@ -1728,11 +1742,11 @@ msgstr "Nenhum alerta não lido"
 msgid "Nenhum comentário ainda."
 msgstr "Nenhum comentário ainda."
 
-#: src/TaskComment.php:614
+#: src/TaskComment.php:619
 msgid "Nenhum comentário nesta tarefa"
 msgstr "Nenhum comentário nesta tarefa"
 
-#: src/TaskComment.php:627
+#: src/TaskComment.php:634
 msgid "Nenhum comentário neste projeto"
 msgstr "Nenhum comentário neste projeto"
 
@@ -1886,7 +1900,7 @@ msgstr "Nova fase"
 msgid "Nova tarefa…"
 msgstr "Nova tarefa…"
 
-#: src/TaskComment.php:645
+#: src/TaskComment.php:652
 msgid "Novo comentário"
 msgstr "Novo comentário"
 
@@ -1906,7 +1920,7 @@ msgstr "Novo projeto"
 msgid "Novo tipo"
 msgstr "Novo tipo"
 
-#: src/Config.php:158 templates/config_shell.html.twig:397
+#: src/Config.php:160 templates/config_shell.html.twig:397
 msgid "NÃO registrado"
 msgstr "NÃO registrado"
 
@@ -2111,7 +2125,7 @@ msgstr "Pendentes"
 msgid "Percentual do teto do projeto"
 msgstr "Percentual do teto do projeto"
 
-#: src/Config.php:194 templates/config_shell.html.twig:326
+#: src/Config.php:196 templates/config_shell.html.twig:326
 #: templates/config_shell.html.twig:330
 msgid "Perfil administrador"
 msgstr "Perfil administrador"
@@ -2500,12 +2514,12 @@ msgstr "Sem datas planejadas — corrija o planejamento"
 msgid "Sem estado"
 msgstr "Sem estado"
 
-#: src/Dashboard.php:440 src/Kanban.php:512 src/MoveRules.php:125
-#: src/ProjectKanban.php:307
+#: src/Dashboard.php:440 src/Kanban.php:521 src/MoveRules.php:125
+#: src/ProjectKanban.php:317
 msgid "Sem fase"
 msgstr "Sem fase"
 
-#: src/ProjectKanban.php:227
+#: src/ProjectKanban.php:231
 msgid "Sem gestor"
 msgstr "Sem gestor"
 
@@ -2552,7 +2566,7 @@ msgstr "Sem permissão para mover o subprojeto \"%s\" para a lixeira — nada fo
 msgid "Sem registro"
 msgstr "Sem registro"
 
-#: src/I18nJs.php:121 src/Kanban.php:296
+#: src/I18nJs.php:121 src/Kanban.php:303
 msgid "Sem responsável"
 msgstr "Sem responsável"
 
@@ -2669,11 +2683,11 @@ msgstr "Tabela"
 msgid "Tabela de mapeamento AUSENTE — reexecute a instalação."
 msgstr "Tabela de mapeamento AUSENTE — reexecute a instalação."
 
-#: src/Config.php:138 templates/config_shell.html.twig:269
+#: src/Config.php:140 templates/config_shell.html.twig:269
 msgid "Tabelas"
 msgstr "Tabelas"
 
-#: src/Config.php:232
+#: src/Config.php:234
 msgid "Tabelas, direitos e cron no lugar"
 msgstr "Tabelas, direitos e cron no lugar"
 
@@ -2876,7 +2890,7 @@ msgstr "Total histórico"
 msgid "Transporte (DSN, senha oculta)"
 msgstr "Transporte (DSN, senha oculta)"
 
-#: src/Config.php:231
+#: src/Config.php:233
 msgid "Tudo certo"
 msgstr "Tudo certo"
 
@@ -3002,7 +3016,7 @@ msgstr "acima de %d%% do teto"
 msgid "as notificações estão desativadas no GLPI"
 msgstr "as notificações estão desativadas no GLPI"
 
-#: src/Config.php:164
+#: src/Config.php:166
 msgid "ativo"
 msgstr "ativo"
 
@@ -3040,7 +3054,7 @@ msgstr "campo \"name\" obrigatório"
 msgid "coluna %d"
 msgstr "coluna %d"
 
-#: src/Config.php:190 templates/config_shell.html.twig:342
+#: src/Config.php:192 templates/config_shell.html.twig:342
 msgid "completo"
 msgstr "completo"
 
@@ -3060,7 +3074,7 @@ msgstr "concluído"
 msgid "conjunto próprio"
 msgstr "conjunto próprio"
 
-#: src/Config.php:161 templates/config_shell.html.twig:394
+#: src/Config.php:163 templates/config_shell.html.twig:394
 msgid "desativado"
 msgstr "desativado"
 
@@ -3085,7 +3099,7 @@ msgstr "dos projetos com teto"
 msgid "duração (d)"
 msgstr "duração (d)"
 
-#: src/I18nJs.php:160 src/TaskComment.php:680
+#: src/I18nJs.php:160 src/TaskComment.php:687
 msgid "editado"
 msgstr "editado"
 
@@ -3153,7 +3167,7 @@ msgstr "ligados"
 msgid "motivo não informado"
 msgstr "motivo não informado"
 
-#: src/Config.php:181
+#: src/Config.php:183
 msgid "nenhum perfil"
 msgstr "nenhum perfil"
 

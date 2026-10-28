@@ -295,6 +295,15 @@ class I18nJs
                     _n('%d arquivo selecionado', '%d arquivos selecionados', 1, 'projectplus'),
                     _n('%d arquivo selecionado', '%d arquivos selecionados', 2, 'projectplus'),
                 ],
+                // O-4 — 💬 com não lidos no cartão do Kanban ("5 · 2 novos")
+                self::pkey('%d novo', '%d novos') => [
+                    _n('%d novo', '%d novos', 1, 'projectplus'),
+                    _n('%d novo', '%d novos', 2, 'projectplus'),
+                ],
+                self::pkey('%d comentário não lido', '%d comentários não lidos') => [
+                    _n('%d comentário não lido', '%d comentários não lidos', 1, 'projectplus'),
+                    _n('%d comentário não lido', '%d comentários não lidos', 2, 'projectplus'),
+                ],
             ],
         ];
     }

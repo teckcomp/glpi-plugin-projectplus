@@ -150,10 +150,19 @@
         }
 
         const grouped = {};
+        const peopleNames = {};
         cards.forEach(function (c) {
             grouped[c.state_id] = grouped[c.state_id] || [];
             grouped[c.state_id].push(c);
+            (Array.isArray(c.manager_people) ? c.manager_people : []).forEach(function (p) {
+                if (p && p.name) { peopleNames[p.name] = true; }
+            });
         });
+        // O-4: cor de pessoa estável (ordem alfabética, não a dos cartões)
+        const KR = window.ProjectPlusKanban;
+        if (KR && typeof KR.registerPeople === 'function') {
+            KR.registerPeople(Object.keys(peopleNames));
+        }
 
         const board = document.createElement('div');
         board.className = 'pp-kb-board pp-pkb-board';
@@ -272,10 +281,14 @@
             a.appendChild(dx);
         }
 
-        const meta = document.createElement('span');
-        meta.className = 'pp-kb-card-item__project';
-        meta.textContent = c.manager || '';
-        a.appendChild(meta);
+        // O-4: a linha com o nome do gestor virou avatares (linha das
+        // pessoas, depois das barras). Sem os helpers, fica o texto de antes.
+        if (!(K && typeof K.peopleRowEl === 'function')) {
+            const meta = document.createElement('span');
+            meta.className = 'pp-kb-card-item__project';
+            meta.textContent = c.manager || '';
+            a.appendChild(meta);
+        }
 
         // O-2c: barras rotuladas (Prazo / Progresso) no lugar da barra solta.
         if (K && typeof K.barsEl === 'function') {
@@ -284,8 +297,23 @@
             a.appendChild(deadlineEl(c.deadline));
         }
 
-        // Bloco N-5: rodapé — tarefas e 💬 à esquerda, fim planejado à direita
-        // (O-2c: o % saiu do rodapé — está na barra Progresso).
+        // O-4: avatares dos gestores + 💬 com não lidos
+        if (K && typeof K.peopleRowEl === 'function') {
+            const people = K.peopleRowEl(
+                Array.isArray(c.manager_people) ? c.manager_people : [],
+                __('Gestores'),
+                (Array.isArray(c.manager_people) && c.manager_people.length) ? '' : (c.manager || ''),
+                c.comments,
+                c.unread
+            );
+            if (people) {
+                a.appendChild(people);
+            }
+        }
+
+        // Bloco N-5: rodapé — tarefas à esquerda, fim planejado à direita
+        // (O-2c: o % saiu do rodapé — está na barra Progresso; O-4: o 💬
+        // subiu para a linha das pessoas).
         const foot = document.createElement('span');
         foot.className = 'pp-kb-card-item__meta';
         const badges = document.createElement('span');
@@ -294,8 +322,8 @@
         if (c.tasks_total > 0) {
             text += c.tasks_done + '/' + c.tasks_total + ' ' + __('tarefas');
         }
-        if (c.comments > 0) {
-            text += (text ? '  •  ' : '') + '💬' + Number(c.comments); // O-2a
+        if (c.comments > 0 && !(K && typeof K.peopleRowEl === 'function')) {
+            text += (text ? '  •  ' : '') + '💬' + Number(c.comments); // O-2a (sem helpers do O-4)
         }
         badges.textContent = text;
         // O-2e: ícone só quando há descrição sem texto (ex.: só imagem) — com
@@ -391,6 +419,10 @@
                 if (changed) { render(state._holder, state); }
             },
         });
+        // O-4: o modal abre os comentários (e o servidor marca como lidos)
+        if (base && typeof K.clearUnread === 'function' && K.clearUnread(c)) {
+            changed = true;
+        }
         // O-2e: descrição (leitura para quem vê; edição pela regra da faixa)
         if (typeof K.descField === 'function') {
             K.descField({

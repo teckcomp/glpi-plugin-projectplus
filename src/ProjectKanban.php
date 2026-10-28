@@ -3,6 +3,7 @@
 namespace GlpiPlugin\Projectplus;
 
 use Project;
+use Session;
 
 /**
  * ProjectPlus — Kanban de PROJETOS (Etapa 8, Bloco 4).
@@ -184,6 +185,9 @@ class ProjectKanban
             $stalled[(int) $r['projects_id']] = !empty($r['is_stalled']);
         }
         $preview = TaskComment::previewFor('project', $ids);
+        // O-4: não lidos do usuário logado
+        $me      = (int) Session::getLoginUserID();
+        $unread  = CommentRead::unreadFor('project', $ids, $me);
         $now     = time();
 
         $cards         = [];
@@ -232,7 +236,13 @@ class ProjectKanban
                     static fn ($uid) => $mgrName[$uid] ?? ('#' . $uid),
                     $mgrIds[$id] ?? []
                 )),
+                // O-4: avatares dos gestores (id + nome, ordem de entrada)
+                'manager_people' => array_values(array_map(
+                    static fn ($uid) => ['id' => (int) $uid, 'name' => $mgrName[$uid] ?? ('#' . $uid)],
+                    $mgrIds[$id] ?? []
+                )),
                 'comments'    => $comments[$id] ?? 0,
+                'unread'      => $unread['count'][$id] ?? 0, // O-4
                 'has_desc'    => Description::has($row['content'] ?? ''), // O-2e
                 'desc_excerpt' => Description::excerpt($row['content'] ?? ''), // O-2e: 2 linhas no cartão
                 'start_label' => DateFmt::date($row['plan_start_date'], ''),
@@ -240,7 +250,7 @@ class ProjectKanban
                 'end_label'   => DateFmt::date($row['plan_end_date'], ''),
                 'deadline'    => $deadline,
                 'status'      => self::projectStatus($row, $deadline, $stalled[$id] ?? false, $now), // O-2c
-                'last_comments' => $preview['items'][$id] ?? [],                                    // O-2c
+                'last_comments' => CommentRead::flagPreview($preview['items'][$id] ?? [], $unread['since'][$id] ?? PHP_INT_MAX, $me), // O-2c + O-4
             ];
         }
 
