@@ -9,6 +9,7 @@ use GlpiPlugin\Projectplus\Access;
 use GlpiPlugin\Projectplus\Budget;
 use GlpiPlugin\Projectplus\Dashboard;
 use GlpiPlugin\Projectplus\DateFmt;
+use GlpiPlugin\Projectplus\Description;
 use GlpiPlugin\Projectplus\I18nJs;
 use GlpiPlugin\Projectplus\Scope;
 use GlpiPlugin\Projectplus\TypePhase;
@@ -261,6 +262,8 @@ TemplateRenderer::getInstance()->display(
         // O-1b-2a: Super-Admin, gestor ou Projetos "Interagir" (por projeto
         // no projectmeta: gestor da árvore ou equipe do projeto).
         'can_edit_project' => Access::canEditProjects(),
+        // O-2f: descrição obrigatória (Novo projeto, Nova tarefa)
+        'desc_required'    => Description::required(),
         'parents'         => $parents,
         // Etapa 9 — filtro de tipo e donut adaptativo
         'ptypes'          => $ptypes,

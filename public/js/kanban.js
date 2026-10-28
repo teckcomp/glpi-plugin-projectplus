@@ -546,13 +546,48 @@
         if (!card || card.state_id === newStateId) {
             return;
         }
-        ppPost(state.ajaxUrl, {
-            action: 'kanban_move',
-            task_id: cardId,
-            projectstates_id: newStateId,
-            _glpi_csrf_token: state.csrf,
-        }, function (resp) {
-            if (resp && resp.csrf) { state.csrf = resp.csrf; }
+        // O-3: comentário / novo prazo antes de gravar (quando a regra pede)
+        const need = moveNeeds(state, card, newStateId);
+        let dlg = null;
+        const go = function (extra) {
+            ppPost(state.ajaxUrl, Object.assign({
+                action: 'kanban_move',
+                task_id: cardId,
+                projectstates_id: newStateId,
+                _glpi_csrf_token: state.csrf,
+            }, extra || {}), function (resp) {
+                if (resp && resp.csrf) { state.csrf = resp.csrf; }
+                // recusa com a caixa aberta: a mensagem fica nela (sem alert)
+                if (dlg && !(resp && resp.ok)) {
+                    dlg.fail((resp && resp.message) || __('Não foi possível salvar.'), resp);
+                    return;
+                }
+                if (!dlg && resp && resp.need_desc && !resp.ok) {
+                    // payload antigo (has_desc desatualizado): abre a caixa já com o campo
+                    dlg = moveDialog({ state: state, card: card, need: { mode: 0, late: false, desc: true },
+                        column: columnOf(state, newStateId), onSubmit: go,
+                        onCancel: function () { render(state._holder, state); } });
+                    dlg.fail(resp.message);
+                    return;
+                }
+                if (dlg) { dlg.close(); }
+                done(resp);
+            });
+        };
+        if (need.any) {
+            dlg = moveDialog({
+                state: state,
+                card: card,
+                need: need,
+                column: columnOf(state, newStateId),
+                onSubmit: go,
+                onCancel: function () { render(state._holder, state); },
+            });
+            return;
+        }
+        go(null);
+
+        function done(resp) {
             if (resp && resp.ok) {
                 // O-2d: o cartão recalculado (fase finalizadora = 100%) volta
                 // junto; sem ele, só a fase muda, como antes.
@@ -563,8 +598,202 @@
                 window.alert(resp.message);
             }
             render(state._holder, state);
-        });
+        }
     }
+
+    // ------------------------------------------------------------------
+    // O-3 (28/10/2026) — comentário e novo prazo ao MOVER (os dois Kanbans).
+    // As regras vêm no payload do board (`data.move`: comment 0|1|2,
+    // deadline, finished = fases finalizadoras). O servidor confere tudo de
+    // novo em kanban_move; aqui só se pergunta antes de gravar.
+    // ------------------------------------------------------------------
+    function moveNeeds(state, card, newStateId) {
+        const mv = (state && state.data && state.data.move) || {};
+        const mode = Number(mv.comment) || 0;
+        const fin = Array.isArray(mv.finished) && mv.finished.map(Number).indexOf(Number(newStateId)) !== -1;
+        const late = !!mv.deadline && !card.is_done && isLate(card.deadline) && !fin;
+        // O-2f: item sem descrição não muda de fase sem ela
+        const desc = !!mv.desc && !card.has_desc;
+        return { mode: mode, late: late, desc: desc, any: mode > 0 || late || desc };
+    }
+    ProjectPlusKanban.moveNeeds = moveNeeds;
+
+    function columnOf(state, id) {
+        const cols = (state.data && state.data.columns) || [];
+        for (let i = 0; i < cols.length; i++) {
+            if (Number(cols[i].id) === Number(id)) { return cols[i]; }
+        }
+        return { id: id, name: '—', color: '' };
+    }
+    ProjectPlusKanban.columnOf = columnOf;
+
+    function todayIso() {
+        const d = new Date();
+        const p = function (n) { return (n < 10 ? '0' : '') + n; };
+        return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+    }
+
+    // Caixa do mover. opts: { state, card, need, column, onSubmit(extra),
+    // onCancel() }. Devolve { close(), fail(msg) } — quem chama fecha no ok
+    // e devolve a recusa do servidor para a mensagem ficar na caixa.
+    function moveDialog(opts) {
+        const need = opts.need || {};
+        const el = document.createElement('div');
+        el.className = 'projectplus-modal pp-im pp-mv';
+        const tid = 'pp-mv-title-' + Date.now();
+        el.innerHTML = '<div class="projectplus-modal__backdrop" data-pp-mv-cancel></div>' +
+            '<div class="projectplus-modal__box pp-im__box pp-mv__box" role="dialog" aria-modal="true" aria-labelledby="' + tid + '">' +
+            '<div class="projectplus-modal__head pp-im__head"><div class="pp-im__titles">' +
+            '<h3 id="' + tid + '"></h3><div class="pp-im__sub"></div></div>' +
+            '<button type="button" class="projectplus-modal__x" data-pp-mv-cancel aria-label="' + escapeText(__('Cancelar')) + '">&times;</button></div>' +
+            '<div class="pp-im__body pp-mv__body"></div>' +
+            '<div class="pp-im__foot pp-mv__foot"><span class="pp-mv__msg" role="alert"></span>' +
+            '<button type="button" class="projectplus-btn projectplus-btn--ghost" data-pp-mv-cancel>' + escapeText(__('Cancelar')) + '</button>' +
+            '<button type="button" class="projectplus-btn pp-mv__ok">' + escapeText(__('Mover')) + '</button></div></div>';
+        el.querySelector('h3').textContent = __('Mover para %s', (opts.column && opts.column.name) || '—');
+        el.querySelector('.pp-im__sub').textContent = (opts.card && opts.card.name) || '';
+        const body = el.querySelector('.pp-mv__body');
+        const msg = el.querySelector('.pp-mv__msg');
+        const okBtn = el.querySelector('.pp-mv__ok');
+        const today = todayIso();
+
+        let dateIn = null, textIn = null, descIn = null;
+        // O-2f: descrição (o item ainda não tem) — primeiro campo da caixa.
+        // Também entra depois, se o servidor recusar por falta dela.
+        const addDesc = function () {
+            if (descIn) { return; }
+            const box = document.createElement('div');
+            box.className = 'pp-mv__field pp-mv__field--desc';
+            const lbl = document.createElement('label');
+            lbl.className = 'pp-mv__label';
+            lbl.textContent = __('Descrição') + ' ' + __('(obrigatório)');
+            descIn = document.createElement('textarea');
+            descIn.className = 'pp-desc__input pp-mv__desc';
+            descIn.rows = 3;
+            descIn.maxLength = 20000;
+            descIn.placeholder = __('Este item ainda não tem descrição: descreva-o para mudar a fase.');
+            lbl.appendChild(descIn);
+            box.appendChild(lbl);
+            body.insertBefore(box, body.firstChild);
+        };
+        if (need.desc) { addDesc(); }
+        if (need.late) {
+            const box = document.createElement('div');
+            box.className = 'pp-mv__field pp-mv__field--late';
+            const note = document.createElement('p');
+            note.className = 'pp-mv__note';
+            note.textContent = __('O prazo deste item já passou: informe o novo fim planejado.');
+            const lbl = document.createElement('label');
+            lbl.className = 'pp-mv__label';
+            lbl.textContent = __('Novo fim planejado');
+            dateIn = document.createElement('input');
+            dateIn.type = 'date';
+            dateIn.className = 'pp-im__input pp-mv__date';
+            dateIn.min = today;
+            dateIn.required = true;
+            lbl.appendChild(dateIn);
+            box.appendChild(note);
+            box.appendChild(lbl);
+            body.appendChild(box);
+        }
+        if (need.mode > 0) {
+            const box = document.createElement('div');
+            box.className = 'pp-mv__field';
+            const lbl = document.createElement('label');
+            lbl.className = 'pp-mv__label';
+            lbl.textContent = __('Comentário') + ' ' + (need.mode === 2 ? __('(obrigatório)') : __('(opcional)'));
+            textIn = document.createElement('textarea');
+            textIn.className = 'pp-desc__input pp-mv__text';
+            textIn.rows = 3;
+            textIn.maxLength = 4000;
+            textIn.placeholder = __('O que mudou nesta etapa?');
+            lbl.appendChild(textIn);
+            box.appendChild(lbl);
+            body.appendChild(box);
+        }
+
+        let busy = false;
+        const setBusy = function (b) {
+            busy = b;
+            okBtn.disabled = b;
+            if (dateIn) { dateIn.disabled = b; }
+            if (textIn) { textIn.disabled = b; }
+            if (descIn) { descIn.disabled = b; }
+        };
+        const say = function (t, kind) {
+            msg.textContent = t || '';
+            msg.className = 'pp-mv__msg' + (kind ? ' pp-mv__msg--' + kind : '');
+        };
+        const close = function () {
+            document.removeEventListener('keydown', onKey, true);
+            if (el.parentNode) { el.parentNode.removeChild(el); }
+        };
+        const cancel = function () {
+            if (busy) { return; }
+            close();
+            if (typeof opts.onCancel === 'function') { opts.onCancel(); }
+        };
+        const submit = function () {
+            if (busy) { return; }
+            const text = textIn ? textIn.value.trim() : '';
+            const end = dateIn ? dateIn.value : '';
+            if (descIn && descIn.value.trim() === '') {
+                say(__('Preencha a descrição antes de mudar a fase.'), 'err');
+                descIn.focus();
+                return;
+            }
+            if (dateIn && !end) {
+                say(__('O prazo deste item já passou: informe o novo fim planejado.'), 'err');
+                dateIn.focus();
+                return;
+            }
+            if (dateIn && end < today) {
+                say(__('O novo fim planejado não pode ser antes de hoje.'), 'err');
+                dateIn.focus();
+                return;
+            }
+            if (textIn && need.mode === 2 && text === '') {
+                say(__('Escreva um comentário para mover.'), 'err');
+                textIn.focus();
+                return;
+            }
+            const extra = {};
+            if (textIn) { extra.comment = text; }
+            if (dateIn) { extra.plan_end_date = end; }
+            if (descIn) { extra.description = descIn.value; }
+            setBusy(true);
+            say(__('Salvando…'), 'busy');
+            opts.onSubmit(extra);
+        };
+        const onKey = function (e) {
+            if (e.key === 'Escape') {
+                e.stopPropagation();
+                e.preventDefault();
+                cancel();
+            } else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                submit();
+            }
+        };
+        el.querySelectorAll('[data-pp-mv-cancel]').forEach(function (b) { b.addEventListener('click', cancel); });
+        okBtn.addEventListener('click', submit);
+        document.addEventListener('keydown', onKey, true);
+        ((opts.state && opts.state._root) || document.body).appendChild(el);
+        const first = descIn || dateIn || textIn;
+        if (first) { first.focus(); }
+
+        return {
+            el: el,
+            close: close,
+            // resp opcional: recusa por falta de descrição abre o campo (O-2f)
+            fail: function (m, resp) {
+                setBusy(false);
+                say(m, 'err');
+                if (resp && resp.need_desc && !descIn) { addDesc(); descIn.focus(); }
+            },
+        };
+    }
+    ProjectPlusKanban.moveDialog = moveDialog;
 
     // Bloco N-5: cabeçalho da fase = nome + contador em selo (antes "Nome (3)"),
     // borda inferior na cor da fase. Compartilhado com o Kanban de projetos.
@@ -641,6 +870,13 @@
         name.appendChild(document.createTextNode(c.name));
         a.appendChild(topEl(name, statusTagEl(c.status, 'task')));
 
+        // O-2e-2: 2 linhas da descrição logo abaixo do título (mesmo padrão
+        // do cartão de projeto — texto puro, cortado pelo CSS)
+        const dx = descExcerptEl(c);
+        if (dx) {
+            a.appendChild(dx);
+        }
+
         // Linha de meta: no agrupamento por Projeto mostra o responsável;
         // no agrupamento por Responsável mostra o projeto direto da tarefa.
         const meta = document.createElement('span');
@@ -653,6 +889,10 @@
         a.appendChild(barsEl(c.deadline, c.percent, c.is_done));
 
         let html = '';
+        // O-2e-2: ícone só para descrição sem texto (ex.: só imagem)
+        if (c.has_desc && !c.desc_excerpt) {
+            html += '<i class="ti ti-align-left pp-kb-card-item__desc" title="' + escapeText(__('Descrição')) + '"></i>';
+        }
         if (c.comments > 0) {
             html += '💬' + Number(c.comments);
         }
@@ -732,6 +972,17 @@
     }
     ProjectPlusKanban.deadlineSpec = deadlineSpec;
 
+    // O-2e: trecho da descrição no cartão (tarefa e projeto)
+    function descExcerptEl(c) {
+        if (!c || !c.desc_excerpt) { return null; }
+        const dx = document.createElement('span');
+        dx.className = 'pp-kb-card-item__desctext';
+        dx.textContent = String(c.desc_excerpt);
+        dx.title = String(c.desc_excerpt);
+        return dx;
+    }
+    ProjectPlusKanban.descExcerptEl = descExcerptEl;
+
     function openTaskModal(state, c, byId, opener) {
         const base = ajaxBase(state.ajaxUrl);
         const subtitle = [c.project_name];
@@ -749,6 +1000,8 @@
             title: c.name,
             subtitle: subtitle,
             fields: [
+                // O-2e-2: descrição primeiro, largura toda (descField preenche)
+                { key: 'desc', label: __('Descrição'), text: '', wide: true },
                 { key: 'state', label: __('Fase'), node: phaseEl(state.data.columns, c.state_id) },
                 { key: 'percent', label: __('Progresso'), text: c.percent + '% ' + __('concluído') },
                 { key: 'start', label: __('Início planejado'), text: c.start_label },
@@ -771,6 +1024,14 @@
             onClose: function () {
                 if (changed) { render(state._holder, state); }
             },
+        });
+        // O-2e-2: descrição (leitura para quem vê; edição pela regra do Kanban)
+        descField({
+            kind: 'task',
+            state: state,
+            card: c,
+            el: el,
+            onChange: function () { changed = true; },
         });
         // O-2b: edição rápida (só quem pode editar; o servidor decide).
         quickEdit({
@@ -923,6 +1184,11 @@
                     if (onOk) { onOk(r); }
                 } else {
                     qeMsg(dd, r.message || __('Não foi possível salvar.'), 'err');
+                    // O-2f: fase recusada por falta de descrição — abre o campo
+                    if (r.need_desc) {
+                        const db = el.querySelector('[data-pp-field="desc"] .pp-desc');
+                        if (db && typeof db.ppEdit === 'function') { db.ppEdit(); }
+                    }
                     if (onFail) { onFail(r); }
                 }
             });
@@ -1111,6 +1377,54 @@
     ProjectPlusKanban.quickEdit = quickEdit;
     ProjectPlusKanban._qeApplyCard = qeApplyCard; // harness
     ProjectPlusKanban.applyFreshCard = qeApplyCard; // O-2d: Kanban de projetos
+
+    // O-2e (27/10/2026) — DESCRIÇÃO no modal (projeto agora; tarefa no
+    // O-2e-2). Lê para QUEM VÊ o item (dashboard_data?action=projectdesc, a
+    // mesma porta do 💬) e monta o ProjectPlus.descBox no campo `desc`.
+    // Edita quem o servidor diz (`can_edit`) e só com o board editável; a
+    // gravação devolve o cartão recalculado (ícone de descrição no rodapé).
+    //   opts: { kind 'project' | 'task', state, card, el, onChange }
+    // O-2e-2: tarefa lê taskdesc e grava em task.php com module=kanban (a
+    // regra do arrastar).
+    function descField(opts) {
+        const state = opts.state;
+        const card = opts.card;
+        const el = opts.el;
+        const PP = window.ProjectPlus;
+        if (!state || !card || !el || !PP || typeof PP.descBox !== 'function') { return; }
+        const base = ajaxBase(state.ajaxUrl);
+        const dd = qeDd(el, 'desc');
+        if (!base || !dd) { return; }
+        const isTask = opts.kind === 'task';
+        const readUrl = base + 'dashboard_data.php?action=' + (isTask ? 'taskdesc' : 'projectdesc') +
+            '&id=' + encodeURIComponent(card.id) + (isTask ? '&module=kanban' : '');
+        fetch(readUrl, { credentials: 'same-origin' })
+            .then(function (r) { return r.json(); })
+            .then(function (r) {
+                if (!r || !r.ok || !r.description || !el.parentNode) { return; }
+                const canEdit = !!(r.can_edit && state.canEdit && state.ajaxUrl);
+                qeClear(dd);
+                dd.appendChild(PP.descBox({
+                    desc: r.description,
+                    canEdit: canEdit,
+                    emptyText: '—',
+                    onSave: function (text, done) {
+                        const data = isTask
+                            ? { action: 'description', task_id: card.id, module: 'kanban', content: text, kanban_card: 1 }
+                            : { action: 'description', project_id: card.id, content: text, kanban_card: 1 };
+                        qePost(state, data, function (resp) {
+                            if (resp.card && qeApplyCard(state, card, resp.card)
+                                && typeof opts.onChange === 'function') {
+                                opts.onChange();
+                            }
+                            done(resp);
+                        });
+                    },
+                }));
+            })
+            .catch(function () { /* fica o "—" */ });
+    }
+    ProjectPlusKanban.descField = descField;
 
     // Bloco N-5: cartão em atraso (prazo estourado) ganha a borda vermelha.
     function isLate(d) {

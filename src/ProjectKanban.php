@@ -94,6 +94,7 @@ class ProjectKanban
                     'glpi_projects.real_start_date',
                     'glpi_projects.projectstates_id',
                     'glpi_projects.auto_percent_done', // O-2b: % travado no modal
+                    'glpi_projects.content',           // O-2e: ícone de descrição
                     'glpi_users.realname AS mgr_realname',
                     'glpi_users.firstname AS mgr_firstname',
                     'glpi_users.name AS mgr_login',
@@ -232,6 +233,8 @@ class ProjectKanban
                     $mgrIds[$id] ?? []
                 )),
                 'comments'    => $comments[$id] ?? 0,
+                'has_desc'    => Description::has($row['content'] ?? ''), // O-2e
+                'desc_excerpt' => Description::excerpt($row['content'] ?? ''), // O-2e: 2 linhas no cartão
                 'start_label' => DateFmt::date($row['plan_start_date'], ''),
                 // Bloco N-5: prazo final no rodapé do cartão (formato do usuário)
                 'end_label'   => DateFmt::date($row['plan_end_date'], ''),
@@ -244,6 +247,8 @@ class ProjectKanban
         return [
             'columns' => self::columnsFrom($states, $sawExtraState),
             'cards'   => $cards,
+            // O-3: regras do arrastar (comentário / novo prazo)
+            'move'    => MoveRules::config() + ['finished' => TaskDep::finishedStateIds(), 'desc' => Description::required()],
         ];
     }
 

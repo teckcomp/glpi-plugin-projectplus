@@ -22,6 +22,9 @@ class Config
         'budget_warn_percent' => 80,  // % do teto que dispara o alerta de orçamento
         'hide_native_costs'   => 1,   // 1 = oculta a aba Custos nativa do projeto
         'hide_native_kanban'  => 1,   // 1 = oculta a aba Kanban nativa do projeto (Etapa 7)
+        'move_comment'        => 2,   // O-3: comentário ao mover no Kanban (0 desligado, 1 opcional, 2 obrigatório)
+        'move_new_deadline'   => 1,   // O-3: cartão atrasado exige novo fim planejado ao ser movido
+        'desc_required'       => 1,   // O-2f: descrição obrigatória (criação e mudança de fase sem descrição)
         'purge_on_uninstall'  => 0,   // 1 = apaga tabelas/dados/direitos ao desinstalar
         'costs_migrated'      => 0,   // 1 = custos nativos já importados (marca interna)
         'phases_seeded'       => 0,   // 1 = conjunto padrão de fases já semeado (marca interna, Etapa 9)
@@ -32,6 +35,9 @@ class Config
      * mas não aparecem no formulário de configuração.
      */
     public const INTERNAL_KEYS = ['costs_migrated', 'phases_seeded'];
+
+    /** O-3: teto de chaves que não são número livre (o resto só tem piso 0). */
+    public const MAX = ['move_comment' => 2];
 
     /**
      * Lê a configuração mesclada com os padrões.
@@ -55,6 +61,9 @@ class Config
             }
             if (isset($values[$key])) {
                 $clean[$key] = max(0, (int) $values[$key]);
+                if (isset(self::MAX[$key])) {
+                    $clean[$key] = min(self::MAX[$key], $clean[$key]);
+                }
             }
         }
         if ($clean) {

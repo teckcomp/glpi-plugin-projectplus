@@ -23,6 +23,9 @@
  * POST action=manager_remove project_id, users_id — O-1c: nunca o último
  * POST action=kanban_edit  project_id — O-2b: o que o modal do Kanban de
  *                          projetos pode editar (+ valores atuais)
+ * POST action=description  project_id, content (texto simples; vazio = apaga)
+ *                          — O-2e: grava o `content` nativo como HTML mínimo;
+ *                          a resposta traz também `description` (payload novo)
  *
  * O-2b (27/10/2026): com `kanban_card=1` (modal do Kanban), `state`, `dates`
  * e `percent` devolvem `card` (ProjectKanban::cardFor, o cartão recalculado)
@@ -35,6 +38,10 @@
 
 use GlpiPlugin\Projectplus\Access;
 use GlpiPlugin\Projectplus\Dashboard;
+use GlpiPlugin\Projectplus\Description;
+use GlpiPlugin\Projectplus\DateFmt;
+use GlpiPlugin\Projectplus\MoveRules;
+use GlpiPlugin\Projectplus\TaskComment;
 use GlpiPlugin\Projectplus\ProjectFinish;
 use GlpiPlugin\Projectplus\ProjectKanban;
 use GlpiPlugin\Projectplus\ProjectManager;
@@ -264,10 +271,45 @@ switch ($action) {
             pp_reply(['ok' => true, 'project_id' => (int) $project->getID(), 'state_id' => $newState]);
         }
 
+        $pid  = (int) $project->getID();
+        // O-2f: sem descrição não muda de fase — a caixa do mover manda a
+        // descrição junto; conferida antes da pergunta do O-2d
+        $gate = Description::gate(
+            Description::required(),
+            $project->fields['content'] ?? '',
+            $oldState,
+            $newState,
+            isset($_POST['description']) ? (string) $_POST['description'] : null
+        );
+        if ($gate['error'] !== null) {
+            pp_reply(['ok' => false, 'message' => $gate['error'], 'need_desc' => true,
+                'card' => ProjectKanban::cardFor($pid)]);
+        }
+
+        // O-3: comentário e novo fim planejado conferidos ANTES da pergunta
+        // do O-2d (ninguém confirma a cascata para depois ser recusado).
+        $move = MoveRules::check(
+            MoveRules::config(),
+            (string) ($_POST['comment'] ?? ''),
+            (string) ($_POST['plan_end_date'] ?? ''),
+            MoveRules::isLate(
+                $project->fields['plan_start_date'] ?? null,
+                $project->fields['real_start_date'] ?? null,
+                $project->fields['plan_end_date'] ?? null,
+                (int) ($project->fields['percent_done'] ?? 0)
+            ),
+            in_array($newState, TaskDep::finishedStateIds(), true),
+            $project->fields['plan_start_date'] ?? null,
+            date('Y-m-d')
+        );
+        if ($move['error'] !== null) {
+            pp_reply(['ok' => false, 'message' => $move['error'], 'need_end' => $move['need_end'],
+                'card' => ProjectKanban::cardFor($pid)]);
+        }
+
         // O-2d: fase finalizadora com itens abertos abaixo → recusa (equipe)
         // ou pergunta "Finalizar mesmo assim?" (Super-Admin/gestor); com
         // `force=1`, finaliza a árvore antes. A resposta leva o cartão real.
-        $pid    = (int) $project->getID();
         $forced = pp_finish_gate($project, $newState, static fn () => ['card' => ProjectKanban::cardFor($pid)]);
 
         $ok = pp_update_project($project, ['id' => $pid, 'projectstates_id' => $newState], $forced);
@@ -291,6 +333,33 @@ switch ($action) {
             ]);
         }
 
+        // O-2f: descrição que veio na caixa do mover (fase já aplicada)
+        if ($gate['html'] !== null) {
+            $withDesc = new Project();
+            if ($withDesc->getFromDB($pid)) {
+                $withDesc->update(['id' => $pid, 'content' => $gate['html']]);
+            }
+        }
+        // O-3: novo fim planejado e comentário da mudança (fase já aplicada)
+        if ($move['end'] !== null) {
+            $fresh = new Project();
+            if ($fresh->getFromDB($pid)) {
+                $fresh->update(['id' => $pid, 'plan_end_date' => $move['end'] . ' 18:00:00']);
+            }
+        }
+        $moveText = MoveRules::commentText(
+            true,
+            MoveRules::phaseName($newState),
+            $move['end'] !== null ? DateFmt::date($move['end']) : null,
+            $move['comment']
+        );
+        if ($moveText !== '') {
+            $commented = new Project();
+            if ($commented->getFromDB($pid)) {
+                TaskComment::addForProject($commented, $moveText);
+            }
+        }
+
         // Mesmo carimbo de atividade das demais telas do plugin
         ProjectTracking::touch($pid);
 
@@ -302,6 +371,21 @@ switch ($action) {
         $project  = pp_project_for_update();
         $pid      = (int) $project->getID();
         $newState = (int) ($_POST['projectstates_id'] ?? 0);
+        // O-2f: sem descrição não muda de fase (`need_desc` abre o campo)
+        $gate = Description::gate(
+            Description::required(),
+            $project->fields['content'] ?? '',
+            (int) ($project->fields['projectstates_id'] ?? 0),
+            $newState,
+            isset($_POST['description']) ? (string) $_POST['description'] : null
+        );
+        if ($gate['error'] !== null) {
+            pp_reply(['ok' => false, 'message' => $gate['error'], 'need_desc' => true] + pp_project_payload($pid));
+        }
+        if ($gate['html'] !== null) {
+            $project->update(['id' => $pid, 'content' => $gate['html']]);
+            $project->getFromDB($pid);
+        }
         if ($newState !== (int) ($project->fields['projectstates_id'] ?? 0)) {
             // O-2d: recusa, pergunta ou cascata (ver pp_finish_gate)
             $forced = pp_finish_gate($project, $newState, static fn () => pp_project_payload($pid));
@@ -389,6 +473,40 @@ switch ($action) {
             'plan_start'   => substr((string) ($project->fields['plan_start_date'] ?? ''), 0, 10),
             'plan_end'     => substr((string) ($project->fields['plan_end_date'] ?? ''), 0, 10),
         ]);
+        break;
+
+    case 'description':
+        // O-2e (27/10/2026): descrição do projeto em TEXTO SIMPLES (decisão do
+        // Claudio). Mesma regra da faixa (Access::canEditProject). Formatação
+        // feita na ficha nativa se perde — o JS avisou antes de abrir a edição.
+        $project = pp_project_for_update();
+        $pid     = (int) $project->getID();
+        $text    = (string) ($_POST['content'] ?? '');
+        // O-2f: com a descrição obrigatória, não se apaga
+        if (trim($text) === '' && Description::required()) {
+            pp_reply(['ok' => false, 'message' => __('A descrição é obrigatória.', 'projectplus')] + pp_project_payload($pid));
+        }
+        if (Description::tooLong($text)) {
+            pp_reply(['ok' => false, 'message' => sprintf(
+                __('A descrição passou do limite de %d caracteres.', 'projectplus'),
+                Description::MAX_LEN
+            )] + pp_project_payload($pid));
+        }
+        $html = Description::fromText($text);
+        $ok   = true;
+        if ($html !== (string) ($project->fields['content'] ?? '')) {
+            $ok = (bool) $project->update(['id' => $pid, 'content' => $html]);
+            if ($ok) {
+                ProjectTracking::touch($pid);
+            }
+        }
+        $fresh = new Project();
+        $fresh->getFromDB($pid);
+        pp_reply([
+            'ok'          => $ok,
+            'description' => Description::payload($fresh->fields['content'] ?? ''),
+        ] + ($ok ? [] : ['message' => __('Não foi possível salvar.', 'projectplus')])
+          + pp_project_payload($pid));
         break;
 
     case 'team_add':

@@ -192,6 +192,7 @@ class Kanban
                     'glpi_projecttasks.projectstates_id',
                     'glpi_projecttasks.date_mod', // O-2c: regra de "Parado"
                     'glpi_projecttasks.auto_percent_done', // O-2b: % travado no modal
+                    'glpi_projecttasks.content',           // O-2e-2: trecho no cartão
                     'glpi_projects.name AS project_name',
                 ],
                 'FROM'       => 'glpi_projecttasks',
@@ -329,6 +330,9 @@ class Kanban
                 // O-2c: tag de status e prévia dos 2 últimos comentários
                 'status'            => self::taskStatus($row, $deadline, $preview['latest'][$id] ?? null, $now),
                 'last_comments'     => $preview['items'][$id] ?? [],
+                // O-2e-2: descrição — 2 linhas abaixo do título (texto puro)
+                'has_desc'          => Description::has($row['content'] ?? ''),
+                'desc_excerpt'      => Description::excerpt($row['content'] ?? ''),
             ];
         }
 
@@ -429,6 +433,9 @@ class Kanban
             'lanes'    => [
                 'responsible' => $laneUsers,
             ],
+            // O-3: regras do arrastar (comentário / novo prazo) e as fases
+            // finalizadoras (lá o novo prazo não é pedido)
+            'move'     => MoveRules::config() + ['finished' => TaskDep::finishedStateIds(), 'desc' => Description::required()],
         ];
     }
 

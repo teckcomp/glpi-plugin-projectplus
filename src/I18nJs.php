@@ -73,6 +73,30 @@ class I18nJs
                 'Adicionar'                => __('Adicionar', 'projectplus'),
                 'Remover'                  => __('Remover', 'projectplus'),
                 'Editar'                   => __('Editar', 'projectplus'),
+                // O-2f: descrição obrigatória
+                'Este item ainda não tem descrição: descreva-o para mudar a fase.' => __('Este item ainda não tem descrição: descreva-o para mudar a fase.', 'projectplus'),
+                'Preencha a descrição antes de mudar a fase.' => __('Preencha a descrição antes de mudar a fase.', 'projectplus'),
+                'Descrição da tarefa (obrigatória)…' => __('Descrição da tarefa (obrigatória)…', 'projectplus'),
+                'Descrição da tarefa (opcional)…' => __('Descrição da tarefa (opcional)…', 'projectplus'),
+                // O-3: comentário e novo prazo ao mover no Kanban
+                'Mover' => __('Mover', 'projectplus'),
+                'Mover para %s' => __('Mover para %s', 'projectplus'),
+                'O prazo deste item já passou: informe o novo fim planejado.' => __('O prazo deste item já passou: informe o novo fim planejado.', 'projectplus'),
+                'Novo fim planejado' => __('Novo fim planejado', 'projectplus'),
+                'Comentário' => __('Comentário', 'projectplus'),
+                '(obrigatório)' => __('(obrigatório)', 'projectplus'),
+                '(opcional)' => __('(opcional)', 'projectplus'),
+                'O que mudou nesta etapa?' => __('O que mudou nesta etapa?', 'projectplus'),
+                'O novo fim planejado não pode ser antes de hoje.' => __('O novo fim planejado não pode ser antes de hoje.', 'projectplus'),
+                'Escreva um comentário para mover.' => __('Escreva um comentário para mover.', 'projectplus'),
+                // O-2e: descrição do projeto (ProjectPlus.descBox)
+                'Descrição'                => __('Descrição', 'projectplus'),
+                'Adicionar descrição'      => __('Adicionar descrição', 'projectplus'),
+                'Editar descrição'         => __('Editar descrição', 'projectplus'),
+                'ver mais'                 => __('ver mais', 'projectplus'),
+                'ver menos'                => __('ver menos', 'projectplus'),
+                'Esta descrição tem formatação (negrito, listas, imagens…) feita na ficha do GLPI. Editada aqui, ela vira texto simples e a formatação se perde. Continuar?'
+                    => __('Esta descrição tem formatação (negrito, listas, imagens…) feita na ficha do GLPI. Editada aqui, ela vira texto simples e a formatação se perde. Continuar?', 'projectplus'),
                 'Excluir'                  => __('Excluir', 'projectplus'),
                 'Concluir'                 => __('Concluir', 'projectplus'),
                 // Bloco M-2: excluir (lixeira nativa)

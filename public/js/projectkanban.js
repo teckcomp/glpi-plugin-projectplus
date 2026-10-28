@@ -265,6 +265,13 @@
             a.appendChild(name);
         }
 
+        // O-2e (pedido de 28/10/2026): 2 linhas da descrição logo abaixo do
+        // título (texto puro, cortado pelo CSS; o completo fica no modal).
+        const dx = (K && typeof K.descExcerptEl === 'function') ? K.descExcerptEl(c) : null;
+        if (dx) {
+            a.appendChild(dx);
+        }
+
         const meta = document.createElement('span');
         meta.className = 'pp-kb-card-item__project';
         meta.textContent = c.manager || '';
@@ -291,6 +298,15 @@
             text += (text ? '  •  ' : '') + '💬' + Number(c.comments); // O-2a
         }
         badges.textContent = text;
+        // O-2e: ícone só quando há descrição sem texto (ex.: só imagem) — com
+        // texto, o trecho abaixo do título já mostra
+        if (c.has_desc && !c.desc_excerpt) {
+            const di = document.createElement('i');
+            di.className = 'ti ti-align-left pp-kb-card-item__desc';
+            di.title = __('Descrição');
+            di.setAttribute('aria-label', __('Descrição'));
+            badges.insertBefore(di, badges.firstChild);
+        }
         foot.appendChild(badges);
         if (c.end_label) {
             const end = document.createElement('span');
@@ -344,6 +360,8 @@
             ? { node: deadlineEl(c.deadline) }
             : { text: (c.is_done || (c.deadline && c.deadline.state === 'done')) ? __('Concluído') : (c.deadline && c.deadline.state === 'none' ? __('Sem datas planejadas — corrija o planejamento') : '') };
         const fields = [
+            // O-2e: descrição primeiro, largura toda (K.descField preenche)
+            { key: 'desc', label: __('Descrição'), text: '', wide: true },
             { key: 'state', label: __('Fase'), node: typeof K.phaseEl === 'function' ? K.phaseEl(state.data.columns, c.state_id) : null },
             { key: 'percent', label: __('Progresso'), text: c.percent + '% ' + __('concluído') },
             { key: 'start', label: __('Início planejado'), text: c.start_label },
@@ -352,7 +370,7 @@
             { key: 'tasks', label: __('Tarefas'), text: c.tasks_total > 0 ? (c.tasks_done + '/' + c.tasks_total + ' ' + __('concluídas')) : '' },
             { key: 'deadline', label: __('Prazo'), node: dl.node, text: dl.text, wide: true },
         ];
-        if (!fields[0].node) { fields[0] = { key: 'state', label: __('Fase'), text: '' }; }
+        if (!fields[1].node) { fields[1] = { key: 'state', label: __('Fase'), text: '' }; }
         const el = window.ProjectPlus.itemModal({
             host: state._root || document.body,
             title: c.name,
@@ -373,6 +391,16 @@
                 if (changed) { render(state._holder, state); }
             },
         });
+        // O-2e: descrição (leitura para quem vê; edição pela regra da faixa)
+        if (typeof K.descField === 'function') {
+            K.descField({
+                kind: 'project',
+                state: state,
+                card: c,
+                el: el,
+                onChange: function () { changed = true; },
+            });
+        }
         // O-2b: edição rápida (Fase, %, datas — sem equipe/gestores).
         if (typeof K.quickEdit === 'function') {
             K.quickEdit({
@@ -428,24 +456,43 @@
         // O-2d: fase finalizadora com itens abertos abaixo — o servidor manda
         // a pergunta pronta (`confirm`) sem gravar; confirmada, reenvia com
         // force=1 e a árvore é finalizada. O cartão recalculado volta junto.
-        const send = function (force) {
-            const data = {
+        // O-3: comentário / novo prazo vão nas duas chamadas (`extra`).
+        const K0 = window.ProjectPlusKanban || {};
+        let dlg = null;
+        const send = function (force, extra) {
+            const data = Object.assign({
                 action: 'kanban_move',
                 project_id: cardId,
                 projectstates_id: newStateId,
                 _glpi_csrf_token: state.csrf,
-            };
+            }, extra || {});
             if (force) { data.force = 1; }
             ppPost(state.ajaxUrl, data, function (resp) {
                 if (resp && resp.csrf) { state.csrf = resp.csrf; }
                 if (resp && resp.confirm && !force) {
                     if (window.confirm(resp.confirm)) {
-                        send(true);
+                        send(true, extra);
                         return;
                     }
+                    if (dlg) { dlg.close(); }
                     render(state._holder, state);
                     return;
                 }
+                // O-3: recusa com a caixa aberta — a mensagem fica nela
+                if (dlg && !(resp && resp.ok)) {
+                    dlg.fail((resp && resp.message) || __('Não foi possível salvar.'), resp);
+                    return;
+                }
+                // O-2f: sem caixa, recusa por falta de descrição — abre a caixa
+                if (!dlg && resp && !resp.ok && resp.need_desc && typeof K0.moveDialog === 'function') {
+                    dlg = K0.moveDialog({ state: state, card: card, need: { mode: 0, late: false, desc: true },
+                        column: typeof K0.columnOf === 'function' ? K0.columnOf(state, newStateId) : { name: '—' },
+                        onSubmit: function (extra) { send(false, extra); },
+                        onCancel: function () { render(state._holder, state); } });
+                    dlg.fail(resp.message);
+                    return;
+                }
+                if (dlg) { dlg.close(); }
                 if (resp && resp.ok) {
                     const K = window.ProjectPlusKanban || {};
                     if (!(resp.card && typeof K.applyFreshCard === 'function' && K.applyFreshCard(state, card, resp.card))) {
@@ -457,7 +504,19 @@
                 render(state._holder, state);
             });
         };
-        send(false);
+        const need = typeof K0.moveNeeds === 'function' ? K0.moveNeeds(state, card, newStateId) : { any: false };
+        if (need.any && typeof K0.moveDialog === 'function') {
+            dlg = K0.moveDialog({
+                state: state,
+                card: card,
+                need: need,
+                column: typeof K0.columnOf === 'function' ? K0.columnOf(state, newStateId) : { name: '—' },
+                onSubmit: function (extra) { send(false, extra); },
+                onCancel: function () { render(state._holder, state); },
+            });
+            return;
+        }
+        send(false, null);
     }
 
     // Escapa texto que entra em HTML/atributo montado por concatenacao.

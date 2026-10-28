@@ -12,6 +12,9 @@
  *                      "Calcular automaticamente" nativo (auto_percent_done)
  * POST action=team_add    task_id, users_id — Bloco D-2a: inclui responsável
  * POST action=team_remove task_id, users_id — Bloco D-2a: retira responsável
+ * POST action=description task_id, content — O-2e-2: descrição em texto
+ *                      simples (mesma regra de canUpdateTask; `module=kanban`
+ *                      no modal). Devolve `description` (payload) e `excerpt`
  * POST action=kanban_edit task_id — O-2b: o que o modal do Kanban pode editar
  *                      nesta tarefa (+ valores atuais e lista de usuários)
  *                      (os dois só para o GESTOR — vínculo, O-1b — ou o
@@ -33,7 +36,11 @@
 
 use GlpiPlugin\Projectplus\Access;
 use GlpiPlugin\Projectplus\Dashboard;
+use GlpiPlugin\Projectplus\DateFmt;
+use GlpiPlugin\Projectplus\Description;
 use GlpiPlugin\Projectplus\Kanban;
+use GlpiPlugin\Projectplus\MoveRules;
+use GlpiPlugin\Projectplus\TaskComment;
 use GlpiPlugin\Projectplus\ProjectTracking;
 use GlpiPlugin\Projectplus\TaskDep;
 use GlpiPlugin\Projectplus\Trash;
@@ -326,12 +333,26 @@ switch ($action) {
             }
         }
 
+        // O-2f: descrição na criação (obrigatória com a regra ligada); grava
+        // no formato do O-2e (texto simples → <p>/<br>)
+        $descText = (string) ($_POST['content'] ?? '');
+        if (trim($descText) === '' && Description::required()) {
+            pp_reply(['ok' => false, 'message' => __('Informe a descrição da tarefa.', 'projectplus')]);
+        }
+        if (Description::tooLong($descText)) {
+            pp_reply(['ok' => false, 'message' => sprintf(
+                __('A descrição passou do limite de %d caracteres.', 'projectplus'),
+                Description::MAX_LEN
+            )]);
+        }
+
         $input = [
             'name'             => $name,
             'projects_id'      => $projectId,
             'projecttasks_id'  => $parentId,
             'projectstates_id' => (int) ($_POST['projectstates_id'] ?? 0),
             'percent_done'     => 0,
+            'content'          => Description::fromText($descText),
         ];
         if (!empty($_POST['plan_start_date'])) {
             $input['plan_start_date'] = $_POST['plan_start_date'] . ' 09:00:00';
@@ -377,10 +398,22 @@ switch ($action) {
         if (($msg = TaskDep::finishedMoveBlock($tid, $newState)) !== null) {
             pp_reply(pp_with_card(['ok' => false, 'message' => $msg], $tid));
         }
-        $ok = $task->update([
-            'id'               => $tid,
-            'projectstates_id' => $newState,
-        ]);
+        // O-2f: sem descrição não muda de fase (`need_desc` abre o campo)
+        $gate = Description::gate(
+            Description::required(),
+            $task->fields['content'] ?? '',
+            (int) ($task->fields['projectstates_id'] ?? 0),
+            $newState,
+            isset($_POST['description']) ? (string) $_POST['description'] : null
+        );
+        if ($gate['error'] !== null) {
+            pp_reply(pp_with_card(['ok' => false, 'message' => $gate['error'], 'need_desc' => true], $tid));
+        }
+        $input = ['id' => $tid, 'projectstates_id' => $newState];
+        if ($gate['html'] !== null) {
+            $input['content'] = $gate['html'];
+        }
+        $ok = $task->update($input);
         // O-2d: fase finalizadora leva a tarefa a 100% (hook) — o % real volta
         // na resposta para o painel/Minhas tarefas redesenharem a linha.
         pp_reply(pp_with_card(['ok' => (bool) $ok, 'percent' => pp_task_percent($tid)], $tid));
@@ -472,7 +505,58 @@ switch ($action) {
             pp_reply(['ok' => false, 'message' => $msg]);
         }
 
-        $ok = $task->update(['id' => $task->getID(), 'projectstates_id' => $newState]);
+        // O-2f: sem descrição não muda de fase — a caixa do mover manda a
+        // descrição junto (`description`)
+        $gate = Description::gate(
+            Description::required(),
+            $task->fields['content'] ?? '',
+            (int) ($task->fields['projectstates_id'] ?? 0),
+            $newState,
+            isset($_POST['description']) ? (string) $_POST['description'] : null
+        );
+        if ($gate['error'] !== null) {
+            pp_reply(['ok' => false, 'message' => $gate['error'], 'need_desc' => true]);
+        }
+
+        // O-3: comentário (Configuração) e novo fim planejado (cartão
+        // atrasado, fora de fase finalizadora) — conferidos ANTES de gravar.
+        $move = MoveRules::check(
+            MoveRules::config(),
+            (string) ($_POST['comment'] ?? ''),
+            (string) ($_POST['plan_end_date'] ?? ''),
+            MoveRules::isLate(
+                $task->fields['plan_start_date'] ?? null,
+                $task->fields['real_start_date'] ?? null,
+                $task->fields['plan_end_date'] ?? null,
+                (int) ($task->fields['percent_done'] ?? 0)
+            ),
+            in_array($newState, TaskDep::finishedStateIds(), true),
+            $task->fields['plan_start_date'] ?? null,
+            date('Y-m-d')
+        );
+        if ($move['error'] !== null) {
+            pp_reply(['ok' => false, 'message' => $move['error'], 'need_end' => $move['need_end']]);
+        }
+
+        $ok = $task->update(['id' => $task->getID(), 'projectstates_id' => $newState]
+            + ($gate['html'] !== null ? ['content' => $gate['html']] : [])); // O-2f
+        // O-3: só registra quando a fase mudou DE FATO (hook pode desfazer)
+        $moved = new ProjectTask();
+        if ($ok && $moved->getFromDB((int) $task->getID())
+            && (int) $moved->fields['projectstates_id'] === $newState) {
+            if ($move['end'] !== null) {
+                $moved->update(['id' => $moved->getID(), 'plan_end_date' => $move['end'] . ' 18:00:00']);
+            }
+            $text = MoveRules::commentText(
+                false,
+                MoveRules::phaseName($newState),
+                $move['end'] !== null ? DateFmt::date($move['end']) : null,
+                $move['comment']
+            );
+            if ($text !== '') {
+                TaskComment::addForTask($moved, $text);
+            }
+        }
         // O-2d: a fase finalizadora leva a tarefa a 100% (hook) — o cartão
         // recalculado volta junto para o board redesenhar % e tag.
         pp_reply([
@@ -519,6 +603,43 @@ switch ($action) {
             ProjectTracking::touch((int) $task->fields['projects_id']);
         }
         pp_reply(pp_with_card(['ok' => (bool) $ok], (int) $task->getID()));
+        break;
+
+    case 'description':
+        // O-2e-2 (28/10/2026): descrição da tarefa em TEXTO SIMPLES (mesma
+        // decisão do projeto). Regra de quem altera a tarefa (canUpdateTask,
+        // módulo `kanban` no modal); formatação da ficha nativa se perde — o
+        // JS avisou antes de abrir a edição.
+        $task = pp_task_for_update(pp_module());
+        $tid  = (int) $task->getID();
+        if (!empty($task->fields['is_deleted'])) {
+            pp_reply(['ok' => false, 'message' => __('Tarefa não encontrada', 'projectplus')]);
+        }
+        $text = (string) ($_POST['content'] ?? '');
+        // O-2f: com a descrição obrigatória, não se apaga
+        if (trim($text) === '' && Description::required()) {
+            pp_reply(pp_with_card(['ok' => false, 'message' => __('A descrição é obrigatória.', 'projectplus')], $tid));
+        }
+        if (Description::tooLong($text)) {
+            pp_reply(pp_with_card(['ok' => false, 'message' => sprintf(
+                __('A descrição passou do limite de %d caracteres.', 'projectplus'),
+                Description::MAX_LEN
+            )], $tid));
+        }
+        $html = Description::fromText($text);
+        $ok   = true;
+        if ($html !== (string) ($task->fields['content'] ?? '')) {
+            // o carimbo de atividade vem do hook (Notification::onTaskUpdate)
+            $ok = (bool) $task->update(['id' => $tid, 'content' => $html]);
+        }
+        $fresh = new ProjectTask();
+        $fresh->getFromDB($tid);
+        $content = (string) ($fresh->fields['content'] ?? '');
+        pp_reply(pp_with_card([
+            'ok'          => $ok,
+            'description' => Description::payload($content),
+            'excerpt'     => Description::excerpt($content),
+        ] + ($ok ? [] : ['message' => __('Não foi possível salvar.', 'projectplus')]), $tid));
         break;
 
     case 'kanban_edit':

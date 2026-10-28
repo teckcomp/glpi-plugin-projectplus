@@ -513,8 +513,8 @@
             {% endif %}
 
             <label class="projectplus-form__full">
-                {{ __('Descrição', 'projectplus') }}
-                <textarea name="content" rows="3"></textarea>
+                {{ __('Descrição', 'projectplus') }}{% if desc_required %} <span class="pp-req" aria-hidden="true">*</span>{% endif %}
+                <textarea name="content" rows="3"{{ desc_required ? ' required' : '' }}></textarea>
             </label>
 
             <div class="projectplus-form__footer">
@@ -537,6 +537,7 @@
     'phases_by_type': phases_by_type,
     'can_team': can_team,
     'can_edit_project': can_edit_project,
+    'desc_required': desc_required,
     'can_delete_tasks': can_delete_tasks,
     'can_delete_project': can_delete_project,
     'read_only': nav.client,

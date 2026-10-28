@@ -863,6 +863,7 @@ class Dashboard extends CommonGLPI
                     'glpi_projecttasks.projectstates_id',
                     'glpi_projecttasks.projecttasks_id',
                     'glpi_projecttasks.auto_percent_done',
+                    'glpi_projecttasks.content', // O-2e-2: trecho da descrição
                     'parent_task.name AS parent_name',
                     'glpi_projects.id AS project_id',
                     'glpi_projects.name AS project_name',
@@ -966,6 +967,9 @@ class Dashboard extends CommonGLPI
                 'state_color' => $states[$stateId]['color'] ?? self::PHASE_DEFAULT_COLOR,
                 'team'        => [],
                 'deadline'    => $deadline,
+                // O-2e-2: descrição — 1 linha abaixo do nome (texto puro)
+                'has_desc'     => Description::has($row['content'] ?? ''),
+                'desc_excerpt' => Description::excerpt($row['content'] ?? ''),
             ];
         }
 
@@ -1379,6 +1383,7 @@ class Dashboard extends CommonGLPI
             'SELECT' => [
                 'id', 'name', 'plan_start_date', 'plan_end_date', 'projectstates_id',
                 'projecttypes_id', 'percent_done', 'auto_percent_done', 'users_id',
+                'content', // O-2e: descrição na faixa
             ],
             'FROM'   => 'glpi_projects',
             'WHERE'  => ['id' => $projectId, 'is_deleted' => 0]
@@ -1437,6 +1442,8 @@ class Dashboard extends CommonGLPI
             'team_users'   => $team,
             // Bloco D-3b: contador do 💬 da faixa
             'comments'     => TaskComment::countForProject((int) $p['id']),
+            // O-2e (27/10/2026): descrição do projeto (campo nativo `content`)
+            'description'  => Description::payload($p['content'] ?? ''),
         ];
     }
 
@@ -1626,6 +1633,7 @@ class Dashboard extends CommonGLPI
                     'id', 'name', 'projecttasks_id', 'percent_done',
                     'plan_start_date', 'plan_end_date', 'real_start_date',
                     'projectstates_id', 'auto_percent_done',
+                    'content', // O-2e-2: trecho da descrição na tabela
                 ],
                 'FROM'  => 'glpi_projecttasks',
                 'WHERE' => array_merge(['projects_id' => $projectId], Trash::liveTasks()), // Bloco M-1
@@ -1717,6 +1725,9 @@ class Dashboard extends CommonGLPI
                     'state_color' => $states[(int) $t['projectstates_id']]['color'] ?? self::PHASE_DEFAULT_COLOR,
                     'team'       => array_column($teams[$id] ?? [], 'name'),
                     'team_users' => $teams[$id] ?? [],
+                    // O-2e-2: descrição — 1 linha abaixo do nome (texto puro)
+                    'has_desc'     => Description::has($t['content'] ?? ''),
+                    'desc_excerpt' => Description::excerpt($t['content'] ?? ''),
                     'deadline'   => Deadline::compute(
                         $t['plan_start_date'],
                         $t['real_start_date'],

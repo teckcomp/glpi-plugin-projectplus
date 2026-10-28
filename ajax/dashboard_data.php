@@ -11,10 +11,13 @@
  * GET ?action=projectmeta&id=NN -> faixa "Projeto" do painel (Bloco D-3a; só
  *                                  para quem edita projeto)
  * GET ?action=projectcomments&id=NN -> comentários do projeto (Bloco D-3b)
+ * GET ?action=projectdesc&id=NN    -> descrição do projeto (O-2e)
+ * GET ?action=taskdesc&id=NN[&module=kanban] -> descrição da tarefa (O-2e-2)
  */
 
 use GlpiPlugin\Projectplus\Access;
 use GlpiPlugin\Projectplus\Dashboard;
+use GlpiPlugin\Projectplus\Description;
 use GlpiPlugin\Projectplus\Scope;
 use GlpiPlugin\Projectplus\TaskComment;
 use GlpiPlugin\Projectplus\TaskDep;
@@ -90,6 +93,49 @@ switch ($action) {
                 ? TaskComment::getForProject($pcId)
                 : []
         );
+        break;
+
+    case 'projectdesc':
+        // O-2e (27/10/2026): descrição do projeto para quem ENXERGA o projeto
+        // (mesma porta do 💬 do projeto). `can_edit` = mesma regra da faixa
+        // "Projeto" (Access::canEditProject) — decide o botão Editar.
+        $pdId = (int) ($_GET['id'] ?? 0);
+        if (!TaskComment::canCommentOnProject($pdId)) {
+            echo json_encode(['ok' => false]);
+            break;
+        }
+        $pdProject = new Project();
+        $pdProject->getFromDB($pdId);
+        echo json_encode([
+            'ok'          => true,
+            'description' => Description::payload($pdProject->fields['content'] ?? ''),
+            'can_edit'    => Access::canEditProject($pdProject),
+        ]);
+        break;
+
+    case 'taskdesc':
+        // O-2e-2 (28/10/2026): descrição da tarefa para quem ENXERGA a tarefa
+        // — tarefa e projeto fora da lixeira, entidade, projeto visível no
+        // escopo (Scope::canSeeProject). `can_edit` = a regra de quem grava
+        // (Access::canUpdateTask; módulo `kanban` no modal, `tasks` nas
+        // tabelas).
+        $tdTask = new ProjectTask();
+        $tdProj = new Project();
+        if (!$tdTask->getFromDB((int) ($_GET['id'] ?? 0))
+            || !empty($tdTask->fields['is_deleted'])
+            || !$tdProj->getFromDB((int) $tdTask->fields['projects_id'])
+            || !empty($tdProj->fields['is_deleted'])
+            || !Session::haveAccessToEntity((int) $tdTask->getEntityID())
+            || !Scope::canSeeProject((int) $tdTask->fields['projects_id'])) {
+            echo json_encode(['ok' => false]);
+            break;
+        }
+        $tdModule = (($_GET['module'] ?? '') === 'kanban') ? 'kanban' : 'tasks';
+        echo json_encode([
+            'ok'          => true,
+            'description' => Description::payload($tdTask->fields['content'] ?? ''),
+            'can_edit'    => Access::canUpdateTask($tdTask, $tdModule),
+        ]);
         break;
 
     case 'taskcomments':

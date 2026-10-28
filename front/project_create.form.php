@@ -7,6 +7,7 @@
 
 use GlpiPlugin\Projectplus\Access;
 use GlpiPlugin\Projectplus\Budget;
+use GlpiPlugin\Projectplus\Description;
 use GlpiPlugin\Projectplus\ProjectManager;
 use GlpiPlugin\Projectplus\ProjectTracking;
 use GlpiPlugin\Projectplus\TemplateCloner;
@@ -45,6 +46,23 @@ if ($name === '') {
     Html::back();
 }
 
+// O-2f (28/10/2026): descrição obrigatória na criação (Configuração
+// `desc_required`); grava no formato do O-2e (texto simples → <p>/<br>).
+// Pelo modelo, o campo já vem preenchido com a descrição dele.
+$descText = (string) ($_POST['content'] ?? '');
+if (trim($descText) === '' && Description::required()) {
+    Session::addMessageAfterRedirect(__('Informe a descrição do projeto.', 'projectplus'), true, ERROR);
+    Html::back();
+}
+if (Description::tooLong($descText)) {
+    Session::addMessageAfterRedirect(sprintf(
+        __('A descrição passou do limite de %d caracteres.', 'projectplus'),
+        Description::MAX_LEN
+    ), true, ERROR);
+    Html::back();
+}
+$descHtml = Description::fromText($descText);
+
 // Bloco J (21/10/2026): criar a partir de um MODELO do plugin direto no
 // modal. O formulário vem pré-preenchido com o modelo (gestor, tipo, fase,
 // orçamento, descrição) e o que o usuário deixar nele sobrepõe o modelo;
@@ -66,7 +84,7 @@ if ($templateId > 0) {
         'projecttypes_id'  => (int) ($_POST['projecttypes_id'] ?? 0),
         'projectstates_id' => (int) ($_POST['projectstates_id'] ?? 0),
         'priority'         => (int) ($_POST['priority'] ?? 0),
-        'content'          => (string) ($_POST['content'] ?? ''),
+        'content'          => $descHtml, // O-2f
     ];
     if (Access::can('costs', UPDATE)) {
         $overrides['budget'] = max(0, (float) str_replace(',', '.', (string) ($_POST['budget_planned'] ?? '0')));
@@ -96,7 +114,7 @@ $input = [
     'projecttypes_id'  => (int) ($_POST['projecttypes_id'] ?? 0),
     'priority'         => min(6, max(1, (int) ($_POST['priority'] ?? 3))),
     'users_id'         => pp_creation_manager(),
-    'content'          => $_POST['content'] ?? '',
+    'content'          => $descHtml, // O-2f
     'date'             => date('Y-m-d H:i:s'),
 ];
 

@@ -33,6 +33,22 @@
         </span>
     </div>
 {% endmacro %}
+{# O-3: lista de opções (valor => rótulo) #}
+{% macro select_row(name, value, options, label, hint) %}
+    <div class="pp-cfg-row">
+        <div class="pp-cfg-row__text">
+            <label class="pp-cfg-row__label" for="pp-cfg-{{ name }}">{{ label }}</label>
+            {% if hint %}<div class="pp-cfg-row__hint">{{ hint }}</div>{% endif %}
+        </div>
+        <span class="pp-cfg-num">
+            <select id="pp-cfg-{{ name }}" name="{{ name }}" class="pp-cfg-select">
+                {% for val, txt in options %}
+                    <option value="{{ val }}"{{ val == value ? ' selected' : '' }}>{{ txt }}</option>
+                {% endfor %}
+            </select>
+        </span>
+    </div>
+{% endmacro %}
 {% import _self as cf %}
 
 {% set v = cfg.values %}
@@ -95,6 +111,27 @@
                             __('Antecedência para alertar prazo se aproximando', 'projectplus'), __('Em dias', 'projectplus'), '') }}
                         {{ cf.number_row('budget_warn_percent', v.budget_warn_percent, 1, 100,
                             __('Alerta de orçamento ao atingir', 'projectplus'), __('Percentual do teto do projeto', 'projectplus'), '%') }}
+                    </div>
+
+                    <div class="pp-cfg-card">
+                        <h2 class="pp-cfg-card__title">{{ __('Kanban', 'projectplus') }}</h2>
+                        {{ cf.select_row('move_comment', v.move_comment, {
+                                0: __('Desligado', 'projectplus'),
+                                1: __('Opcional', 'projectplus'),
+                                2: __('Obrigatório', 'projectplus')
+                            },
+                            __('Comentário ao mover um cartão de fase', 'projectplus'),
+                            __('Vale nos Kanbans de tarefas e de projetos; o texto entra nos comentários do item', 'projectplus')) }}
+                        {{ cf.switch_row('move_new_deadline', v.move_new_deadline,
+                            __('Exigir novo prazo ao mover cartão atrasado', 'projectplus'),
+                            __('Não vale ao mover para uma fase finalizadora', 'projectplus'), '') }}
+                    </div>
+
+                    <div class="pp-cfg-card">
+                        <h2 class="pp-cfg-card__title">{{ __('Descrição', 'projectplus') }}</h2>
+                        {{ cf.switch_row('desc_required', v.desc_required,
+                            __('Exigir descrição de projetos e tarefas', 'projectplus'),
+                            __('Na criação e ao mudar de fase um item que ainda não tem descrição; quem já tem não é cobrado', 'projectplus'), '') }}
                     </div>
 
                     <div class="pp-cfg-card">

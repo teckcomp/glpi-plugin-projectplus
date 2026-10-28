@@ -1701,6 +1701,8 @@
                 container.innerHTML = renderTaskPanel(projectId, tasks, meta);
                 bindTaskPanel(container, projectId, ajaxUrl, taskUrl, tasks);
                 bindProjectStrip(container.querySelector('.pp-projstrip'));
+                mountStripDesc(container.querySelector('.pp-projstrip'), meta); // O-2e
+                loadSoloDesc(container, projectId, ajaxUrl);                     // O-2e
                 enhanceSearchSelects(container); // busca nos dropdowns da linha de criacao
             })
             .catch(function () {
@@ -1729,6 +1731,10 @@
         if (meta) {
             html += '<div class="pp-projstrip" data-project-id="' + parseInt(meta.id, 10) + '">' +
                 projectStripInner(meta) + '</div>';
+        } else {
+            // O-2e: sem faixa (não edita o projeto) — a descrição vem por
+            // dashboard_data?action=projectdesc (loadSoloDesc)
+            html += '<div class="pp-projdesc pp-projdesc--solo" data-pp-desc-solo></div>';
         }
 
         // Formulário de nova tarefa. O-1e: a Visão do cliente é somente
@@ -1746,6 +1752,11 @@
             '<input type="date" class="pp-nt-start" title="' + escapeHtml(__('Início planejado')) + '">' +
             '<input type="date" class="pp-nt-end" title="' + escapeHtml(__('Fim planejado')) + '">' +
             '<button type="button" class="projectplus-btn pp-nt-create">' + escapeHtml(__('Criar tarefa')) + '</button>' +
+            // O-2f: descrição já na criação — linha inteira embaixo
+            // (obrigatória com a regra ligada; servidor confere)
+            '<textarea class="pp-nt-desc" rows="2" maxlength="20000" placeholder="' +
+                escapeHtml(ppData.desc_required ? __('Descrição da tarefa (obrigatória)…') : __('Descrição da tarefa (opcional)…')) +
+                '" aria-label="' + escapeHtml(__('Descrição')) + '"' + (ppData.desc_required ? ' required' : '') + '></textarea>' +
             '</div>';
 
         if (tasks.length === 0) {
@@ -1831,7 +1842,8 @@
                         ? '<span class="pp-dep-lock" title="' +
                           escapeHtml(__('Bloqueada por outra(s) tarefa(s) — veja 🔗')) + '">🔒</span> '
                         : '') +
-                    '<a href="' + escapeHtml(t.url) + '" target="_blank">' + escapeHtml(t.name) + '</a></td>' +
+                    '<a href="' + escapeHtml(t.url) + '" target="_blank">' + escapeHtml(t.name) + '</a>' +
+                    taskDescHtml(t) + '</td>' + // O-2e-2
                 '<td class="pp-team-cell">' + teamCellHtml(t) + '</td>' +
                 '<td><input type="date" class="pp-task-start" value="' + (t.start_iso || '') + '"' + roAttr() + '></td>' +
                 '<td><input type="date" class="pp-task-end" value="' + (t.end_iso || '') + '"' + roAttr() + '></td>' +
@@ -1859,6 +1871,97 @@
 
         html += '</tbody></table>';
         return html;
+    }
+
+    // ------------------------------------------------------------------
+    // O-2e-2 (28/10/2026) — DESCRIÇÃO DA TAREFA nas tabelas (painel do
+    // projeto e Minhas tarefas). Com texto: 1 linha logo abaixo do nome
+    // (clique abre a descrição inteira numa linha-painel, como o 💬). Sem
+    // texto: ícone discreto ao lado do nome para quem edita ("Adicionar
+    // descrição" — já abre em edição). A regra de quem edita vem do servidor
+    // (dashboard_data?action=taskdesc → can_edit).
+    // ------------------------------------------------------------------
+    function taskDescHtml(t) {
+        const ex = t.desc_excerpt ? String(t.desc_excerpt) : '';
+        if (ex) {
+            return '<button type="button" class="pp-task-desc" title="' + escapeHtml(ex) + '">' + escapeHtml(ex) + '</button>';
+        }
+        if (t.has_desc) { // descrição sem texto (só imagem, por exemplo)
+            return ' <button type="button" class="pp-task-descbtn pp-task-descbtn--has" title="' + escapeHtml(__('Descrição')) +
+                '" aria-label="' + escapeHtml(__('Descrição')) + '"><i class="ti ti-align-left"></i></button>';
+        }
+        if (isReadOnly()) { return ''; }
+        return ' <button type="button" class="pp-task-descbtn" data-pp-desc-add="1" title="' + escapeHtml(__('Adicionar descrição')) +
+            '" aria-label="' + escapeHtml(__('Adicionar descrição')) + '"><i class="ti ti-align-left"></i></button>';
+    }
+
+    function bindTaskDesc(row, taskId, taskUrl) {
+        row.querySelectorAll('.pp-task-desc, .pp-task-descbtn').forEach(function (b) {
+            b.addEventListener('click', function () {
+                toggleDescPanel(row, taskId, taskUrl, b.dataset.ppDescAdd === '1');
+            });
+        });
+    }
+
+    // Troca o trecho/ícone da célula do nome depois de gravar.
+    function refreshTaskDesc(row, taskId, taskUrl, excerpt, has) {
+        const cell = row.children[0];
+        if (!cell) { return; }
+        cell.querySelectorAll('.pp-task-desc, .pp-task-descbtn').forEach(function (b) {
+            const prev = b.previousSibling; // o espaço antes do ícone
+            if (prev && prev.nodeType === 3 && prev.nodeValue === ' ') { prev.remove(); }
+            b.remove();
+        });
+        cell.insertAdjacentHTML('beforeend', taskDescHtml({ desc_excerpt: excerpt, has_desc: has }));
+        bindTaskDesc(row, taskId, taskUrl);
+    }
+
+    function toggleDescPanel(row, taskId, taskUrl, startEditing, note) {
+        const existing = findPanelRow(row, 'pp-desc-row');
+        if (existing) {
+            existing.remove(); // toggle: fecha
+            return;
+        }
+        const tr = document.createElement('tr');
+        tr.className = 'pp-desc-row';
+        const td = document.createElement('td');
+        td.colSpan = row.children.length;
+        const panel = document.createElement('div');
+        panel.className = 'pp-desc-panel';
+        panel.innerHTML = '<span class="projectplus-muted">' + escapeHtml(__('Carregando…')) + '</span>';
+        td.appendChild(panel);
+        tr.appendChild(td);
+        row.insertAdjacentElement('afterend', tr);
+        fetch(ppDataUrl + '?action=taskdesc&id=' + encodeURIComponent(taskId), { credentials: 'same-origin' })
+            .then(function (r) { return r.json(); })
+            .then(function (r) {
+                panel.innerHTML = '';
+                if (!r || !r.ok || !r.description) {
+                    panel.innerHTML = '<span class="projectplus-muted">—</span>';
+                    return;
+                }
+                if (note) { // O-2f: por que o campo abriu
+                    const p = document.createElement('p');
+                    p.className = 'pp-desc-note';
+                    p.textContent = note;
+                    panel.appendChild(p);
+                }
+                panel.appendChild(descBox({
+                    desc: r.description,
+                    canEdit: !!r.can_edit && !isReadOnly() && !!taskUrl,
+                    emptyText: '—',
+                    startEditing: !!startEditing,
+                    onSave: function (text, done) {
+                        postQuiet(taskUrl, { action: 'description', task_id: taskId, content: text }, function (resp) {
+                            done(resp);
+                            if (resp && resp.ok && resp.description) {
+                                refreshTaskDesc(row, taskId, taskUrl, resp.excerpt || '', !resp.description.empty);
+                            }
+                        });
+                    },
+                }));
+            })
+            .catch(function () { panel.innerHTML = '<span class="projectplus-muted">—</span>'; });
     }
 
     // ------------------------------------------------------------------
@@ -2016,10 +2119,19 @@
             createBtn.addEventListener('click', function () {
                 const name = container.querySelector('.pp-nt-name').value.trim();
                 if (!name) { return; }
+                // O-2f: descrição obrigatória — avisa no campo, sem ir ao servidor
+                const descEl = container.querySelector('.pp-nt-desc');
+                const desc = descEl ? descEl.value : '';
+                if (ppData.desc_required && descEl && !desc.trim()) {
+                    descEl.classList.add('pp-nt-desc--missing');
+                    descEl.focus();
+                    return;
+                }
                 const parentId = container.querySelector('.pp-nt-parent').value;
                 createBtn.disabled = true;
                 taskPost(taskUrl, {
                     action: 'create',
+                    content: desc,
                     name: name,
                     projects_id: projectId,
                     projecttasks_id: parentId,
@@ -2036,6 +2148,11 @@
                     reload();
                 });
             });
+        }
+
+        const ntDesc = container.querySelector('.pp-nt-desc');
+        if (ntDesc) {
+            ntDesc.addEventListener('input', function () { ntDesc.classList.remove('pp-nt-desc--missing'); });
         }
 
         // Responsáveis da tarefa nova (Bloco D-2a) — só no cliente até criar
@@ -2197,7 +2314,16 @@
                 st.addEventListener('change', function () {
                     const dot = row.querySelector('.pp-phase-dot');
                     if (dot) { dot.style.background = stateColor(st.value); }
-                    taskPost(taskUrl, { action: 'state', task_id: taskId, projectstates_id: st.value }, function (resp) {
+                    postQuiet(taskUrl, { action: 'state', task_id: taskId, projectstates_id: st.value }, function (resp) {
+                        // O-2f: sem descrição — em vez do alert, abre o campo
+                        // da descrição já em edição logo abaixo da linha
+                        if (!resp.ok && resp.need_desc) {
+                            const open = findPanelRow(row, 'pp-desc-row');
+                            if (open) { open.remove(); }
+                            toggleDescPanel(row, taskId, taskUrl, true, resp.message);
+                        } else if (!resp.ok && resp.message) {
+                            alert(resp.message);
+                        }
                         if (resp.ok) {
                             st.dataset.ppPrev = st.value;
                             // O-2d: fase finalizadora leva a tarefa a 100% no
@@ -2269,6 +2395,9 @@
                 });
             }
 
+            // O-2e-2: descrição (trecho abaixo do nome / ícone de adicionar)
+            bindTaskDesc(row, taskId, taskUrl);
+
             // Dependências (Etapa 3, Bloco 3)
             const dep = row.querySelector('.pp-dep-btn');
             if (dep) {
@@ -2300,7 +2429,8 @@
     // procura o painel da classe pedida atravessando os adjacentes.
     function findPanelRow(row, cls) {
         let next = row.nextElementSibling;
-        while (next && (next.classList.contains('pp-cmt-row') || next.classList.contains('pp-dep-row'))) {
+        while (next && (next.classList.contains('pp-cmt-row') || next.classList.contains('pp-dep-row') ||
+                        next.classList.contains('pp-desc-row'))) { // O-2e-2
             if (next.classList.contains(cls)) { return next; }
             next = next.nextElementSibling;
         }
@@ -2601,7 +2731,7 @@
         const onKey = function (e) {
             // O-2b: Esc dentro da busca de responsável fecha só a busca.
             if (e.key === 'Escape' && e.target && typeof e.target.closest === 'function'
-                && e.target.closest('.pp-team__picker')) {
+                && e.target.closest('.pp-team__picker, .pp-desc__input')) { // O-2e: descrição
                 return;
             }
             if (e.key === 'Escape') {
@@ -2644,6 +2774,167 @@
     ProjectPlus.teamChipHtml = teamChipHtml;
     ProjectPlus.teamAddBtnHtml = teamAddBtnHtml;
     ProjectPlus.openTeamPicker = openTeamPicker;
+
+    // ------------------------------------------------------------------
+    // O-2e (27/10/2026) — DESCRIÇÃO (projeto; a tarefa usa o mesmo no O-2e-2)
+    //
+    // descBox(opts) devolve o elemento pronto:
+    //   opts.desc     {empty, html, text, rich} — payload de Description.php
+    //                 (`html` já vem SANITIZADO pelo core: vai por innerHTML)
+    //   opts.canEdit  mostra Editar / "+ Adicionar descrição"
+    //   opts.onSave(text, done) grava; done(resp) com resp.ok e
+    //                 resp.description (o payload novo) ou resp.message
+    //   opts.emptyText texto quando vazio e sem edição (null = some)
+    //   opts.startEditing já abre em edição (O-2e-2: "+" da linha da tarefa)
+    // Texto simples (decisão do Claudio): descrição com formatação feita na
+    // ficha do GLPI (`rich`) pede confirmação antes de virar texto simples.
+    // Leitura cortada em 2 linhas com "ver mais" quando passa disso.
+    // ------------------------------------------------------------------
+    const DESC_MAX = 20000;
+
+    function descBox(opts) {
+        opts = opts || {};
+        let desc = opts.desc || { empty: true };
+        const box = document.createElement('div');
+        box.className = 'pp-desc';
+
+        const clear = function () { while (box.firstChild) { box.removeChild(box.firstChild); } };
+        const btn = function (cls, icon, label, title) {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = cls;
+            if (title) { b.title = title; }
+            if (icon) {
+                const i = document.createElement('i');
+                i.className = 'ti ' + icon;
+                i.setAttribute('aria-hidden', 'true');
+                b.appendChild(i);
+                b.appendChild(document.createTextNode(' '));
+            }
+            b.appendChild(document.createTextNode(label));
+            return b;
+        };
+
+        function read() {
+            clear();
+            box.classList.remove('pp-desc--editing');
+            box.classList.toggle('pp-desc--empty', !!desc.empty);
+            if (desc.empty) {
+                if (opts.canEdit) {
+                    const add = btn('pp-desc__add', 'ti-plus', __('Adicionar descrição'));
+                    add.addEventListener('click', edit);
+                    box.appendChild(add);
+                } else if (opts.emptyText) {
+                    const t = document.createElement('span');
+                    t.className = 'pp-desc__none';
+                    t.textContent = opts.emptyText;
+                    box.appendChild(t);
+                }
+                return;
+            }
+            const ico = document.createElement('i');
+            ico.className = 'ti ti-align-left pp-desc__ico';
+            ico.setAttribute('aria-hidden', 'true');
+            box.appendChild(ico);
+            const main = document.createElement('div');
+            main.className = 'pp-desc__main';
+            const body = document.createElement('div');
+            body.className = 'pp-desc__body pp-desc__body--clamp';
+            body.innerHTML = String(desc.html || '');
+            main.appendChild(body);
+            const more = btn('pp-desc__more', null, __('ver mais'));
+            more.hidden = true;
+            more.addEventListener('click', function () {
+                const open = body.classList.toggle('pp-desc__body--clamp');
+                more.textContent = open ? __('ver mais') : __('ver menos');
+            });
+            main.appendChild(more);
+            box.appendChild(main);
+            if (opts.canEdit) {
+                const ed = btn('pp-desc__edit', 'ti-edit', __('Editar'), __('Editar descrição'));
+                ed.addEventListener('click', edit);
+                box.appendChild(ed);
+            }
+            // "ver mais" só quando o texto passa das 2 linhas (medido depois
+            // de o elemento estar na página).
+            const measure = function () {
+                if (body.scrollHeight > body.clientHeight + 1) { more.hidden = false; }
+            };
+            if (typeof window.requestAnimationFrame === 'function') {
+                window.requestAnimationFrame(measure);
+            } else {
+                setTimeout(measure, 0);
+            }
+        }
+
+        function edit() {
+            if (desc.rich && !window.confirm(__('Esta descrição tem formatação (negrito, listas, imagens…) feita na ficha do GLPI. Editada aqui, ela vira texto simples e a formatação se perde. Continuar?'))) {
+                return;
+            }
+            clear();
+            box.classList.add('pp-desc--editing');
+            const ta = document.createElement('textarea');
+            ta.className = 'pp-desc__input';
+            ta.rows = 4;
+            ta.maxLength = DESC_MAX;
+            ta.value = desc.empty ? '' : String(desc.text || '');
+            ta.setAttribute('aria-label', __('Descrição'));
+            const bar = document.createElement('div');
+            bar.className = 'pp-desc__bar';
+            const save = btn('projectplus-btn pp-desc__save', null, __('Salvar'));
+            const cancel = btn('projectplus-btn projectplus-btn--ghost pp-desc__cancel', null, __('Cancelar'));
+            const msg = document.createElement('span');
+            msg.className = 'pp-desc__msg';
+            msg.setAttribute('role', 'status');
+            bar.appendChild(save);
+            bar.appendChild(cancel);
+            bar.appendChild(msg);
+            box.appendChild(ta);
+            box.appendChild(bar);
+
+            let busy = false;
+            const doSave = function () {
+                if (busy || typeof opts.onSave !== 'function') { return; }
+                busy = true;
+                ta.disabled = save.disabled = cancel.disabled = true;
+                msg.className = 'pp-desc__msg pp-desc__msg--busy';
+                msg.textContent = __('Salvando…');
+                opts.onSave(ta.value, function (resp) {
+                    busy = false;
+                    if (resp && resp.ok && resp.description) {
+                        desc = resp.description;
+                        read();
+                        return;
+                    }
+                    ta.disabled = save.disabled = cancel.disabled = false;
+                    msg.className = 'pp-desc__msg pp-desc__msg--err';
+                    msg.textContent = (resp && resp.message) || __('Não foi possível salvar.');
+                });
+            };
+            save.addEventListener('click', doSave);
+            cancel.addEventListener('click', function () { if (!busy) { read(); } });
+            ta.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (!busy) { read(); }
+                } else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    doSave();
+                }
+            });
+            // startEditing: o box ainda não está na página — foca depois
+            if (ta.isConnected) { ta.focus(); } else { setTimeout(function () { ta.focus(); }, 0); }
+        }
+
+        box.ppIsEditing = function () { return box.classList.contains('pp-desc--editing'); };
+        // O-2f: abrir a edição de fora (fase recusada por falta de descrição)
+        box.ppEdit = function () { if (opts.canEdit && !box.ppIsEditing()) { edit(); } };
+        read();
+        if (opts.startEditing && opts.canEdit && desc.empty) { edit(); }
+        return box;
+    }
+    ProjectPlus.descBox = descBox;
 
     // ------------------------------------------------------------------
     // Dependências entre tarefas (Etapa 3, Bloco 3)
@@ -3296,7 +3587,82 @@
             (ppData.can_delete_project && m.can_delete
                 ? '<button type="button" class="pp-ps-del" data-name="' + escapeHtml(m.name || '') + '" title="' +
                   escapeHtml(__('Mover para a lixeira')) + '"><i class="ti ti-trash"></i></button>'
-                : '');
+                : '') +
+            // O-2e: descrição do projeto — linha inteira embaixo (o
+            // componente é montado por mountStripDesc depois do innerHTML)
+            '<div class="pp-projdesc" data-pp-desc></div>';
+    }
+
+    // O-2e (27/10/2026): monta a descrição na faixa. A faixa é refeita por
+    // innerHTML a cada gravação de outro campo; se a descrição estiver em
+    // edição, o MESMO elemento volta para o lugar (o texto digitado não se
+    // perde). `desc` ausente (meta antiga) = linha some.
+    function mountStripDesc(strip, meta, keep) {
+        if (!strip) { return; }
+        const slot = strip.querySelector('[data-pp-desc]');
+        if (!slot) { return; }
+        if (keep && keep.ppIsEditing && keep.ppIsEditing()) {
+            slot.appendChild(keep);
+            strip.ppDesc = keep;
+            return;
+        }
+        if (!meta || !meta.description) {
+            slot.remove();
+            return;
+        }
+        const pid = strip.dataset.projectId;
+        const box = descBox({
+            desc: meta.description,
+            canEdit: !isReadOnly() && !!ppProjectUrl,
+            onSave: function (text, done) {
+                projectPostQuiet({ action: 'description', project_id: pid, content: text }, function (resp) {
+                    done(resp);
+                    if (resp && resp.meta) { redrawStrip(strip, resp.meta); }
+                    if (resp && resp.rows) { refreshProjectRows(resp.rows); }
+                });
+            },
+        });
+        slot.appendChild(box);
+        strip.ppDesc = box;
+    }
+
+    // Redesenha a faixa preservando a descrição em edição.
+    function redrawStrip(strip, meta) {
+        const keep = strip.ppDesc || null;
+        strip.innerHTML = projectStripInner(meta);
+        mountStripDesc(strip, meta, keep);
+    }
+
+    // POST da faixa SEM o alert() do taskPost: a descrição mostra a recusa
+    // no próprio campo.
+    function projectPostQuiet(data, onDone) {
+        postQuiet(ppProjectUrl, data, onDone);
+    }
+
+    // O-2e-2: o mesmo, para qualquer endpoint (descrição da tarefa)
+    function postQuiet(url, data, onDone) {
+        data._glpi_csrf_token = ppCsrf;
+        postForm(url, data, function (resp) {
+            if (resp && resp.csrf) { ppCsrf = resp.csrf; if (ppCsrfSink) { ppCsrfSink(resp.csrf); } }
+            if (onDone) { onDone(resp || {}); }
+        });
+    }
+
+    // O-2e: quem NÃO edita o projeto (sem faixa) também lê a descrição —
+    // caixa própria no topo do painel, só quando há texto.
+    function loadSoloDesc(container, projectId, ajaxUrl) {
+        const slot = container.querySelector('[data-pp-desc-solo]');
+        if (!slot) { return; }
+        fetch(ajaxUrl + '?action=projectdesc&id=' + encodeURIComponent(projectId) + scopeQs(), { credentials: 'same-origin' })
+            .then(function (r) { return r.json(); })
+            .then(function (r) {
+                if (!r || !r.ok || !r.description || r.description.empty) {
+                    slot.remove();
+                    return;
+                }
+                slot.appendChild(descBox({ desc: r.description, canEdit: false }));
+            })
+            .catch(function () { slot.remove(); });
     }
 
     // Painel de comentários do projeto: IRMÃO da faixa (não dentro), para
@@ -3323,16 +3689,29 @@
         const post = function (data, ctl) {
             if (ctl) { ctl.disabled = true; }
             data.project_id = pid;
-            taskPost(ppProjectUrl, data, function (resp) {
+            // O-2f: postQuiet + alert manual — a fase recusada por falta de
+            // descrição abre o campo da faixa em vez do alert
+            postQuiet(ppProjectUrl, data, function (resp) {
+                if (resp && resp.ok === false && resp.message && !resp.need_desc) { alert(resp.message); }
                 // Sucesso OU recusa: a resposta traz o estado real do banco
                 // — a faixa volta ao que está gravado (fase recusada pela
                 // trava, por exemplo, retorna sozinha, com a mensagem).
                 if (resp && resp.meta) {
-                    strip.innerHTML = projectStripInner(resp.meta);
+                    redrawStrip(strip, resp.meta); // O-2e: preserva a descrição em edição
                 } else if (ctl) {
                     ctl.disabled = false;
                 }
                 if (resp && resp.rows) { refreshProjectRows(resp.rows); }
+                if (resp && resp.need_desc && strip.ppDesc && typeof strip.ppDesc.ppEdit === 'function') {
+                    strip.ppDesc.ppEdit();
+                    const slot = strip.querySelector('[data-pp-desc]');
+                    if (slot && !slot.querySelector('.pp-desc-note')) {
+                        const p = document.createElement('p');
+                        p.className = 'pp-desc-note';
+                        p.textContent = resp.message;
+                        slot.insertBefore(p, slot.firstChild);
+                    }
+                }
                 // O-2d: fase finalizadora com itens abertos abaixo — o servidor
                 // não gravou nada e manda a pergunta pronta; confirmada, reenvia
                 // com force=1 (só Super-Admin/gestor recebem a pergunta).
@@ -3875,6 +4254,7 @@
         bindTaskRows: bindTaskRows,
         // Bloco D-2a: painel completo (linha de criação + chips) no harness
         setData: function (d) { ppData = d; },
+        setDataUrl: function (u) { ppDataUrl = u; }, // O-2e-2 (harness)
         renderTaskPanel: renderTaskPanel,
         bindTaskPanel: bindTaskPanel,
         // Bloco D-3a
@@ -3889,6 +4269,9 @@
         initTemplateListFilter: initTemplateListFilter, // Bloco N-8b-1
         tplSummary: tplSummary, // Bloco N-8b-2
         itemModal: itemModal, // O-2a
+        descBox: descBox,               // O-2e
+        mountStripDesc: mountStripDesc, // O-2e
+        loadSoloDesc: loadSoloDesc,     // O-2e
         closeItemModal: closeItemModal,
     };
 
