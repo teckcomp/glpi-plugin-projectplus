@@ -288,8 +288,12 @@
                             <td class="pp-actions-cell pp-cmt-cell">
                                 {% if can_tasks %}<button type="button" class="projectplus-tasksbtn"
                                         data-tasks-project="{{ project.id }}">{{ __('Tarefas', 'projectplus') }}</button>{% endif %}
-                                <button type="button" class="pp-cmt-btn{% if project.comments > 0 %} pp-cmt-btn--has{% endif %}"
-                                        title="{{ __('Comentários', 'projectplus') }}" aria-label="{{ __('Comentários', 'projectplus') }}"><i class="ti ti-message"></i>{% if project.comments > 0 %}<span class="pp-cmt-count">{{ project.comments }}</span>{% endif %}</button>
+                                {# O-4b: não lidos no 💬 — mesmo desenho do commentBtnHtml do projectplus.js #}
+                                {% set pp_cu = min(project.unread|default(0), project.comments) %}
+                                {% set pp_ct = pp_cu > 0 ? _n('%d comentário não lido', '%d comentários não lidos', pp_cu, 'projectplus')|format(pp_cu) : __('Comentários', 'projectplus') %}
+                                <button type="button" class="pp-cmt-btn{% if project.comments > 0 %} pp-cmt-btn--has{% endif %}{% if pp_cu > 0 %} pp-cmt-btn--new{% endif %}"
+                                        data-cmt-kind="project" data-cmt-id="{{ project.id }}" data-cmt-total="{{ project.comments }}" data-cmt-unread="{{ pp_cu }}"
+                                        title="{{ pp_ct }}" aria-label="{{ pp_ct }}">{% if pp_cu > 0 %}<span class="pp-cmt-dot" aria-hidden="true"></span>{% endif %}<i class="ti ti-message"></i>{% if project.comments > 0 %}<span class="pp-cmt-count">{{ project.comments }}{% if pp_cu > 0 %} · {{ _n('%d novo', '%d novos', pp_cu, 'projectplus')|format(pp_cu) }}{% endif %}</span>{% endif %}</button>
                             </td>
                         </tr>
                     {% else %}
@@ -389,8 +393,12 @@
                                         title="{{ __('Dependências', 'projectplus') }}" aria-label="{{ __('Dependências', 'projectplus') }}"><i class="ti ti-link"></i>{% if task.deps > 0 %}<span class="pp-dep-count">{{ task.deps }}</span>{% endif %}</button>
                             </td>
                             <td class="pp-cmt-cell">
-                                <button type="button" class="pp-cmt-btn{% if task.comments > 0 %} pp-cmt-btn--has{% endif %}"
-                                        title="{{ __('Comentários', 'projectplus') }}" aria-label="{{ __('Comentários', 'projectplus') }}"><i class="ti ti-message"></i>{% if task.comments > 0 %}<span class="pp-cmt-count">{{ task.comments }}</span>{% endif %}</button>
+                                {# O-4b: não lidos no 💬 — mesmo desenho do commentBtnHtml do projectplus.js #}
+                                {% set pp_cu = min(task.unread|default(0), task.comments) %}
+                                {% set pp_ct = pp_cu > 0 ? _n('%d comentário não lido', '%d comentários não lidos', pp_cu, 'projectplus')|format(pp_cu) : __('Comentários', 'projectplus') %}
+                                <button type="button" class="pp-cmt-btn{% if task.comments > 0 %} pp-cmt-btn--has{% endif %}{% if pp_cu > 0 %} pp-cmt-btn--new{% endif %}"
+                                        data-cmt-kind="task" data-cmt-id="{{ task.id }}" data-cmt-total="{{ task.comments }}" data-cmt-unread="{{ pp_cu }}"
+                                        title="{{ pp_ct }}" aria-label="{{ pp_ct }}">{% if pp_cu > 0 %}<span class="pp-cmt-dot" aria-hidden="true"></span>{% endif %}<i class="ti ti-message"></i>{% if task.comments > 0 %}<span class="pp-cmt-count">{{ task.comments }}{% if pp_cu > 0 %} · {{ _n('%d novo', '%d novos', pp_cu, 'projectplus')|format(pp_cu) }}{% endif %}</span>{% endif %}</button>
                             </td>
                         </tr>
                     {% else %}

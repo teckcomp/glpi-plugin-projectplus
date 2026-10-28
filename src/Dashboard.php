@@ -322,8 +322,11 @@ class Dashboard extends CommonGLPI
         // Regra geral (Etapa 3, Bloco 3 / Fix 1): projeto com filhos
         // abertos fica 🔒 — consulta única para todos os projetos
         $blockedProjects = TaskDep::blockedProjects(array_column($projects, 'id'));
+        // O-4b: não lidos do 💬 da linha do projeto — consulta única
+        $unreadProjects  = self::unreadMap('project', array_column($projects, 'id'));
         foreach ($projects as &$p) {
             $p['blocked'] = $blockedProjects[$p['id']] ?? false;
+            $p['unread']  = $unreadProjects[$p['id']] ?? 0;
         }
         unset($p);
 
@@ -812,11 +815,13 @@ class Dashboard extends CommonGLPI
         // para os botões 💬/🔗 na tabela "Tarefas em andamento"
         $comments = TaskComment::countForTasks($ids);
         $deps     = TaskDep::countForTasks($ids);
+        $unread   = self::unreadMap('task', $ids); // O-4b
 
         foreach ($tasks as &$t) {
             $t['team']     = $byTid[$t['id']] ?? [];
             $t['children'] = $counts[$t['id']] ?? 0;
             $t['comments'] = $comments[$t['id']] ?? 0;
+            $t['unread']   = $unread[$t['id']] ?? 0;
             $t['deps']     = $deps[$t['id']]['deps'] ?? 0;
             $t['blocked']  = $deps[$t['id']]['blocked'] ?? false;
         }
@@ -1023,12 +1028,15 @@ class Dashboard extends CommonGLPI
             $comments = TaskComment::countForTasks($taskIds);
             // Dependências (Etapa 3, Bloco 3) — consulta única
             $deps = TaskDep::countForTasks($taskIds);
+            // O-4b: não lidos do 💬 — consulta única, para o usuário da tela
+            $unread = self::unreadMap('task', $taskIds, $userId);
 
             foreach ($groups as &$g) {
                 foreach ($g['tasks'] as &$t) {
                     $t['team_users'] = $teamUsers[$t['id']] ?? [];
                     $t['team']       = array_column($t['team_users'], 'name');
                     $t['comments'] = $comments[$t['id']] ?? 0;
+                    $t['unread']   = $unread[$t['id']] ?? 0;
                     $t['deps']     = $deps[$t['id']]['deps'] ?? 0;
                     $t['blocked']  = $deps[$t['id']]['blocked'] ?? false;
                 }
@@ -1195,6 +1203,22 @@ class Dashboard extends CommonGLPI
     // ------------------------------------------------------------------
 
     /**
+     * O-4b (28/10/2026): comentários NÃO LIDOS por item, para o 💬 das
+     * tabelas (Painel e Minhas tarefas) — a mesma regra dos cartões do
+     * Kanban (CommentRead::unreadFor; comentário do próprio nunca conta).
+     *
+     * @param 'task'|'project' $kind
+     * @param int[]            $ids
+     * @param int|null         $userId null = usuário logado
+     * @return array<int,int>  id => quantos novos (ids sem novos = 0)
+     */
+    private static function unreadMap(string $kind, array $ids, ?int $userId = null): array
+    {
+        $uid = $userId ?? (int) \Session::getLoginUserID();
+        return CommentRead::unreadFor($kind, $ids, $uid)['count'];
+    }
+
+    /**
      * @param array<int, true>|null $allowed Bloco F-1: subprojetos visíveis
      *        no escopo (Scope::visibleProjectMap); null = todos.
      */
@@ -1231,8 +1255,10 @@ class Dashboard extends CommonGLPI
         // Regra geral (Etapa 3, Bloco 3 / Fix 1): subprojeto com filhos
         // abertos também mostra 🔒
         $blockedProjects = TaskDep::blockedProjects(array_column($children, 'id'));
+        $unreadProjects  = self::unreadMap('project', array_column($children, 'id')); // O-4b
         foreach ($children as &$c) {
             $c['blocked'] = $blockedProjects[$c['id']] ?? false;
+            $c['unread']  = $unreadProjects[$c['id']] ?? 0;
         }
         unset($c);
 
@@ -1329,8 +1355,10 @@ class Dashboard extends CommonGLPI
             $out[] = self::projectRowData($row, $states, $now);
         }
         $blocked = TaskDep::blockedProjects(array_column($out, 'id'));
+        $unread  = self::unreadMap('project', array_column($out, 'id')); // O-4b
         foreach ($out as &$r) {
             $r['blocked'] = $blocked[$r['id']] ?? false;
+            $r['unread']  = $unread[$r['id']] ?? 0;
         }
         unset($r);
         return $out;
@@ -1442,6 +1470,8 @@ class Dashboard extends CommonGLPI
             'team_users'   => $team,
             // Bloco D-3b: contador do 💬 da faixa
             'comments'     => TaskComment::countForProject((int) $p['id']),
+            // O-4b: não lidos do 💬 da faixa
+            'unread'       => self::unreadMap('project', [(int) $p['id']])[(int) $p['id']] ?? 0,
             // O-2e (27/10/2026): descrição do projeto (campo nativo `content`)
             'description'  => Description::payload($p['content'] ?? ''),
         ];
@@ -1744,11 +1774,13 @@ class Dashboard extends CommonGLPI
         $comments = TaskComment::countForTasks($allIds);
         // Dependências (Etapa 3, Bloco 3) — consulta única
         $deps = TaskDep::countForTasks($allIds);
+        $unread = self::unreadMap('task', $allIds); // O-4b
         foreach ($out as &$t) {
             if (!empty($t['context'])) {
                 continue;
             }
             $t['comments'] = $comments[$t['id']] ?? 0;
+            $t['unread']   = $unread[$t['id']] ?? 0;
             $t['deps']     = $deps[$t['id']]['deps'] ?? 0;
             $t['blocked']  = $deps[$t['id']]['blocked'] ?? false;
         }

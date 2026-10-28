@@ -2577,3 +2577,14 @@ label.pp-cfg-row__label { cursor: pointer; }
 .pp-kb-cmtbadge__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--pp-accent); }
 .pp-kb-cmts__line--new { border-left: 2px solid var(--pp-accent); padding-left: 6px; }
 
+
+/* ===== O-4b (28/10/2026) — não lidos no 💬 das tabelas =====
+   Mesmo aviso do chip dos cartões do Kanban (.pp-kb-cmtbadge--new):
+   fundo de destaque, bolinha e "N · X novos" no contador. */
+.pp-cmt-btn.pp-cmt-btn--new {
+    background: var(--pp-accent-soft); border-color: var(--pp-accent); color: var(--pp-link);
+    white-space: nowrap;
+}
+.pp-cmt-btn--new .pp-cmt-dot {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--pp-accent); flex: 0 0 auto;
+}

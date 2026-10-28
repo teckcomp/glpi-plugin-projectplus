@@ -2417,12 +2417,62 @@
     // linha, no mesmo padrão da expansão de subtarefas.
     // ------------------------------------------------------------------
 
-    function commentBtnHtml(t) {
+    // O-4b (28/10/2026): o mesmo aviso de não lidos dos cartões do Kanban
+    // ("5 · 2 novos", bolinha, fundo de destaque) no 💬 das tabelas. O
+    // botão leva tipo/id/contagens em data-* para que abrir os comentários
+    // em QUALQUER lugar da página (a mesma tarefa pode estar no painel do
+    // projeto e em "Tarefas em andamento") limpe todos os botões dela.
+    // kind = 'task' (padrão) ou 'project'.
+    function commentBtnParts(total, unread) {
+        const title = unread > 0
+            ? _n('%d comentário não lido', '%d comentários não lidos', unread, unread)
+            : __('Comentários');
+        const inner = (unread > 0 ? '<span class="pp-cmt-dot" aria-hidden="true"></span>' : '') +
+            '<i class="ti ti-message"></i>' +
+            (total > 0
+                ? '<span class="pp-cmt-count">' + total +
+                  (unread > 0 ? ' · ' + escapeHtml(_n('%d novo', '%d novos', unread, unread)) : '') + '</span>'
+                : '');
+        return { title: title, inner: inner };
+    }
+
+    function commentBtnHtml(t, kind) {
         const n = parseInt(t.comments, 10) || 0;
+        const u = Math.min(parseInt(t.unread, 10) || 0, n);
+        const parts = commentBtnParts(n, u);
         return '<button type="button" class="pp-cmt-btn' + (n > 0 ? ' pp-cmt-btn--has' : '') +
-            '" title="' + escapeHtml(__('Comentários')) + '" aria-label="' + escapeHtml(__('Comentários')) + '"><i class="ti ti-message"></i>' +
-            (n > 0 ? '<span class="pp-cmt-count">' + n + '</span>' : '') +
-            '</button>';
+            (u > 0 ? ' pp-cmt-btn--new' : '') + '"' +
+            ' data-cmt-kind="' + (kind === 'project' ? 'project' : 'task') + '"' +
+            ' data-cmt-id="' + (parseInt(t.id, 10) || 0) + '"' +
+            ' data-cmt-total="' + n + '" data-cmt-unread="' + u + '"' +
+            ' title="' + escapeHtml(parts.title) + '" aria-label="' + escapeHtml(parts.title) + '">' +
+            parts.inner + '</button>';
+    }
+
+    // Redesenha o botão NO LUGAR (innerHTML): os handlers presos ao próprio
+    // botão (linhas de tarefa) continuam valendo.
+    function paintCommentBtn(btn, total, unread) {
+        total  = Math.max(0, parseInt(total, 10) || 0);
+        unread = Math.min(Math.max(0, parseInt(unread, 10) || 0), total);
+        const parts = commentBtnParts(total, unread);
+        btn.classList.toggle('pp-cmt-btn--has', total > 0);
+        btn.classList.toggle('pp-cmt-btn--new', unread > 0);
+        btn.dataset.cmtTotal  = String(total);
+        btn.dataset.cmtUnread = String(unread);
+        btn.title = parts.title;
+        btn.setAttribute('aria-label', parts.title);
+        btn.innerHTML = parts.inner;
+    }
+
+    // Abriu os comentários = leu (o servidor já gravou ao devolver a lista).
+    function clearCommentUnread(kind, id) {
+        const sel = '.pp-cmt-btn[data-cmt-kind="' + (kind === 'project' ? 'project' : 'task') +
+            '"][data-cmt-id="' + (parseInt(id, 10) || 0) + '"]';
+        document.querySelectorAll(sel).forEach(function (btn) {
+            if ((parseInt(btn.dataset.cmtUnread, 10) || 0) > 0) {
+                paintCommentBtn(btn, btn.dataset.cmtTotal, 0);
+            }
+        });
     }
 
     // Painéis expansíveis podem coexistir na mesma linha (💬 e 🔗):
@@ -2463,7 +2513,10 @@
             credentials: 'same-origin'
         })
             .then(function (r) { return r.json(); })
-            .then(function (comments) { renderComments(container, row, taskId, comments, kind); })
+            .then(function (comments) {
+                if (Array.isArray(comments)) { clearCommentUnread(kind, taskId); } // O-4b
+                renderComments(container, row, taskId, comments, kind);
+            })
             .catch(function () {
                 container.innerHTML = '<div class="pp-cmt-panel">' +
                     '<span class="projectplus-muted">' +
@@ -2620,19 +2673,8 @@
         }
         const btn = row.querySelector('.pp-cmt-btn');
         if (!btn || typeof count === 'undefined') { return; }
-        const n = parseInt(count, 10) || 0;
-        btn.classList.toggle('pp-cmt-btn--has', n > 0);
-        let span = btn.querySelector('.pp-cmt-count');
-        if (n > 0) {
-            if (!span) {
-                span = document.createElement('span');
-                span.className = 'pp-cmt-count';
-                btn.appendChild(span);
-            }
-            span.textContent = String(n);
-        } else if (span) {
-            span.remove();
-        }
+        // O-4b: quem comenta está com o painel aberto — já leu tudo
+        paintCommentBtn(btn, count, 0);
     }
 
     // ------------------------------------------------------------------
@@ -3442,7 +3484,7 @@
         cells.push({ cls: 'pp-actions-cell pp-cmt-cell', html: (showTasks
             ? '<button type="button" class="projectplus-tasksbtn" data-tasks-project="' + parseInt(p.id, 10) + '">' +
               escapeHtml(__('Tarefas')) + '</button> '
-            : '') + commentBtnHtml({ comments: p.comments }) });
+            : '') + commentBtnHtml({ id: p.id, comments: p.comments, unread: p.unread }, 'project') });
         return cells;
     }
 
@@ -3581,7 +3623,7 @@
                 '<input type="checkbox" class="pp-ps-auto"' + (m.auto_percent ? ' checked' : '') + '>' +
                 '<span class="pp-auto-switch__track"></span><span class="pp-auto-switch__txt">auto</span></label>' +
             // Bloco D-3b: 💬 do projeto (painel abre logo abaixo da faixa)
-            commentBtnHtml({ comments: m.comments }) +
+            commentBtnHtml({ id: m.id, comments: m.comments, unread: m.unread }, 'project') +
             // Bloco M-2: projeto (com subprojetos) para a lixeira. O-1b-2a:
             // por projeto (m.can_delete — Super-Admin ou gestor da árvore).
             (ppData.can_delete_project && m.can_delete
