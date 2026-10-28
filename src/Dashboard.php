@@ -105,6 +105,63 @@ class Dashboard extends CommonGLPI
      * já com um respiro de 2px entre fatias quando há mais de uma.
      * Itens com count 0 ficam fora dos segmentos.
      */
+    /** Bloco Q-1: máximo de itens por painel da Visão geral (o último pode ser "Outros"). */
+    public const PANEL_MAX_ITEMS = 6;
+
+    /**
+     * Bloco Q-1: limita uma lista de fatias/barras a $max itens, para os
+     * painéis da Visão geral ficarem do mesmo tamanho. Cabendo, devolve a
+     * lista intacta (inclusive itens com 0). Não cabendo: tira os zeros,
+     * guarda os ($max - 1) MAIORES na ORDEM ORIGINAL (a ordem das fases é a
+     * do fluxo) e soma o resto num último item "Outros", cujo `title` lista
+     * o que foi agrupado ("Nome (n), …", do maior para o menor).
+     *
+     * @param array<int, array{name:string,color:string,count:int}> $items
+     */
+    public static function capItems(array $items, int $max = self::PANEL_MAX_ITEMS): array
+    {
+        $items = array_values($items);
+        if ($max < 2 || count($items) <= $max) {
+            return $items;
+        }
+        $live = array_values(array_filter($items, static fn($it) => (int) ($it['count'] ?? 0) > 0));
+        if (count($live) <= $max) {
+            return $live;
+        }
+
+        // Ranking estável: maior contagem primeiro; empate fica na ordem original.
+        $rank = array_keys($live);
+        usort($rank, static function ($a, $b) use ($live) {
+            $d = (int) $live[$b]['count'] <=> (int) $live[$a]['count'];
+            return $d !== 0 ? $d : $a <=> $b;
+        });
+        $keep = array_flip(array_slice($rank, 0, $max - 1));
+
+        $out   = [];
+        $rest  = 0;
+        $names = [];
+        foreach ($rank as $i) {
+            if (!isset($keep[$i])) {
+                $rest   += (int) $live[$i]['count'];
+                $names[] = (string) ($live[$i]['name'] ?? '') . ' (' . (int) $live[$i]['count'] . ')';
+            }
+        }
+        foreach ($live as $i => $it) {
+            if (isset($keep[$i])) {
+                $out[] = $it;
+            }
+        }
+        $out[] = [
+            'name'  => __('Outros', 'projectplus'),
+            'color' => 'var(--pp-muted)',
+            'count' => $rest,
+            'title' => implode(', ', $names),
+            'other' => true,
+        ];
+
+        return $out;
+    }
+
     public static function donutSegments(array $items): array
     {
         $circ  = 301.59;
@@ -125,6 +182,7 @@ class Dashboard extends CommonGLPI
                 'name'   => (string) ($it['name'] ?? ''),
                 'color'  => (string) ($it['color'] ?? self::PHASE_DEFAULT_COLOR),
                 'count'  => (int) $it['count'],
+                'title'  => (string) ($it['title'] ?? ''),
                 'dash'   => round(max(0.0, $len - $gap), 2),
                 'offset' => round(-$pos, 2),
             ];

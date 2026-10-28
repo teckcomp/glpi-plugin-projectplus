@@ -193,7 +193,8 @@ $situation['items']  = $situationItems;
 $situation['center'] = $situation['total'] > 0 ? (round(100 * $onTime / $situation['total']) . '%') : '—';
 
 // Segundo donut: por tipo (sem tipo escolhido) ou por fase (com tipo).
-$secondDonut = Dashboard::donutSegments($typeId === null ? $data['type_chart'] : $data['phase_chart']);
+// Bloco Q-1: no máximo Dashboard::PANEL_MAX_ITEMS itens por painel (o resto vira "Outros").
+$secondDonut = Dashboard::donutSegments(Dashboard::capItems($typeId === null ? $data['type_chart'] : $data['phase_chart']));
 $kpiTypes    = count(array_filter($data['type_chart'], static fn($t) => (int) ($t['count'] ?? 0) > 0));
 
 // Tarefas por fase: barras proporcionais ao total.
@@ -202,11 +203,12 @@ foreach ($data['task_state_chart'] as $t) {
     $taskTotal += (int) $t['count'];
 }
 $taskBars = [];
-foreach ($data['task_state_chart'] as $t) {
+foreach (Dashboard::capItems($data['task_state_chart']) as $t) {
     $taskBars[] = [
         'name'  => $t['name'],
         'color' => $t['color'],
         'count' => (int) $t['count'],
+        'title' => (string) ($t['title'] ?? ''),
         'pct'   => $taskTotal > 0 ? round(100 * (int) $t['count'] / $taskTotal, 1) : 0,
     ];
 }
