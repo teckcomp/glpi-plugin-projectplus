@@ -3396,7 +3396,7 @@
     function projectLockHtml(blocked) {
         return blocked
             ? '<span class="pp-dep-lock" title="' +
-              escapeHtml(__('Projeto com tarefas/subprojetos abertos — não pode ir para fase concluída')) +
+              escapeHtml(__('Tarefas ou subprojetos abertos — só o gestor pode finalizar, com confirmação')) +
               '">🔒</span> '
             : '';
     }

@@ -234,7 +234,7 @@
                                 {% endif %}
                             </td>
                             <td class="pp-name-cell">{% if project.blocked %}<span class="pp-dep-lock"
-                                    title="{{ __('Projeto com tarefas/subprojetos abertos — não pode ir para fase concluída', 'projectplus') }}">🔒</span> {% endif %}<a href="{{ project.url }}">{{ project.name }}</a></td>
+                                    title="{{ __('Tarefas ou subprojetos abertos — só o gestor pode finalizar, com confirmação', 'projectplus') }}">🔒</span> {% endif %}<a href="{{ project.url }}">{{ project.name }}</a></td>
                             <td class="pp-phase-cell">
                                 {% if project.state_name %}
                                     <span class="pp-phase" style="--pp-phase-color: {{ project.state_color }}">{{ project.state_name }}</span>

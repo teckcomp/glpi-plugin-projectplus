@@ -138,7 +138,7 @@ class I18nJs
                 'Cálculo automático a partir das subtarefas' => __('Cálculo automático a partir das subtarefas', 'projectplus'),
                 'Calcular automaticamente a partir das subtarefas' => __('Calcular automaticamente a partir das subtarefas', 'projectplus'),
                 'Bloqueada por outra(s) tarefa(s) — veja 🔗' => __('Bloqueada por outra(s) tarefa(s) — veja 🔗', 'projectplus'),
-                'Projeto com tarefas/subprojetos abertos — não pode ir para fase concluída' => __('Projeto com tarefas/subprojetos abertos — não pode ir para fase concluída', 'projectplus'),
+                'Tarefas ou subprojetos abertos — só o gestor pode finalizar, com confirmação' => __('Tarefas ou subprojetos abertos — só o gestor pode finalizar, com confirmação', 'projectplus'), // O-4c (texto do O-2d),
 
                 // ---- barra de prazo / badges ----
                 'Sem datas planejadas — corrija o planejamento' => __('Sem datas planejadas — corrija o planejamento', 'projectplus'),

@@ -185,6 +185,8 @@ class ProjectKanban
             $stalled[(int) $r['projects_id']] = !empty($r['is_stalled']);
         }
         $preview = TaskComment::previewFor('project', $ids);
+        // O-4c: cadeado no cartão — mesma regra do 🔒 do painel
+        $blocked = TaskDep::blockedProjects($ids);
         // O-4: não lidos do usuário logado
         $me      = (int) Session::getLoginUserID();
         $unread  = CommentRead::unreadFor('project', $ids, $me);
@@ -243,6 +245,7 @@ class ProjectKanban
                 )),
                 'comments'    => $comments[$id] ?? 0,
                 'unread'      => $unread['count'][$id] ?? 0, // O-4
+                'blocked'     => !empty($blocked[$id]),      // O-4c
                 'has_desc'    => Description::has($row['content'] ?? ''), // O-2e
                 'desc_excerpt' => Description::excerpt($row['content'] ?? ''), // O-2e: 2 linhas no cartão
                 'start_label' => DateFmt::date($row['plan_start_date'], ''),

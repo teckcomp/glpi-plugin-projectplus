@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ProjectPlus\n"
 "Report-Msgid-Bugs-To: https://github.com/teckcomp/glpi-plugin-projectplus/issues\n"
-"POT-Creation-Date: 2026-10-28 14:21+0000\n"
+"POT-Creation-Date: 2026-10-28 15:10+0000\n"
 "PO-Revision-Date: 2026-07-25 00:00+0000\n"
 "Last-Translator: Teckcomp I.T. Services\n"
 "Language-Team: English\n"
@@ -430,8 +430,8 @@ msgid "Arraste um cartão entre as colunas para mudar a fase da tarefa."
 msgstr "Drag a card between columns to change the task phase."
 
 #: templates/projectkanban.html.twig:26
-msgid "Arraste um cartão entre as colunas para mudar a fase do projeto. Projeto com tarefa ou subprojeto aberto não vai para fase finalizada."
-msgstr "Drag a card between columns to change the project phase. A project with an open task or subproject cannot move to a finished phase."
+msgid "Arraste um cartão entre as colunas para mudar a fase do projeto. Com tarefa ou subprojeto aberto, só o gestor finaliza o projeto, com confirmação."
+msgstr "Drag a card between columns to change the project phase. With an open task or subproject, only the manager can finish the project, with confirmation."
 
 #: templates/kanban.html.twig:51 templates/projectkanban.html.twig:49
 msgid "As colunas são as fases do tipo de projeto escolhido"
@@ -2269,10 +2269,6 @@ msgstr "Project (applied on creation)"
 msgid "Projeto / tarefa"
 msgstr "Project / task"
 
-#: src/I18nJs.php:141 templates/dashboard.html.twig:237
-msgid "Projeto com tarefas/subprojetos abertos — não pode ir para fase concluída"
-msgstr "Project with open tasks/subprojects — it cannot move to a finished phase"
-
 #: src/TemplateCloner.php:214
 #, php-format
 msgid "Projeto criado com %1$d tarefa(s) e %2$d subprojeto(s)"
@@ -2512,11 +2508,11 @@ msgid "Sem estado"
 msgstr "No status"
 
 #: src/Dashboard.php:440 src/Kanban.php:521 src/MoveRules.php:125
-#: src/ProjectKanban.php:317
+#: src/ProjectKanban.php:320
 msgid "Sem fase"
 msgstr "No phase"
 
-#: src/ProjectKanban.php:231
+#: src/ProjectKanban.php:233
 msgid "Sem gestor"
 msgstr "No manager"
 
@@ -2778,6 +2774,10 @@ msgstr "Invalid tasks for the link"
 #: templates/projecttemplates.html.twig:27
 msgid "Tarefas nos modelos"
 msgstr "Tasks in templates"
+
+#: src/I18nJs.php:141 templates/dashboard.html.twig:237
+msgid "Tarefas ou subprojetos abertos — só o gestor pode finalizar, com confirmação"
+msgstr "Open tasks or subprojects — only the manager can finish it, with confirmation"
 
 #: templates/dashboard.html.twig:172
 msgid "Tarefas por fase"

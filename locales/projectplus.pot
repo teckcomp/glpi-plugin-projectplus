@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ProjectPlus 1.1.0-beta\n"
 "Report-Msgid-Bugs-To: https://github.com/teckcomp/glpi-plugin-projectplus/issues\n"
-"POT-Creation-Date: 2026-10-28 14:21+0000\n"
+"POT-Creation-Date: 2026-10-28 15:10+0000\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -433,8 +433,8 @@ msgstr ""
 
 #: templates/projectkanban.html.twig:26
 msgid ""
-"Arraste um cartão entre as colunas para mudar a fase do projeto. Projeto com "
-"tarefa ou subprojeto aberto não vai para fase finalizada."
+"Arraste um cartão entre as colunas para mudar a fase do projeto. Com tarefa "
+"ou subprojeto aberto, só o gestor finaliza o projeto, com confirmação."
 msgstr ""
 
 #: templates/kanban.html.twig:51 templates/projectkanban.html.twig:49
@@ -2328,11 +2328,6 @@ msgstr ""
 msgid "Projeto / tarefa"
 msgstr ""
 
-#: src/I18nJs.php:141 templates/dashboard.html.twig:237
-msgid ""
-"Projeto com tarefas/subprojetos abertos — não pode ir para fase concluída"
-msgstr ""
-
 #: src/TemplateCloner.php:214
 #, php-format
 msgid "Projeto criado com %1$d tarefa(s) e %2$d subprojeto(s)"
@@ -2582,11 +2577,11 @@ msgid "Sem estado"
 msgstr ""
 
 #: src/Dashboard.php:440 src/Kanban.php:521 src/MoveRules.php:125
-#: src/ProjectKanban.php:317
+#: src/ProjectKanban.php:320
 msgid "Sem fase"
 msgstr ""
 
-#: src/ProjectKanban.php:231
+#: src/ProjectKanban.php:233
 msgid "Sem gestor"
 msgstr ""
 
@@ -2855,6 +2850,11 @@ msgstr ""
 
 #: templates/projecttemplates.html.twig:27
 msgid "Tarefas nos modelos"
+msgstr ""
+
+#: src/I18nJs.php:141 templates/dashboard.html.twig:237
+msgid ""
+"Tarefas ou subprojetos abertos — só o gestor pode finalizar, com confirmação"
 msgstr ""
 
 #: templates/dashboard.html.twig:172

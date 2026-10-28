@@ -23,7 +23,7 @@
             <h1>{{ __('Kanban', 'projectplus') }}</h1>
             <span>
                 {% if can_edit %}
-                {{ __('Arraste um cartão entre as colunas para mudar a fase do projeto. Projeto com tarefa ou subprojeto aberto não vai para fase finalizada.', 'projectplus') }}
+                {{ __('Arraste um cartão entre as colunas para mudar a fase do projeto. Com tarefa ou subprojeto aberto, só o gestor finaliza o projeto, com confirmação.', 'projectplus') }}
                 {% else %}
                 {{ __('Somente leitura — cada cartão é um projeto ou subprojeto na coluna da fase atual.', 'projectplus') }}
                 {% endif %}

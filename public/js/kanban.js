@@ -1452,10 +1452,10 @@
         return !!d && d.state === 'dark';
     }
 
-    function lockEl() {
+    function lockEl(title) {
         const i = document.createElement('i');
         i.className = 'ti ti-lock pp-kb-card-item__lock';
-        i.title = __('Bloqueada — veja as dependências');
+        i.title = title || __('Bloqueada — veja as dependências'); // O-4c: o projeto passa o próprio texto
         i.setAttribute('aria-label', i.title);
         return i;
     }
@@ -1742,6 +1742,7 @@
         return had;
     }
 
+    ProjectPlusKanban.lockEl = lockEl; // O-4c
     ProjectPlusKanban.personColor = personColor;
     ProjectPlusKanban.registerPeople = registerPeople;
     ProjectPlusKanban.initials = initials;

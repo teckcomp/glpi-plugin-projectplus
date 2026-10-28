@@ -266,7 +266,12 @@
 
         const name = document.createElement('span');
         name.className = 'pp-kb-card-item__name';
-        name.textContent = c.name;
+        // O-4c: cadeado antes do nome, como no painel (tarefa ou subprojeto
+        // aberto); projeto concluído não mostra
+        if (c.blocked && !c.is_done && K && typeof K.lockEl === 'function') {
+            name.appendChild(K.lockEl(__('Tarefas ou subprojetos abertos — só o gestor pode finalizar, com confirmação')));
+        }
+        name.appendChild(document.createTextNode(c.name));
         // O-2c: nome + tag de status (helpers do kanban.js)
         if (K && typeof K.topEl === 'function') {
             a.appendChild(K.topEl(name, K.statusTagEl(c.status, 'project')));
@@ -404,6 +409,8 @@
             title: c.name,
             subtitle: c.parent_id ? [__('Subprojeto de: %s', c.parent_name || '—')] : [],
             fields: fields,
+            // O-4c: mesma nota de bloqueio do modal da tarefa
+            note: (c.blocked && !c.is_done) ? __('Tarefas ou subprojetos abertos — só o gestor pode finalizar, com confirmação') : '',
             url: c.url,
             opener: opener,
             comments: base ? {
